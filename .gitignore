@@ -1,0 +1,64 @@
+# AgriInsights UK — deployment repo
+#
+# This repo holds ONLY the files the app needs to run. Everything below is either
+# machine noise or something that must never leave the development machine.
+
+# ── Internal documents ───────────────────────────────────────────────────────
+# The working repo carries a handover, market and residue reviews, and a folder of
+# notes covering pricing, the investor material and every defect found and fixed.
+# None of it belongs in a deployment repo, and this one is public. Listed by name
+# so that copying the whole working folder across cannot publish them by accident.
+HANDOVER.md
+CONTENTS.md
+*-REVIEW.md
+*-review.md
+_claude-memory/
+.claude/
+docs/
+reviews/
+
+# ── Anything carrying real farm or bank data ─────────────────────────────────
+# Statements belong to third parties: their account numbers and their transactions.
+# The bank import work is tested with synthetic fixtures only, and its scratch
+# directory is _work. Nothing of that shape should ever be committed here.
+tools/bank-harness/_work/
+_work/
+*.csv
+*.ofx
+*.qif
+*.qbo
+*.xls
+*.xlsx
+
+# ── Secrets ──────────────────────────────────────────────────────────────────
+# The app's Supabase config lives in ai-data-uk.js and is deliberately tracked, but
+# it must only ever hold the PUBLISHABLE key. A service role key belongs in an env
+# file, and an env file belongs nowhere near a public repo.
+.env
+.env.*
+*.pem
+*.key
+secrets.json
+
+# ── macOS ────────────────────────────────────────────────────────────────────
+.DS_Store
+._*
+.Spotlight-V100
+.Trashes
+.fseventsd
+.AppleDouble
+
+# ── Editors ──────────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ── Tooling ──────────────────────────────────────────────────────────────────
+node_modules/
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.log
