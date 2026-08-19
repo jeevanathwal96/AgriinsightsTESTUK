@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8"/>
+<title>AgriInsights UK</title>
+<!--
+  GitHub Pages serves index.html at the root of a site. The app's entry point is
+  index-uk.html, suffixed on purpose so that the UK and South African builds can
+  never be confused for one another in a folder, a cache or a deployment.
+
+  Rather than rename the app and break that convention - the service worker
+  precaches './index-uk.html' by name - this file forwards the root URL to it.
+
+  The script carries the query string and hash across, because ?demo=1 is how the
+  sample farm is opened and a plain redirect would silently drop it. The meta
+  refresh below is the fallback for a browser with JavaScript turned off; it
+  cannot preserve the query string, which is why the script runs first.
+-->
+<meta http-equiv="refresh" content="0; url=index-uk.html"/>
+<link rel="canonical" href="index-uk.html"/>
+<script>
+  (function () {
+    var target = 'index-uk.html' + (window.location.search || '') + (window.location.hash || '');
+    window.location.replace(target);   // replace, so Back does not bounce off this page
+  })();
+</script>
+<style>
+  body { font-family: system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+         background: #1B4332; color: #fff; display: flex; align-items: center;
+         justify-content: center; height: 100vh; margin: 0; }
+  a { color: #fff; }
+</style>
+</head>
+<body>
+  <p>Opening AgriInsights UK&hellip; <a href="index-uk.html">continue</a></p>
+</body>
+</html>
