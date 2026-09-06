@@ -1069,6 +1069,39 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
   // upsert + explicit remove (a flaky load must never delete farm data);
   // classes/benchmarks are pruned to mirror edits-in-place.
   function _numIf(s){ var n=parseInt(s,10); return (String(n)===String(s))?n:s; }
+  /* Replace every row this farm holds in `table` with `rows`, in an order that cannot
+     lose data.
+
+     These saves used to delete first and insert second. PostgREST gives us no
+     transaction, so anything that made the insert fail - an expired token, a dropped
+     connection, one row the database rejected - left the farm's records deleted with
+     nothing put back. It is not hypothetical: a farm's plan crops and orchard blocks
+     were found missing from the server on 6 Sep 2026 while the device still held them.
+
+     So: note which rows are already there, write the new ones, and only then remove
+     the old. A failure at any step leaves the previous state intact and the next save
+     simply tries again.
+
+     An empty `rows` still clears the table. That is a farmer deleting their last
+     record and it has to reach the server; the point of this helper is that a FAILED
+     write no longer looks the same as an intentional one.
+
+     Old ids are deleted in chunks because the filter travels in the query string, and
+     a farm with thousands of log rows would otherwise build a URL no server accepts. */
+  async function replaceAllRows(table, fid, rows){
+    const prior = await selectAll(function(){ return client().from(table).select('id').eq('farm_id', fid); });
+    if (prior.error) throw prior.error;
+    if (rows && rows.length){
+      const e = (await client().from(table).insert(rows)).error;
+      if (e) throw e;                       // old rows still standing
+    }
+    const oldIds = (prior.data || []).map(function(r){ return r.id; });
+    for (let i = 0; i < oldIds.length; i += 100){
+      const e = (await client().from(table).delete().in('id', oldIds.slice(i, i + 100))).error;
+      if (e) throw e;
+    }
+  }
+
   function _inList(keep){ return '('+keep.map(function(k){return '"'+String(k).replace(/"/g,'')+'"';}).join(',')+')'; }
   function campToDb(c,fid){ return { farm_id:fid, local_id:String(c.id), name:c.name||null, ha:(c.ha!=null&&c.ha!=='')?Number(c.ha):null, since:c.since||null, notes:c.notes||null }; }
   function campFromDb(r){ return { id:r.local_id, name:r.name||'', ha:(r.ha!=null)?Number(r.ha):0, since:r.since||'', notes:r.notes||'' }; }
@@ -1386,21 +1419,17 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
       var areaRows=CC_AREAS.map(function(k){ return { farm_id:fid, area_key:k, tracked:(trk[k]!==false), cadence_months:(cad[k]!=null?parseInt(cad[k],10):null) }; });
       { const e=(await client().from('crop_compliance_areas').upsert(areaRows,{onConflict:'farm_id,area_key'})).error; if(e) throw e; }
       // logs: replace-all (per area)
-      { const e=(await client().from('crop_compliance_logs').delete().eq('farm_id',fid)).error; if(e) throw e; }
       var logRows=[]; var L=c.logs||{}; Object.keys(L).forEach(function(area){ (L[area]||[]).forEach(function(g,i){ logRows.push({farm_id:fid,area_key:area,log_date:g.date||null,what:g.what||null,note:g.note||null,sort_idx:i}); }); });
-      if(logRows.length){ const e=(await client().from('crop_compliance_logs').insert(logRows)).error; if(e) throw e; }
+      await replaceAllRows('crop_compliance_logs', fid, logRows);
       // docs: replace-all (per area) — metadata only; file blobs deferred to Storage
-      { const e=(await client().from('crop_compliance_docs').delete().eq('farm_id',fid)).error; if(e) throw e; }
       var docRows=[]; var D=c.docs||{}; Object.keys(D).forEach(function(area){ (D[area]||[]).forEach(function(d,i){ docRows.push({farm_id:fid,area_key:area,name:d.name||null,kind:d.kind||null,expiry:d.expiry||null,added:d.added||null,url:d.url||null,sort_idx:i}); }); });
-      if(docRows.length){ const e=(await client().from('crop_compliance_docs').insert(docRows)).error; if(e) throw e; }
+      await replaceAllRows('crop_compliance_docs', fid, docRows);
       // log photos: replace-all, one row per photo, keyed to its log by (area_key, log_idx)
-      { const e=(await client().from('crop_compliance_log_photos').delete().eq('farm_id',fid)).error; if(e) throw e; }
       var photoRows=[]; Object.keys(L).forEach(function(area){ (L[area]||[]).forEach(function(g,li){ (g.photos||[]).forEach(function(p,pi){ photoRows.push({farm_id:fid,area_key:area,log_idx:li,name:p.name||null,kind:p.kind||null,url:p.url||null,sort_idx:pi}); }); }); });
-      if(photoRows.length){ const e=(await client().from('crop_compliance_log_photos').insert(photoRows)).error; if(e) throw e; }
+      await replaceAllRows('crop_compliance_log_photos', fid, photoRows);
       // water meter readings: replace-all
-      { const e=(await client().from('crop_compliance_readings').delete().eq('farm_id',fid)).error; if(e) throw e; }
       var rdRows=[]; (c.waterReadings||[]).forEach(function(rd,i){ rdRows.push({farm_id:fid,area_key:'water',reading_date:rd.date||null,m3:(rd.m3!=null?Number(rd.m3):null),sort_idx:i}); });
-      if(rdRows.length){ const e=(await client().from('crop_compliance_readings').insert(rdRows)).error; if(e) throw e; }
+      await replaceAllRows('crop_compliance_readings', fid, rdRows);
       _cropCfgSnap=snap;
       return true;
       } finally { _rel(); }
@@ -1475,22 +1504,20 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
       if(blocks.length){ const e=(await client().from('orchard_blocks').upsert(blocks.map(function(b){return obToDb(b,fid);}),{onConflict:'farm_id,local_id'})).error; if(e) throw e; }
       { var bq=client().from('orchard_blocks').delete().eq('farm_id',fid); if(blockIds.length) bq=bq.not('local_id','in',_inList(blockIds)); const e=(await bq).error; if(e) throw e; }
       // block docs: replace-all (small metadata child set)
-      { const e=(await client().from('orchard_block_docs').delete().eq('farm_id',fid)).error; if(e) throw e; }
       var docRows=[]; blocks.forEach(function(b){ (b.docs||[]).forEach(function(d,i){
         var _r={farm_id:fid,block_local_id:String(b.id),name:d.name||null,kind:d.kind||null,added:d.added||null,sort_idx:i};
         /* The FILE lives in Storage; this carries only its path, plus the ref id so the
            Open link still resolves on a device that has never seen the local copy. */
         if(CAN_ORCH_DOCFILE){ _r.local_id=d.id||null; _r.path=d.path||null; }
         docRows.push(_r); }); });
-      if(docRows.length){ const e=(await client().from('orchard_block_docs').insert(docRows)).error; if(e) throw e; }
+      await replaceAllRows('orchard_block_docs', fid, docRows);
       // pricing upsert + prune
       var pricing=stf.pricing||{}; var pkeys=Object.keys(pricing).filter(function(k){return blockIds.indexOf(String(k))>=0;});
       if(pkeys.length){ const e=(await client().from('orchard_pricing').upsert(pkeys.map(function(k){return opToDb(k,pricing[k],fid);}),{onConflict:'farm_id,block_local_id'})).error; if(e) throw e; }
       { var pq=client().from('orchard_pricing').delete().eq('farm_id',fid); if(pkeys.length) pq=pq.not('block_local_id','in',_inList(pkeys)); const e=(await pq).error; if(e) throw e; }
       // pricing others: replace-all
-      { const e=(await client().from('orchard_pricing_others').delete().eq('farm_id',fid)).error; if(e) throw e; }
       var othRows=[]; pkeys.forEach(function(k){ ((pricing[k]&&pricing[k].others)||[]).forEach(function(o,i){ othRows.push({farm_id:fid,block_local_id:String(k),label:o.label||null,amt:_n(o.amt),sort_idx:i}); }); });
-      if(othRows.length){ const e=(await client().from('orchard_pricing_others').insert(othRows)).error; if(e) throw e; }
+      await replaceAllRows('orchard_pricing_others', fid, othRows);
       // sprays append-only (assign ids if missing so upsert is stable)
       var sprayRows=[]; var sd=stf.sprayDiary||{}; Object.keys(sd).forEach(function(cat){ (sd[cat]||[]).forEach(function(s){ if(!s.id) s.id='os'+Date.now().toString(36)+Math.random().toString(36).slice(2,6); sprayRows.push(osToDb(s,cat,fid)); }); });
       if(sprayRows.length){ const e=(await client().from('orchard_sprays').upsert(sprayRows,{onConflict:'farm_id,local_id'})).error; if(e) throw e; }
@@ -1500,18 +1527,15 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
       var comply=stf.comply||{}; var ckeys=Object.keys(comply);
       if(ckeys.length){ const e=(await client().from('orchard_compliance_items').upsert(ckeys.map(function(k){return ociToDb(k,comply[k],fid);}),{onConflict:'farm_id,item_key'})).error; if(e) throw e; }
       { var cq=client().from('orchard_compliance_items').delete().eq('farm_id',fid); if(ckeys.length) cq=cq.not('item_key','in',_inList(ckeys)); const e=(await cq).error; if(e) throw e; }
-      { const e=(await client().from('orchard_compliance_docs').delete().eq('farm_id',fid)).error; if(e) throw e; }
       var cdRows=[]; ckeys.forEach(function(k){ ((comply[k]&&comply[k].docs)||[]).forEach(function(d,i){
         var _c={farm_id:fid,item_key:k,name:d.name||null,kind:d.kind||null,added:d.added||null,sort_idx:i};
         if(CAN_ORCH_DOCFILE){ _c.local_id=d.id||null; _c.path=d.path||null; }
         cdRows.push(_c); }); });
-      if(cdRows.length){ const e=(await client().from('orchard_compliance_docs').insert(cdRows)).error; if(e) throw e; }
-      { const e=(await client().from('orchard_compliance_checks').delete().eq('farm_id',fid)).error; if(e) throw e; }
+      await replaceAllRows('orchard_compliance_docs', fid, cdRows);
       var ccRows=[]; ckeys.forEach(function(k){ ((comply[k]&&comply[k].checks)||[]).forEach(function(c,i){ ccRows.push({farm_id:fid,item_key:k,check_date:c.date||null,note:c.note||null,sort_idx:i}); }); });
-      if(ccRows.length){ const e=(await client().from('orchard_compliance_checks').insert(ccRows)).error; if(e) throw e; }
-      { const e=(await client().from('orchard_compliance_readings').delete().eq('farm_id',fid)).error; if(e) throw e; }
+      await replaceAllRows('orchard_compliance_checks', fid, ccRows);
       var crRows=[]; ckeys.forEach(function(k){ ((comply[k]&&comply[k].readings)||[]).forEach(function(rd,i){ crRows.push({farm_id:fid,item_key:k,reading_date:rd.date||null,m3:rd.m3||null,sort_idx:i}); }); });
-      if(crRows.length){ const e=(await client().from('orchard_compliance_readings').insert(crRows)).error; if(e) throw e; }
+      await replaceAllRows('orchard_compliance_readings', fid, crRows);
       _orSnap=snap;
       return true;
       } finally { _rel(); }
@@ -1561,10 +1585,8 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
       const crops=(stp.crops||[]), events=(stp.events||[]);
       const snap=JSON.stringify({c:crops,e:events});
       if(snap===_planSnap) return true;
-      { const e=(await client().from('plan_crops').delete().eq('farm_id',fid)).error; if(e) throw e; }
-      if(crops.length){ const e=(await client().from('plan_crops').insert(crops.map(function(c,i){return planCropToDb(c,fid,i);}))).error; if(e) throw e; }
-      { const e=(await client().from('plan_events').delete().eq('farm_id',fid)).error; if(e) throw e; }
-      if(events.length){ const e=(await client().from('plan_events').insert(events.map(function(ev,i){return planEvtToDb(ev,fid,i);}))).error; if(e) throw e; }
+      await replaceAllRows('plan_crops', fid, crops.map(function(c,i){return planCropToDb(c,fid,i);}));
+      await replaceAllRows('plan_events', fid, events.map(function(ev,i){return planEvtToDb(ev,fid,i);}));
       _planSnap=snap;
       return true;
       } finally { _rel(); }
@@ -1687,16 +1709,12 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
       { const e=(await client().from('worker_settings').upsert(wkSettToDb(stw,fid),{onConflict:'farm_id'})).error; if(e) throw e; }
       var ws=(stw.workers||[]);
       if(ws.length){ const e=(await client().from('workers').upsert(ws.map(function(w){return wkrToDb(w,fid);}),{onConflict:'farm_id,local_id'})).error; if(e) throw e; }
-      { const e=(await client().from('worker_ledger').delete().eq('farm_id',fid)).error; if(e) throw e; }
-      var lgR=wkLedgerRows(stw,fid); if(lgR.length){ const e=(await client().from('worker_ledger').insert(lgR)).error; if(e) throw e; }
-      { const e=(await client().from('worker_leave_log').delete().eq('farm_id',fid)).error; if(e) throw e; }
-      var lvR=wkLeaveRows(stw,fid); if(lvR.length){ const e=(await client().from('worker_leave_log').insert(lvR)).error; if(e) throw e; }
-      { const e=(await client().from('worker_docs').delete().eq('farm_id',fid)).error; if(e) throw e; }
-      var dcR=wkDocRows(stw,fid); if(dcR.length){ const e=(await client().from('worker_docs').insert(dcR)).error; if(e) throw e; }
+      var lgR=wkLedgerRows(stw,fid); await replaceAllRows('worker_ledger', fid, lgR);
+      var lvR=wkLeaveRows(stw,fid); await replaceAllRows('worker_leave_log', fid, lvR);
+      var dcR=wkDocRows(stw,fid); await replaceAllRows('worker_docs', fid, dcR);
       var peR=wkPayrollRows(stw,fid); if(peR.length){ const e=(await client().from('payroll_entries').upsert(peR,{onConflict:'farm_id,period_label,worker_local_id'})).error; if(e) throw e; }
       var prR=(stw.payRuns||[]).map(function(r){return payRunToDb(r,fid);}); if(prR.length){ const e=(await client().from('pay_runs').upsert(prR,{onConflict:'farm_id,local_id'})).error; if(e) throw e; }
-      { const e=(await client().from('pay_run_applied').delete().eq('farm_id',fid)).error; if(e) throw e; }
-      var paR=payAppliedRows(stw,fid); if(paR.length){ const e=(await client().from('pay_run_applied').insert(paR)).error; if(e) throw e; }
+      var paR=payAppliedRows(stw,fid); await replaceAllRows('pay_run_applied', fid, paR);
       _wkSnap=snap;
       return true;
     },
