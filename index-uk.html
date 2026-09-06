@@ -33,8 +33,8 @@
 <script defer src="vendor/chart.umd.js"></script>
 <!-- AgriInsights backend: Supabase client + data service (load order matters) -->
 <script src="vendor/supabase.js"></script>
-<script src="ai-data-uk.js?v=uk91"></script>
-<script src="ai-auth-uk.js?v=uk91"></script>
+<script src="ai-data-uk.js?v=uk92"></script>
+<script src="ai-auth-uk.js?v=uk92"></script>
 <link rel="stylesheet" href="fonts.css"/>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -24724,7 +24724,20 @@ function wkErNiPayable(){
   return wkEmploymentAllowance(annualEmployerNI).payable > 0;
 }
 function wkMonthsBetween(a,b){ return (b.getFullYear()-a.getFullYear())*12 + (b.getMonth()-a.getMonth()) + 1; }
-function wkTaxYear(){ var d=(typeof APP_TODAY!=='undefined'&&APP_TODAY)?APP_TODAY:new Date(); var y=d.getFullYear(); var sy=(d.getMonth()>=2)?y:y-1; return { sy:sy, label:sy+'/'+String(sy+1).slice(2), start:new Date(sy,2,1) }; }
+/* The PAYE year. This returned 1 MARCH - the South African tax year - so payroll ran
+   March to February while the ledger's fyOf() correctly ran 6 April to 5 April. The two
+   engines disagreed about which year a March or early-April payslip belonged to, which
+   is what P60s, year-to-date NI and wkMonthsInTY are all counted against.
+
+   PAYE always runs on the income tax year, 6 April to 5 April, for every employer -
+   including a limited company whose own accounts are made up to a different date. So
+   this is deliberately NOT tied to the farm's financial-year setting. */
+function wkTaxYear(){
+  var d=(typeof APP_TODAY!=='undefined'&&APP_TODAY)?APP_TODAY:new Date();
+  var y=d.getFullYear(), m=d.getMonth(), day=d.getDate();
+  var sy=(m>3 || (m===3 && day>=6)) ? y : y-1;    // on or after 6 April
+  return { sy:sy, label:sy+'/'+String(sy+1).slice(2), start:new Date(sy,3,6) };
+}
 function wkMonthsInTY(w){ var ty=wkTaxYear(); var d=(typeof APP_TODAY!=='undefined'&&APP_TODAY)?APP_TODAY:new Date(); var st=ty.start; if(w.start){ var ws=new Date(w.start); if(ws>st) st=ws; } return Math.max(0,Math.min(12,wkMonthsBetween(new Date(st.getFullYear(),st.getMonth(),1), d))); }
 /* Anything that is not on a monthly salary is run through the casual pay run.
    This tested w.basis==='day' exactly, and the demo farm's three seasonal pickers
@@ -33176,8 +33189,19 @@ function fyStartMonth(){
    the PREVIOUS tax year. SA (and any 1st-of-month country) returns 1, which makes
    the day comparison in _yearOf a no-op — identical behaviour to before. */
 function fyStartDay(){
+  /* A company's accounting period is its own financial year, and that is a month end -
+     so the period opens on the 1st. Only the INCOME TAX year runs 6 April to 5 April.
+     Without this a company with a 31 March year end was handed a 6 April to 5 April
+     period and every corporation tax date derived from it came out five days wrong.
+
+     This is checked BEFORE the stored value on purpose. ST.fyStartDay is seeded to 6 and
+     no screen in the app sets it, so a stored 6 is the income-tax default leaking through
+     rather than anything the farmer chose - and honouring it would silently defeat this
+     for every existing farm. If a day control is ever added, revisit the order. */
+  if (typeof ukIsCompany==='function' && ukIsCompany()) return 1;
   var d=(typeof ST!=='undefined' && ST && ST.fyStartDay)|0;
-  return (d>=1 && d<=28) ? d : _cDef('fy.startDay', 6);
+  if (d>=1 && d<=28) return d;
+  return _cDef('fy.startDay', 6);
 }
 function seasonStartDay(){
   var d=(typeof ST!=='undefined' && ST && ST.seasonStartDay)|0;
@@ -49127,6 +49151,32 @@ window.calcAnnualIncomeTax = calcAnnualIncomeTax; window._taxFromBands = _taxFro
 function _txNow(){ return (typeof APP_TODAY!=='undefined'&&APP_TODAY)?new Date(APP_TODAY):new Date(); }
 function _txDaysTo(d){ return Math.ceil((d-_txNow())/86400000); }
 function _txWhen(d){ var n=_txDaysTo(d); if(n<0) return {t:'Overdue',late:true}; if(n===0) return {t:'Due today',late:false}; return {t:'in '+n+' day'+(n===1?'':'s'),late:false}; }
+/* A company is taxed under corporation tax, not Self Assessment. Everything that branches
+   on this is about DEADLINES and LABELS - the rate itself was already right. */
+function ukIsCompany(){ return (((typeof ST!=='undefined'&&ST&&ST.entityType)||'sole')==='company'); }
+/* Month arithmetic that clamps instead of overflowing. 31 December plus nine months is
+   30 September, not 1 October - and JS setMonth() would give the latter, which would put
+   every December year-end company's corporation tax a day late. */
+function _ukAddMonths(d,n){
+  var y=d.getFullYear(), m=d.getMonth()+n, day=d.getDate();
+  var last=new Date(y, m+1, 0).getDate();
+  return new Date(y, m, Math.min(day, last));
+}
+/* The last day of the accounting period that STARTS in `year`, from the farm's own
+   financial-year setting - so a company with a 31 December or 31 March year end gets its
+   own dates rather than the 5 April the income tax year would impose. */
+function ukFyPeriodEnd(year){
+  var start=new Date(year, fyStartMonth()-1, fyStartDay());
+  var end=new Date(start.getFullYear()+1, start.getMonth(), start.getDate());
+  end.setDate(end.getDate()-1);
+  return end;
+}
+/* Corporation tax is due 9 months and 1 day after the period ends, in ONE payment for
+   profits up to 1.5m (quarterly instalments only above that). The CT600 is due 12 months
+   after - so the money falls due a full three months BEFORE the return, which is the part
+   people get wrong. Verified against gov.uk/pay-corporation-tax and /company-tax-returns. */
+function ukCtPaymentDue(periodEnd){ var d=_ukAddMonths(periodEnd,9); d.setDate(d.getDate()+1); return d; }
+function ukCtReturnDue(periodEnd){ return _ukAddMonths(periodEnd,12); }
 /* HMRC calls these payments on account, not provisional tax. */
 function _ukPoaLabel(per){
   return per==='1st' ? '1st payment on account'
@@ -51051,7 +51101,19 @@ function taxWhatIf(){
   setEl('tax-wi-ann',_curSym()+_grpInt(t)); setEl('tax-wi-eff',effp+'% effective');
   var bt=$('tax-wi-bartax'), bk=$('tax-wi-barkeep'); if(bt) bt.style.width=taxPct+'%'; if(bk) bk.style.width=(100-taxPct)+'%';
   setEl('tax-wi-bartaxv',_curSym()+_grpInt(t)); setEl('tax-wi-barkeepv',_curSym()+_grpInt(keep));
-  setEl('tax-wi-p1',_curSym()+_grpInt(Math.round(t/2))); setEl('tax-wi-p2',_curSym()+_grpInt(t-Math.round(t/2))); setEl('tax-wi-mo',_curSym()+_grpInt(Math.round(t/12))); setEl('tax-wi-marg',mrg+'%');
+  /* A company pays the whole bill in one instalment, so halving it across 31 January and
+     31 July describes the wrong regime AND the wrong amount. Show the single payment, and
+     retitle the tiles - their labels are static in the template, so they are set here. */
+  if(ukIsCompany()){
+    var _wiEnd=ukFyPeriodEnd(fyOf(_txNow()));
+    setEl('tax-wi-p1lbl','Due '+_shortDate(ukCtPaymentDue(_wiEnd)));
+    setEl('tax-wi-p2lbl','CT600 by');
+    setEl('tax-wi-p1',_curSym()+_grpInt(t));
+    setEl('tax-wi-p2',_shortDate(ukCtReturnDue(_wiEnd)));
+  } else {
+    setEl('tax-wi-p1lbl','1st \u00b7 31 Jan'); setEl('tax-wi-p2lbl','2nd \u00b7 31 Jul');
+    setEl('tax-wi-p1',_curSym()+_grpInt(Math.round(t/2))); setEl('tax-wi-p2',_curSym()+_grpInt(t-Math.round(t/2)));
+  } setEl('tax-wi-mo',_curSym()+_grpInt(Math.round(t/12))); setEl('tax-wi-marg',mrg+'%');
   var sv=$('tax-wi-save'), ded=t0-t; if(sv){ if(ded>0){ sv.style.display='block'; sv.innerHTML='🛠️ Your deductions cut this year’s tax by about <b>'+_curSym()+_grpInt(ded)+'</b>.'; } else sv.style.display='none'; }
   var vo=$('tax-wi-vatout'); if(vo){ var vr=taxVatIfRegistered();
     if(TAX_WI_VAT==='yes') vo.innerHTML='<b style="color:var(--gm)">If you register:</b> reclaim about <b>'+_curSym()+_grpInt(vr.inputVat)+'</b> input VAT on your standard-rated costs (machinery, repairs, vet, admin)'+'. Most of what you sell is food, so it is zero-rated — you would charge nothing on it and still reclaim, which is why farms are usually owed money by HMRC'+(vr.outputVat>0?', though your standard-rated sales (wool, contracting, rent) would carry 20% — about '+_curSym()+_grpInt(vr.outputVat)+' of output VAT':'')+'. Below '+fmt(vatRegThreshold())+' turnover it is your choice.';
@@ -51335,10 +51397,18 @@ function taxGlanceHTML(){
      has no statutory date \u2014 it runs to the policy anniversary \u2014 so it is listed as a
      standing duty rather than a deadline, which is what it actually is. */
   var cal=[], _n=_txNow();
-  if(prov.ok) cal.push([_shortDate(prov.next.d),_ukPoaLabel(prov.next.per)+' \u00b7 '+fmt(prov.next.amt),'payment on account','#B45309',true]);
+  /* A company pays corporation tax in one go, 9 months and a day after ITS period ends -
+     it makes no payments on account and files no Self Assessment return. Showing it the
+     31 January / 31 July schedule was telling a farmer to pay on dates that do not apply. */
+  if(ukIsCompany()){
+    var _ctEnd=ukFyPeriodEnd(fyOf(_txNow()));
+    cal.push([_shortDate(ukCtPaymentDue(_ctEnd)),'Corporation tax'+(prov.ok?(' \u00b7 '+fmt(prov.total!=null?prov.total:prov.next.amt)):''),'9 months + 1 day after year end','#B45309',true]);
+    cal.push([_shortDate(ukCtReturnDue(_ctEnd)),'Company Tax Return (CT600)','12 months after year end','#2D6A4F',false]);
+  }
+  else if(prov.ok) cal.push([_shortDate(prov.next.d),_ukPoaLabel(prov.next.per)+' \u00b7 '+fmt(prov.next.amt),'payment on account','#B45309',true]);
   if(vat) cal.push([_shortDate(_ukVatDueDate(vat.to)),'VAT return','one month + 7 days','#DC2626',false]);
   if(wk) cal.push(['22nd','PAYE & NIC','paid over to HMRC','#2D6A4F',false]);
-  cal.push(['31 Jan','Self Assessment','return + balancing payment','#2D6A4F',false]);
+  if(!ukIsCompany()) cal.push(['31 Jan','Self Assessment','return + balancing payment','#2D6A4F',false]);
   if(wk) cal.push(['ongoing','Employers liability','cover must stay in force','#6B7280',false]);
   h+=cal.map(function(c){ return '<div style="display:flex;gap:10px;align-items:center;padding:6px 0;border-bottom:1px solid var(--br2)"><div style="min-width:56px;text-align:center;font-size:10px;font-weight:800;color:#fff;background:'+c[3]+';border-radius:7px;padding:4px 6px">'+c[0]+'</div><div style="flex:1;font-size:12px;font-weight:600">'+c[1]+' <small style="color:#B9BFC4">'+c[2]+'</small></div>'+(c[4]?'<span style="font-size:9px;font-weight:800;background:#FEF3E0;color:#B45309;padding:1px 6px;border-radius:999px">next up</span>':'')+'</div>'; }).join('');
   h+='</div></div>';
@@ -51380,7 +51450,7 @@ function taxGlanceHTML(){
 
   // tax-health check
   var chk=[]; chk.push([(typeof FARM!=='undefined'&&FARM.vat)?'✓':'—',(typeof FARM!=='undefined'&&FARM.vat)?'VAT registered':'Not VAT registered',(typeof FARM!=='undefined'&&FARM.vat)?1:2]);
-  chk.push(['✓','Set up for payments on account',1]);
+  chk.push(['✓', ukIsCompany() ? 'Corporation tax due 9 months + 1 day after year end' : 'Set up for payments on account', 1]);
   if(wk) chk.push([wk.allOk?'✓':'⚠',wk.allOk?'All workers above minimum wage':'A worker is below minimum wage',wk.allOk?1:0]);
   var dlog=(typeof ST_CROP!=='undefined'&&ST_CROP.compliance&&ST_CROP.compliance.dieselLogbook);
   if(diesel>0) chk.push([dlog?'✓':'⚠',dlog?'Red diesel usage log kept':'Diesel logbook incomplete',dlog?1:0]);
@@ -51389,7 +51459,7 @@ function taxGlanceHTML(){
   h+='<div class="tx-card" style="margin-bottom:12px"><div class="tx-h">Tax-health check</div><div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px 18px">'+chk.map(function(c){ var col=c[2]===1?'var(--gm)':c[2]===0?'#B45309':'var(--t4)'; return '<div style="display:flex;gap:8px;align-items:center;font-size:12px"><span style="color:'+col+';font-weight:800">'+c[0]+'</span><span style="color:'+(c[2]===0?'#7a4a10':'var(--t2)')+'">'+esc(c[1])+'</span></div>'; }).join('')+'</div></div>';
 
   h+='<div class="tx-btn" onclick="taxAccountantPack()">📤 Share HMRC-ready pack with your accountant</div>';
-  h+='<div class="tx-disc"><b>Everything here is a helper to plan with — not a filed return.</b> Figures are worked out from your records; rates are reviewed each Budget ('+esc((STATUTORY&&STATUTORY.tax&&STATUTORY.tax.yearLabel)||'2026/27')+' tables). These figures follow HMRC’s rules rather than just adding everything up. It’s still not tax advice — other money you earn, or farming on the side rather than as your main work, can change the answer. Confirm the final numbers with your accountant — and if the farm has been loss-making for several years running, ask them about the five-year farming-loss restriction (ITA 2007 s67–70), which can stop those losses being set against your other income.</div>';
+  h+='<div class="tx-disc"><b>Everything here is a helper to plan with — not a filed return.</b> Figures are worked out from your records; rates are reviewed each Budget ('+esc((STATUTORY&&STATUTORY.tax&&STATUTORY.tax.yearLabel)||'2026/27')+' tables). These figures follow HMRC’s rules rather than just adding everything up. It’s still not tax advice — other money you earn, or farming on the side rather than as your main work, can change the answer. Confirm the final numbers with your accountant.'+(ukIsCompany()?' A company\u2019s losses follow the corporation tax rules (CTA 2010), not the five-year farming-loss restriction.':' And if the farm has been loss-making for several years running, ask them about the five-year farming-loss restriction (ITA 2007 s67\u201370), which can stop those losses being set against your other income.')+'</div>';
   return h;
 }
 /* ── Costs filed where they get no deduction, that don't look like tax ────────────
@@ -52759,7 +52829,7 @@ function ukMtdReportHTML(fy){
     return '<tr><td><b>'+esc(k)+'</b>'+(cats?('<div class="mtd-cats">'+esc(cats)+'</div>'):'')+'</td>'+
            '<td class="n">'+money(tot.boxes[k])+'</td></tr>';
   }).join('') || '<tr><td colspan="2" class="mtd-none">Nothing recorded in this period yet.</td></tr>';
-  var boxes='<details class="mtd-det"><summary>What Q'+q+' reports, by SA103F box</summary>'+
+  var boxes='<details class="mtd-det"><summary>What Q'+q+' reports, by '+(ukIsCompany()?'CT600 box':'SA103F box')+'</summary>'+
     '<div class="mtd-tw"><table class="mtd-t mtd-t2"><tbody>'+boxRows+
     '<tr class="mtd-tot"><td>Profit to date</td><td class="n">'+money(tot.profit)+'</td></tr>'+
     '</tbody></table></div>'+
@@ -53155,7 +53225,7 @@ function taxWhatIfHTML(){
     '<div style="margin-top:14px"><div style="display:flex;height:12px;border-radius:6px;overflow:hidden;background:rgba(255,255,255,.12)"><div id="tax-wi-bartax" style="width:0;background:#E8A33D"></div><div id="tax-wi-barkeep" style="flex:1;background:#5FBE85"></div></div>'+
       '<div style="display:flex;justify-content:space-between;font-size:11px;margin-top:6px"><span>🟠 To HMRC <b id="tax-wi-bartaxv">'+_curSym()+'—</b></span><span>🟢 You keep <b id="tax-wi-barkeepv">'+_curSym()+'—</b></span></div></div>'+
     '<div style="display:flex;justify-content:space-between;gap:8px;margin-top:16px;padding-top:14px;border-top:1px solid rgba(255,255,255,.16)">'+
-      ['1st · 31 Jan|tax-wi-p1','2nd · 31 Jul|tax-wi-p2','≈ / month|tax-wi-mo','Next £100k|tax-wi-marg'].map(function(s){var a=s.split('|');return '<div style="text-align:center"><div style="font-size:9.5px;text-transform:uppercase;letter-spacing:.04em;opacity:.72">'+a[0]+'</div><div style="font-size:15px;font-weight:800" id="'+a[1]+'">'+_curSym()+'—</div></div>';}).join('')+
+      ['1st · 31 Jan|tax-wi-p1','2nd · 31 Jul|tax-wi-p2','≈ / month|tax-wi-mo','Next £100k|tax-wi-marg'].map(function(s){var a=s.split('|');return '<div style="text-align:center"><div id="'+a[1]+'lbl" style="font-size:9.5px;text-transform:uppercase;letter-spacing:.04em;opacity:.72">'+a[0]+'</div><div style="font-size:15px;font-weight:800" id="'+a[1]+'">'+_curSym()+'—</div></div>';}).join('')+
     '</div>'+
     '<div id="tax-wi-save" style="font-size:12px;margin-top:14px;background:rgba(255,255,255,.1);border-radius:9px;padding:9px 12px;line-height:1.5;display:none"></div></div>';
   // ── VAT registration helper (a separate tax) ──
