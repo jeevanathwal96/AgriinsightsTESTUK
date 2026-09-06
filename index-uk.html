@@ -33,8 +33,8 @@
 <script defer src="vendor/chart.umd.js"></script>
 <!-- AgriInsights backend: Supabase client + data service (load order matters) -->
 <script src="vendor/supabase.js"></script>
-<script src="ai-data-uk.js?v=uk88"></script>
-<script src="ai-auth-uk.js?v=uk88"></script>
+<script src="ai-data-uk.js?v=uk89"></script>
+<script src="ai-auth-uk.js?v=uk89"></script>
 <link rel="stylesheet" href="fonts.css"/>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -46365,15 +46365,34 @@ function updateOnlineStatus() {
 // Push the current in-memory relational state to the backend (used on reconnect).
 function flushRelationalToBackend(){
   if(!(window.AI && AI.farm && AI.farm.active())) return;
-  try{ if(window.ST_CROP && AI.crop){ AI.crop.saveAll(ST_CROP).catch(function(){}); AI.crop.saveConfig(ST_CROP).catch(function(){}); } }catch(e){}
-  try{ if(window.ST_LS && AI.livestock){ AI.livestock.saveAll(ST_LS).catch(function(){}); } }catch(e){}
+  /* This runs on RECONNECT, which can happen before the sign-in load has put the
+     farm's records into memory. Every module below replaces the server's copy with
+     what is held locally, so pushing a module that is still empty does not write
+     nothing - it DELETES what is on the server. That is not theoretical: this farm's
+     orchard blocks were wiped twice on 6 Sep 2026 while the device still held them,
+     and a connection that blips during load is all it takes.
+
+     So a module is only flushed when it actually holds something. The same guard was
+     already here on ST.docs and ST_FUEL.issues; it was simply never applied to the
+     four collections below, which are the ones with the most to lose.
+
+     The cost is that deleting your LAST land, herd, block or plan line while offline
+     is not pushed by the reconnect flush - it syncs on the next change instead,
+     through the ordinary save paths. Losing one deletion until the next edit is a far
+     better failure than losing the whole set. */
+  var _cropHas  = window.ST_CROP  && ((ST_CROP.lands||[]).length || (ST_CROP.events||[]).length || (ST_CROP.inputs||[]).length);
+  var _lsHas    = window.ST_LS    && ((ST_LS.herd||[]).length || (ST_LS.fields||[]).length || (ST_LS.animals||[]).length);
+  var _fruitHas = window.ST_FRUIT && ((ST_FRUIT.blocks||[]).length);
+  var _planHas  = window.ST_PLAN  && ((ST_PLAN.crops||[]).length || (ST_PLAN.events||[]).length);
+  try{ if(_cropHas && AI.crop){ AI.crop.saveAll(ST_CROP).catch(function(){}); AI.crop.saveConfig(ST_CROP).catch(function(){}); } }catch(e){}
+  try{ if(_lsHas && AI.livestock){ AI.livestock.saveAll(ST_LS).catch(function(){}); } }catch(e){}
   /* Certificates issued offline used to reach the server only if the farmer
      happened to issue ANOTHER one while online — otherwise the record stayed
      on that device forever and was absent on any other. */
   try{ if(window.ST && ST.docs && ST.docs.length && AI.documents){ AI.documents.saveAll(ST.docs).catch(function(){}); } }catch(e){}
   try{ if(window.ST_FUEL && ST_FUEL.issues && ST_FUEL.issues.length && AI.fuel){ AI.fuel.saveAll(ST_FUEL.issues).catch(function(){}); } }catch(e){}
-  try{ if(window.ST_FRUIT && AI.orchard){ AI.orchard.saveAll(ST_FRUIT).catch(function(){}); AI.orchard.saveConfig(ST_FRUIT).catch(function(){}); } }catch(e){}
-  try{ if(window.ST_PLAN && AI.plan){ AI.plan.saveAll(ST_PLAN).catch(function(){}); } }catch(e){}
+  try{ if(_fruitHas && AI.orchard){ AI.orchard.saveAll(ST_FRUIT).catch(function(){}); AI.orchard.saveConfig(ST_FRUIT).catch(function(){}); } }catch(e){}
+  try{ if(_planHas && AI.plan){ AI.plan.saveAll(ST_PLAN).catch(function(){}); } }catch(e){}
   try{ if(typeof wkSync==='function'){ wkSync(); } }catch(e){}
 }
 
