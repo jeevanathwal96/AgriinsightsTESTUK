@@ -33,8 +33,8 @@
 <script defer src="vendor/chart.umd.js"></script>
 <!-- AgriInsights backend: Supabase client + data service (load order matters) -->
 <script src="vendor/supabase.js"></script>
-<script src="ai-data-uk.js?v=uk84"></script>
-<script src="ai-auth-uk.js?v=uk84"></script>
+<script src="ai-data-uk.js?v=uk85"></script>
+<script src="ai-auth-uk.js?v=uk85"></script>
 <link rel="stylesheet" href="fonts.css"/>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -9110,7 +9110,7 @@ body.no-livestock .tours-menu-item.ent-livestock{display:none}
         <div class="or-frow" id="or-cell-trees"><label class="or-flbl"><span id="or-lbl-count">Trees</span></label><input class="or-finp" id="or-f-trees" placeholder="e.g. 6930"></div>
         <div class="or-frow" id="or-cell-space"><label class="or-flbl" data-t="or.add.spacing">Spacing</label><input class="or-finp" id="or-f-space" placeholder="e.g. 4m x 2m"></div>
       </div>
-      <div class="or-frow" id="or-row-root"><label class="or-flbl"><span data-t="or.add.root">Rootstock</span> <span class="or-fh">what the tree is grafted onto</span></label><input class="or-finp" id="or-f-root" placeholder="e.g. Carrizo"></div>
+      <div class="or-frow" id="or-row-root"><label class="or-flbl"><span data-t="or.add.root">Rootstock</span> <span class="or-fh">what the tree is grafted onto</span></label><input class="or-finp" id="or-f-root" placeholder="e.g. M9, M26, MM106"></div>
       <div class="or-frow" id="or-row-carton"><label class="or-flbl"><span data-t="or.add.carton">Carton size</span> <span class="or-fh">how your fruit is packed</span> <span class="or-what" onclick="orToggleWhat('or-w-carton')">What's a carton?</span></label>
         <div class="or-whatbox" id="or-w-carton" style="display:none"><b>A carton is the standard box your fruit is packed and sold in.</b> Apples and pears are usually 12–13 kg, or bulk bins of about 300 kg; soft fruit is punnets by the tray — but your packhouse may pack a different size, so set what you actually use.</div>
         <select class="or-finp" id="or-f-carton" onchange="orCartonAddChange()"></select>
@@ -10760,7 +10760,7 @@ var ST_CROP = {
      see cropSeasonStr(). It was a frozen literal that never advanced, so on 16 Aug 2026
      the Crops page read "season 2024/25" beside a chip saying Sep 2025 - Aug 2026, and
      the same stale string was stamped on the spray/PHI audit, the HMRC input-cost
-     report, the Water Use Return and the compliance pack — misdating statutory
+     report, the Water Abstraction Return and the compliance pack — misdating statutory
      evidence by a year. */
   season: '2024/25',
   /* Baseline reference prices, GBP per tonne - the comment here said "R per tonne" and
@@ -10828,8 +10828,7 @@ var ST_CROP = {
   compliance: {
     // Which areas the farmer chooses to track (auto-relevant ones default on)
     tracked: { chem:true, water:true, gmo:false, invasive:true, seed:true, soil:true, ohs:true, diesel:true, export:false },
-    waterWUL:'WUL-FS-2291', waterAuthorised:480000, waterUsed:312400, waterMetered:true,
-    gmoStewardshipDoc:true, gmoRefugeLogged:true, gmoRefugePct:'',
+    waterLicence:'AN/033/0021/012', waterAuthorised:480000, waterUsed:312400, waterMetered:true,
     invasiveRegister:true, invasiveOutstanding:'Top Field firebreak', invasiveLastAction:'Pompom weed · Feb 2025',
     seedCertified:true, retainedSeed:false, seedNote:'',
     soilPractice:'Min-till + contours', soilTest:'Home Field · Aug 2024',
@@ -10847,7 +10846,7 @@ var ST_CROP = {
     },
     // Standing documents on file per area: [{name,url,kind,expiry:'YYYY-MM'|'',added}]
     docs: {
-      water:[ {name:'WUL-FS-2291 licence.pdf', kind:'pdf', url:'', expiry:'2027-06', added:'2022-06-01'} ],
+      water:[ {name:'Abstraction licence AN-033-0021-012.pdf', kind:'pdf', url:'', expiry:'2027-06', added:'2022-06-01'} ],
       export:[]
     },
     // Structured water meter readings (item 7): [{date:'YYYY-MM-DD', m3}]
@@ -11392,9 +11391,9 @@ function cropComplianceDefs(){
      keep:['Registered product (L-number) used at label rate','Date, land, batch & applicator per application','Pre-harvest interval observed before harvest','SDS for every product in the chemical store','Empty-container triple-rinse & disposal record'],
      note:'Spray records (product, rate, batch, PHI) are logged on the Inputs & Spray tab \u2014 they flow into this automatically. Operator training is managed under Worker safety.'},
     {id:'water', t:'Water abstraction licence', law:'Water Resources Act 1991 \u00b7 abstraction licence', auto:anyIrr, status: anyIrr ? (c.waterMetered && c.waterUsed<=c.waterAuthorised ? 'g':'a') : 'g',
-     desc: anyIrr ? 'Irrigation water use is registered/licensed and abstraction recorded against the authorised volume; feeds your water-use return.' : 'No irrigated lands recorded \u2014 Schedule-1 / dryland use only. Register if you start irrigating.',
-     kv: anyIrr ? [['WUL / reg no.', c.waterWUL||'\u2014'],['Authorised', (c.waterAuthorised||0).toLocaleString('en-GB')+' m\u00b3/yr'],['Used this season', (c.waterUsed||0).toLocaleString('en-GB')+' m\u00b3 ('+(c.waterAuthorised?Math.round(c.waterUsed/c.waterAuthorised*100):0)+'%)'],['Meter readings', c.waterMetered?'\u2713 logged':'\u26a0 none']] : [['Irrigated lands','none']],
-     fields:[{k:'waterWUL',label:'Water-use licence / registration no.',type:'text'},{k:'waterAuthorised',label:'Authorised volume (m\u00b3/yr)',type:'number'},{k:'waterUsed',label:'Abstracted this season (m\u00b3)',type:'number'},{k:'waterMetered',label:'Monthly meter readings kept?',type:'bool'}], keep:['Water-use licence / registration','Monthly meter readings vs authorised volume','Annual water-use return']},
+     desc: anyIrr ? 'Abstraction is licensed and recorded against the authorised volume; feeds your Environment Agency abstraction return.' : 'No irrigated lands recorded \u2014 rain-fed only. Abstracting more than 20 m\u00b3 a day needs a licence, so apply before you start.',
+     kv: anyIrr ? [['Abstraction licence', c.waterLicence||'\u2014'],['Authorised', (c.waterAuthorised||0).toLocaleString('en-GB')+' m\u00b3/yr'],['Used this season', (c.waterUsed||0).toLocaleString('en-GB')+' m\u00b3 ('+(c.waterAuthorised?Math.round(c.waterUsed/c.waterAuthorised*100):0)+'%)'],['Meter readings', c.waterMetered?'\u2713 logged':'\u26a0 none']] : [['Irrigated lands','none']],
+     fields:[{k:'waterLicence',label:'Abstraction licence number',type:'text'},{k:'waterAuthorised',label:'Authorised volume (m\u00b3/yr)',type:'number'},{k:'waterUsed',label:'Abstracted this season (m\u00b3)',type:'number'},{k:'waterMetered',label:'Monthly meter readings kept?',type:'bool'}], keep:['Water-use licence / registration','Monthly meter readings vs authorised volume','Annual water-use return']},
     {id:'lerap', t:'LERAP \u00b7 buffer zones at every spray', law:'Plant Protection Products Regs \u00b7 HSE', auto:true, status: c.lerapRecorded ? 'g':'a',
      desc:'At each application near a watercourse you must either carry out and record a Local Environment Risk Assessment for Pesticides, or record the decision to observe the full label buffer. Records are kept 3 years.',
      kv:[['Assessments recorded', c.lerapRecorded?'\u2713 logged':'\u26a0 none'],['Default buffer','5 m watercourse \u00b7 1 m dry ditch'],['Records kept','3 years']],
@@ -12077,7 +12076,7 @@ function _cropLandCard(l){
   var money = (planned) ? '<div class="cr-money mut">Not planted yet</div>'
             : (fallow||!l.crop) ? '<div class="cr-money mut">—</div>'
             : '<div class="cr-money">'+_lsCompactRand(cropLandIncomePerHa(l)*(l.area||0))+'</div>';
-  var meta=(l.area||0)+' ha'+(l.crop?(' · '+esc(l.crop)+(l.cultivar?(' '+esc(l.cultivar)):'')+(l.gmo?' (Bt)':'')):'');
+  var meta=(l.area||0)+' ha'+(l.crop?(' · '+esc(l.crop)+(l.cultivar?(' '+esc(l.cultivar)):'')+''):'');
   var top='<div class="cr-top"><div class="cr-av">'+(l.crop?cropIcon(l.crop):'🌱')+'</div>'+
       '<div style="min-width:0"><div class="nm">'+esc(l.name)+'</div><div class="meta">'+meta+'</div></div>'+
       '<div class="cr-right">'+money+'<div style="margin-top:3px"><span class="crop-stage '+chipCls+'">'+chip+'</span></div></div></div>';
@@ -12154,7 +12153,7 @@ function _cropLandTable(sorted){
     return '<tr onclick="cropOpenLand('+l.id+')" style="cursor:pointer">'+
       '<td><b>'+esc(l.name)+'</b></td>'+
       '<td class="r">'+(l.area||0)+' ha</td>'+
-      '<td>'+(l.crop?esc(l.crop)+(l.cultivar?' \u00B7 '+esc(l.cultivar):'')+(l.gmo?' (Bt)':''):'\u2014')+'</td>'+
+      '<td>'+(l.crop?esc(l.crop)+(l.cultivar?' \u00B7 '+esc(l.cultivar):'')+'':'\u2014')+'</td>'+
       '<td><span class="crop-stage '+chipCls+'">'+chip+'</span></td>'+
       '<td class="r">'+yld+'</td>'+
       '<td class="r"'+(gmNeg?' style="color:var(--rd)"':'')+'>'+gm+'</td>'+
@@ -12168,7 +12167,7 @@ function cropCta(cls,ic,t,s,onclick){ return '<button class="crop-rpt-cta '+cls+
 function cropRenderLands(){
   var el=$('crop-view-lands'); if(!el) return;
   var rows=ST_CROP.lands.map(function(l){
-    return '<tr><td><b>'+esc(l.name)+'</b></td><td class="r">'+(l.area||0)+' ha</td><td>'+(l.crop?esc(l.crop)+(l.cultivar?' \u00b7 '+esc(l.cultivar):'')+(l.gmo?' (Bt)':''):'\u2014')+'</td>'+
+    return '<tr><td><b>'+esc(l.name)+'</b></td><td class="r">'+(l.area||0)+' ha</td><td>'+(l.crop?esc(l.crop)+(l.cultivar?' \u00b7 '+esc(l.cultivar):'')+'':'\u2014')+'</td>'+
       '<td><span class="crop-stage '+cropStageClass(cropEffStage(l))+'">'+cropStageLabel(cropEffStage(l))+'</span></td><td>'+esc(l.prevCrop||'\u2014')+'</td>'+
       '<td class="r">'+(l.actualYield!=null?(l.actualYield+' act'):(l.targetYield?(l.targetYield+(l.stage==='planned'?' tgt':' exp')):'\u2014'))+'</td></tr>';
   }).join('');
@@ -12305,7 +12304,7 @@ function cropRenderCompliance(){
     cropCta('spray','\uD83D\uDEE1\uFE0F','Compliance Audit Pack','One printable pack of all the above \u2014 for inspectors, export buyers, your merchant or bank.','openCropComplianceReport()')+
     cropCta('water','\uD83D\uDCA7','Abstraction return','Licensed vs metered abstraction \u2014 for your annual return to the Environment Agency, NRW, SEPA or NIEA.','openCropWaterReport()')+
     '<div onclick="cropSetTab(\'overview\')" style="margin-top:8px;font-size:12px;font-weight:700;color:var(--gm);cursor:pointer">All crop reports on the Overview \u2192</div>'+
-    '<div class="crop-infonote" style="margin-top:14px">Plain-language status only. Exact legal thresholds (refuge %, water limits, refund rate) are entered or looked up, never assumed.</div>';
+    '<div class="crop-infonote" style="margin-top:14px">Plain-language status only. Exact legal thresholds (NVZ nitrogen limits, abstraction limits, red diesel rate) are entered or looked up, never assumed.</div>';
 }
 
 // ---- Choose-what-to-track modal ----
@@ -12506,15 +12505,15 @@ function cropRenderAddForm(){
     '<div class="crop-two"><div class="crop-field"><label>Crop</label><select id="crop-f-crop">'+cropOpts+'</select></div>'+
       '<div class="crop-field"><label>Cultivar (optional)</label><input id="crop-f-cultivar" placeholder="e.g. Skyfall"></div></div>'+
     '<div class="crop-two"><div class="crop-field"><label>Area planted (ha)</label><input id="crop-f-area" type="number" placeholder="120"></div>'+
-      '<div class="crop-field"><label>GMO / Bt cultivar?</label><select id="crop-f-gmo"><option value="no">No</option><option value="yes">Yes \u2014 Bt / GM (track refuge)</option></select></div></div>'+
-    '<div class="crop-two"><div class="crop-field"><label>Planting date</label><input id="crop-f-planted" type="date"><div class="hint">Summer-rainfall wheat: Oct\u2013Dec \u00b7 WC winter wheat: May\u2013Jul</div></div>'+
+      '</div>'+
+    '<div class="crop-two"><div class="crop-field"><label>Planting date</label><input id="crop-f-planted" type="date"><div class="hint">Winter wheat: Sep\u2013Oct \u00b7 Spring barley: Feb\u2013Apr</div></div>'+
       '<div class="crop-field"><label>Expected harvest</label><input id="crop-f-harvest" type="date"></div></div>'+
     '<div class="crop-two"><div class="crop-field"><label>Target yield (t/ha)</label><input id="crop-f-yield" type="number" step="0.1" placeholder="6.2"></div>'+
       '<div class="crop-field"><label>Budgeted input cost (£/ha)</label><input id="crop-f-input" type="number" placeholder="11200"></div></div>'+
     '<div class="crop-field"><label>Price (£ per tonne)</label><input id="crop-f-price" type="number" inputmode="decimal" placeholder="e.g. 4180" oninput="cropPriceTouched=true"><div id="crop-f-price-chip"></div></div>'+
     '<div class="crop-field"><label>Irrigated?</label><select id="crop-f-irr"><option value="no">Dryland (rain-fed)</option><option value="yes">Irrigated \u2014 links to water-use tracking</option></select></div>'+
     '<button class="crop-formbtn" onclick="cropSaveLand()">Plant this land</button>'+
-    '<div class="crop-infonote">Answering \u201cGMO\u201d and \u201cIrrigated\u201d here is what switches on the matching Compliance items \u2014 ask once, use everywhere.</div>';
+    '<div class="crop-infonote">Answering \u201cIrrigated\u201d here is what switches on the matching Compliance items \u2014 ask once, use everywhere.</div>';
   var sel=$('crop-f-land'); if(sel) sel.onchange=function(){ var w=$('crop-f-newland-wrap'); if(w) w.style.display=(this.value==='new'?'block':'none'); };
   // Initialise the new-land name field visibility for the current selection. With no
   // lands yet, "new" is the only/default option, so the name box must show immediately.
@@ -12558,7 +12557,10 @@ function cropSaveLand(){
   var crop=$('crop-f-crop').value;
   var area=parseFloat($('crop-f-area').value)||0;
   var cultivar=$('crop-f-cultivar').value.trim();
-  var gmo=$('crop-f-gmo').value==='yes';
+  /* No GM crop may be grown commercially in the UK, so the question is gone from the form
+   and the flag is simply false. The column stays: it costs nothing, and removing a stored
+   field is how you orphan the records that already use it. */
+var gmo=false;
   var irr=$('crop-f-irr').value==='yes';
   var planted=$('crop-f-planted').value;
   var harvest=$('crop-f-harvest').value;
@@ -12770,7 +12772,7 @@ function cropRenderLandModal(){
     var dl='';
     dl+=DT+'Stage</dt>'+DD+'<span class="crop-stage '+cropStageClass(est)+'">'+cropStageLabel(est)+'</span></dd>';
     if(l.crop){
-      dl+=DT+'Crop / cultivar</dt>'+DD+esc(l.crop)+(l.cultivar?(' \u00b7 '+esc(l.cultivar)):'')+(l.gmo?' (Bt)':'')+'</dd>';
+      dl+=DT+'Crop / cultivar</dt>'+DD+esc(l.crop)+(l.cultivar?(' \u00b7 '+esc(l.cultivar)):'')+''+'</dd>';
       dl+=DT+(l.stage==='planned'?'Plant from':'Planted')+'</dt>'+DD+cropDispDate(l.planted)+'</dd>';
       dl+=DT+'Expected harvest</dt>'+DD+(est==='harvest'?'Now':cropDispDate(l.harvest))+'</dd>';
       dl+=DT+(l.actualYield!=null?'Actual yield':'Expected yield')+'</dt>'+DD+(cropLandYield(l)||0)+' t/ha</dd>';
@@ -12816,7 +12818,7 @@ function cropRenderLandModal(){
   var body='<div style="padding:16px 20px">'+
     F('Land name','<input id="cle-name" value="'+esc(l.name)+'">')+
     '<div class="crop-two">'+F('Crop','<select id="cle-crop"><option value="">\u2014 none (fallow)</option>'+cropOpts+'</select>')+F('Cultivar','<input id="cle-cultivar" value="'+esc(l.cultivar||'')+'">')+'</div>'+
-    '<div class="crop-two">'+F('Area (ha)','<input id="cle-area" type="number" value="'+(l.area||0)+'">')+F('GMO / Bt?','<select id="cle-gmo"><option value="no"'+(!l.gmo?' selected':'')+'>No</option><option value="yes"'+(l.gmo?' selected':'')+'>Yes \u2014 Bt / GM</option></select>')+'</div>'+
+    '<div class="crop-two">'+F('Area (ha)','<input id="cle-area" type="number" value="'+(l.area||0)+'">')+'</div>'+
     '<div class="crop-two">'+F('Planting date','<input id="cle-planted" type="date" value="'+(l.planted||'')+'">')+F('Expected harvest','<input id="cle-harvest" type="date" value="'+(l.harvest||'')+'">')+'</div>'+
     '<div class="crop-two">'+F('Expected yield (t/ha)','<input id="cle-yield" type="number" step="0.1" value="'+(l.targetYield||0)+'">')+F('Input cost (£/ha)','<input id="cle-input" type="number" value="'+(l.inputPerHa||0)+'">')+'</div>'+
     F('Price (£ per tonne)','<input id="cle-price" type="number" inputmode="decimal" value="'+(l.price>0?l.price:'')+'" placeholder="'+(cropPrice(l.crop)>0?('AHDB \u2248 '+cropPrice(l.crop)):'enter your own price')+'" oninput="cropEditPriceTouched=true"><div id="cle-price-chip"></div>')+
@@ -12851,7 +12853,7 @@ async function cropSaveLandEdit(){
   if(newCrop && newCrop!==l.crop && l.crop) l.prevCrop=l.crop;
   l.name=nm; l.crop=newCrop; l.cultivar=$('cle-cultivar').value.trim();
   l.area=parseFloat($('cle-area').value)||0;
-  l.gmo=$('cle-gmo').value==='yes'; l.irrigated=$('cle-irr').value==='yes';
+  l.gmo=!!l.gmo;   /* control removed - no GM crop is grown commercially in the UK; keep what is stored */ l.irrigated=$('cle-irr').value==='yes';
   l.planted=$('cle-planted').value; l.harvest=$('cle-harvest').value;
   l.targetYield=parseFloat($('cle-yield').value)||0; l.inputPerHa=parseFloat($('cle-input').value)||0;
   l.price=parseFloat($('cle-price') && $('cle-price').value)||0;
@@ -12986,18 +12988,18 @@ function openCropWaterReport(){
   var irr=ST_CROP.lands.filter(function(l){return l.irrigated;});
   var rows=irr.map(function(l){return '<tr><td>'+escTxHtml(l.name)+'</td><td>'+escTxHtml(l.crop||'\u2014')+'</td><td class="amt">'+l.area+' ha</td><td>Irrigated</td></tr>';}).join('') || '<tr><td colspan="4" style="color:#6b7280">No irrigated lands recorded.</td></tr>';
   var pct=c.waterAuthorised?Math.round(c.waterUsed/c.waterAuthorised*100):0;
-  var html='<h1>Water Use Return</h1>'+
+  var html='<h1>Water Abstraction Return</h1>'+
     '<div class="lsr-meta">'+escTxHtml(FARM.name||'Farm')+' \u00b7 Water Resources Act 1991 · abstraction licensing \u00b7 season '+cropSeasonStr()+'</div>'+
     '<h2>1 \u00b7 Authorisation &amp; abstraction</h2><table><tbody>'+
-      '<tr><td>Water-use licence / registration</td><td class="amt">'+escTxHtml(c.waterWUL||'\u2014')+'</td></tr>'+
+      '<tr><td>Abstraction licence</td><td class="amt">'+escTxHtml(c.waterLicence||'\u2014')+'</td></tr>'+
       '<tr><td>Authorised volume</td><td class="amt">'+(c.waterAuthorised||0).toLocaleString('en-GB')+' m\u00b3/yr</td></tr>'+
       '<tr><td>Abstracted this season</td><td class="amt">'+(c.waterUsed||0).toLocaleString('en-GB')+' m\u00b3</td></tr>'+
       '<tr class="total"><td>Used vs authorised</td><td class="amt">'+pct+'%</td></tr>'+
     '</tbody></table>'+
     '<h2>2 \u00b7 Irrigated lands</h2><table><thead><tr><th>Land</th><th>Crop</th><th class="amt">Area</th><th>Use</th></tr></thead><tbody>'+rows+'</tbody></table>'+
-    '<div class="lsr-note">Keep monthly meter readings and stay within the authorised volume. Use above the authorisation, or unregistered use beyond Schedule-1, is an offence under the Act.</div>'+
+    '<div class="lsr-note">Keep monthly meter readings and stay within the authorised volume. Abstracting above the licensed volume, or without a licence where one is needed, is an offence under the Water Resources Act 1991.</div>'+
     '<div class="lsr-disc"><b>Not legal advice.</b> Confirm your authorisation conditions and reporting deadlines with the Department of Water and Sanitation / your Water User Association.</div>';
-  var csv=lsCsvRow(['Water Use Return',FARM.name||'Farm','Season',cropSeasonStr()])+lsCsvRow([])+lsCsvRow(['WUL',c.waterWUL||''])+lsCsvRow(['Authorised m3/yr',c.waterAuthorised||0])+lsCsvRow(['Used m3',c.waterUsed||0])+lsCsvRow(['% used',pct])+lsCsvRow([])+lsCsvRow(['Irrigated land','Crop','Ha']);
+  var csv=lsCsvRow(['Water Abstraction Return',FARM.name||'Farm','Season',cropSeasonStr()])+lsCsvRow([])+lsCsvRow(['Abstraction licence',c.waterLicence||''])+lsCsvRow(['Authorised m3/yr',c.waterAuthorised||0])+lsCsvRow(['Used m3',c.waterUsed||0])+lsCsvRow(['% used',pct])+lsCsvRow([])+lsCsvRow(['Irrigated land','Crop','Ha']);
   irr.forEach(function(l){csv+=lsCsvRow([l.name,l.crop||'',l.area]);});
   lsShowReport('Water use return','linear-gradient(135deg,#0891B2,#0E7490)',html,csv,'crop-water-use.csv');
 }
@@ -13026,7 +13028,7 @@ async function openCropComplianceReport(){
     '<div class="lsr-meta">'+escTxHtml(FARM.name||'Farm')+' \u00b7 season '+cropSeasonStr()+' \u00b7 compiled '+lsFmtDate(LS_TODAY)+'</div>'+
     '<div class="lsr-banner ok"><b>Compliance score: '+sc.ok+'/'+sc.total+'.</b> Status summary across the Acts that touch crop farming. Tap each section for the records behind it.</div>'+
     secs+
-    '<div class="lsr-disc"><b>Not legal advice.</b> A status summary compiled from your records for inspectors, buyers, your merchant or bank. Exact thresholds (refuge %, water limits, diesel rate) must be verified against current regulations.</div>';
+    '<div class="lsr-disc"><b>Not legal advice.</b> A status summary compiled from your records for inspectors, buyers, your merchant or bank. Exact thresholds (NVZ nitrogen limits, abstraction limits, red diesel rate) must be verified against current regulations.</div>';
   var csv=lsCsvRow(['Crop Compliance Audit Pack',FARM.name||'Farm','Season',cropSeasonStr(),'Score',sc.ok+'/'+sc.total])+lsCsvRow([])+lsCsvRow(['Area','Law','Status','Detail']);
   cropComplianceItems().forEach(function(it){csv+=lsCsvRow([it.t,it.law,it.status==='g'?'OK':(it.status==='a'?'Attention':'Action'),it.kv.map(function(p){return p[0]+': '+p[1];}).join(' | ')]);});
   csv+=lsCsvRow([])+lsCsvRow(['Check & test log']);
@@ -19034,7 +19036,7 @@ var ST_LOANAPP = {
      on the next. */
   estimates: { crops:480000, debtors:240000 },
   track: { back1:{income:1720000, costs:1375000}, back2:{income:1610000, costs:1290000} },
-  landWater: { ownedHa:340, leasedHa:95, tenure:'HM Land Registry title HR284511, Home Farm, with 95 ha held on a Farm Business Tenancy', water:'Registered — 480 000 m³/yr, Wilge River scheme (WUL-FS-2291); balance rain-fed' },
+  landWater: { ownedHa:340, leasedHa:95, tenure:'HM Land Registry title HR284511, Home Farm, with 95 ha held on a Farm Business Tenancy', water:'Registered — 480 000 m³/yr, abstraction licence AN/033/0021/012; balance rain-fed' },
   savedAt: '2026-07-20T09:15:00.000Z'
 };
 var LN_ASSETS_FALLBACK = 13300000;
@@ -19515,7 +19517,7 @@ function laRenderCheckFigures(){
         '<div class="la-cf-row2"><div><div class="cl" style="font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.03em;color:var(--t4);margin-bottom:4px">Land you own (ha)</div><div class="la-cf-in"><input id="la-cf-ownedha" inputmode="numeric" value="'+v(lw.ownedHa!=null?lw.ownedHa:((typeof FARM!=='undefined'&&FARM.ha>0)?FARM.ha:''))+'" placeholder="0" onblur="laCFGrp(this);laCFLWCheck()"></div></div>'+
         '<div><div class="cl" style="font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.03em;color:var(--t4);margin-bottom:4px">Land you lease (ha)</div><div class="la-cf-in"><input id="la-cf-leasedha" inputmode="numeric" value="'+v(lw.leasedHa||'')+'" placeholder="0" onblur="laCFGrp(this);laCFLWCheck()"></div></div></div>'+
         '<div style="margin-bottom:9px"><div class="cl" style="font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.03em;color:var(--t4);margin-bottom:4px">Tenure details</div><textarea class="la-cf-ta" id="la-cf-tenure" oninput="laCFLWCheck()" placeholder="Title deed number, portions, district...">'+esc(lw.tenure||'')+'</textarea></div>'+
-        '<div><div class="cl" style="font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.03em;color:var(--t4);margin-bottom:4px">Water rights</div><textarea class="la-cf-ta" id="la-cf-water" oninput="laCFLWCheck()" placeholder="e.g. Registered - 480 000 m\u00b3/yr, Wilge River scheme, or &#39;Rain-fed, no irrigation registration&#39;">'+esc(lw.water||'')+'</textarea></div>'+
+        '<div><div class="cl" style="font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.03em;color:var(--t4);margin-bottom:4px">Water rights</div><textarea class="la-cf-ta" id="la-cf-water" oninput="laCFLWCheck()" placeholder="e.g. Registered - 480 000 m\u00b3/yr under abstraction licence AN/033/0021/012, or &#39;Rain-fed, no abstraction licence&#39;">'+esc(lw.water||'')+'</textarea></div>'+
         '<div class="la-cf-warn" id="la-cf-lw-warn" style="display:'+((lw.ownedHa||lw.leasedHa||lw.tenure||lw.water)?'none':'flex')+'"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#B45309" stroke-width="2.3" stroke-linecap="round"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9"/></svg><span>Left blank — <b>this section will be missing from your report</b>. That\'s fine if you\'d rather add it later, but a lender will likely ask for it.</span></div>'+
       '</div>'+
     '<div class="la-cf-grp"><div class="la-cf-h est"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" stroke-width="2.3" stroke-linecap="round"><path d="M12 8v.5M12 11v5"/><circle cx="12" cy="12" r="9"/></svg>Please check these amounts</div>'+
@@ -64583,7 +64585,7 @@ function orToggleWhat(id){ var e=$(id); if(e) e.style.display=(e.style.display==
 
 /* ---------- add block (adaptive form + auto-apply) ---------- */
 var OR_TYPES={
-  tree:['Apple — Bramley (culinary)','Apple — Gala','Apple — Cox','Apple — cider','Pear — Conference','Pear — Comice','Plum / gage','Cherry','Peach / nectarine','Quince','Cob nut','Table grapes','Wine grapes','Olive','Pomegranate','Other tree / vine'],
+  tree:['Apple — Bramley (culinary)','Apple — Gala','Apple — Cox','Apple — cider','Pear — Conference','Pear — Comice','Plum / gage','Cherry','Peach / nectarine','Quince','Cob nut','Table grapes','Wine grapes','Other tree / vine'],
   berry:['Blueberry','Raspberry','Blackberry','Strawberry','Gooseberry','Other berry'],
   veg:['Potato','Onion','Cabbage','Cauliflower','Broccoli','Carrot','Parsnip','Swede','Leek','Courgette','Runner beans','Sprouts','Squash','Other vegetable']
 };
@@ -64622,12 +64624,15 @@ function orSetStyle(s){
   orAutoApply();
 }
 function orValNum(id){ var e=$(id); if(!e) return 0; var v=parseFloat(String(e.value).replace(/[^0-9.\-]/g,'')); return isNaN(v)?0:v; }
-var OR_ADD={sprays:true, markets:{eu:true,uk:false,us:false,local:true}};
+/* Home market ticked, EU not. This is a UK product: the old default had a Kent apple
+   grower exporting to the EU and not selling at home, which also switched on the stricter
+   export safe-to-pick rules and certificates for every new block. */
+var OR_ADD={sprays:true, markets:{eu:false,uk:true,us:false,local:true}};
 function orAddMarketsArr(){ return ['eu','uk','us','local'].filter(function(m){return OR_ADD.markets[m];}); }
 function orAddSprayNote(){ var n=$('or-f-spray-note'); if(n) n.textContent=OR_ADD.sprays?'We\u2019ll track spray records, safe-to-pick and operator training for this block.':'This block won\u2019t be asked for spray records, waiting periods or operator training.'; }
 function orAddSetSpray(v){ OR_ADD.sprays=!!v; var seg=$('or-f-spray'); if(seg) seg.querySelectorAll('button').forEach(function(bn){ bn.classList.toggle('on',(bn.getAttribute('data-v')==='1')===!!v); }); orAddSprayNote(); }
 function orAddToggleMkt(m){ OR_ADD.markets[m]=!OR_ADD.markets[m]; var c=document.querySelector('#or-f-markets .or-mktchip[data-m="'+m+'"]'); if(c) c.classList.toggle('on',OR_ADD.markets[m]); }
-function orAddResetInputs(){ OR_ADD={sprays:true, markets:{eu:true,uk:false,us:false,local:true}}; var seg=$('or-f-spray'); if(seg) seg.querySelectorAll('button').forEach(function(bn,i){ bn.classList.toggle('on',i===0); }); document.querySelectorAll('#or-f-markets .or-mktchip').forEach(function(c){ c.classList.toggle('on',!!OR_ADD.markets[c.getAttribute('data-m')]); }); orAddSprayNote(); }
+function orAddResetInputs(){ OR_ADD={sprays:true, markets:{eu:false,uk:true,us:false,local:true}}; var seg=$('or-f-spray'); if(seg) seg.querySelectorAll('button').forEach(function(bn,i){ bn.classList.toggle('on',i===0); }); document.querySelectorAll('#or-f-markets .or-mktchip').forEach(function(c){ c.classList.toggle('on',!!OR_ADD.markets[c.getAttribute('data-m')]); }); orAddSprayNote(); }
 function orSaveBlock(){
   var style=(document.querySelector('#or-style-tog .or-stylebtn.on')||{}).getAttribute?document.querySelector('#or-style-tog .or-stylebtn.on').getAttribute('data-s'):'tree';
   var name=($('or-f-name')||{}).value||'New block';
