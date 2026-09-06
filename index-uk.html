@@ -33,8 +33,8 @@
 <script defer src="vendor/chart.umd.js"></script>
 <!-- AgriInsights backend: Supabase client + data service (load order matters) -->
 <script src="vendor/supabase.js"></script>
-<script src="ai-data-uk.js?v=uk85"></script>
-<script src="ai-auth-uk.js?v=uk85"></script>
+<script src="ai-data-uk.js?v=uk86"></script>
+<script src="ai-auth-uk.js?v=uk86"></script>
 <link rel="stylesheet" href="fonts.css"/>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -6094,7 +6094,7 @@ body.no-livestock .tours-menu-item.ent-livestock{display:none}
 .or-recmode button{padding:6px 12px;font-size:11.5px;font-weight:800;background:#fff;color:var(--t3);border:none;cursor:pointer;font-family:inherit}
 .or-recmode button.on{background:var(--gd);color:#fff}
 .or-req{font-size:9px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;border-radius:5px;padding:1px 6px;margin-left:6px;vertical-align:1px}
-.or-req.top fruit{background:#FAEEDA;color:#854F0B}.or-req.eu{background:#E0F2FE;color:#075985}.or-req.all{background:#EEF0F2;color:#52606D}
+.or-req.topfruit{background:#FAEEDA;color:#854F0B}.or-req.eu{background:#E0F2FE;color:#075985}.or-req.all{background:#EEF0F2;color:#52606D}
 .or-ext{font-size:10.5px;font-weight:800;color:var(--gm);cursor:pointer;margin-left:6px;white-space:nowrap}
 .or-ri{border:1px solid var(--br);border-radius:12px;padding:11px 13px;margin-bottom:9px}
 .or-ri:last-child{margin-bottom:0}
@@ -8999,7 +8999,7 @@ body.no-livestock .tours-menu-item.ent-livestock{display:none}
     <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:12px">
       <div id="or-bl-filter">
         <span class="or-chip on" onclick="orFilterBlocks('all',this)">All</span>
-        <span class="or-chip" onclick="orFilterBlocks('top fruit',this)">🍊 Top fruit</span>
+        <span class="or-chip" onclick="orFilterBlocks('topfruit',this)">🍎 Top fruit</span>
         <span class="or-chip" onclick="orFilterBlocks('fruit',this)">🍏 Other fruit</span>
         <span class="or-chip" onclick="orFilterBlocks('berry',this)">🫐 Berries</span>
         <span class="or-chip" onclick="orFilterBlocks('veg',this)">🥬 Vegetables</span>
@@ -34406,7 +34406,7 @@ function planCropIcon(cropName){
     ['bean','\uD83E\uDED8'],['pea','\uD83E\uDED8'],
     ['lucerne','\uD83C\uDF3F'],['alfalfa','\uD83C\uDF3F'],['hay','\uD83C\uDF3F'],['pasture','\uD83C\uDF3F'],
     ['potato','\uD83E\uDD54'],['vegetable','\uD83E\uDD6C'],['cabbage','\uD83E\uDD6C'],['tomato','\uD83C\uDF45'],
-    ['top fruit','\uD83C\uDF4A'],['orange','\uD83C\uDF4A'],['lemon','\uD83C\uDF4B'],
+    ['top fruit','\uD83C\uDF4E'],['orange','\uD83C\uDF4A'],['lemon','\uD83C\uDF4B'],
     ['apple','\uD83C\uDF4E'],['pear','\uD83C\uDF50'],['deciduous','\uD83C\uDF4E'],['grape','\uD83C\uDF47'],['vine','\uD83C\uDF47'],
     ['nut','\uD83C\uDF30'],['cherry','\uD83C\uDF52'],
     ['sugar beet','\uD83E\uDD6C'],['beet','\uD83E\uDD6C']
@@ -36398,7 +36398,7 @@ function renderOrchPlanGrid(){
   var MS=(ST_PLAN.months||[]).map(function(m){ return (m.label||'').split(' ')[0]; });
   var now=orpNowIdx();
   var byCat={}; rows.forEach(function(r){ (byCat[r.b.cat]=byCat[r.b.cat]||[]).push(r); });
-  var order=(typeof OR_CAT_ORDER!=='undefined')?OR_CAT_ORDER:['top fruit','fruit','berry','veg'];
+  var order=(typeof OR_CAT_ORDER!=='undefined')?OR_CAT_ORDER:['topfruit','fruit','berry','veg'];
 
   var h='<div class="orp-wrap">'+
     '<div class="orp-lh"><div><div class="t">Orchard planning</div>'+
@@ -63049,13 +63049,13 @@ var ST_FRUIT = {
   activeTab: 'overview',
   market: 'eu',
   blocks: [
-    {id:'f1', cat:'topfruit', icon:'\uD83C\uDF4A', name:'Long Orchard', cultivar:'Bramley’s Seedling', root:'M9', plant:2015, age:10, ha:14.0, trees:6930, status:'Full bearing', statusTag:'green', tons:620, exp:78, cartonKg:1000, margin:96400, estab:'\u00a3168,000', estabYr:2015, writeoff:11800, perUnit:248, unitWord:'tree', curve:'top fruit', docs:[{name:'nursery-invoice-2015.pdf',kind:'pdf',added:'18 Aug 2015'},{name:'soil-test-Vlei-2024.pdf',kind:'pdf',added:'14 Aug 2024'}]},
-    {id:'f2', cat:'topfruit', icon:'\uD83C\uDF4A', name:'Church Field', cultivar:'Gala', root:'M9', plant:2019, age:6, ha:9.5, trees:5225, status:'Ramping up', statusTag:'blue', tons:399, exp:72, cartonKg:1000, margin:71500, estab:'\u00a3114,000', estabYr:2019, writeoff:8100, perUnit:186, unitWord:'tree', curve:'top fruit', docs:[]},
-    {id:'f3', cat:'topfruit', icon:'\uD83C\uDF4B', name:'Brook Orchard', cultivar:'Plum · Victoria', root:'St Julien A', plant:2013, age:12, ha:7.0, trees:3150, status:'Full bearing', statusTag:'green', tons:147, exp:64, cartonKg:1000, margin:41800, estab:'\u00a352,000', estabYr:2013, writeoff:4400, perUnit:118, unitWord:'tree', curve:'top fruit', docs:[]},
-    {id:'f4', cat:'topfruit', icon:'\uD83C\uDF4A', name:'Netted Block', cultivar:'Cherry · Kordia', root:'Gisela 5', plant:2021, age:4, ha:5.5, trees:3575, status:'First crop', statusTag:'amber', tons:66, exp:85, cartonKg:1000, margin:58200, estab:'\u00a366,000', estabYr:2021, writeoff:5200, perUnit:88, unitWord:'tree', curve:'top fruit', cover:'net', docs:[]},
-    {id:'f5', cat:'topfruit', icon:'\uD83C\uDF31', name:'New Planting', cultivar:'Cox’s Orange Pippin', root:'M9', plant:2024, age:1, ha:4.0, trees:2000, status:'Not bearing', statusTag:'gray', tons:0, exp:0, cartonKg:1000, margin:-18600, estab:'\u00a348,000', estabYr:2024, writeoff:3900, perUnit:0, unitWord:'tree', curve:'top fruit', plan:true, docs:[]},
-    {id:'f6', cat:'fruit', icon:'\uD83C\uDF4F', name:'Top Orchard', cultivar:'Apple · Braeburn', root:'M9', plant:2016, age:9, ha:6.0, trees:9000, status:'Full bearing', statusTag:'green', tons:252, exp:46, cartonKg:1000, estab:'\u00a372,000', estabYr:2016, writeoff:5600, perUnit:164, unitWord:'tree', curve:'top fruit', docs:[]},
-    {id:'f10', cat:'fruit', icon:'\uD83C\uDF50', name:'Lower Orchard', cultivar:'Pear \u00b7 Conference', root:'Quince A', plant:2008, age:18, ha:5.0, trees:4000, status:'Full bearing', statusTag:'green', tons:155, exp:49, cartonKg:1000, planCost:62000, estab:'\u00a360,000', estabYr:2008, writeoff:4700, perUnit:126, unitWord:'tree', curve:'top fruit', docs:[]},
+    {id:'f1', cat:'topfruit', icon:'\uD83C\uDF4A', name:'Long Orchard', cultivar:'Bramley’s Seedling', root:'M9', plant:2015, age:10, ha:14.0, trees:6930, status:'Full bearing', statusTag:'green', tons:620, exp:78, cartonKg:1000, margin:96400, estab:'\u00a3168,000', estabYr:2015, writeoff:11800, perUnit:248, unitWord:'tree', curve:'topfruit', docs:[{name:'nursery-invoice-2015.pdf',kind:'pdf',added:'18 Aug 2015'},{name:'soil-test-Vlei-2024.pdf',kind:'pdf',added:'14 Aug 2024'}]},
+    {id:'f2', cat:'topfruit', icon:'\uD83C\uDF4A', name:'Church Field', cultivar:'Gala', root:'M9', plant:2019, age:6, ha:9.5, trees:5225, status:'Ramping up', statusTag:'blue', tons:399, exp:72, cartonKg:1000, margin:71500, estab:'\u00a3114,000', estabYr:2019, writeoff:8100, perUnit:186, unitWord:'tree', curve:'topfruit', docs:[]},
+    {id:'f3', cat:'topfruit', icon:'\uD83C\uDF4B', name:'Brook Orchard', cultivar:'Plum · Victoria', root:'St Julien A', plant:2013, age:12, ha:7.0, trees:3150, status:'Full bearing', statusTag:'green', tons:147, exp:64, cartonKg:1000, margin:41800, estab:'\u00a352,000', estabYr:2013, writeoff:4400, perUnit:118, unitWord:'tree', curve:'topfruit', docs:[]},
+    {id:'f4', cat:'topfruit', icon:'\uD83C\uDF4A', name:'Netted Block', cultivar:'Cherry · Kordia', root:'Gisela 5', plant:2021, age:4, ha:5.5, trees:3575, status:'First crop', statusTag:'amber', tons:66, exp:85, cartonKg:1000, margin:58200, estab:'\u00a366,000', estabYr:2021, writeoff:5200, perUnit:88, unitWord:'tree', curve:'topfruit', cover:'net', docs:[]},
+    {id:'f5', cat:'topfruit', icon:'\uD83C\uDF31', name:'New Planting', cultivar:'Cox’s Orange Pippin', root:'M9', plant:2024, age:1, ha:4.0, trees:2000, status:'Not bearing', statusTag:'gray', tons:0, exp:0, cartonKg:1000, margin:-18600, estab:'\u00a348,000', estabYr:2024, writeoff:3900, perUnit:0, unitWord:'tree', curve:'topfruit', plan:true, docs:[]},
+    {id:'f6', cat:'fruit', icon:'\uD83C\uDF4F', name:'Top Orchard', cultivar:'Apple · Braeburn', root:'M9', plant:2016, age:9, ha:6.0, trees:9000, status:'Full bearing', statusTag:'green', tons:252, exp:46, cartonKg:1000, estab:'\u00a372,000', estabYr:2016, writeoff:5600, perUnit:164, unitWord:'tree', curve:'topfruit', docs:[]},
+    {id:'f10', cat:'fruit', icon:'\uD83C\uDF50', name:'Lower Orchard', cultivar:'Pear \u00b7 Conference', root:'Quince A', plant:2008, age:18, ha:5.0, trees:4000, status:'Full bearing', statusTag:'green', tons:155, exp:49, cartonKg:1000, planCost:62000, estab:'\u00a360,000', estabYr:2008, writeoff:4700, perUnit:126, unitWord:'tree', curve:'topfruit', docs:[]},
     {id:'f7', cat:'berry', icon:'\uD83E\uDED0', name:'Tunnel A', cultivar:'Blueberry · Duke', root:'own root', plant:2022, age:3, ha:2.5, trees:11000, status:'Bearing', statusTag:'green', tons:28, exp:70, cartonKg:1000, unit:'kg', margin:61500, estab:'\u00a392,000', estabYr:2022, writeoff:7400, perUnit:72, unitWord:'bush', curve:'berry', cover:'tunnels', docs:[{name:'blueberry-plant-cert.pdf',kind:'pdf',added:'02 Sep 2022'}]},
     {id:'f8', cat:'veg', icon:'\uD83C\uDF83', name:'Field 7', cultivar:'Potatoes · Maris Piper', plant:'14 Feb', pickFrom:'~25 May', cycle:'1 of 2', ha:8.0, status:'Growing', statusTag:'blue', tons:392, grade:82, unit:'tonne', margin:74000, days:100, docs:[]},
     {id:'f9', cat:'veg', icon:'\uD83E\uDD6C', name:'Garden Ground', cultivar:'Cabbage · Kilaton', plant:'2 Apr', pickFrom:'~18 Jun', cycle:'3 of 4', ha:3.0, status:'Growing', statusTag:'blue', tons:141, grade:90, unit:'tonne', margin:38000, days:77, docs:[]}
@@ -63116,7 +63116,7 @@ var ST_FRUIT = {
 
 var OR_CATS = {topfruit:{nm:'Top fruit',ic:'\uD83C\uDF4E'}, fruit:{nm:'Other fruit',ic:'\uD83C\uDF4F'}, berry:{nm:'Berries',ic:'\uD83E\uDED0'}, veg:{nm:'Vegetables',ic:'\uD83E\uDD6C'}};
 var OR_COMPLY_TEMPLATE = JSON.parse(JSON.stringify(ST_FRUIT.comply));
-var OR_CAT_ORDER = ['top fruit','fruit','berry','veg'];
+var OR_CAT_ORDER = ['topfruit','fruit','berry','veg'];
 var OR_CURVES = {
   topfruit:[0,0,0,15,30,50,70,85,95,100,100,100,100,98,96,94,92,88,84,80,72,64,55,46,38],
   /* Biennial bearing - a heavy year followed by a light one. Was keyed 'avo' for
@@ -64123,7 +64123,7 @@ function orRenderExportControls(exp,cats){
   var mode=ST_FRUIT.orRecMode||'status';
   var rows=list.map(function(c){
     var ce=ST_FRUIT.comply[c.key]||{}; var docn=(ce.docs||[]).length; var stt=ce.status||c.status; var stag=(ce.statusTag==='amber'||c.tag==='amber')?'due':'ok';
-    var tags='<span class="or-req '+(c.cat==='*'?'all':'top fruit')+'">'+(c.cat==='*'?'All export':(OR_CATS[c.cat]?OR_CATS[c.cat].nm:''))+'</span><span class="or-req eu">'+esc(c.market)+'</span>';
+    var tags='<span class="or-req '+(c.cat==='*'?'all':'topfruit')+'">'+(c.cat==='*'?'All export':(OR_CATS[c.cat]?OR_CATS[c.cat].nm:''))+'</span><span class="or-req eu">'+esc(c.market)+'</span>';
     var pill='<span class="or-cc '+stag+'">'+esc(stt)+'</span>';
     if(mode==='records'){
       return '<div class="or-ri"><div class="or-ri-top"><span class="or-lic2">'+c.ic+'</span><div class="or-ri-mid"><div class="or-ri-t">'+esc(c.title)+tags+'</div><div class="or-ri-s">'+esc(c.desc)+'</div></div>'+pill+'</div>'+
@@ -64253,7 +64253,7 @@ function orRenderComply(){
   if(other) other.innerHTML=['water','operators','diesel'].filter(kExist).map(orComplyRow).join('') || '<div class="or-empty">No other records on file yet.</div>';
   if(pl){
     var html='';
-    ['top fruit','fruit','berry'].forEach(function(cat){
+    ['topfruit','fruit','berry'].forEach(function(cat){
       if(!cats[cat]) return;
       Object.keys(ST_FRUIT.comply).forEach(function(key){
         var c=ST_FRUIT.comply[key]; if(!c||c.type!=='pest'||c.cropcat!==cat) return;
@@ -64460,7 +64460,7 @@ function orOpenComply(key){
   orModalHTML(h);
 }
 function orCtypeClass(t){ t=(t||'').toLowerCase(); if(t.indexOf('registr')>=0) return 'reg'; if(t.indexOf('control')>=0||t.indexOf('spray')>=0) return 'spray'; if(t.indexOf('trap')>=0||t.indexOf('check')>=0) return 'check'; return 'insp'; }
-function orComplyTags(c){ if(c.type!=='control'&&c.type!=='pest') return ''; var t=''; if(c.cropcat&&typeof OR_CATS!=='undefined'&&OR_CATS[c.cropcat]) t+='<span class="or-req top fruit">'+OR_CATS[c.cropcat].nm+'</span>'; if(c.market) t+='<span class="or-req eu">'+esc(c.market)+'</span>'; return t?(t+' '):''; }
+function orComplyTags(c){ if(c.type!=='control'&&c.type!=='pest') return ''; var t=''; if(c.cropcat&&typeof OR_CATS!=='undefined'&&OR_CATS[c.cropcat]) t+='<span class="or-req topfruit">'+OR_CATS[c.cropcat].nm+'</span>'; if(c.market) t+='<span class="or-req eu">'+esc(c.market)+'</span>'; return t?(t+' '):''; }
 function orChecksTimeline(c){
   if(!(c.checks&&c.checks.length)) return '';
   var n=c.checks.length, dn=c.checks.filter(function(k){return k.att;}).length;
@@ -64494,7 +64494,10 @@ function orOpenBlock(id){
   if(b.cat==='veg'){
     h+='<div class="or-mlbl">This season\u2019s cycle</div><div style="display:flex;align-items:center;gap:10px;background:var(--gb);border-radius:10px;padding:14px 16px"><div style="text-align:center"><div style="font-size:11px;color:var(--t3)">Planted</div><div style="font-size:14px;font-weight:800">'+b.plant+'</div></div><div style="flex:1;height:4px;background:var(--gl);border-radius:2px;position:relative"><div style="position:absolute;top:-9px;left:50%;transform:translateX(-50%);font-size:10.5px;color:var(--gm);font-weight:700">~'+(b.days||90)+' days</div></div><div style="text-align:center"><div style="font-size:11px;color:var(--t3)">First pick</div><div style="font-size:14px;font-weight:800">'+b.pickFrom+'</div></div></div>';
   } else {
-    var cv=OR_CURVES[b.curve||'top fruit']; var life=cv.length; var now=Math.min(Math.max(b.age-1,0),life-1);
+    /* Unguarded, this threw: every seeded block carried curve:'top fruit' while OR_CURVES
+       is keyed 'topfruit', so the lookup returned undefined and .length blew up the block
+       detail view. Keys are normalised above; the fallback stops a stray value doing it again. */
+    var cv=OR_CURVES[b.curve]||OR_CURVES[b.cat]||OR_CURVES.topfruit; var life=cv.length; var now=Math.min(Math.max(b.age-1,0),life-1);
     h+='<div class="or-mlbl">Age vs what it yields</div><div class="or-curve">'+cv.map(function(v,i){return '<i class="'+(i===now?'now':(v>0?'fill':''))+'" style="height:'+Math.max(v,4)+'%"></i>';}).join('')+'</div><div class="or-curvex"><span>Year 1</span><span>Year '+Math.round(life/2)+'</span><span>Year '+life+'</span></div>';
     h+='<div style="display:flex;gap:18px;flex-wrap:wrap;margin-top:12px"><div><div class="or-mini-l">Cost to plant</div><div class="or-mini-v">'+(b.estab||'\u2014')+'</div></div><div><div class="or-mini-l">Yearly tax write-off</div><div class="or-mini-v lspos">'+(b.writeoff>0?orR(b.writeoff):'starts when it bears')+'</div></div>'+(b.perUnit>0?'<div><div class="or-mini-l">Money / '+b.unitWord+'</div><div class="or-mini-v lspos">'+orR(b.perUnit)+'</div></div>':'')+'</div>';
   }
@@ -64663,7 +64666,7 @@ function orSaveBlock(){
        trees:orValNum('or-f-trees')||0,space:orValNum('or-f-space')||undefined,status:bearing?'Bearing':(age>=1?'Not bearing':'Just planted'),statusTag:bearing?'green':'gray',
        tons:bearing?orValNum('or-f-yield'):0,exp:bearing?70:0,cartonKg:(cat==='berry'?0:cartonKg),unit:(cat==='berry'?'kg':undefined),
        margin:0,estab:($('or-f-estab')||{}).value||'\u2014',estabYr:yr,writeoff:0,perUnit:0,unitWord:(style==='berry'?'bush':'tree'),
-       curve:(cat==='berry'?'berry':(/bramley|biennial/i.test(crop)?'biennial':'top fruit')),plan:!bearing,docs:[]};
+       curve:(cat==='berry'?'berry':(/bramley|biennial/i.test(crop)?'biennial':'topfruit')),plan:!bearing,docs:[]};
     if(prof.body.indexOf('British Apples')>=0){ ST_FRUIT.pricing[id]={price:640,comm:8,pack:180,ship:42,levy:0,levyName:'',others:[{label:'Other costs',amt:0}]}; }
     else if(cat==='berry'){ ST_FRUIT.pricing[id]={price:95,comm:10,pack:22,ship:14,levy:0.30,levyName:'Berries UK',others:[{label:'Other costs',amt:0}]}; }
   }
