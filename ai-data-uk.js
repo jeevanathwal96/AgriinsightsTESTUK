@@ -57,9 +57,15 @@
      Until all three are done the app runs in demo mode only, which is exactly what
      pre-launch needs. Failing loudly here is the whole point: a silent connection is
      the failure mode that cannot be undone. */
-  const UK_BACKEND_READY  = false;      // flip to true ONLY once both values below are the UK project's
-  const SUPABASE_URL      = '';         // e.g. 'https://YOUR-UK-PROJECT.supabase.co'
-  const SUPABASE_ANON_KEY = '';         // the PUBLISHABLE (anon) key — never the service role key
+  /* The UK project, provisioned 19 Aug 2026 in the London region (verified: the CDN
+     answers from LHR), so UK personal data stays in the UK.
+
+     The schema was applied on 19 August 2026: 60 tables, 66 policies, row-level
+     security on every one of them, the tax year starting in April and the UK-only
+     columns present. Sign-in is live from here. */
+  const UK_BACKEND_READY  = true;       // schema applied 19 Aug 2026: 60 tables, 66 policies, RLS on all
+  const SUPABASE_URL      = 'https://rjhwwikxikhivxhdyfwj.supabase.co';
+  const SUPABASE_ANON_KEY = 'sb_publishable_am9yz3INlCOdEFAdGnYg_A_qvczlNUt';  // publishable (anon) key
   /* Blocked unless the UK project is both configured AND declared ready. This is a
      stronger tripwire than the old one, which only checked for the SA address: an
      empty, half-filled or mistyped configuration now fails the same closed way. */
@@ -167,7 +173,7 @@
     async mine() {
       // farms the signed-in user belongs to (RLS limits this automatically)
       const { data, error } = await selectAll(() => client()
-        .from('farms').select('id,name,owner_name,province,farm_ha,farm_type,fy_start_month,lang')
+        .from('farms').select('id,name,owner_name,region,farm_ha,farm_type,fy_start_month,lang')
         .order('created_at', { ascending: true }));
       if (error) throw error;
       return data || [];
@@ -1046,7 +1052,7 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
   function campToDb(c,fid){ return { farm_id:fid, local_id:String(c.id), name:c.name||null, ha:(c.ha!=null&&c.ha!=='')?Number(c.ha):null, since:c.since||null, notes:c.notes||null }; }
   function campFromDb(r){ return { id:r.local_id, name:r.name||'', ha:(r.ha!=null)?Number(r.ha):0, since:r.since||'', notes:r.notes||'' }; }
   function herdToDb(h,fid){ return { farm_id:fid, local_id:String(h.id), type:h.type||null, name:h.name||null, breed:h.breed||null,
-    camp:h.camp||null, camp_id:h.campId||null, track:!!h.track, planned:!!h.planned, qty:(h.qty!=null)?parseInt(h.qty,10):0,
+    field:h.field||null, field_id:h.fieldId||null, track:!!h.track, planned:!!h.planned, qty:(h.qty!=null)?parseInt(h.qty,10):0,
     buy:(h.buy!=null&&h.buy!=='')?Number(h.buy):null, feed:(h.feed!=null&&h.feed!=='')?Number(h.feed):null,
     vet:(h.vet!=null&&h.vet!=='')?Number(h.vet):null, sell:(h.sell!=null&&h.sell!=='')?Number(h.sell):null,
     months:(h.months!=null&&h.months!=='')?parseInt(h.months,10):null, notes:h.notes||null,
@@ -1055,7 +1061,7 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     plan_month:h.planMonth||null, plan_classes:(h.planClasses&&h.planClasses.length)?h.planClasses:null }; }
   function herdFromDb(r){ var h={ id:_numIf(r.local_id), type:r.type||'', name:r.name||'', qty:Number(r.qty)||0,
     buy:Number(r.buy)||0, feed:Number(r.feed)||0, vet:Number(r.vet)||0, sell:Number(r.sell)||0,
-    months:(r.months!=null)?Number(r.months):0, notes:r.notes||'', camp:r.camp||'', campId:r.camp_id||'', track:!!r.track };
+    months:(r.months!=null)?Number(r.months):0, notes:r.notes||'', field:r.field||'', fieldId:r.field_id||'', track:!!r.track };
     if(r.planned) h.planned=true; if(r.breed) h.breed=r.breed;
     if(r.ages){ try{ h.ages=(typeof r.ages==='string'?JSON.parse(r.ages):r.ages); }catch(e){} }
     if(r.removed) h.removed=true;
@@ -1088,7 +1094,7 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
   load.livestock = async function(farmId){
     farmId = farmId || farm.active();
     const [cp,hd,hc,bm,mv,tr,an,he] = await Promise.all([
-      selectAll(() => client().from('livestock_camps').select('*').eq('farm_id',farmId).order('created_at')),
+      selectAll(() => client().from('livestock_fields').select('*').eq('farm_id',farmId).order('created_at')),
       selectAll(() => client().from('herds').select('*').eq('farm_id',farmId).order('created_at')),
       selectAll(() => client().from('herd_classes').select('*').eq('farm_id',farmId)),
       selectAll(() => client().from('livestock_benchmarks').select('*').eq('farm_id',farmId)),
@@ -1107,7 +1113,7 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     var breedings=[];
     try{ var bd=await selectAll(() => client().from('livestock_breedings').select('*').eq('farm_id',farmId).order('created_at')); if(!bd.error) breedings=(bd.data||[]).map(breedingFromDb); }
     catch(e){ /* table not migrated yet — ignore */ }
-    /* The table is still livestock_camps; the app property is `fields`. Renaming the
+    /* The table is livestock_fields, matching the app property `fields`. Renaming the
        column would need a migration for no benefit, so the mapping happens here. */
     return { fields:(cp.data||[]).map(campFromDb), herds:herds, benchmarks:benchmarks,
              moves:(mv.data||[]).map(moveFromDb), treatments:(tr.data||[]).map(treatFromDb),
@@ -1151,11 +1157,11 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
      of its own rather than hanging off livestock. Append-only and immutable:
      a correction issues a NEW number and supersedes the old, so nothing here
      is ever updated in place except the status flip on being superseded. */
-  function docToDb(d,fid){ return { farm_id:fid, local_id:String(d.no), doc_type:d.doc_type||d.type||'RC',
+  function docToDb(d,fid){ return { farm_id:fid, local_id:String(d.no), doc_type:d.doc_type||d.type||'MD',
       doc_no:d.no||null, status:d.status||'issued', issued_at:d.issuedAt||null, doc_date:d.date||null,
       move_local_id:d.moveId?String(d.moveId):null, supersedes:d.supersedes||null,
       superseded_by:d.supersededBy||null, snapshot:d.snap||null }; }
-  function docFromDb(r){ var d={ no:r.doc_no||r.local_id, type:r.doc_type||'RC', status:r.status||'issued',
+  function docFromDb(r){ var d={ no:r.doc_no||r.local_id, type:r.doc_type||'MD', status:r.status||'issued',
       issuedAt:r.issued_at||'', date:r.doc_date||'', moveId:r.move_local_id||null };
     if(r.supersedes) d.supersedes=r.supersedes;
     if(r.superseded_by) d.supersededBy=r.superseded_by;
@@ -1192,7 +1198,7 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
       if(snap===_lsSnap) return;
       const camps=(stls.fields||[]), herds=(stls.herd||[]), bench=(stls.benchmarks||{});
       const moves=(stls.moves||[]), treats=(stls.treatments||[]), animals=(stls.animals||[]);
-      if(camps.length){ const e=(await client().from('livestock_camps').upsert(camps.map(function(c){return campToDb(c,fid);}),{onConflict:'farm_id,local_id'})).error; if(e) throw e; }
+      if(camps.length){ const e=(await client().from('livestock_fields').upsert(camps.map(function(c){return campToDb(c,fid);}),{onConflict:'farm_id,local_id'})).error; if(e) throw e; }
       if(herds.length){
         var hrows=herds.map(function(h){return herdToDb(h,fid);});
         var he=(await client().from('herds').upsert(hrows,{onConflict:'farm_id,local_id'})).error;
@@ -1248,7 +1254,7 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     async addHealth(h){ const fid=farm.active(); if(!fid||!h) return; const e=(await client().from('livestock_health').insert(healthToDb(h,fid))).error; if(e) throw e; return true; },
     async removeAnimal(localId){ const fid=farm.active(); if(!fid||localId==null) return; const e=(await client().from('animals').delete().eq('farm_id',fid).eq('local_id',String(localId))).error; if(e) throw e; _lsSnap=null; return true; },
     async removeHerd(localId){ const fid=farm.active(); if(!fid||localId==null) return; const e=(await client().from('herds').delete().eq('farm_id',fid).eq('local_id',String(localId))).error; if(e) throw e; _lsSnap=null; return true; },
-    async removeCamp(localId){ const fid=farm.active(); if(!fid||localId==null) return; const e=(await client().from('livestock_camps').delete().eq('farm_id',fid).eq('local_id',String(localId))).error; if(e) throw e; _lsSnap=null; return true; }
+    async removeCamp(localId){ const fid=farm.active(); if(!fid||localId==null) return; const e=(await client().from('livestock_fields').delete().eq('farm_id',fid).eq('local_id',String(localId))).error; if(e) throw e; _lsSnap=null; return true; }
   };
 
   // ---- CROPS (lands, events, inputs) — 3b-i --------------------------------
@@ -1269,7 +1275,7 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
   // Doc files (url) and log photos are base64 blobs — deferred to Storage; metadata persists.
   var CC_AREAS=['chem','water','gmo','invasive','seed','soil','ohs','diesel','export'];
   // [appKey, dbCol, type]  type: t=text n=number i=int b=bool
-  var CC_SET=[['waterWUL','water_wul','t'],['waterAuthorised','water_authorised','n'],['waterUsed','water_used','n'],['waterMetered','water_metered','b'],['gmoStewardshipDoc','gmo_stewardship_doc','b'],['gmoRefugeLogged','gmo_refuge_logged','b'],['gmoRefugePct','gmo_refuge_pct','t'],['invasiveRegister','invasive_register','b'],['invasiveOutstanding','invasive_outstanding','t'],['invasiveLastAction','invasive_last_action','t'],['seedCertified','seed_certified','b'],['retainedSeed','retained_seed','b'],['seedNote','seed_note','t'],['soilPractice','soil_practice','t'],['soilTest','soil_test','t'],['operatorsTrained','operators_trained','i'],['operatorsTotal','operators_total','i'],['ppeIssued','ppe_issued','b'],['firstAidKit','first_aid_kit','b'],['workerTraining','worker_training','t'],['sdsRegister','sds_register','b'],['containerDisposal','container_disposal','b'],['dieselLitres','diesel_litres','n'],['dieselLogbook','diesel_logbook','b'],['exportReady','export_ready','b'],['exportScheme','export_scheme','t']];
+  var CC_SET=[['waterLicence','abstraction_licence','t'],['waterAuthorised','water_authorised','n'],['waterUsed','water_used','n'],['waterMetered','water_metered','b'],['invasiveRegister','invasive_register','b'],['invasiveOutstanding','invasive_outstanding','t'],['invasiveLastAction','invasive_last_action','t'],['seedCertified','seed_certified','b'],['retainedSeed','retained_seed','b'],['seedNote','seed_note','t'],['soilPractice','soil_practice','t'],['soilTest','soil_test','t'],['operatorsTrained','operators_trained','i'],['operatorsTotal','operators_total','i'],['ppeIssued','ppe_issued','b'],['firstAidKit','first_aid_kit','b'],['workerTraining','worker_training','t'],['sdsRegister','sds_register','b'],['containerDisposal','container_disposal','b'],['dieselLitres','diesel_litres','n'],['dieselLogbook','diesel_logbook','b'],['exportReady','export_ready','b'],['exportScheme','export_scheme','t']];
   function ccSettToDb(c,fid){ c=c||{}; var row={farm_id:fid}; CC_SET.forEach(function(f){ var v=c[f[0]]; if(v===undefined||v===null||v===''){ row[f[1]]=null; } else if(f[2]==='b'){ row[f[1]]=!!v; } else if(f[2]==='i'){ row[f[1]]=parseInt(v,10); } else if(f[2]==='n'){ row[f[1]]=Number(v); } else { row[f[1]]=String(v); } }); return row; }
   function ccSettFromDb(r){ var c={}; CC_SET.forEach(function(f){ var v=r?r[f[1]]:null; if(v==null){ c[f[0]]=(f[2]==='b')?false:((f[2]==='n'||f[2]==='i')?0:''); } else { c[f[0]]=(f[2]==='b')?!!v:((f[2]==='n'||f[2]==='i')?Number(v):String(v)); } }); return c; }
 
@@ -1542,7 +1548,7 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
   // ==========================================================================
   function wkrToDb(w, fid){ return { farm_id:fid, local_id:String(w.id),
     name:w.name||null, role:w.role||null, worker_type:w.type||null, start_date:w.start||null,
-    on_farm:!!w.onFarm, id_no:w.idNo||null, basis:w.basis||null,
+    on_farm:!!w.onFarm, ni_no:(w.niNo||w.uifNo||null), basis:w.basis||null,
     amt:(w.amt!=null&&w.amt!=='')?Number(w.amt):null,
     hours_week:(w.hoursWeek!=null&&w.hoursWeek!=='')?parseInt(w.hoursWeek,10):null,
     hours_day:(w.hoursDay!=null&&w.hoursDay!=='')?parseInt(w.hoursDay,10):null,
@@ -1563,7 +1569,7 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     fund_balance:(w.fund&&w.fund.balance!=null)?Number(w.fund.balance):null,
     fund_consent:(w.fund&&w.fund.consent!=null)?!!w.fund.consent:null }; }
   function wkrFromDb(r){ var w={ id:r.local_id, name:r.name||'', role:r.role||'', type:r.worker_type||'',
-    start:r.start_date||'', onFarm:!!r.on_farm, idNo:r.id_no||'', basis:r.basis||'month',
+    start:r.start_date||'', onFarm:!!r.on_farm, niNo:r.ni_no||'', basis:r.basis||'month',
     amt:Number(r.amt)||0, hoursWeek:(r.hours_week!=null)?Number(r.hours_week):45,
     hoursDay:(r.hours_day!=null)?Number(r.hours_day):8, niReg:(r.ni_registered!=null)?!!r.ni_registered:true,
     niNo:r.ni_no||'', niExempt:!!r.ni_exempt, worksSundays:!!r.works_sundays, contract:r.contract_status||'missing', activity:r.activity||'' };
@@ -1681,24 +1687,25 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
 
 
   // ---- SETTINGS / FARM PROFILE ---------------------------------------------
-  // All on the farms row (name/owner/province/ha/type/fy/lang already existed;
-  // vat_registered/tax_number/vat_number added by settings_profile_schema.sql).
+  // All on the farms row (name/owner/region/ha/type/fy/lang already existed;
+  // vat_registered/utr/vat_number added by settings_profile_schema.sql; province
+  // became region and tax_number became utr when the UK schema was made native).
   function profileFromDb(r){ if(!r) return null; var p={};
     if(r.name!=null) p.farmName=r.name;
     if(r.owner_name!=null) p.ownerName=r.owner_name;
-    if(r.province!=null) p.province=r.province;
+    if(r.region!=null) p.region=r.region;
     if(r.farm_ha!=null) p.farmHa=Number(r.farm_ha);
     if(r.farm_type!=null) p.farmType=r.farm_type;
     if(r.fy_start_month!=null) p.fyStartMonth=parseInt(r.fy_start_month,10);
     if(r.lang!=null) p.lang=r.lang;
     if(r.vat_registered!=null) p.vatRegistered=!!r.vat_registered;
-    if(r.tax_number!=null) p.taxNumber=r.tax_number;
+    if(r.utr!=null) p.taxNumber=r.utr;
     if(r.vat_number!=null) p.vatNumber=r.vat_number;
     if(r.entity_type!=null) p.entityType=r.entity_type;
     if(r.farm_address!=null) p.farmAddr=r.farm_address;
     if(r.paye_ref!=null) p.payeRef=r.paye_ref;
-    if(r.stock_mark!=null) p.stockMark=r.stock_mark;
-    if(r.stock_mark_type!=null) p.stockMarkType=r.stock_mark_type;
+    if(r.herd_mark!=null) p.stockMark=r.herd_mark;
+    if(r.herd_mark_type!=null) p.stockMarkType=r.herd_mark_type;
     /* Partners and their profit shares. A partnership return cannot be produced without
        them, so losing them on a device change would lose the allocation statement. */
     if(r.partners!=null){
@@ -1708,7 +1715,7 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     return p; }
   load.profile = async function(farmId){
     farmId=farmId||farm.active();
-    const r=await client().from('farms').select('name,owner_name,province,farm_ha,farm_type,fy_start_month,lang,vat_registered,tax_number,vat_number,entity_type,partners,stock_mark,stock_mark_type,farm_address,paye_ref').eq('id',farmId).single();
+    const r=await client().from('farms').select('name,owner_name,region,farm_ha,farm_type,fy_start_month,lang,vat_registered,utr,vat_number,entity_type,partners,herd_mark,herd_mark_type,farm_address,paye_ref').eq('id',farmId).single();
     if(r.error) throw r.error;
     return profileFromDb(r.data);
   };
@@ -1716,7 +1723,7 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
   const profile = {
     // Update only the fields actually provided — never null out an existing value.
     // Core columns (always present) save first and independently of the
-    // registration columns (vat_registered/tax_number/vat_number, added by
+    // registration columns (vat_registered/utr/vat_number, added by
     // settings_profile_schema.sql) so a missing migration can never block the
     // whole save — the symptom that would otherwise be "nothing saved".
     async save(st){
@@ -1724,19 +1731,19 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
       var core={}, extra={};
       if(st.farmName) core.name=st.farmName;
       if(st.ownerName) core.owner_name=st.ownerName;
-      if(st.province) core.province=st.province;
+      if(st.region) core.region=st.region;
       if(st.farmHa!=null && st.farmHa!=='') core.farm_ha=Number(st.farmHa);
       if(st.farmType) core.farm_type=st.farmType;
       if(st.fyStartMonth!=null) core.fy_start_month=parseInt(st.fyStartMonth,10);
       if(st.lang) core.lang=st.lang;
       if(st.vatRegistered!=null) extra.vat_registered=!!st.vatRegistered;
-      if(st.taxNumber) extra.tax_number=st.taxNumber;
+      if(st.taxNumber) extra.utr=st.taxNumber;
       if(st.vatNumber) extra.vat_number=st.vatNumber;
       if(st.entityType) extra.entity_type=st.entityType;
       if(st.farmAddr!=null) extra.farm_address=st.farmAddr;
       if(st.payeRef!=null) extra.paye_ref=st.payeRef;
-      if(st.stockMark!=null) extra.stock_mark=st.stockMark;
-      if(st.stockMarkType!=null) extra.stock_mark_type=st.stockMarkType;
+      if(st.stockMark!=null) extra.herd_mark=st.stockMark;
+      if(st.stockMarkType!=null) extra.herd_mark_type=st.stockMarkType;
       /* Privacy consent (UK GDPR). Captured by the onboarding gate as {policyVersion, acceptedAt}
          but, until now, only ever stored in the browser \u2014 a cleared cache erased the
          proof that consent was ever given. Written in its OWN statement and gated on
