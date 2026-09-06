@@ -1332,7 +1332,18 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
       (cp&&cp.data||[]).forEach(function(r){ var arr=logs[r.area_key]; if(arr && arr[r.log_idx]){ arr[r.log_idx].photos.push({name:r.name||'',kind:r.kind||'',url:r.url||''}); } });
       var docs={}; (cd.data||[]).forEach(function(r){ (docs[r.area_key]=docs[r.area_key]||[]).push({name:r.name||'',kind:r.kind||'',expiry:r.expiry||'',added:r.added||'',url:r.url||''}); });
       var waterReadings=(cr.data||[]).map(function(r){ return {date:r.reading_date||'',m3:(r.m3!=null?Number(r.m3):0)}; });
-      compliance={ settings:ccSettFromDb(settingsRow), tracked:tracked, cadence:cadence, logs:logs, docs:docs, waterReadings:waterReadings };
+      /* The scalars go FLAT, alongside tracked/cadence/logs/docs/waterReadings - not nested
+         under a `settings` key. Both other sides of this contract are flat: the UI reads
+         ST_CROP.compliance.waterLicence, and cropCfg's own save reads c[f[0]] off
+         stc.compliance to build the row. Only this loader nested them, and nothing anywhere
+         read compliance.settings - it was produced and never consumed. The effect: all 23
+         compliance fields (abstraction licence, authorised and used volume, metered, invasive
+         register, seed, soil, PPE, operator training) came back blank on any device that
+         loaded from the server rather than from its own cache, because the flat keys the
+         screens read did not exist on the object they were handed.
+         Siblings applied last so a future settings key can never shadow one of them. */
+      compliance = Object.assign({}, ccSettFromDb(settingsRow), {
+        tracked:tracked, cadence:cadence, logs:logs, docs:docs, waterReadings:waterReadings });
     }
     return { lands:(ld.data||[]).map(landFromDb), events:(ev.data||[]).map(cevFromDb), inputs:(ip.data||[]).map(cinFromDb),
              season:(cfg.data && cfg.data.crop_season) || null,
