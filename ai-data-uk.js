@@ -318,6 +318,7 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
   let CAN_TXN_RECEIPT  = false;
   let CAN_ORCH_DOCFILE = false;
   let CAN_TXN_PARTY    = false;
+  let CAN_BUDGET_CATTGT= false;   /* farms.budget_cat_targets */
   async function probeCaps(farmId){
     if (!farmId) return;
     /* Probe with a real column name. NOT select=count — PostgREST treats count as an
@@ -339,6 +340,7 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     CAN_TXN_RECEIPT = await has('transactions', 'receipt_path');
     CAN_ORCH_DOCFILE= await has('orchard_block_docs','path');
     CAN_TXN_PARTY   = await has('transactions','counterparty');
+    CAN_BUDGET_CATTGT= await has('farms',       'budget_cat_targets');
   /* A table probe, not a column probe: selecting a column off a table that does not
      exist errors the same way a missing column does, which is all we need to know. */
   CAN_TXN_ASSETS  = await has('transaction_assets','asset_id');
@@ -488,7 +490,7 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
         selectAll(() => client().from('transactions').select('*').eq('farm_id', farmId).order('txn_date', { ascending: false })),
         client().from('budget_months').select('*').eq('farm_id', farmId),
         client().from('recurring').select('*').eq('farm_id', farmId).order('name'),
-        client().from('farms').select('budget_income_pattern,budget_expense_pattern,budget_current_month').eq('id', farmId).single()
+        client().from('farms').select('budget_income_pattern,budget_expense_pattern,budget_current_month' + (CAN_BUDGET_CATTGT ? ',budget_cat_targets' : '')).eq('id', farmId).single()
       ]);
       for (const r of [acc, txn, bud, rec]) if (r.error) throw r.error;
 
@@ -496,6 +498,17 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
         incomePattern: (fst.data && fst.data.budget_income_pattern) || 'harvest',
         expensePattern: (fst.data && fst.data.budget_expense_pattern) || 'planting',
         currentMonth: (fst.data && fst.data.budget_current_month) || null };
+      /* Per-category targets ("I want Crop Sales to make 120,000 this year"). These lived
+         only in the browser: the app wrote them to ST.budgets.catTargets, showed its
+         "Category budget added" toast, and nothing ever sent them. A farmer who set their
+         targets and then opened the app anywhere else found them gone, with no error to
+         explain it. Stored as jsonb on farms, next to the other budget settings. */
+      if (fst.data && fst.data.budget_cat_targets != null) {
+        try { bObj.catTargets = (typeof fst.data.budget_cat_targets === 'string')
+                ? JSON.parse(fst.data.budget_cat_targets)
+                : fst.data.budget_cat_targets; }
+        catch (e) { bObj.catTargets = { income:{}, expense:{} }; }
+      }
       (bud.data || []).forEach(function (r) {
         var lbl = ymToLabel(r.period_year, r.period_month);
         if (r.side === 'income') bObj.monthlyIncome[lbl] = Number(r.amount);
@@ -735,6 +748,14 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
         budget_current_month: b.currentMonth || null
       }).eq('id', fid);
       if (r2.error) throw r2.error;
+      /* Its own statement, behind its own probe, on the same rule the profile save uses: a
+         database that has not had the column added yet must still save the month figures
+         rather than lose the whole budget to one missing field. */
+      if (CAN_BUDGET_CATTGT && b.catTargets) {
+        var r3 = await client().from('farms')
+          .update({ budget_cat_targets: b.catTargets }).eq('id', fid);
+        if (r3.error) console.warn('Budgets: category targets not saved - add farms.budget_cat_targets. (' + (r3.error.message || r3.error) + ')');
+      }
       return true;
     }
   };

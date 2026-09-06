@@ -486,7 +486,15 @@
       return AI.load.financeCore(fid);
     }).then(function (core) {
       // Replace the app's working data with the farm's real data.
-      if (window.ST) { ST.txns = (window.preservePendingTxns ? window.preservePendingTxns(core.txns || []) : (core.txns || [])); ST.recurring = core.recurring || []; if (core.budgets) ST.budgets = core.budgets; if (core.batches) ST.importBatches = core.batches;
+      if (window.ST) { ST.txns = (window.preservePendingTxns ? window.preservePendingTxns(core.txns || []) : (core.txns || [])); ST.recurring = core.recurring || []; if (core.budgets) {
+          /* Keep any category targets this device already has when the server has none.
+             The server payload replaces ST.budgets wholesale, so without this the first
+             load after the catTargets migration would wipe targets that had never had
+             anywhere to sync to - losing them at the exact moment they became savable. */
+          var _localCT = (ST.budgets && ST.budgets.catTargets) || null;
+          ST.budgets = core.budgets;
+          if (!ST.budgets.catTargets && _localCT) ST.budgets.catTargets = _localCT;
+        } if (core.batches) ST.importBatches = core.batches;
         /* Has this farmer ever been through setup? A farm auto-created at first
            sign-in has no owner_name until obFinish saves one, so "no owner AND no
            transactions" is an un-onboarded farm on any device. Requiring the empty

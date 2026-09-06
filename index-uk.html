@@ -33,8 +33,8 @@
 <script defer src="vendor/chart.umd.js"></script>
 <!-- AgriInsights backend: Supabase client + data service (load order matters) -->
 <script src="vendor/supabase.js"></script>
-<script src="ai-data-uk.js?v=uk83"></script>
-<script src="ai-auth-uk.js?v=uk83"></script>
+<script src="ai-data-uk.js?v=uk84"></script>
+<script src="ai-auth-uk.js?v=uk84"></script>
 <link rel="stylesheet" href="fonts.css"/>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -23071,7 +23071,11 @@ function calcAssetDepr() {
   prev.style.display = 'block';
 
   var d;
-  try{ d = calcDepr({price:price, date:(($('ast-date')&&$('ast-date').value)||new Date().toISOString().slice(0,10)), deprType:dtype}); }
+  /* Carry the finance kind into the probe object. Without it calcDepr cannot apply the
+     hire gate (ukCanClaim / ukOnBooks read a.finance), so the preview computed a full
+     allowance for a machine the farm will hand back. */
+  var _fin = ($('ast-finance')&&$('ast-finance').value) || 'own';
+  try{ d = calcDepr({price:price, date:(($('ast-date')&&$('ast-date').value)||new Date().toISOString().slice(0,10)), deprType:dtype, finance:_fin}); }
   catch(e){ prev.style.display='none'; return; }
   var sch=(d&&d.deprSchedule)||[];
   if(!sch.length){ prev.style.display='none'; return; }
@@ -23187,7 +23191,12 @@ function astFinanceChanged(){
   if(m && m.note){ note.textContent=m.note; note.style.display=''; }
   else { note.textContent=''; note.style.display='none'; }
   if(typeof astShowTreatNote==='function'){ try{ astShowTreatNote(); }catch(e){} }
-  if(typeof astPreviewDepr==='function'){ try{ astPreviewDepr(); }catch(e){} }
+  /* astPreviewDepr has never existed, so the typeof guard made this a silent no-op and the
+     allowance panel kept showing a full 100% claim after the farmer chose contract hire -
+     contradicting the sentence this function had just written above it. The two functions
+     that actually draw those figures are calcAssetDepr and astCalcNet. */
+  if(typeof calcAssetDepr==='function'){ try{ calcAssetDepr(); }catch(e){} }
+  if(typeof astCalcNet==='function'){ try{ astCalcNet(); }catch(e){} }
 }
 function astToggleFinance(){
   var on = $('ast-financed') && $('ast-financed').checked;
@@ -23198,6 +23207,11 @@ function astToggleFinance(){
 function astCalcNet(){
   var price = parseFloat($('ast-price')&&$('ast-price').value)||0;
   var out   = parseFloat($('ast-outstanding')&&$('ast-outstanding').value)||0;
+  /* On contract hire the machine is never the farm's, so the net value it owns is nil -
+     not price minus outstanding. The Assets register already got this right ("1 on hire",
+     excluded from total asset value); this is what the Add Asset form shows. */
+  var fin = ($('ast-finance')&&$('ast-finance').value) || 'own';
+  if(typeof ukOnBooks==='function' && !ukOnBooks({finance:fin})){ setEl('ast-net-val', fmt(0)); return; }
   setEl('ast-net-val', fmt(Math.max(0, price-out)));
 }
 function astAddDocs(ev){
@@ -64569,7 +64583,7 @@ function orToggleWhat(id){ var e=$(id); if(e) e.style.display=(e.style.display==
 
 /* ---------- add block (adaptive form + auto-apply) ---------- */
 var OR_TYPES={
-  tree:['Apple — Bramley (culinary)','Apple — Gala','Apple — Cox','Apple — cider','Pear — Conference','Pear — Comice','Plum / gage','Cherry','Peach / nectarine','Quince','Cob nut','Other trehi','Table grapes','Wine grapes','Olive','Pomegranate','Other tree / vine'],
+  tree:['Apple — Bramley (culinary)','Apple — Gala','Apple — Cox','Apple — cider','Pear — Conference','Pear — Comice','Plum / gage','Cherry','Peach / nectarine','Quince','Cob nut','Table grapes','Wine grapes','Olive','Pomegranate','Other tree / vine'],
   berry:['Blueberry','Raspberry','Blackberry','Strawberry','Gooseberry','Other berry'],
   veg:['Potato','Onion','Cabbage','Cauliflower','Broccoli','Carrot','Parsnip','Swede','Leek','Courgette','Runner beans','Sprouts','Squash','Other vegetable']
 };
@@ -64620,8 +64634,17 @@ function orSaveBlock(){
   var crop=($('or-f-type')||{}).value||'';
   var ha=orValNum('or-f-ha')||1;
   var prof=orAutoFor(crop);
-  var cat = style==='veg' ? 'veg' : style==='berry' ? 'berry' : (/top fruit|valencia|navel|lemon|mandarin|grapefruit/i.test(crop) ? 'top fruit' : 'fruit');
-  var icon = cat==='topfruit' ? '\uD83C\uDF4A' : cat==='berry' ? '\uD83E\uDED0' : cat==='veg' ? '\uD83E\uDD6C' : '\uD83E\uDD51';
+  /* Top fruit is apples, pears, plums and cherries. The test used to look for South
+     African citrus - valencia, navel, lemon, mandarin, grapefruit - none of which any UK
+     block is ever called, so every apple and pear fell through to 'Other fruit'. It also
+     returned 'top fruit' with a space while OR_CATS is keyed 'topfruit', so even a match
+     produced a key OR_CATS[b.cat].nm would have thrown on. Both fixed here. */
+  var cat = style==='veg' ? 'veg' : style==='berry' ? 'berry'
+          : (/apple|pear|plum|gage|damson|cherry|quince|apricot|peach|nectarine/i.test(crop) ? 'topfruit' : 'fruit');
+  /* Read the icon from OR_CATS instead of a parallel ternary that had drifted from it:
+     this branch gave top fruit an orange and everything else an AVOCADO, so a Bramley
+     apple saved with a avocado. OR_CATS is what the rest of the page renders from. */
+  var icon = (OR_CATS[cat] && OR_CATS[cat].ic) || OR_CATS.fruit.ic;
   var id='f'+(Date.now().toString(36));
   var b;
   if(style==='veg'){
@@ -64635,7 +64658,7 @@ function orSaveBlock(){
        trees:orValNum('or-f-trees')||0,space:orValNum('or-f-space')||undefined,status:bearing?'Bearing':(age>=1?'Not bearing':'Just planted'),statusTag:bearing?'green':'gray',
        tons:bearing?orValNum('or-f-yield'):0,exp:bearing?70:0,cartonKg:(cat==='berry'?0:cartonKg),unit:(cat==='berry'?'kg':undefined),
        margin:0,estab:($('or-f-estab')||{}).value||'\u2014',estabYr:yr,writeoff:0,perUnit:0,unitWord:(style==='berry'?'bush':'tree'),
-       curve:(cat==='berry'?'berry':(cat==='fruit'&&/bramley|biennial/i.test(crop))?'biennial':'top fruit'),plan:!bearing,docs:[]};
+       curve:(cat==='berry'?'berry':(/bramley|biennial/i.test(crop)?'biennial':'top fruit')),plan:!bearing,docs:[]};
     if(prof.body.indexOf('British Apples')>=0){ ST_FRUIT.pricing[id]={price:640,comm:8,pack:180,ship:42,levy:0,levyName:'',others:[{label:'Other costs',amt:0}]}; }
     else if(cat==='berry'){ ST_FRUIT.pricing[id]={price:95,comm:10,pack:22,ship:14,levy:0.30,levyName:'Berries UK',others:[{label:'Other costs',amt:0}]}; }
   }
