@@ -33,8 +33,8 @@
 <script defer src="vendor/chart.umd.js"></script>
 <!-- AgriInsights backend: Supabase client + data service (load order matters) -->
 <script src="vendor/supabase.js"></script>
-<script src="ai-data-uk.js?v=uk89"></script>
-<script src="ai-auth-uk.js?v=uk89"></script>
+<script src="ai-data-uk.js?v=uk90"></script>
+<script src="ai-auth-uk.js?v=uk90"></script>
 <link rel="stylesheet" href="fonts.css"/>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -50926,15 +50926,66 @@ function _taxNonDedPhrase(byCat){
    · the employer line was grossMo * 0.01, a hard-coded 1% — the SDL rate — not
      read from STATUTORY at all, so it survived every rate correction.
    Both sides now come from the same helpers the payroll screens use. */
+/* What the farm will owe HMRC on its payroll over the year.
+   Two things were wrong here.
+
+   PAYE summed w.paye off each worker — but a worker object has no `paye` property.
+   PAYE is stored per pay run at ST_WORK.paye[periodLabel][workerId] (see wkSetPaye),
+   so w.paye was always undefined and this reported ZERO PAYE for every farm, whatever
+   the salary. Employee and employer NI were computed from gross; PAYE alone read a
+   field that never existed. It now goes through ukPayrollWorker, the same engine the
+   payroll screen uses, which derives PAYE from the worker's tax code.
+
+   And only basis==='month' workers were counted. The form offers month OR day, and a
+   day-rate worker therefore contributed nothing at all — on a farm, that is the
+   seasonal and casual labour. Day workers have no standing annual figure (their pay is
+   the days actually posted), so they are summed from ST_WORK.seasonal one posted period
+   at a time, which is also what keeps PAYE and NI on their proper per-period tables
+   rather than being run once against an annual lump. */
 function taxPayrollAnnual(){
   var ws=(typeof wkList==='function')?wkList():[]; if(!ws.length) return {total:0,employeeNI:0,employerNI:0,allowance:0,paye:0};
-  var eeMo=0, erMo=0;
-  ws.forEach(function(w){ var g=(w.basis==='month')?(w.amt||0):0; if(g<=0) return; eeMo+=wkNI(g); erMo+=wkEmployerNI(g); });
-  var payeMo=ws.reduce(function(a,w){ return a+(w.paye||0); },0);
-  var ea=wkEmploymentAllowance(erMo*12);
-  return { employeeNI:Math.round(eeMo*12), employerNI:ea.payable, allowance:ea.relief,
-           paye:Math.round(payeMo*12),
-           total:Math.round(eeMo*12)+ea.payable+Math.round(payeMo*12) };
+  var eeYr=0, erYr=0, payeYr=0;
+  var uk=function(w,gross){
+    return (typeof ukPayrollWorker==='function')
+      ? ukPayrollWorker(w,{gross:gross})
+      : { paye:0, employeeNI:(typeof wkNI==='function'?wkNI(gross):0),
+          employerNI:(typeof wkEmployerNI==='function'?wkEmployerNI(gross):0) };
+  };
+
+  // Monthly: a standing wage, so the year is twelve of it.
+  ws.forEach(function(w){
+    if(w.basis!=='month') return;
+    var g=w.amt||0; if(g<=0) return;
+    var r=uk(w,g);
+    eeYr   += (r.employeeNI||0)*12;
+    erYr   += (r.employerNI||0)*12;
+    payeYr += (r.paye||0)*12;
+  });
+
+  // Day rate: only what has actually been posted, period by period.
+  try{
+    var seasonal=(typeof ST_WORK!=='undefined'&&ST_WORK&&ST_WORK.seasonal)||{};
+    var byId={}; ws.forEach(function(w){ if(w.basis==='day') byId[w.id]=w; });
+    Object.keys(seasonal).forEach(function(label){
+      var m=seasonal[label]||{};
+      Object.keys(m).forEach(function(wid){
+        var w=byId[wid]; if(!w) return;
+        var gross=(m[wid]||0)*(w.amt||0); if(gross<=0) return;
+        var r=uk(w,gross);
+        eeYr   += (r.employeeNI||0);
+        erYr   += (r.employerNI||0);
+        payeYr += (r.paye||0);
+      });
+    });
+  }catch(e){}
+
+  /* The Employment Allowance is a business-level relief against the whole employer NI
+     bill, so it is applied once to the total — never per worker. */
+  var ea=wkEmploymentAllowance(erYr);
+  eeYr=Math.round(eeYr); payeYr=Math.round(payeYr);
+  return { employeeNI:eeYr, employerNI:ea.payable, allowance:ea.relief,
+           paye:payeYr,
+           total:eeYr+ea.payable+payeYr };
 }
 function taxVatTrend(){
   if(typeof FARM==='undefined'||!FARM.vat) return [];
