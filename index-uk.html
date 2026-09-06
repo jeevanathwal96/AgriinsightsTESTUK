@@ -33,8 +33,8 @@
 <script defer src="vendor/chart.umd.js"></script>
 <!-- AgriInsights backend: Supabase client + data service (load order matters) -->
 <script src="vendor/supabase.js"></script>
-<script src="ai-data-uk.js?v=uk81"></script>
-<script src="ai-auth-uk.js?v=uk81"></script>
+<script src="ai-data-uk.js?v=uk82"></script>
+<script src="ai-auth-uk.js?v=uk82"></script>
 <link rel="stylesheet" href="fonts.css"/>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -7136,7 +7136,7 @@ body.no-livestock .tours-menu-item.ent-livestock{display:none}
         <div style="margin-bottom:12px"><label id="ai-cust-lbl">Customer / Buyer (optional)</label><input id="ai-cust" placeholder="Customer name"/></div>
         <!-- Qty section (Crops/Livestock/Agritourism) -->
         <div id="ai-qty-sec" class="fg3">
-          <div><label id="ai-qty-lbl">Quantity</label><div style="display:flex;gap:6px"><input id="ai-qty" type="number" placeholder="0" style="flex:1" oninput="calcSaleTotal();lsLeaveRefresh()"/><select id="ai-unit" style="width:75px;flex:0"><option>Tons</option><option>kg</option><option>head</option></select></div></div>
+          <div><label id="ai-qty-lbl">Quantity</label><div style="display:flex;gap:6px"><input id="ai-qty" type="number" placeholder="0" style="flex:1" oninput="calcSaleTotal();lsLeaveRefresh()"/><select id="ai-unit" style="width:75px;flex:0"><option>tonne</option><option>kg</option><option>head</option></select></div></div>
           <div><label id="ai-price-lbl">Price per unit (£)</label><input id="ai-price" type="number" placeholder="0" oninput="calcSaleTotal()"/></div>
           <div><label>Total Amount (£)</label><input id="ai-total" readonly style="background:var(--gb);font-weight:700;color:var(--gd)" placeholder="Auto-calculated"/></div>
         </div>
@@ -10252,7 +10252,7 @@ body.no-livestock .tours-menu-item.ent-livestock{display:none}
             <div class="qc-hint" id="qc-fuel-hint" style="display:none;background:var(--gb);border-radius:8px;padding:8px 11px;margin-bottom:9px;color:var(--gd)">⛽ Record the <b>litres</b> — red diesel must be accounted for per litre, and litres you never enter cannot be evidenced at an excise check.</div>
             <div class="qc-row">
               <div class="qc-field"><label id="qcd-qty-lbl">Quantity</label><input id="qcd-qty" type="number" placeholder="0" oninput="qcCalcTotal()" style="width:100%;padding:10px;border:1.5px solid var(--br);border-radius:var(--rs);font-size:13px;background:#fff"/></div>
-              <div class="qc-field"><label>Unit</label><select id="qcd-unit" style="width:100%;padding:10px;border:1.5px solid var(--br);border-radius:var(--rs);font-size:13px;background:#fff"><option>Tons</option><option>kg</option><option>head</option><option>litre</option><option>hour</option><option>unit</option></select></div>
+              <div class="qc-field"><label>Unit</label><select id="qcd-unit" style="width:100%;padding:10px;border:1.5px solid var(--br);border-radius:var(--rs);font-size:13px;background:#fff"><option>tonne</option><option>kg</option><option>head</option><option>litre</option><option>hour</option><option>unit</option></select></div>
               <div class="qc-field" id="qcd-price-wrap"><label>Price/unit (£)</label><input id="qcd-price" type="number" placeholder="0" oninput="qcCalcTotal()" style="width:100%;padding:10px;border:1.5px solid var(--br);border-radius:var(--rs);font-size:13px;background:#fff"/></div>
             </div>
             <div class="qc-row">
@@ -18333,8 +18333,8 @@ function openAddIncome(mode) {
 }
 
 var SALE_CFG = {
-  Crops:       {desc:'e.g. Winter wheat \u2014 60 t, feed',hint:'Crop name and grade.',cust:'Customer / Buyer (optional)',custph:'e.g. Frontier, ADM, local merchant',qty:true,qlbl:'Quantity',units:['Tons','kg','bags'],plbl:'Price per unit (£)',freq:'One-off',sslbl:'Crop Sale'},
-  Fruit:       {desc:'e.g. Galas \u2014 1\u00a0200 cartons Class 1',hint:'Fruit or veg type, count and class.',cust:'Packhouse / Agent / Buyer (optional)',custph:'e.g. your packhouse or marketing agent',qty:true,qlbl:'Quantity',units:['cartons','Tons','kg'],plbl:'Price per unit (£)',freq:'One-off',sslbl:'Fruit Sale'},
+  Crops:       {desc:'e.g. Winter wheat \u2014 60 t, feed',hint:'Crop name and grade.',cust:'Customer / Buyer (optional)',custph:'e.g. Frontier, ADM, local merchant',qty:true,qlbl:'Quantity',units:['tonne','kg','bags'],plbl:'Price per unit (£)',freq:'One-off',sslbl:'Crop Sale'},
+  Fruit:       {desc:'e.g. Galas \u2014 1\u00a0200 cartons Class 1',hint:'Fruit or veg type, count and class.',cust:'Packhouse / Agent / Buyer (optional)',custph:'e.g. your packhouse or marketing agent',qty:true,qlbl:'Quantity',units:['cartons','tonne','kg'],plbl:'Price per unit (£)',freq:'One-off',sslbl:'Fruit Sale'},
   Livestock:   {desc:'e.g. Cattle sale — 12 finished steers, R4L',hint:'Animal type, number and grade.',cust:'Buyer (optional)',custph:'e.g. Abattoir / Auction house',qty:true,qlbl:'Number of animals',units:['head','unit'],plbl:'Price per head (£)',freq:'One-off',sslbl:'Livestock Sale'},
   Agritourism: {desc:'e.g. Holiday let \u2014 5 nights, farm walk',hint:'Type of activity and number of guests or nights.',cust:'Guest / Group name (optional)',custph:'e.g. Smith Family',qty:true,qlbl:'Guests / Nights',units:['guests','nights','sessions'],plbl:'Price per person (£)',freq:'One-off',sslbl:'Agritourism Income'},
   Rental:      {desc:'e.g. North block land rental, Baler hire',hint:'Asset or land being rented.',cust:'Tenant / Renter name (optional)',custph:'e.g. Green Farms Ltd',qty:false,amt_lbl:'Rental amount (£)',amt_hint:'Enter the rental amount for this period.',freq:'Monthly',sslbl:'Rental Income'},
@@ -18555,7 +18555,7 @@ function saveSale() {
        lsSellFromTxn posts no money of its own; it records the movement and links the pair. */
     try{
       if(cat==='Livestock Sales' && _leaveSnap.on && _aiEnt){
-        /* qty here is a HEAD COUNT. The money form's quantity can be Tons/kg (carcass or
+        /* qty here is a HEAD COUNT. The money form's quantity can be tonne/kg (carcass or
            weight sales), so only treat it as head when the unit says so — otherwise a
            "4 500 kg" sale would remove 4 500 head and zero the herd. When the count is
            unknown (weight sale, no tagged animals picked), pass 0: lsSellFromTxn records
@@ -18980,7 +18980,14 @@ var ST_LOANS = {
 // they add. Everything else derives from records. Persists via saveState/loadState (localStorage);
 // degrades gracefully with no backend wiring.
 var ST_LOANAPP = {
-  req: { mode:'amount', amount:1200000, purpose:'Machinery', margin:2.25, term:7, rate:12.75, addedIncome:0, addedFrom:2 },
+  /* rate is deliberately null, not a number. openAffordabilityFlow() and laStoredInputs()
+     both fall back to laSuggestRate(purpose) = Bank Rate + the margin for that purpose,
+     which is what the hint under the field already tells the farmer. A seeded 12.75 sat
+     here - South African prime - and because it was non-null the fallback never ran and
+     laPurpose() read it as a deliberate override, so changing purpose would not refresh
+     it either. On a 1.2m machinery loan that overstated the payment by about 4,000 a
+     month and answered "no, you cannot afford this" to a farm that could. */
+  req: { mode:'amount', amount:1200000, purpose:'Machinery', margin:2.25, term:7, rate:null, addedIncome:0, addedFrom:2 },
   income: { y1:1850000, y2:1980000, y3:2100000, drawMo:35000, off:0 },
   /* Built from this farm's own cropping and the app's verified AHDB prices rather
      than picked. 435 ha of arable at its own target yields is 600,544 of output
@@ -30225,7 +30232,7 @@ function lsLeaveRender(entId, qty, unit){
   if(!h){ box.style.display='none'; box.innerHTML=''; lsLeaveReset(); return; }
   if(LS_LEAVE.herdId!==h.id){ lsLeaveReset(); LS_LEAVE.herdId=h.id; LS_LEAVE.on=true; }
   /* The money quantity is only a head count when the unit says so. For weight sales
-     (Tons/kg) we can't infer how many animals left, so don't show or use a head count
+     (tonne/kg) we can't infer how many animals left, so don't show or use a head count
      derived from the weight — the farmer picks tagged animals or records it in Livestock. */
   var _headUnit=!unit || /^(head|hd|unit)$/i.test(String(unit).trim());
   var n=_headUnit ? Math.max(0,parseInt(qty,10)||0) : 0;
