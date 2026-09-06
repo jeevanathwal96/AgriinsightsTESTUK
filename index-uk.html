@@ -33,8 +33,8 @@
 <script defer src="vendor/chart.umd.js"></script>
 <!-- AgriInsights backend: Supabase client + data service (load order matters) -->
 <script src="vendor/supabase.js"></script>
-<script src="ai-data-uk.js?v=uk82"></script>
-<script src="ai-auth-uk.js?v=uk82"></script>
+<script src="ai-data-uk.js?v=uk83"></script>
+<script src="ai-auth-uk.js?v=uk83"></script>
 <link rel="stylesheet" href="fonts.css"/>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -17515,8 +17515,39 @@ function getFYMonths(fy) {
 // ============================================================
 
 // ============================================================
+/* FARM mirrors the identity fields that ST owns. It exists because 54 read sites
+   across reports, statements and the tax screens ask FARM for the farm's name, owner,
+   area, VAT status and reference numbers rather than reaching into ST.
+
+   Those two objects were only ever tied together at the moment the farmer typed
+   something. FARM is re-created from DEMO_FARM on every load, clearAllToFresh() then
+   sets FARM.vat=false, and onboarding's FARM.vat=vatReg lives in memory only. ST
+   IS restored - from localStorage and from the server via AI.load.profile - but
+   nothing re-derived FARM from it. So a VAT-registered farm came back from every
+   reload with FARM.vat === false, and the Tax screen told it "Not registered for
+   VAT - no VAT to track" while Settings, ST and the server all said yes.
+
+   Deriving instead of assigning at the point of entry means there is one rule, and
+   it holds no matter which path populated ST. */
+function syncFarmFromST(){
+  try{
+    if (typeof FARM === 'undefined' || !window.ST) return;
+    if (ST.farmName  != null) FARM.name  = ST.farmName;
+    if (ST.ownerName != null) FARM.owner = ST.ownerName;
+    if (ST.farmHa    != null) FARM.ha    = ST.farmHa;
+    /* Coerced, not copied: the wizard writes a boolean, Settings writes the string
+       'yes', and the server returns a real boolean. A bare copy made FARM.vat the
+       string 'yes' on one path - truthy, so it happened to work, which is exactly
+       how it would have gone unnoticed until something compared it to true. */
+    FARM.vat   = (ST.vatRegistered === true || ST.vatRegistered === 'yes');
+    FARM.vatNo = ST.vatNumber || '';
+    FARM.taxNo = ST.taxNumber || '';
+  }catch(e){}
+}
+
 function syncTopbarFarm(){
   try{
+    syncFarmFromST();
     var fn=document.getElementById('farm-name'); if(fn) fn.textContent = ST.farmName || 'Your farm';
     var di=document.querySelector('#farm-drop .drop-item'); if(di) di.textContent = '\u2713  ' + (ST.farmName || 'Your farm');
     if (typeof updateTopbarGreeting==='function') updateTopbarGreeting();
