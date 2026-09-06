@@ -6358,10 +6358,11 @@ body.no-livestock .tours-menu-item.ent-livestock{display:none}
             <option value="7">July</option>
             <option value="10">October</option>
           </select>
+          <div id="ob-fylock" style="display:none;font-size:11px;color:#6B7280;line-height:1.45;margin-top:6px">HMRC sets this one for you. Only a limited company picks its own year end.</div>
         </div>
         <div class="ob-field">
           <label class="ob-label">Business type (for tax)</label>
-          <select id="ob-entity" class="ob-select">
+          <select id="ob-entity" class="ob-select" onchange="obFyLock()">
             <option value="sole" selected>Sole trader (taxed in your own name)</option>
             <option value="partnership">Partnership (each partner taxed on their share)</option>
             <option value="company">Limited company</option>
@@ -9652,13 +9653,14 @@ body.no-livestock .tours-menu-item.ent-livestock{display:none}
       <div class="set-card">
         <div class="set-h"><span class="ic">📋</span>Tax &amp; VAT</div>
         <div class="fg2" style="margin-bottom:12px">
-          <div><label>Financial year start <span class="set-ihint"><button type="button" class="set-i" onclick="setPop(this,event)" aria-label="Why we ask">i</button><span class="set-pop"><b>Your tax year.</b> HMRC runs a sole trader&rsquo;s or partner&rsquo;s year from 6 April to 5 April. A company may have chosen a different year-end — use that one. This drives Tax &amp; HMRC, Reports, Profit and Budgets.</span></span></label>
+          <div><label>Financial year start <span class="set-ihint"><button type="button" class="set-i" onclick="setPop(this,event)" aria-label="Why we ask">i</button><span class="set-pop"><b>Your tax year.</b> If you are a sole trader, in a partnership or a trust, HMRC sets it: 6 April to 5 April, whatever date you draw your accounts to. Only a limited company chooses its own year end, so only a company can change this. It drives Tax &amp; HMRC, Reports, Profit and Budgets.</span></span></label>
             <select id="set-fystart">
               <option value="4">6 April – 5 April (UK standard)</option>
               <option value="1">January</option>
               <option value="7">July</option>
               <option value="10">October</option>
             </select>
+            <div id="set-fylock" style="display:none;font-size:11px;color:var(--t4);line-height:1.45;margin-top:6px">HMRC sets this one. You are taxed on the year to 5 April even if you draw your accounts to a different date &mdash; your accountant fits them into it. Change your business type to Limited company to pick a year end.</div>
           </div>
           <div><label>Season starts <span class="set-ihint"><button type="button" class="set-i" onclick="setPop(this,event)" aria-label="Why we ask">i</button><span class="set-pop"><b>Your growing year</b>, which is not your tax year. It sets the twelve months the Planning and Season Tracker screens run over. Combinable crops usually start with autumn drilling in September; a spring-cropping or livestock farm may start somewhere else. Your tax year is unaffected.</span></span></label>
             <select id="set-season">
@@ -17610,6 +17612,11 @@ function saveSettings() {
   var owner = ownerEl ? ownerEl.value.trim() : '';
   var ha    = haEl    ? parseFloat(haEl.value) || ST.farmHa : ST.farmHa;
   var fy    = fyEl    ? parseInt(fyEl.value) || fyStartMonth() : fyStartMonth();
+  /* Second lock. The control is disabled for an unincorporated farm, but a disabled
+     select still reads back whatever it last held, so a farm that carries an old
+     October year would write it straight back on the next save of any other field. */
+  var _entSel = document.getElementById('set-entity');
+  if (!(_entSel && _entSel.value === 'company')) fy = _cDef('fy.startMonth', 4);
   var seasEl = document.getElementById('set-season');
   var seas   = seasEl ? (parseInt(seasEl.value,10) || seasonStartMonth()) : seasonStartMonth();
   var vat   = vatEl   ? vatEl.value : 'yes';
@@ -17692,9 +17699,10 @@ if (name)  { ST.farmName = name;  FARM.name  = name; }
   if (capEl) { var _cv = parseFloat(capEl.value); ST.capThreshold = (isFinite(_cv) && _cv >= 0) ? _cv : CAP_MIN_DEFAULT; }
   var basisEl = document.getElementById('set-basis'); if (basisEl) ST.cashBasis = (basisEl.value === 'cash');
   var resEl = document.getElementById('set-taxres'); if (resEl) ST.taxResidence = resEl.value || null;
-  /* The UK tax year opens on the 6th only when it is the April year. Any other
-     start month a farmer picks (a company year-end) opens on the 1st. */
-  ST.fyStartDay = (ST.fyStartMonth === _cDef('fy.startMonth',4)) ? _cDef('fy.startDay',6) : 1;
+  /* The UK tax year opens on the 6th. A company year-end is a month end, so its
+     period opens on the 1st. Keyed off the business type rather than the month,
+     which is now only free to move for a company anyway. */
+  ST.fyStartDay = (ST.entityType === 'company') ? 1 : _cDef('fy.startDay',6);
   var taxno = document.getElementById('set-taxno'); if(taxno && taxno.value.trim()) { ST.taxNumber = taxno.value.trim(); FARM.taxNo = ST.taxNumber; }
   var vatno = document.getElementById('set-vatno'); if(vatno && vatno.value.trim()) { ST.vatNumber = vatno.value.trim(); FARM.vatNo = ST.vatNumber; }
   var vcat = document.getElementById('set-vatcat'); if(vcat && vcat.value) ST.vatCategory = vcat.value;
@@ -18005,12 +18013,13 @@ function nav(id) {
     var sen=$('set-entity'); if(sen) sen.value = ST.entityType || 'sole';
     /* The partners block only makes sense for a partnership, so it is shown by the
        business-type select rather than sitting there confusing a sole trader. */
-    if(sen && !sen._pwired){ sen._pwired=1; sen.addEventListener('change', function(){ if(typeof setPartnersRender==='function') setPartnersRender(); }); }
+    if(sen && !sen._pwired){ sen._pwired=1; sen.addEventListener('change', function(){ if(typeof setPartnersRender==='function') setPartnersRender(); if(typeof setFyLock==='function') setFyLock(); }); }
     if(typeof setPartnersRender==='function') setPartnersRender();
     /* Both year selects were never populated from state — they always opened on
        their first option, so a farmer who had chosen July saw "March" staring
        back at him and re-saving silently reset it. */
     var sfy=$('set-fystart'); if(sfy) sfy.value = String(fyStartMonth());
+    if(typeof setFyLock==='function') setFyLock();
     var sse=$('set-season');  if(sse) sse.value = String(seasonStartMonth());
     var stb=$('set-tour-btn'); if(stb) stb.checked = ST.showTourBtn !== false;
     var sdb=$('set-demo-btn'); if(sdb) sdb.checked = ST.showDemoBtn !== false;
@@ -33180,8 +33189,20 @@ function seasonStartMonth(){
   var m=(typeof ST!=='undefined' && ST && ST.seasonStartMonth)|0;
   return (m>=1 && m<=12) ? m : _cDef('season.startMonth', 9);
 }
-/* The month the tax year opens (1-12). UK default is April. */
+/* The month the tax year opens (1-12). UK default is April.
+
+   Basis period reform, which finished in 2024/25, settled who gets to choose. A sole
+   trader, partnership or trust is now taxed on the profit ARISING IN THE TAX YEAR
+   whatever date it draws its accounts to, so there is no year left for them to pick -
+   HMRC has picked it, 6 April to 5 April. Only a company keeps a financial year of its
+   own, and its corporation tax dates are derived from that period.
+
+   Settings and onboarding lock the control, and this is the lock that matters: state
+   also arrives from the server and from saves made when July and October were legal
+   choices. Left alone, an October year moved the demo farm's income tax estimate from
+   49,246 to 204,406 with no warning anywhere on the screen. */
 function fyStartMonth(){
+  if (typeof ukIsCompany==='function' && !ukIsCompany()) return _cDef('fy.startMonth', 4);
   var m=(typeof ST!=='undefined' && ST && ST.fyStartMonth)|0;
   return (m>=1 && m<=12) ? m : _cDef('fy.startMonth', 4);
 }
@@ -33199,8 +33220,9 @@ function fyStartDay(){
      rather than anything the farmer chose - and honouring it would silently defeat this
      for every existing farm. If a day control is ever added, revisit the order. */
   if (typeof ukIsCompany==='function' && ukIsCompany()) return 1;
-  var d=(typeof ST!=='undefined' && ST && ST.fyStartDay)|0;
-  if (d>=1 && d<=28) return d;
+  /* Everyone else is on the HMRC year, which opens on the 6th. A stored 1 is the
+     leftover of a July or October year end that can no longer be chosen, and honouring
+     it would put the boundary five days out from the month fyStartMonth() returns. */
   return _cDef('fy.startDay', 6);
 }
 function seasonStartDay(){
@@ -47925,6 +47947,22 @@ window.ukProfitAllocationPreview=ukProfitAllocationPreview;
 window.ukProfitAllocationCsv=ukProfitAllocationCsv;
 
 /* ── Settings editor ─────────────────────────────────────────────────────────── */
+/* Basis period reform leaves only a company free to choose a year end. The control
+   still shows - a farmer should be able to see which year he is on - but for a sole
+   trader, partnership or trust it is locked to the HMRC year and says why. */
+function setFyLock(){
+  var sel=document.getElementById('set-entity');
+  var fy=document.getElementById('set-fystart');
+  var note=document.getElementById('set-fylock');
+  if(!fy) return;
+  var isCo=(sel && sel.value==='company');
+  if(!isCo) fy.value='4';
+  fy.disabled=!isCo;
+  fy.style.opacity=isCo?'':'.62';
+  fy.style.cursor=isCo?'':'not-allowed';
+  if(note) note.style.display=isCo?'none':'';
+}
+window.setFyLock=setFyLock;
 function setPartnersRender(){
   var wrap=document.getElementById('set-partners-wrap');
   var sel=document.getElementById('set-entity');
@@ -54062,8 +54100,12 @@ function obFinish() {
   var owner    = ($('ob-owner')    && $('ob-owner').value.trim())    || 'Farmer';
   var ha       = parseFloat($('ob-ha') && $('ob-ha').value) || 0;
   var province = ($('ob-country') && $('ob-country').value) || '';
-  var fy       = parseInt($('ob-fystart') && $('ob-fystart').value) || 4;
   var entity   = ($('ob-entity') && $('ob-entity').value) || 'sole';
+  /* Only a company has a year of its own to choose. Everyone else is on the HMRC year
+     whatever the (locked) control reads back. */
+  var fy       = (entity === 'company')
+                 ? (parseInt($('ob-fystart') && $('ob-fystart').value) || 4)
+                 : 4;
   var vatReg   = (typeof OB_VATREG !== 'undefined') ? OB_VATREG : false;
   var vatCat   = ($('ob-vatcat') && $('ob-vatcat').value) || 'quarterly';
 
@@ -54071,8 +54113,9 @@ ST.farmName      = farmName;
   ST.ownerName     = owner;
   ST.fyStartMonth  = fy;
   /* The UK year opens on the 6th, so 1-5 April fall in the closing year. Onboarding
-     never wrote the day at all, leaving whatever the previous state carried. */
-  ST.fyStartDay    = (fy === 4) ? 6 : 1;
+     never wrote the day at all, leaving whatever the previous state carried. A company
+     year-end is a month end, so its period opens on the 1st. */
+  ST.fyStartDay    = (entity === 'company') ? 1 : 6;
   ST.entityType    = entity;
   ST.vatRegistered = vatReg; if (typeof FARM !== 'undefined') FARM.vat = vatReg;
   ST.vatCategory   = vatCat;
@@ -54188,11 +54231,27 @@ function obSkip() {
   try { if (typeof impRenderDoorway === 'function') impRenderDoorway(); } catch(e){}
 }
 
+/* Same rule as Settings: the year-start control is only live for a company. It sits
+   ABOVE the business type on this step, so it is locked on arrival (the default is
+   sole trader) and unlocks the moment Limited company is chosen. */
+function obFyLock(){
+  var sel=$('ob-entity'), fy=$('ob-fystart'), note=$('ob-fylock');
+  if(!fy) return;
+  var isCo=(sel && sel.value==='company');
+  if(!isCo) fy.value='4';
+  fy.disabled=!isCo;
+  fy.style.opacity=isCo?'':'.62';
+  fy.style.cursor=isCo?'':'not-allowed';
+  if(note) note.style.display=isCo?'none':'';
+}
+window.obFyLock=obFyLock;
+
 (function(){
   if (!ST.firstRun) {
     var ov = $('ob-overlay');
     if(ov) ov.style.display = 'none';
   }
+  try{ obFyLock(); }catch(e){}
 })();
 
 // ============================================================
