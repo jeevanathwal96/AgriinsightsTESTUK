@@ -11,7 +11,7 @@
  */
 'use strict';
 
-var APP_VERSION = 'uk-2026-08-17-295';
+var APP_VERSION = 'uk-2026-08-17-296';
 var CACHE = 'agriinsights-uk-' + APP_VERSION;
 
 /* App shell precached on install. The ?v=-suffixed JS is intentionally left to
@@ -26,7 +26,7 @@ var PRECACHE = [
      cache.addAll() rejects the whole batch if any one entry 404s, so this single dead
      path could take the entire app-shell precache down with it. */
   './vendor/jspdf.umd.min.js?v=218',
-  './img/hero-farmland.jpg?v=217',
+  './img/hero-farmland-uk.jpg?v=uk295',
   './img/logomark.png?v=225',
   './icon-192.png',
   './icon-512.png',

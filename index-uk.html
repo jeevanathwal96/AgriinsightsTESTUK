@@ -160,6 +160,12 @@ label{font-size:13px;color:var(--t3);font-weight:500;display:block;margin-bottom
 
 .hero{border-radius:var(--rl);overflow:hidden;position:relative;height:210px;margin-bottom:22px;background:var(--gd)}
 .hero-svg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+/* Bottom-aligned on purpose. The SA build uses 50% 45%, which suits a source whose
+   interest sits mid-frame; here the cows, the tractor and the farmhouse are in the
+   bottom 14% of the image, and 45% crops 62% of that band away at 1920 and all of it
+   at 2560. Measured white-on-image contrast in the text area passes WCAG AA at every
+   width with the existing overlay: date 6.2-7.1:1, headline 3.9-8.9:1. */
+.hero-photo{position:absolute;inset:0;background-image:url('img/hero-farmland-uk.jpg?v=uk295');background-size:cover;background-position:50% 100%;background-repeat:no-repeat}
 .hero-ov{position:absolute;inset:0;background:linear-gradient(to right,rgba(15,40,28,.85) 0%,rgba(15,40,28,.55) 45%,rgba(15,40,28,.1) 100%)}
 /* The hero was a photograph of the Cape Winelands — Cape Dutch gables, vineyards and
    the Hottentots Holland mountains. Unmistakably South African to anyone who farms
@@ -6681,66 +6687,10 @@ body.no-livestock .tours-menu-item.ent-livestock{display:none}
 <div class="pg on" id="pg-dashboard">
   <!-- Hero -->
   <div class="hero">
-    <svg class="hero-svg" viewBox="0 0 1200 300" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="English farmland with hedgerow-divided fields">
-      <defs>
-        <linearGradient id="ukSky" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="#A9C9DD"/><stop offset="55%" stop-color="#CFE0E6"/><stop offset="100%" stop-color="#E6E9DC"/>
-        </linearGradient>
-        <linearGradient id="ukFar" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="#93AC9A"/><stop offset="100%" stop-color="#7E9C87"/>
-        </linearGradient>
-        <linearGradient id="ukStubble" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="#C8B679"/><stop offset="100%" stop-color="#AF9A5E"/>
-        </linearGradient>
-      </defs>
-      <rect width="1200" height="300" fill="url(#ukSky)"/>
-      <g fill="#fff" opacity=".55">
-        <ellipse cx="250" cy="52" rx="62" ry="17"/><ellipse cx="300" cy="46" rx="44" ry="14"/>
-        <ellipse cx="880" cy="38" rx="70" ry="15"/><ellipse cx="940" cy="44" rx="46" ry="12"/>
-      </g>
-      <!-- Low rolling downland, not mountains: this is the shape of an English horizon. -->
-      <path d="M0 132 C 150 112, 300 128, 460 118 C 620 108, 760 126, 900 116 C 1040 106, 1130 120, 1200 114 L1200 300 L0 300Z" fill="url(#ukFar)"/>
-      <path d="M0 150 C 180 138, 340 154, 520 144 C 700 134, 880 152, 1060 142 C 1130 138, 1170 144, 1200 142 L1200 300 L0 300Z" fill="#6E8F76" opacity=".92"/>
-      <!-- Hedgerow-divided patchwork: the defining feature of lowland Britain. -->
-      <path d="M0 168 C 200 158, 420 172, 640 162 C 860 152, 1030 168, 1200 160 L1200 200 L0 208Z" fill="#5E8A5C"/>
-      <path d="M0 206 C 220 198, 470 210, 700 200 C 900 192, 1060 204, 1200 198 L1200 232 L0 242Z" fill="#6F9B5E"/>
-      <path d="M0 240 C 240 232, 500 244, 760 234 C 960 227, 1090 238, 1200 232 L1200 268 L0 276Z" fill="url(#ukStubble)"/>
-      <path d="M0 274 C 260 266, 540 278, 820 268 C 1000 262, 1110 272, 1200 268 L1200 300 L0 300Z" fill="#557F51"/>
-      <!-- Tramlines through the stubble -->
-      <g stroke="#96854F" stroke-width="1.6" opacity=".55">
-        <path d="M120 276 C 300 262, 520 254, 760 246" fill="none"/>
-        <path d="M210 280 C 400 266, 620 258, 860 250" fill="none"/>
-        <path d="M300 284 C 500 270, 720 262, 960 254" fill="none"/>
-      </g>
-      <!-- Hedgerows running up the field boundaries -->
-      <g stroke="#3F6642" stroke-width="4" stroke-linecap="round" opacity=".75">
-        <path d="M180 208 C 176 190, 172 178, 168 166" fill="none"/>
-        <path d="M640 202 C 646 186, 650 174, 654 162" fill="none"/>
-        <path d="M980 199 C 986 184, 990 172, 994 161" fill="none"/>
-      </g>
-      <!-- Hedgerow oaks -->
-      <g fill="#3E6942">
-        <ellipse cx="168" cy="158" rx="19" ry="15"/><rect x="166" y="166" width="4" height="12" fill="#4A3B2A"/>
-        <ellipse cx="655" cy="154" rx="16" ry="13"/><rect x="653" y="161" width="3.5" height="11" fill="#4A3B2A"/>
-        <ellipse cx="995" cy="153" rx="21" ry="16"/><rect x="993" y="162" width="4" height="12" fill="#4A3B2A"/>
-        <ellipse cx="405" cy="150" rx="14" ry="11"/><rect x="403" y="157" width="3" height="10" fill="#4A3B2A"/>
-      </g>
-      <!-- Stone farmstead: a long barn and a gabled farmhouse under a slate roof -->
-      <g>
-        <rect x="742" y="168" width="96" height="27" fill="#D8D2C4"/>
-        <path d="M736 168 L790 149 L844 168 Z" fill="#6E7076"/>
-        <rect x="760" y="177" width="11" height="18" fill="#5C6B5A"/>
-        <rect x="784" y="177" width="11" height="18" fill="#5C6B5A"/>
-        <rect x="808" y="177" width="11" height="18" fill="#5C6B5A"/>
-        <rect x="852" y="176" width="58" height="19" fill="#C9C2B2"/>
-        <path d="M847 176 L881 162 L915 176 Z" fill="#6E7076"/>
-        <rect x="866" y="183" width="9" height="12" fill="#5C6B5A"/>
-      </g>
-      <!-- A few sheep on the near pasture -->
-      <g fill="#F2F0E8" opacity=".9">
-        <ellipse cx="300" cy="256" rx="6" ry="4"/><ellipse cx="330" cy="262" rx="5.5" ry="3.6"/><ellipse cx="272" cy="264" rx="5" ry="3.4"/>
-      </g>
-    </svg>
+    <!-- Was a hand-drawn SVG landscape. A photograph of the country the farmer
+         actually farms in does the job the illustration was standing in for, and it
+         is 246KB against 4.1KB of inline path data that had to parse on every load. -->
+    <div class="hero-photo" role="img" aria-label="English farmland at sunset — dairy cows grazing, a tractor and a stone farmhouse above a valley"></div>
     <div class="hero-ov"></div>
     <div class="hero-txt"><div class="hero-date" id="dash-hero-date"></div><div class="hero-h" data-t="hero.h" data-doorway-marker="1">Let's grow your<br>profit this season.</div></div>
   </div>
