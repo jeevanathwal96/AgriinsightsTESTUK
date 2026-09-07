@@ -60452,11 +60452,18 @@ function wkPRExportEmp201(){
      employer figure sat in the employee column and vice versa — and both were wrong
      anyway: sdl was a flat 15% of the whole wage bill and eeNiTotal was employee NI
      doubled, which is South Africa's symmetric 1%+1% UIF, not UK NI. */
+  var _eaLeftX=(typeof wkEaRemaining==='function')?wkEaRemaining():0;
   labels.forEach(function(L){
     var paye=0, eeNI=0;
     wkPayRows(L).forEach(function(r){ paye+=wkPayeFor(L,r.w.id); eeNI+=r.ni; });
-    wkSeasList().forEach(function(w){ var days=wkSeasDaysFor(L,w.id); if(days>0) eeNI+=wkSeasNI(wkSeasGross(w,days),days,w); });
-    var erM=wkErNIMonth(L); var tot=paye+eeNI+erM.payable;
+    /* Seasonal NI was counted here and seasonal PAYE was not, so the export's own
+       columns disagreed: the same three pickers were in the NI total and missing from
+       the PAYE total. */
+    wkSeasList().forEach(function(w){ var days=wkSeasDaysFor(L,w.id); if(days>0){ eeNI+=wkSeasNI(wkSeasGross(w,days),days,w); paye+=wkPayeFor(L,w.id); } });
+    /* Drawn from ONE running pool across the exported months, or a six-month export
+       would hand back the whole allowance six times. */
+    var erM=wkErNIMonth(L,_eaLeftX); _eaLeftX=Math.max(0,_eaLeftX-erM.relief);
+    var tot=paye+eeNI+erM.payable;
     data.push([L, paye.toFixed(2), eeNI.toFixed(2), erM.payable.toFixed(2), erM.relief.toFixed(2), tot.toFixed(2)]);
   });
   wkDownload('PAYE_and_NIC_summary_'+wkPRTag(), toCSV(['Month','PAYE (GBP)','Employee NI (GBP)','Employer NI payable (GBP)','Employment Allowance applied (GBP)','Total payable to HMRC (GBP)'], data));
