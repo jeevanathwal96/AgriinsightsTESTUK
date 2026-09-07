@@ -158,14 +158,22 @@ label{font-size:13px;color:var(--t3);font-weight:500;display:block;margin-bottom
 .btn-sec{background:#fff;color:var(--t1);border:1.5px solid var(--br);border-radius:var(--rs);padding:8px 16px;font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:6px;cursor:pointer;transition:all .15s}
 .btn-sec:hover{border-color:var(--gl);color:var(--gd)}
 
-.hero{border-radius:var(--rl);overflow:hidden;position:relative;height:210px;margin-bottom:22px;background:var(--gd)}
+/* Fixed ASPECT-RATIO, not a fixed height. At 210px tall against a full-bleed width the
+   hero's own ratio ran from 4.69:1 at a 1280 viewport to 10.78:1 at 2560, so a photo
+   that fitted one width was 57% cropped at another and no source could satisfy both.
+   At 5:1 the visible region is identical at every width: 984x197 at 1280, 2264x453 at
+   2560. The min-height is the floor the text needs - 22px padding, the date, two
+   headline lines and 22px again come to 124px. */
+.hero{border-radius:var(--rl);overflow:hidden;position:relative;aspect-ratio:5/1;min-height:150px;margin-bottom:22px;background:var(--gd)}
 .hero-svg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-/* Bottom-aligned on purpose. The SA build uses 50% 45%, which suits a source whose
-   interest sits mid-frame; here the cows, the tractor and the farmhouse are in the
-   bottom 14% of the image, and 45% crops 62% of that band away at 1920 and all of it
-   at 2560. Measured white-on-image contrast in the text area passes WCAG AA at every
-   width with the existing overlay: date 6.2-7.1:1, headline 3.9-8.9:1. */
-.hero-photo{position:absolute;inset:0;background-image:url('img/hero-farmland-uk.jpg?v=uk295');background-size:cover;background-position:50% 100%;background-repeat:no-repeat}
+/* Centred, because this source IS the letterbox: the 6.52:1 band was cut from the
+   generated frame with the cows, the tractor and the farmhouse already inside it, so
+   there is nothing at an edge that needs saving. (The first UK photo needed 50% 100%
+   for exactly that reason - its livestock sat in the bottom 14% and a centred crop
+   threw them away above 1920. Check the source before copying a position value.)
+   Measured white-on-image contrast in the text area passes WCAG AA at all five widths:
+   date 6.5-7.2:1 against 4.5 needed, headline 3.8-7.8:1 against 3.0. */
+.hero-photo{position:absolute;inset:0;background-image:url('img/hero-farmland-uk.jpg?v=uk298');background-size:cover;background-position:50% 50%;background-repeat:no-repeat}
 .hero-ov{position:absolute;inset:0;background:linear-gradient(to right,rgba(15,40,28,.85) 0%,rgba(15,40,28,.55) 45%,rgba(15,40,28,.1) 100%)}
 /* The hero was a photograph of the Cape Winelands — Cape Dutch gables, vineyards and
    the Hottentots Holland mountains. Unmistakably South African to anyone who farms
