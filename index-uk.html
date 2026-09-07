@@ -23711,6 +23711,19 @@ function wkEaUsedThisTaxYear(){
   return Math.min(cap, Math.round(used*100)/100);
 }
 function wkEaRemaining(){ return Math.max(0, wkEaCap()-wkEaUsedThisTaxYear()); }
+/* HMRC: "If your company has only one director, they must not be the only employee
+   liable for secondary Class 1 National Insurance." We hold no director flag, so this
+   raises the question rather than answering it - blocking outright would be wrong every
+   time that single liable employee is somebody other than the director. */
+function wkEaSingleDirectorRisk(){
+  try{
+    if(!(typeof ukIsCompany==='function' && ukIsCompany())) return false;
+    var liable=((typeof wkList==='function')?wkList():[]).filter(function(w){
+      return (typeof wkEmployerNI==='function') && wkEmployerNI(w.amt||0)>0; });
+    return liable.length===1;
+  }catch(e){ return false; }
+}
+window.wkEaSingleDirectorRisk=wkEaSingleDirectorRisk;
 window.wkEaCap=wkEaCap; window.wkEaUsedThisTaxYear=wkEaUsedThisTaxYear; window.wkEaRemaining=wkEaRemaining;
 
 function wkEmploymentAllowance(annualEmployerNI){
@@ -24013,6 +24026,12 @@ function renderWkPayroll(){ wkSync();
     var eaLine = (ukRun.employmentAllowance.thisPeriod > 0)
       ? '<div class="wk-srow"><span>Less Employment Allowance <span style="color:var(--t4)">\u00b7 '+wkMoney2(wkEaRemaining())+' left this year</span></span><span class="neg">\u2212'+wkMoney2(ukRun.employmentAllowance.thisPeriod)+'</span></div>'
       : '<div class="wk-srow"><span>Employment Allowance</span><span style="color:var(--t4)">all '+wkMoney2(wkEaCap())+' used for the year</span></div>';
+    /* gov.uk eligibility: a company whose only director is also the only employee liable
+       for secondary Class 1 cannot claim. We do not know who the director is, so ask. */
+    if (typeof wkEaSingleDirectorRisk==='function' && wkEaSingleDirectorRisk()) {
+      eaLine += '<div style="font-size:11px;color:#B45309;background:#FEF6E7;border-radius:9px;padding:9px 11px;margin:8px 0;line-height:1.5">'
+             +  'Only one person on your payroll is over the \u00a35,000 threshold. If that is your only director, a company cannot claim the Employment Allowance \u2014 check with your accountant before relying on this relief.</div>';
+    }
     var floorWarn = ukRun.belowFloor.length
       ? '<div style="font-size:11px;color:var(--rd);font-weight:700;margin-top:10px">\u26a0 '+ukRun.belowFloor.length+' worker'+(ukRun.belowFloor.length===1?' is':'s are')+' under the wage floor for '+wkE(ukRun.rows[0].floor?ukRun.rows[0].floor.region:'your country')+' \u2014 open their payslip to see by how much.</div>'
       : '<div style="font-size:11px;color:var(--gm);font-weight:700;margin-top:10px">\u2713 Everyone is at or above the wage floor that applies where you farm.</div>';
@@ -24139,16 +24158,32 @@ function wkPostSeasonal(){
   /* Gross here INCLUDES rolled-up holiday pay, and the employer side is real employer
      NI plus pension - not the 1% UIF the SA build added. Posting anything less
      understates the wage cost in Profit and in the books. */
-  var sg=0,su=0,totDays=0,buckets={}; wkSeasList().forEach(function(w){ var days=wkSeasDaysFor(label,w.id); if(days>0){
+  /* NIM06505: the Employment Allowance is the EMPLOYER's, set against secondary Class 1
+     on all employees' earnings combined, "irrespective of how many persons they employ".
+     Seasonal staff are in that same pool and this drew nothing from it - so a seasonal
+     run paid employer NI in full while relief sat unused, AND, because it recorded no
+     eaUsed, the monthly runs then believed more allowance was left than really was.
+     One pool, both paths. */
+  var sg=0,sni=0,spen=0,totDays=0,buckets={}; wkSeasList().forEach(function(w){ var days=wkSeasDaysFor(label,w.id); if(days>0){
     var P=ukSeasonalPay(w,days);
-    var g=P.gross, u=Math.round((P.employerNI+P.employerPension)*100)/100;
-    sg+=g; su+=u; totDays+=days;
-    var key=w.activity||''; var b=buckets[key]||(buckets[key]={gross:0,ni:0}); b.gross+=g; b.ni+=u; } });
+    sg+=P.gross; sni+=P.employerNI; spen+=P.employerPension; totDays+=days;
+    var key=w.activity||''; var b=buckets[key]||(buckets[key]={gross:0,ni:0,pen:0}); b.gross+=P.gross; b.ni+=P.employerNI; b.pen+=P.employerPension; } });
   if(sg<=0){ if(typeof toast==='function') toast('Enter days worked first.','info'); return; }
-  var cost=Math.round((sg+su)*100)/100;   // gross (incl. holiday pay) + employer NI + pension
+  var _eaLeft=(typeof wkEaRemaining==='function')?wkEaRemaining():0;
+  var _relief=Math.round(Math.min(sni,_eaLeft)*100)/100;
+  var _niPaid=Math.round(Math.max(0,sni-_relief)*100)/100;
+  var su=Math.round((_niPaid+spen)*100)/100;
+  /* Relief lands on the buckets in proportion to the NI each one raised, so an activity
+     split of the cost still adds back to the total. */
+  var _niTot=sni||1;
+  for(var _bk in buckets){ if(!buckets.hasOwnProperty(_bk)) continue;
+    var _bb=buckets[_bk]; _bb.ni=Math.round(Math.max(0,_bb.ni-(_relief*(_bb.ni/_niTot)))*100)/100 + (_bb.pen||0); }
+  var cost=Math.round((sg+su)*100)/100;   // gross (incl. holiday pay) + employer NI after relief + pension
   var runId='pr'+Date.now();
   if(typeof ST!=='undefined' && ST.txns){ for(var _k in buckets){ if(!buckets.hasOwnProperty(_k)) continue; var _b=buckets[_k]; var _c=Math.round((_b.gross+_b.ni)*100)/100; var _sd='Seasonal wages \u2014 '+label+(_k?(' \u00b7 '+wkActLabel(_k)):''); ST.txns.unshift({ date:wkTodayStr(), desc:_sd, cat:'Labour & Wages', type:'expense', amt:_c, method:'Bank', source:'Payroll', ent:_k||undefined, payRunId:runId }); var _wkSTx=ST.txns[0]; (function(_e,_amt,_desc,_ent){ try{ if(window.AI && AI.farm && AI.farm.active()){ txnWriteThrough(_e, {date:wkTodayStr(),amt:_amt,cat:'Labour & Wages',type:'expense',desc:_desc,method:'Bank',source:'Payroll',ent:_ent}); } }catch(er){} })(_wkSTx,_c,_sd,(_k||('payrun:'+runId))); } }
-  ST_WORK.payRuns.unshift({ id:runId, label:label, kind:'Seasonal \u00b7 '+totDays+' days', seasonal:true, net:Math.round(sg-su), gross:Math.round(sg), ni:Math.round(su*2), date:wkTodayStr() });
+  ST_WORK.payRuns.unshift({ id:runId, label:label, kind:'Seasonal \u00b7 '+totDays+' days', seasonal:true, net:Math.round(sg-su), gross:Math.round(sg),
+    employerNI:Math.round(sni*100)/100, employerPension:Math.round(spen*100)/100, eaUsed:_relief,
+    ni:_niPaid, date:wkTodayStr() });
   try { if(typeof dataChanged==='function') dataChanged('transaction'); } catch(e){}
   if(typeof saveState==='function') saveState();
   if(typeof toast==='function') toast('Posted '+wkMoney(cost)+' to Labour & Wages.','success');
@@ -24156,17 +24191,20 @@ function wkPostSeasonal(){
 }
 function wkSeasPostRow(label){
   if(wkSeasonalPosted(label)) return '<div style="margin-top:11px;font-size:12px;font-weight:800;color:var(--gm);background:var(--gp);border-radius:10px;padding:11px 13px;display:flex;align-items:center;gap:8px"><span>\u2713</span> Paid \u2014 posted to Labour &amp; Wages</div>';
-  var sg=0,su=0,hol=0,short=[],visa=[]; wkSeasList().forEach(function(w){ var days=wkSeasDaysFor(label,w.id); if(days>0){
-    var P=ukSeasonalPay(w,days); sg+=P.gross; su+=P.employerNI+P.employerPension; hol+=P.holidayPay;
+  var sg=0,sni=0,spen=0,hol=0,short=[],visa=[]; wkSeasList().forEach(function(w){ var days=wkSeasDaysFor(label,w.id); if(days>0){
+    var P=ukSeasonalPay(w,days); sg+=P.gross; sni+=P.employerNI; spen+=P.employerPension; hol+=P.holidayPay;
     if(P.belowFloor) short.push(w.name); if(P.visaShort) visa.push(w.name); } });
   if(sg<=0) return '';
-  var cost=Math.round((sg+su)*100)/100;
+  var _eaLeft=(typeof wkEaRemaining==='function')?wkEaRemaining():0;
+  var _relief=Math.min(sni,_eaLeft);
+  var cost=Math.round((sg+Math.max(0,sni-_relief)+spen)*100)/100;
   /* Compliance stops the run rather than decorating it: underpaying the wage floor or
      breaching a visa hours guarantee is not something to post and fix later. */
   var warn='';
   if(short.length) warn+='<div style="margin-top:11px;font-size:11.5px;font-weight:700;color:var(--rd);background:#FEF2F2;border-radius:10px;padding:10px 12px">\u26a0 Under the wage floor: '+wkE(short.join(', '))+'. Fix the day rate before paying.</div>';
   if(visa.length) warn+='<div style="margin-top:8px;font-size:11.5px;font-weight:700;color:var(--rd);background:#FEF2F2;border-radius:10px;padding:10px 12px">\u26a0 Seasonal Worker visa \u2014 under the 32-hour weekly guarantee: '+wkE(visa.join(', '))+'.</div>';
-  return '<div style="margin-top:11px;font-size:10.5px;color:var(--t3);line-height:1.5">Includes '+wkMoney(hol)+' rolled-up holiday pay (12.07%), plus employer NI and pension.</div>'
+  return '<div style="margin-top:11px;font-size:10.5px;color:var(--t3);line-height:1.5">Includes '+wkMoney(hol)+' rolled-up holiday pay (12.07%), plus employer NI and pension.'
+    + (_relief>0 ? ' Employment Allowance covers '+wkMoney(_relief)+' of the employer NI \u2014 '+wkMoney(Math.max(0,_eaLeft-_relief))+' left for the rest of the year.' : '')+'</div>'
     + warn
     + '<button onclick="wkPostSeasonal()"'+((short.length||visa.length)?' disabled style="width:100%;margin-top:11px;border:none;background:var(--br2);color:var(--t4);border-radius:11px;padding:13px;font-size:13px;font-weight:800;font-family:inherit;cursor:not-allowed"':' style="width:100%;margin-top:11px;border:none;background:var(--gd);color:#fff;border-radius:11px;padding:13px;font-size:13px;font-weight:800;font-family:inherit;cursor:pointer"')+'>'+((short.length||visa.length)?'Fix the warnings above to pay':'Pay seasonal workers \u2014 post '+wkMoney(cost)+' to expenses')+'</button>';
 }
@@ -51142,9 +51180,30 @@ function taxPayrollAnnual(){
      bill, so it is applied once to the total — never per worker. */
   var ea=wkEmploymentAllowance(erYr);
   eeYr=Math.round(eeYr); payeYr=Math.round(payeYr);
+  /* What has ALREADY been paid over this payroll tax year, from the runs actually
+     posted. s6 SSCBA 1992 puts the liability to pay Class 1 at the time earnings are
+     PAID, and the RTI submission is due on or before payday - so nothing above is owed
+     until the wage is paid. The figure is a forecast of the year, and separating what is
+     already gone from what is still to come is what stops it reading as a debt. */
+  var paid=0;
+  try{
+    var _st=(typeof wkTaxYear==='function')?wkTaxYear().start:null;
+    ((typeof ST_WORK!=='undefined'&&ST_WORK&&ST_WORK.payRuns)||[]).forEach(function(r){
+      if(!r) return;
+      if(_st){ var d=(typeof parseDate==='function')?parseDate(r.date):null;
+        if(!d || new Date(d.y,d.m,d.d||1) < _st) return; }
+      paid += (r.paye||0) + (r.employeeNI||0) + (r.ni||0);
+    });
+  }catch(e){}
+  paid=Math.round(paid);
+  var total=eeYr+ea.payable+payeYr;
   return { employeeNI:eeYr, employerNI:ea.payable, allowance:ea.relief,
            paye:payeYr,
-           total:eeYr+ea.payable+payeYr };
+           /* Only employer NI is a COST to the farm. PAYE and employee NI come out of
+              gross pay - the farm withholds and remits them, it does not bear them. */
+           farmBears:ea.payable, withheld:eeYr+payeYr,
+           paidSoFar:Math.min(paid,total), toCome:Math.max(0,total-Math.min(paid,total)),
+           total:total };
 }
 function taxVatTrend(){
   if(typeof FARM==='undefined'||!FARM.vat) return [];
@@ -51391,6 +51450,16 @@ function taxGlanceHTML(){
           indented from the sentence it belongs to */
        '<span class="tx-wi" style="display:block;margin:2px 0 0"><details><summary>Why is it bigger than my Reports profit?</summary>'+
        ' The Reports tab counts only what has actually happened. This one carries your banked months on to 5 April, to show what the whole year is heading for.</details></span>'+
+       /* Income tax, VAT and employer NI are the farm's own. PAYE and employee NI are the
+          worker's tax: the farm withholds them from wages and passes them on, so they are
+          in the total HMRC receives but they are not a cost to the business. Reading the
+          whole number as money the farm loses overstates what it actually bears. */
+       ((pay.withheld>0)
+         ? '<span class="tx-wi" style="display:block;margin:2px 0 0"><details><summary>How much of this does the farm actually bear?</summary>'+
+           ' '+fmt(pay.withheld)+' of the payroll figure is PAYE and employee National Insurance. That comes out of your workers\u2019 wages \u2014 you hold it back and pass it on, so HMRC receives it but it never was your money. What the farm itself pays on top of wages is the employer National Insurance, '+fmt(pay.farmBears)+'.'+
+           ((pay.paidSoFar>0) ? ' '+fmt(pay.paidSoFar)+' of the year\u2019s payroll has already gone across in the runs you have posted.' : '')+
+           '</details></span>'
+         : '')+
        '</div>';
     if(prov.nudge && prov.nudge.show) h+='<div class="tx-nudge" style="background:#FEF6E7;border-color:#F1DBA6"><b>A sharper number is waiting.</b> You haven\u2019t added your '+esc(prov.nudge.enterprise)+' to the season plan yet, so we spread your income evenly across the year. <span onclick="nav(\'planning\')" style="text-decoration:underline;cursor:pointer">Finish your plan \u2192</span></div>';
   }
