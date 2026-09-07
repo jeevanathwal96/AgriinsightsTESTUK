@@ -23763,21 +23763,29 @@ function wkErNIRawMonth(label){
   }catch(e){}
   return Math.round(tot*100)/100;
 }
-function wkErNIMonth(label){
+/* Was raw*12, allowance applied, divided back by twelve - a flat monthly share. HMRC
+   does not spread it: it comes off the employer NI bill as that bill arises, until it is
+   gone. The pay-run card was moved onto the running pool and these report tabs were not,
+   so the same month read 875 of relief here and 1,292 there. One pool. */
+function wkErNIMonth(label, poolLeft){
   var raw=wkErNIRawMonth(label);
-  var ea=wkEmploymentAllowance(raw*12);
-  return { raw:raw,
-           relief:Math.round(ea.relief/12*100)/100,
-           payable:Math.round(ea.payable/12*100)/100,
-           cap:ea.cap,
-           covered:(raw>0 && ea.payable<=0) };
+  var left=(poolLeft!=null) ? poolLeft
+         : ((typeof wkEaRemaining==='function') ? wkEaRemaining() : 0);
+  var relief=Math.round(Math.min(raw, Math.max(0,left))*100)/100;
+  var payable=Math.round(Math.max(0, raw-relief)*100)/100;
+  return { raw:raw, relief:relief, payable:payable,
+           cap:(typeof wkEaCap==='function')?wkEaCap():10500,
+           covered:(raw>0 && payable<=0) };
 }
 /* Same figure summed over a multi-month view. Each month annualises its own
    run-rate, so an uneven year is an approximation — stated on screen, and far
    closer than the all-or-nothing switch it replaces. */
 function wkErNIPeriod(labels){
   var raw=0, payable=0, relief=0;
-  (labels||[]).forEach(function(L){ var m=wkErNIMonth(L); raw+=m.raw; payable+=m.payable; relief+=m.relief; });
+  /* Drawn month by month from ONE running pool, so a range cannot relieve more than
+     the year's allowance however many months it spans. */
+  var left=(typeof wkEaRemaining==='function')?wkEaRemaining():0;
+  (labels||[]).forEach(function(L){ var m=wkErNIMonth(L,left); raw+=m.raw; payable+=m.payable; relief+=m.relief; left=Math.max(0,left-m.relief); });
   return { raw:Math.round(raw*100)/100, payable:Math.round(payable*100)/100,
            relief:Math.round(relief*100)/100, covered:(raw>0 && payable<=0) };
 }
@@ -24807,7 +24815,41 @@ function cbGenerate(id, commit){
 // ---- Payroll report ----
 var prPayeEdit=null;
 function wkPayState(){ var c=ST_WORK; if(!c.paye)c.paye={}; if(!c.seasonal)c.seasonal={}; if(typeof c.taxThreshold!=='number')c.taxThreshold=STATUTORY.taxThreshold.value; return c; }
-function wkPayeFor(label,wid){ return (((ST_WORK.paye||{})[label])||{})[wid]||0; }
+/* PAYE was a number the farmer typed in and nothing else, so every report read zero
+   until they typed it: the register showed "enter" beside four workers whose PAYE the
+   cost card two clicks away had already worked out from the tax code, the Full Payment
+   Submission left PAYE out of "total payable", and the tax-year page told a farmer on
+   18,900 year-to-date they had "no PAYE this year - earnings below the threshold".
+
+   The engine computes PAYE from the worker's code. So the typed figure becomes an
+   OVERRIDE - it still wins, because HMRC's own tables beat our arithmetic and a farmer
+   correcting us must stay corrected - and the computed figure is the default.
+
+   Thirteen readers, including the CSV exports, so the fallback lives here rather than
+   at each call site. The re-entry guard is because wkPayRows falls back to this function
+   when the engine is missing, which would otherwise recurse. */
+var _WK_PAYE_REENTRY=false;
+function wkPayeFor(label,wid){
+  var manual=(((ST_WORK.paye||{})[label])||{})[wid];
+  if(manual!=null && manual!=='') return Number(manual)||0;
+  if(_WK_PAYE_REENTRY) return 0;
+  var w=(typeof wkFind==='function')?wkFind(wid):null; if(!w) return 0;
+  _WK_PAYE_REENTRY=true;
+  try{
+    if(w.basis==='month'){
+      var rs=(typeof wkPayRows==='function')?(wkPayRows(label)||[]):[];
+      for(var i=0;i<rs.length;i++){ if(rs[i].w && rs[i].w.id===wid) return Math.round((rs[i].paye||0)*100)/100; }
+      return 0;
+    }
+    var d=(typeof wkSeasDaysFor==='function')?(wkSeasDaysFor(label,wid)||0):0;
+    if(d>0 && typeof ukSeasonalPay==='function') return Math.round((ukSeasonalPay(w,d).paye||0)*100)/100;
+    return 0;
+  } finally { _WK_PAYE_REENTRY=false; }
+}
+function wkPayeIsManual(label,wid){
+  var m=(((ST_WORK.paye||{})[label])||{})[wid];
+  return (m!=null && m!=='');
+}
 function wkSetPaye(label,wid,amt){ wkPayState(); ST_WORK.paye[label]=ST_WORK.paye[label]||{}; ST_WORK.paye[label][wid]=amt; }
 function wkSeasDaysFor(label,wid){ return (((ST_WORK.seasonal||{})[label])||{})[wid]||0; }
 function wkSetSeasDays(label,wid,days){ wkPayState(); ST_WORK.seasonal[label]=ST_WORK.seasonal[label]||{}; ST_WORK.seasonal[label][wid]=days; }
@@ -25046,11 +25088,13 @@ function wkPRCustom(){ var f=($('pr-from')||{}).value, t=($('pr-to')||{}).value;
 
 function wkPRMonthTotals(){
   var labels=wkPRLabels(); var single=labels.length===1; var rows=wkPayRows();
-  var t={gross:0,ni:0,adv:0,sav:0,paye:0,net:0,seasGross:0,seasNi:0,rows:rows,labels:labels,single:single,n:labels.length};
+  var t={gross:0,ni:0,adv:0,sav:0,paye:0,net:0,seasGross:0,seasNi:0,seasPaye:0,erPen:0,rows:rows,labels:labels,single:single,n:labels.length};
   labels.forEach(function(L){
-    wkPayRows(L).forEach(function(r){ t.gross+=r.gross; t.ni+=r.ni; t.paye+=wkPayeFor(L,r.w.id); if(single){ t.adv+=r.advRepay; t.sav+=r.savings; } });
-    wkSeasList().forEach(function(w){ var days=wkSeasDaysFor(L,w.id); if(days>0){ var g=wkSeasGross(w,days); t.seasGross+=g; t.seasNi+=wkSeasNI(g,days,w); } });
+    wkPayRows(L).forEach(function(r){ t.gross+=r.gross; t.ni+=r.ni; t.paye+=wkPayeFor(L,r.w.id); t.erPen+=(r.employerPension||0); if(single){ t.adv+=r.advRepay; t.sav+=r.savings; } });
+    wkSeasList().forEach(function(w){ var days=wkSeasDaysFor(L,w.id); if(days>0){ var g=wkSeasGross(w,days); t.seasGross+=g; t.seasNi+=wkSeasNI(g,days,w); t.seasPaye+=wkPayeFor(L,w.id);
+      if(typeof ukSeasonalPay==='function') t.erPen+=(ukSeasonalPay(w,days).employerPension||0); } });
   });
+  t.erPen=Math.round(t.erPen*100)/100;
   t.net=t.gross-t.ni-t.paye-t.adv-t.sav;
   t.label = single ? labels[0] : (wkShortMo(labels[0])+' \u2013 '+wkShortMo(labels[labels.length-1]));
   return t;
@@ -25068,33 +25112,36 @@ function wkPRSummary(){
      · Employer NI itself was a flat 15% of the whole wage bill (see wkErNIMonth). */
   var er=wkErNIPeriod(t.labels);
   var eeNI=t.ni+t.seasNi;
-  var cost=t.gross+t.seasGross+er.raw;
-  var sdl=er.payable;
-  var hmrcTot=t.paye+eeNI+er.payable;
+  var payeAll=t.paye+t.seasPaye;
+  /* Was gross + RAW employer NI: it charged the farm relief it had already been given,
+     and left out the employer pension entirely - while the sentence underneath said the
+     allowance covered part of the NI. The card contradicted its own explanation. */
+  var cost=t.gross+t.seasGross+er.payable+t.erPen;
+  var hmrcTot=payeAll+eeNI+er.payable;
   function kpi(l,v,sub){ return '<div class="pr-kpi"><div class="l">'+l+'</div><div class="v">'+v+'</div><div class="s">'+sub+'</div></div>'; }
-  var take=t.net+ (t.seasGross-t.seasNi);
+  var take=t.net+ (t.seasGross-t.seasNi-t.seasPaye);
   var perLbl=single?'this month':('across '+t.n+' months');
   return '<div class="pr-kpis">'
       +kpi('Wage bill (gross)', wkMoney(t.gross+t.seasGross), t.rows.length+' permanent'+(t.seasGross?' + seasonal':''))
       +kpi('Take-home paid', wkMoney(take), 'after NI, PAYE &amp; deductions')
-      +kpi('Cost to you', wkMoney(cost), 'wages plus employer NI')
+      +kpi('Cost to you', wkMoney(cost), 'wages, employer NI and pension')
       +kpi('To pay HMRC', wkMoney(hmrcTot), perLbl)
     +'</div>'
     +'<div class="wk-card"><div class="pr-h3">Where the wages went</div><div class="pr-sub">'+wkE(t.label)+(single?'':(' \u00b7 '+t.n+' months'))+'</div><div class="pr-flow">'
       +'<div class="r"><span>Gross wages</span><span>'+wkMoney(t.gross+t.seasGross)+'</span></div>'
       +'<div class="r"><span class="pr-neg">\u2212 Employee National Insurance</span><span class="pr-neg">\u2212 '+wkMoney(t.ni+t.seasNi)+'</span></div>'
-      +(t.paye?'<div class="r"><span class="pr-neg">\u2212 PAYE</span><span class="pr-neg">\u2212 '+wkMoney(t.paye)+'</span></div>':'')
+      +(payeAll?'<div class="r"><span class="pr-neg">\u2212 PAYE</span><span class="pr-neg">\u2212 '+wkMoney(payeAll)+'</span></div>':'')
       +(t.adv?'<div class="r"><span class="pr-neg">\u2212 Advances repaid</span><span class="pr-neg">\u2212 '+wkMoney(t.adv)+'</span></div>':'')
       +(t.sav?'<div class="r"><span class="pr-neg">\u2212 Workplace savings</span><span class="pr-neg">\u2212 '+wkMoney(t.sav)+'</span></div>':'')
       +'<div class="r tot"><span>Take-home pay</span><span>'+wkMoney(take)+'</span></div>'
-    +'</div><div style="font-size:11.5px;color:var(--t3);margin-top:12px;background:var(--gb);border-radius:9px;padding:10px 12px;line-height:1.5">Employee NI comes out of the wage. What the farm pays <i>on top</i> is employer NI, <b>'+wkMoney(er.raw)+'</b>'+(er.relief>0?(' \u2014 of which <b>'+wkMoney(er.relief)+'</b> is covered by the Employment Allowance'):'')+', so the full cost to the farm is <b>'+wkMoney(cost)+'</b> \u2014 the figure on your expenses.</div></div>'
+    +'</div><div style="font-size:11.5px;color:var(--t3);margin-top:12px;background:var(--gb);border-radius:9px;padding:10px 12px;line-height:1.5">Employee NI comes out of the wage. What the farm pays <i>on top</i> is employer NI, <b>'+wkMoney(er.raw)+'</b>'+(er.relief>0?(' \u2014 of which <b>'+wkMoney(er.relief)+'</b> is covered by the Employment Allowance'):'')+(t.erPen?(', plus <b>'+wkMoney(t.erPen)+'</b> of employer pension'):'')+', so the full cost to the farm is <b>'+wkMoney(cost)+'</b> \u2014 the figure on your expenses.</div></div>'
     +'<div class="wk-card pr-hmrc"><div class="pr-h3">'+(single?'What to pay over this month':'What to pay over \u2014 period total')+'</div><div class="pr-sub">'+(single?'The Full Payment Submission figures':('Across '+t.n+' months \u2014 filed as '+t.n+' monthly Full Payment Submissions'))+'</div><div class="pr-flow">'
-      +'<div class="r"><span>PAYE</span><span>'+wkMoney(t.paye)+'</span></div>'
+      +'<div class="r"><span>PAYE</span><span>'+wkMoney(payeAll)+'</span></div>'
       +'<div class="r"><span>Employee National Insurance</span><span>'+wkMoney(eeNI)+'</span></div>'
       +'<div class="r"><span>Employer National Insurance'+(er.relief>0?' <span class="pr-pill na">'+wkMoney(er.relief)+' covered by the Employment Allowance</span>':'')+'</span><span>'+wkMoney(er.payable)+'</span></div>'
       +'<div class="r tot"><span>Total to HMRC</span><span>'+wkMoney(hmrcTot)+'</span></div>'
     +'</div><div style="font-size:10.5px;color:rgba(255,255,255,.75);margin-top:10px">'+(single?('Paid to HMRC by the 22nd of the following month.'+(er.covered?' Employer NI is nil this month \u2014 the Employment Allowance covers it.':'')):'Each month files its own Full Payment Submission \u2014 see the HMRC &amp; statutory tab for the per-month breakdown.')+'</div></div>'
-    +'<div class="pr-disc"><b>Not tax advice.</b> Figures come from your pay runs. Employee and employer NI follow the published thresholds; the Employment Allowance is spread evenly across the year, so a single month is an estimate spread from the whole year, not an RTI submission.</div>';
+    +'<div class="pr-disc"><b>Not tax advice.</b> Figures come from your pay runs. Employee and employer NI follow the published thresholds; the Employment Allowance comes off as the bill arises, so it covers the early months in full and runs out later in the year. Figures are a working estimate, not an RTI submission.</div>';
 }
 
 function wkPRRegister(){
@@ -25137,10 +25184,10 @@ function wkPRRegister(){
       return '<tr><td>'+wkE(w.name)+wkActChip(w)+'</td><td><input type="number" class="pr-seas-in" value="'+(days||'')+'" placeholder="0" onchange="wkPRSeasSet(\''+w.id+'\',this.value)"> days</td><td>'+_curSym()+wkSeasDayRate(w)+(w.basis==='hour'?('<div style="font-size:9px;color:var(--t4)">'+_curSym()+(w.amt||0)+'/hr</div>'):'')+'</td><td>'+wkMoney(g)+'</td><td>'+(u?u.toFixed(2):'\u2014')+(days>0?(' <button onclick="wkSeasSlipInModal(\''+w.id+'\')" style="border:1.5px solid var(--br2);background:#fff;color:var(--gd);border-radius:7px;padding:3px 7px;font-size:9.5px;font-weight:800;font-family:inherit;cursor:pointer;white-space:nowrap">Slip</button>'):'')+'</td></tr>'; }).join('');
     seasBlock='<div class="wk-card"><div class="pr-h3">Seasonal workers <span class="pr-pill tech">paid per day</span></div><div class="pr-sub">Enter days worked in '+wkE(label)+'</div><div class="pr-wrap"><table class="pr-tbl"><thead><tr><th>Worker</th><th>Days</th><th>Rate</th><th>Gross</th><th>NI</th></tr></thead><tbody>'+srs+'<tr class="tot"><td>Seasonal total</td><td></td><td></td><td>'+wkMoney(sg)+'</td><td>'+(su?su.toFixed(2):'0.00')+'</td></tr></tbody></table></div><div style="font-size:10px;color:var(--t4);margin-top:9px;line-height:1.5">Kept separate because casual pay is worked out per day, with holiday pay rolled up. NI is judged on earnings in the pay period, not on hours \u2014 there is no hours-based exemption.</div>'+wkSeasActBox()+wkSeasPostRow(label)+'</div>';
   }
-  return '<div class="wk-card"><div class="pr-h3">Payroll register \u2014 permanent <span class="pr-pill tech">monthly</span></div><div class="pr-sub">'+wkE(label)+' \u00b7 HMRC-standard columns \u00b7 tap to enter PAYE yourself</div>'
+  return '<div class="wk-card"><div class="pr-h3">Payroll register \u2014 permanent <span class="pr-pill tech">monthly</span></div><div class="pr-sub">'+wkE(label)+' \u00b7 HMRC-standard columns \u00b7 PAYE from each tax code, editable</div>'
     +'<div class="pr-wrap"><table class="pr-tbl"><thead><tr><th>Employee</th><th>Gross</th><th>Employee NI</th><th>PAYE</th><th>Other</th><th>Net</th></tr></thead><tbody>'+trs+foot+'</tbody></table></div>'
     + editBox
-    +'<div style="font-size:10px;color:var(--t4);margin-top:10px;line-height:1.5"><b>PAYE is yours to enter.</b> Below-threshold workers stay at \u00a30; anyone flagged \u26a0 gets an \u201center\u201d to fill in. Nothing is auto-calculated.</div></div>'
+    +'<div style="font-size:10px;color:var(--t4);margin-top:10px;line-height:1.5"><b>PAYE is worked out from each worker\u2019s tax code.</b> Every figure is editable \u2014 enter HMRC\u2019s own and yours wins from then on. Workers under the threshold stay at \u00a30.</div></div>'
     + seasBlock;
 }
 function wkPRPayeEdit(wid){ ST_WORK.payRepTab='reg'; prPayeEdit=wid; wkPRRender(); }
@@ -25153,13 +25200,14 @@ function wkPRStatutory(){
   var empLiabilityCard='<div class="wk-card"><div class="pr-h3">Wages declared to your insurer <span class="pr-pill tech">Employers\u2019 liability insurance</span></div><div class="pr-sub">Total wages for your annual wage declaration</div><div class="pr-flow"><div class="r"><span>Earnings this tax year ('+wkE(ty.label)+')</span><span>'+wkMoney(empLiability)+'</span></div><div class="r tot"><span>Total wageroll to declare</span><span>'+wkMoney(empLiability)+'</span></div></div><div style="font-size:10px;color:var(--t4);margin-top:9px">Your insurer sets the wage bands \u2014 there is no statutory cap. Employers\u2019 liability cover is compulsory (Employers\u2019 Liability (Compulsory Insurance) Act 1969) and runs to your policy anniversary, not a fixed date.</div></div>';
   if(!single){
     var rows=wkPayRows();
-    var blocks=labels.map(function(L){ var paye=0,eeNI=0; rows.forEach(function(r){ paye+=wkPayeFor(L,r.w.id); eeNI+=r.ni; }); var su=0; wkSeasList().forEach(function(w){ var days=wkSeasDaysFor(L,w.id); if(days>0){ su+=wkSeasNI(wkSeasGross(w,days),days,w);} }); eeNI+=su; var er=wkErNIMonth(L); var tot=paye+eeNI+er.payable;
+    var _eaLeftB=(typeof wkEaRemaining==='function')?wkEaRemaining():0;
+    var blocks=labels.map(function(L){ var paye=0,eeNI=0; rows.forEach(function(r){ paye+=wkPayeFor(L,r.w.id); eeNI+=r.ni; }); var su=0; wkSeasList().forEach(function(w){ var days=wkSeasDaysFor(L,w.id); if(days>0){ su+=wkSeasNI(wkSeasGross(w,days),days,w); paye+=wkPayeFor(L,w.id); } }); eeNI+=su; var er=wkErNIMonth(L,_eaLeftB); _eaLeftB=Math.max(0,_eaLeftB-er.relief); var tot=paye+eeNI+er.payable;
       return '<div class="wk-card" style="padding:12px 15px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><div style="font-size:12.5px;font-weight:800">Full Payment Submission \u00b7 '+wkE(L)+'</div><span class="pr-pill tech">file separately</span></div><div class="pr-flow"><div class="r"><span>PAYE</span><span>'+wkMoney(paye)+'</span></div><div class="r"><span>Employee National Insurance</span><span>'+wkMoney(eeNI)+'</span></div><div class="r"><span>Employer National Insurance'+(er.relief>0?(' <span class="pr-pill na">'+wkMoney(er.relief)+' allowance</span>'):'')+'</span><span>'+wkMoney(er.payable)+'</span></div><div class="r tot"><span>Total</span><span>'+wkMoney(tot)+'</span></div></div></div>'; }).join('');
     return '<div class="wk-card pr-hmrc" style="padding:13px 15px"><div class="pr-h3">One Full Payment Submission per month</div><div class="pr-sub">'+labels.length+' monthly returns \u2014 they don\u2019t combine. Each is due on or before the day you pay your workers.</div></div>'
       + blocks + empLiabilityCard;
   }
   var t=wkPRMonthTotals();
-  var er=wkErNIMonth(t.label); var eeNI=t.ni+t.seasNi; var hmrcTot=t.paye+eeNI+er.payable;
+  var er=wkErNIMonth(t.label); var eeNI=t.ni+t.seasNi; var hmrcTot=t.paye+t.seasPaye+eeNI+er.payable;
   /* Per-worker NI. This was the UIF declaration wearing an NI label: it charged
      min(pay, ceiling) x 2%, which is South Africa's 1% employee plus 1% employer,
      and it passed the ANNUAL upper earnings limit in as a MONTHLY cap, so nothing
@@ -25177,7 +25225,7 @@ function wkPRStatutory(){
   var pt=((STATUTORY.niPrimaryThresh&&STATUTORY.niPrimaryThresh.value)||12570),
       sec=((STATUTORY._ref&&STATUTORY._ref.employerNiThresh&&STATUTORY._ref.employerNiThresh.value)||5000);
   return '<div class="wk-card"><div class="pr-h3">Monthly declaration <span class="pr-pill tech">Full Payment Submission</span></div><div class="pr-sub">What gets declared to HMRC \u00b7 '+wkE(t.label)+'</div><div class="pr-flow">'
-      +'<div class="r"><span>PAYE</span><span>'+wkMoney(t.paye)+'</span></div>'
+      +'<div class="r"><span>PAYE</span><span>'+wkMoney(t.paye+t.seasPaye)+'</span></div>'
       +'<div class="r"><span>Employee National Insurance</span><span>'+wkMoney(eeNI)+'</span></div>'
       +'<div class="r"><span>Employer National Insurance '+(er.relief>0?('<span class="pr-pill na">'+wkMoney(er.relief)+' covered by the Employment Allowance</span>'):'')+'</span><span>'+wkMoney(er.payable)+'</span></div>'
       +'<div class="r tot"><span>Total payable</span><span>'+wkMoney(hmrcTot)+'</span></div>'
@@ -25190,8 +25238,16 @@ function wkPRTaxYear(){
   var ty=wkTaxYear();
   var rows=wkList().filter(function(w){return w.basis==='month';}).map(function(w){
     var m=wkMonthsInTY(w); var gross=(w.amt||0)*m; var ni=wkNI(w.amt)*m;
-    // sum PAYE entered across this tax year's month labels
-    var paye=0; var pm=ST_WORK.paye||{}; for(var k in pm){ if(pm.hasOwnProperty(k)&&pm[k][w.id]) paye+=pm[k][w.id]; }
+    /* The comment said "across this tax year's month labels" and the loop walked EVERY
+       label ever stored, so a figure entered last year was added to this year's total.
+       It also read only the typed store, which is why a farmer on 18,900 was told they
+       had no PAYE. Both fixed: this tax year's months only, computed where not typed. */
+    var paye=0;
+    for(var _i=0;_i<m;_i++){
+      var _d=new Date(ty.sy, 3, 6); _d.setMonth(_d.getMonth()+_i);
+      paye+=wkPayeFor(wkDateToLabel(_d), w.id);
+    }
+    paye=Math.round(paye*100)/100;
     var net=gross-ni-paye;
     var cert=(paye>0)?'P60':'no PAYE this year';
     return { name:w.name, gross:gross, ni:ni, paye:paye, net:net, cert:cert };
@@ -25200,7 +25256,7 @@ function wkPRTaxYear(){
   var trs=rows.map(function(r){ tg+=r.gross; tu+=r.ni; tp+=r.paye; return '<tr><td>'+wkE(r.name)+'</td><td>'+wkMoney(r.gross)+'</td><td>'+Math.round(r.ni)+'</td><td>'+(r.paye?wkMoney(r.paye):'0')+'</td><td>'+r.cert+'</td></tr>'; }).join('');
   return '<div class="wk-card"><div class="pr-h3">Tax-year totals <span class="pr-pill tech">P60</span></div><div class="pr-sub">'+wkE(ty.label)+' \u00b7 6 Apr '+ty.sy+' \u2013 5 Apr '+(ty.sy+1)+' \u00b7 to date</div>'
     +'<div class="pr-wrap"><table class="pr-tbl"><thead><tr><th>Employee</th><th>Gross</th><th>NI</th><th>PAYE</th><th>Cert.</th></tr></thead><tbody>'+trs+'<tr class="tot"><td>Totals</td><td>'+wkMoney(tg)+'</td><td>'+Math.round(tu)+'</td><td>'+wkMoney(tp)+'</td><td>'+rows.length+'</td></tr></tbody></table></div>'
-    +'<div style="font-size:10px;color:var(--t4);margin-top:10px;line-height:1.5">No PAYE this year = earnings below the threshold. P60 = PAYE was deducted. Year-to-date, based on current monthly pay; reconciled at P60 / P11D (interim Aug &amp; annual).</div></div>'
+    +'<div style="font-size:10px;color:var(--t4);margin-top:10px;line-height:1.5">No PAYE this year = earnings below the tax-free threshold for the year so far. P60 = PAYE was deducted. Year-to-date, based on current monthly pay; reconciled at P60 / P11D (interim Aug &amp; annual).</div></div>'
     +'<div class="pr-disc"><b>Not tax advice.</b> Figures span the tax year (6 April \u2013 5 April). PAYE and certificate types should be confirmed with your accountant or on HMRC online services.</div>';
 }
 
