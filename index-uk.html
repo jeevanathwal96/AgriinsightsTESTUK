@@ -23683,6 +23683,36 @@ function wkEmployerNI(monthlyGross){
   var over=Math.max(0, g-(ST_/12));
   return Math.round(over*rate*100)/100;
 }
+/* How much of the Employment Allowance this farm has already used this TAX YEAR.
+   HMRC does not spread the 10,500 over twelve months - it comes off the employer NI
+   bill as that bill arises, so a farm with a 1,292 monthly bill pays nothing at all
+   until about month eight and then pays in full. Spreading it as a twelfth understated
+   the wage cost early in the year and overstated it late.
+
+   Runs posted before this changed carry no eaUsed, so they are counted at the twelfth
+   the app granted them at the time. That keeps the running total continuous without
+   rewriting a transaction the farmer has already seen and reconciled.
+
+   The payroll TAX year (6 April) is the right window, never fyOf() - a limited company
+   has its own accounting year and the allowance does not follow it. */
+function wkEaCap(){
+  return (STATUTORY._ref&&STATUTORY._ref.employmentAllow&&STATUTORY._ref.employmentAllow.value)||10500;
+}
+function wkEaUsedThisTaxYear(){
+  var cap=wkEaCap(), used=0, start=null;
+  try{ start=(typeof wkTaxYear==='function')?wkTaxYear().start:null; }catch(e){}
+  ((typeof ST_WORK!=='undefined'&&ST_WORK&&ST_WORK.payRuns)||[]).forEach(function(r){
+    if(!r) return;
+    if(start){ var d=(typeof parseDate==='function')?parseDate(r.date):null;
+      if(!d) return;
+      if(new Date(d.y,d.m,d.d||1) < start) return; }
+    used += (r.eaUsed!=null) ? (r.eaUsed||0) : Math.round(cap/12);
+  });
+  return Math.min(cap, Math.round(used*100)/100);
+}
+function wkEaRemaining(){ return Math.max(0, wkEaCap()-wkEaUsedThisTaxYear()); }
+window.wkEaCap=wkEaCap; window.wkEaUsedThisTaxYear=wkEaUsedThisTaxYear; window.wkEaRemaining=wkEaRemaining;
+
 function wkEmploymentAllowance(annualEmployerNI){
   var cap=(STATUTORY._ref&&STATUTORY._ref.employmentAllow&&STATUTORY._ref.employmentAllow.value)||10500;
   var relief=Math.min(Math.max(0,annualEmployerNI||0), cap);
@@ -23873,11 +23903,22 @@ function ukPayrollWorker(w, opts){
    which would relieve the same 10,500 several times over. */
 function ukPayrollRun(label, workers){
   var list=workers||((typeof wkList==='function')?wkList().filter(function(w){return w.basis==='month';}):[]);
-  var rows=list.map(function(w){ return ukPayrollWorker(w); });
+  /* Gross is base pay PLUS any bonus and Sunday or bank-holiday premium for the month.
+     Taking w.amt alone left this card blind to both: a 500 bonus moved every payslip
+     and moved nothing here, so employer NI and the pension were charged on base pay and
+     the farm was told a pay run cost less than the payslips it had just issued.
+     wkPayRows already owns those rules, so it is the one place gross is decided. */
+  var _grossBy={};
+  try{ if(typeof wkPayRows==='function'){ wkPayRows(label).forEach(function(r){ if(r&&r.w) _grossBy[r.w.id]=r.gross; }); } }catch(e){}
+  var rows=list.map(function(w){
+    var g=_grossBy[w.id];
+    return (g!=null) ? ukPayrollWorker(w,{gross:g}) : ukPayrollWorker(w);
+  });
   var t=function(k){ return Math.round(rows.reduce(function(a,r){ return a+(r[k]||0); },0)*100)/100; };
   var grossT=t('gross'), erNIT=t('employerNI'), erPenT=t('employerPension');
   var ea=wkEmploymentAllowance(erNIT*12);           // the allowance is annual
-  var eaThisPeriod=Math.round(Math.min(erNIT, ea.relief/12)*100)/100;
+  /* Taken against what is left of the year's allowance, not as a flat twelfth. */
+  var eaThisPeriod=Math.round(Math.min(erNIT, (typeof wkEaRemaining==='function')?wkEaRemaining():(ea.relief/12))*100)/100;
   return {
     label:label||'', rows:rows, count:rows.length,
     gross:grossT, paye:t('paye'), employeeNI:t('employeeNI'), employeePension:t('employeePension'),
@@ -23970,8 +24011,8 @@ function renderWkPayroll(){ wkSync();
   var _ukEmployerCard = '';
   if (ukRun && ukRun.count) {
     var eaLine = (ukRun.employmentAllowance.thisPeriod > 0)
-      ? '<div class="wk-srow"><span>Less Employment Allowance <span style="color:var(--t4)">\u00b7 this month\u2019s share</span></span><span class="neg">\u2212'+wkMoney2(ukRun.employmentAllowance.thisPeriod)+'</span></div>'
-      : '<div class="wk-srow"><span>Employment Allowance</span><span style="color:var(--t4)">already used for the year</span></div>';
+      ? '<div class="wk-srow"><span>Less Employment Allowance <span style="color:var(--t4)">\u00b7 '+wkMoney2(wkEaRemaining())+' left this year</span></span><span class="neg">\u2212'+wkMoney2(ukRun.employmentAllowance.thisPeriod)+'</span></div>'
+      : '<div class="wk-srow"><span>Employment Allowance</span><span style="color:var(--t4)">all '+wkMoney2(wkEaCap())+' used for the year</span></div>';
     var floorWarn = ukRun.belowFloor.length
       ? '<div style="font-size:11px;color:var(--rd);font-weight:700;margin-top:10px">\u26a0 '+ukRun.belowFloor.length+' worker'+(ukRun.belowFloor.length===1?' is':'s are')+' under the wage floor for '+wkE(ukRun.rows[0].floor?ukRun.rows[0].floor.region:'your country')+' \u2014 open their payslip to see by how much.</div>'
       : '<div style="font-size:11px;color:var(--gm);font-weight:700;margin-top:10px">\u2713 Everyone is at or above the wage floor that applies where you farm.</div>';
@@ -24041,14 +24082,30 @@ function wkPostPayRun(){
     if(w.fund && w.fund.on && w.fund.where==='hold' && r.savings>0){ w.fund.balance=(w.fund.balance||0)+r.savings; wkLedgerAdd(w,'savings-in',r.savings,label); rec.savings=r.savings; }
     if(rec.advRepay||rec.savings) applied.push(rec);
   });
-  var cost=Math.round((totGross+totNI)*100)/100;   // employment cost = gross + employer NI (1%)
+  /* What leaves the farm is gross + EMPLOYER NI + the employer pension, less whatever
+     Employment Allowance is left. This posted gross + EMPLOYEE NI: NI that is already
+     inside gross, added a second time, while the employer's own two costs were dropped.
+     The card directly above the button had the right number all along - it just was not
+     the number the button used, so the farm's books disagreed with its own screen by
+     175.80 a run. One function owns the figure now, and both paths read it. */
+  var _run=(typeof ukPayrollRun==='function') ? ukPayrollRun(label, null) : null;
+  var cost = _run ? _run.costToEmploy
+                  : Math.round((totGross + rows.reduce(function(a,r){ return a+(r.employerNI||0)+(r.employerPension||0); },0))*100)/100;
+  var _eaUsed = _run ? (_run.employmentAllowance.thisPeriod||0) : 0;
+  var _erNI   = _run ? _run.employerNI : 0;
   var runId='pr'+Date.now();
   if(typeof ST!=='undefined' && ST.txns){
     ST.txns.unshift({ date:wkTodayStr(), desc:'Wages \u2014 '+label, cat:'Labour & Wages', type:'expense', amt:cost, method:'Bank', source:'Payroll', payRunId:runId });
     var _wkPRTx=ST.txns[0];
     try{ if(window.AI && AI.farm && AI.farm.active()){ txnWriteThrough(_wkPRTx, {date:wkTodayStr(),amt:cost,cat:'Labour & Wages',type:'expense',desc:'Wages \u2014 '+label,method:'Bank',source:'Payroll',ent:'payrun:'+runId}); } }catch(e){}
   }
-  ST_WORK.payRuns.unshift({ id:runId, label:label, kind:rows.length+' permanent', net:Math.round(totNet), gross:Math.round(totGross), ni:Math.round(totNI*2), date:wkTodayStr(), applied:applied });
+  /* ni was employee NI DOUBLED - the South African model where employer and employee
+     each paid 1%. UK employer NI is 15% over 5,000 against the employee's 8%; the two
+     sides are not symmetric and are stored separately now. eaUsed is what makes the
+     allowance run down correctly for the rest of the year. */
+  ST_WORK.payRuns.unshift({ id:runId, label:label, kind:rows.length+' permanent', net:Math.round(totNet), gross:Math.round(totGross),
+    employeeNI:Math.round(totNI*100)/100, employerNI:Math.round(_erNI*100)/100, eaUsed:Math.round(_eaUsed*100)/100,
+    ni:Math.round((totNI+Math.max(0,_erNI-_eaUsed))*100)/100, date:wkTodayStr(), applied:applied });
   try { if(typeof dataChanged==='function') dataChanged('transaction'); } catch(e){}
   if(typeof saveState==='function') saveState();
   if(typeof toast==='function') toast('Posted '+wkMoney(cost)+' to Labour & Wages.','success');
