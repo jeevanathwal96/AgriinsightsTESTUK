@@ -1088,8 +1088,37 @@ label{font-size:13px;color:var(--t3);font-weight:500;display:block;margin-bottom
 .pf-taphint{font-size:10.5px;color:var(--t4);text-align:center;margin:2px 0 6px}
 .pf-drill{margin:0 0 6px}
 .pf-drill:empty{margin:0}
-.pf-sub{background:var(--br2);border-radius:12px;padding:13px 14px;margin:10px 0}
-.pf-subt{font-size:12px;font-weight:800;color:var(--t1);margin-bottom:11px}
+/* Detail sections now carry the same card the rest of the app is built from — white
+   ground, hairline border, the app's radius — instead of a grey inset block, and the
+   heading is a small uppercase label rather than an emoji plus bold text. The emoji are
+   dropped in markup, not hidden here, so screen readers do not read them either. */
+.pf-sub{background:var(--wh);border:1px solid var(--br);border-radius:14px;padding:15px 17px;margin:11px 0;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.pf-subt{font-size:10px;font-weight:800;color:var(--t4);letter-spacing:.09em;text-transform:uppercase;margin-bottom:11px}
+/* Hero: the enterprise, its margin, and the one number that decides it — what a unit
+   costs to make against what that unit brings in. It leads the pane because it is the
+   figure a farmer acts on; break-even used to sit at the very bottom of the page. */
+.pf-hero{background:var(--wh);border:1px solid var(--br);border-radius:14px;padding:15px 17px;margin:11px 0;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.pf-heroh{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap}
+.pf-heroh .nm{font-size:18px;font-weight:800;letter-spacing:-.01em;color:var(--t1)}
+.pf-heroh .meta{font-size:11.5px;color:var(--t3);margin-top:1px}
+.pf-heroh .rt{text-align:right}
+.pf-heroh .cap{font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--t4);margin-bottom:3px}
+.pf-heroh .big{font-size:25px;font-weight:800;line-height:1;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.pf-rul{margin-top:12px}
+.pf-rultk{position:relative;height:30px;border-radius:9px;background:var(--br2);overflow:hidden}
+.pf-rulc{position:absolute;left:0;top:0;bottom:0;background:#FBE9E7}
+.pf-rulshort{position:absolute;left:0;top:0;bottom:0;background:#F3C9C3}
+.pf-rulcov{position:absolute;top:0;bottom:0;background:#C7CFD6}
+.pf-rulm{position:absolute;top:0;bottom:0;background:var(--gp)}
+.pf-rulmk{position:absolute;top:-3px;bottom:-3px;width:2px;background:#C0392B;border-radius:1px;z-index:3}
+.pf-rull{display:flex;justify-content:space-between;gap:10px;margin-top:6px;font-size:10.5px}
+.pf-rull b{display:block;font-size:12.5px;font-weight:800;color:var(--t1);font-variant-numeric:tabular-nums}
+.pf-rull span{color:var(--t4);font-weight:700;font-size:9.5px;text-transform:uppercase;letter-spacing:.04em}
+.pf-rull .hi{text-align:right}
+.pf-rulsay{margin-top:9px;font-size:12.3px;line-height:1.55;color:var(--t2)}
+.pf-rulsay b{font-weight:800;color:var(--t1)}
+.pf-vpill{display:inline-block;font-size:8.5px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;padding:1px 6px;border-radius:5px;margin-left:4px}
+.pf-vpill.bad{background:#FBE9E7;color:#C0392B}.pf-vpill.ok{background:var(--gp);color:var(--gd)}
 .pf-be{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:2px}
 .pf-be-t{flex:1;min-width:140px;background:var(--wh);border:1px solid var(--br);border-radius:11px;padding:10px 12px}
 .pf-be-t .bel{font-size:11px;color:var(--t3)}
@@ -1099,8 +1128,19 @@ label{font-size:13px;color:var(--t3);font-weight:500;display:block;margin-bottom
 .pf-mk{display:flex;align-items:center;gap:9px;margin-bottom:7px;font-size:11.5px}
 .pf-mk .mkn{width:150px;flex:none;color:var(--t2);font-weight:600}
 .pf-mk .mktk{flex:1;background:#e6e9ec;border-radius:6px;height:13px;overflow:hidden}
-.pf-mk .mkfl{height:100%;border-radius:6px;background:#40916C}
-.pf-mk .mkv{width:38px;text-align:right;font-weight:700;color:var(--t2);flex:none}
+/* Cost bars are slate-blue rather than the margin green: reserving green for money in and
+   a positive margin keeps one colour language, and a losing herd was showing its cost
+   lines in the profit colour, which reads as reassurance on the screen that should not
+   reassure.
+   But a single flat grey for all four was worse — it reads as disabled, and it threw away
+   the card's actual point, which is WHICH line is the big one. Two tones of the same hue:
+   the largest line full strength, the rest stepped back. Amber still overrides for a line
+   outside its reference band. */
+.pf-mk .mkfl{height:100%;border-radius:6px;background:#A8B4C0}
+.pf-mk .mkfl.top{background:#5A6E85}
+/* 38px could not hold "66% / 56%" and white-space:normal let it wrap, so every row in the
+   spend-shape card was two lines tall with the figure broken across them. */
+.pf-mk .mkv{min-width:38px;text-align:right;font-weight:700;color:var(--t2);flex:none;white-space:nowrap;font-variant-numeric:tabular-nums}
 .pf-fld{margin-bottom:9px}
 .pf-fldh{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px;gap:8px}
 .pf-fldh .fn{font-size:12px;font-weight:700;color:var(--t1)} .pf-fldh .fn small{color:var(--t4);font-weight:600;font-size:10px}
@@ -7403,6 +7443,35 @@ body.no-livestock .tours-menu-item.ent-livestock{display:none}
         .ae-coop-impact{font-size:11.5px;color:var(--t2);line-height:1.5;margin-top:10px;padding-top:10px;border-top:1px solid var(--br)}
         .ae-coop-impact b{color:var(--gd)}
        .opf-wrap{margin-bottom:20px}
+       /* Livestock drill-down: benchmark track, spend shape, herd composition. */
+       .pf-lsbmk{position:relative;height:24px;border-radius:8px;background:var(--bg);overflow:hidden;margin-top:2px}
+       .pf-lsyou{position:absolute;top:4px;bottom:4px;border-radius:5px;background:var(--gm)}
+       .pf-lsyou.neg{background:#C0392B}
+       .pf-lsavg{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--t1);z-index:3}
+       .pf-lsz{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--t4);z-index:2}
+       .pf-lsband{position:absolute;top:0;bottom:0;background:var(--gb);border-left:1px dashed var(--t4);border-right:1px dashed var(--t4)}
+       .pf-lslbl{display:flex;justify-content:space-between;gap:10px;margin-top:6px;font-size:11px;color:var(--t3)}
+       .pf-lslbl b{font-size:12.5px;font-weight:800;color:var(--t1);font-variant-numeric:tabular-nums}
+       .pf-lslbl small{color:var(--t4);font-weight:700;font-size:9.5px;text-transform:uppercase;letter-spacing:.04em}
+       .pf-mk .mkfl.warn{background:#E07B2A}
+       .pf-lsclsw{display:grid;grid-template-columns:repeat(auto-fit,minmax(104px,1fr));gap:8px;margin-top:2px}
+       .pf-lscls{border:1px solid var(--br);border-radius:10px;padding:8px 10px;background:var(--bg)}
+       .pf-lscls .n{font-size:11.5px;font-weight:800;color:var(--t1)}
+       .pf-lscls .m{font-size:10px;color:var(--t4);margin-top:1px}
+       .pf-lscls .v{font-size:14px;font-weight:800;margin-top:4px;font-variant-numeric:tabular-nums}
+       /* Maturity: age chip on the block row, and the explainer line under the list. */
+       .opf-mat{display:inline-block;font-size:8.5px;line-height:1.45;font-weight:800;text-transform:uppercase;letter-spacing:.04em;padding:0 5px;border-radius:4px;margin-left:6px;vertical-align:1px;white-space:nowrap}
+       .opf-mat.young{background:#FFF3E0;color:#9A3412}
+       .opf-mat.full{background:#E8F2DC;color:#3F6212}
+       .opf-mat.old{background:#E4EEF7;color:#1E4E7A}
+       .opf-matnote{font-size:11px;color:var(--t3);line-height:1.5;padding:8px 14px 10px;border-top:1px dashed var(--br)}
+       .opf-matnote b{color:var(--t2);font-weight:700}
+       .opf-led{display:flex;align-items:center;gap:8px;border-top:1px solid var(--br2);padding:8px 14px 9px;font-size:12px}
+       .opf-led span{display:flex;flex-direction:column;gap:1px;min-width:0}
+       .opf-led i{font-style:normal;font-size:8.5px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--t4);white-space:nowrap}
+       .opf-led b{font-size:13px;font-weight:800;color:var(--t1);font-variant-numeric:tabular-nums;white-space:nowrap}
+       .opf-led b.neg{color:var(--rd)} .opf-led b.tot{color:var(--gm)}
+       .opf-led .op{align-self:center;color:var(--t4);font-weight:800;font-size:13px;margin-top:8px}
 .opf-h{font-size:14px;font-weight:800;color:var(--t2);margin:0 2px 10px}
 .opf-card{background:#fff;border:1px solid var(--br);border-radius:14px;margin-bottom:10px;overflow:hidden}
 .opf-head{display:flex;align-items:center;gap:11px;padding:13px 14px;cursor:pointer}
@@ -13404,21 +13473,94 @@ function _benchSrcHTML(m){
 function _pfKindLabel(k){ k=(k||'other'); return k.charAt(0).toUpperCase()+k.slice(1); }
 function _pfBenchCropMeta(c){ return _benchResolve(BENCH.crop[c.crop]); }
 function _pfBenchCrop(c){ return _pfBenchCropMeta(c).v; }
+/* SPECIES BEFORE THE DAIRY QUALIFIER, for the same reason _pfLsu above tests in that
+   order. "Dairy goats" matched the dairy branch and every goat herd was benchmarked
+   against BENCH.live.dairy — a DAIRY COW figure of £1,780/LU — while BENCH.live.goat,
+   whose own source line reads "UK dairy goat, indicative", was unreachable. The demo
+   farm's 24 goats were being told they were £871/LU behind a herd of Holsteins.
+   Anything still reaching the dairy test after this is bovine, which is what it means. */
 function _pfLiveKey(l){ var s=((l.type||'')+' '+(l.name||'')).toLowerCase();
-  if(s.indexOf('dairy')>=0) return 'dairy';
-  if(s.indexOf('cattle')>=0||s.indexOf('beef')>=0) return 'cattle';
   if(s.indexOf('goat')>=0) return 'goat';
-  if(s.indexOf('pig')>=0) return 'pig';
+  if(s.indexOf('pig')>=0||s.indexOf('sow')>=0) return 'pig';
   if(s.indexOf('wool')>=0||s.indexOf('texel')>=0) return 'sheepWool';
   if(s.indexOf('mutton')>=0||s.indexOf('cull ewe')>=0) return 'sheepMutton';
-  if(s.indexOf('sheep')>=0||s.indexOf('lamb')>=0) return 'sheep';
+  if(s.indexOf('sheep')>=0||s.indexOf('lamb')>=0||s.indexOf('ewe')>=0) return 'sheep';
+  if(s.indexOf('dairy')>=0) return 'dairy';
+  if(s.indexOf('cattle')>=0||s.indexOf('beef')>=0) return 'cattle';
   return 'other'; }
 /* BENCH.live has an 'other' entry and _pfLiveKey falls back to it, so this resolves for every
    herd type today — the old flat 5000/LSU fallback was unreachable. Dropped it anyway rather
    than leave a magic number waiting to surface if that 'other' entry is ever removed. */
+/* Reference cost SHAPE, not cost level. AHDB Farmbench cost of production benchmarks,
+   MIDDLE 50% — the average performer, not the top quartile, because a farmer comparing
+   the shape of their spend against the best 25% is being shown a target dressed up as a
+   norm.
+
+   Figures are the published pounds, not percentages, so the shares can be recomputed
+   over exactly the lines the farm itself carries. That is the whole reason this is not
+   a fixed 35/11/54: UK convention puts LABOUR outside the gross margin, most farms have
+   tagged none of it to a herd, and a farm reading 0% against a reference 54% would be
+   flagged on every screen for a gap in tagging rather than a fault in the spend.
+   _pfLiveStruct renormalises both sides over the lines both carry.
+
+   Feed & forage is purchased feed plus home-grown forage variable cost plus purchased
+   forage, which is how Farmbench groups them.
+
+   Only the enterprises AHDB actually itemises are here:
+     cattle       suckler herds, 2024/25 (per cow put to the bull)
+     cattleFinish finishing cattle, 2023/24, 97 English farms (per head of output)
+     sheep        breeding flocks, 2024/25 (per ewe put to the ram)
+   DAIRY IS DELIBERATELY ABSENT. AHDB publishes no itemised dairy cost of production —
+   its dairy costings are Kingshay and Promar, which publish margin over purchased feed
+   and the feed cost alone, with no vet or labour line to read. Rather than borrow a beef
+   structure or invent one, a dairy herd gets no reference and this section does not
+   render. Pigs and goats are absent for the same reason. */
+var LS_STRUCT_REF = {
+  cattle:       {feed:120.41, vet:36.77, labour:183.96, unit:'per cow put to the bull',
+                 src:'AHDB Farmbench suckler herd benchmarks 2024/25, middle 50%'},
+  cattleFinish: {feed:116.92, vet:6.97,  labour:75.15,  unit:'per head of output',
+                 src:'AHDB Farmbench finishing cattle benchmarks 2023/24, middle 50%'},
+  sheep:        {feed:17.27,  vet:10.76, labour:24.14,  unit:'per ewe put to the ram',
+                 src:'AHDB Farmbench breeding flock benchmarks 2024/25, middle 50%'}
+};
+/* Which published structure fits this herd, or null when none does. A finishing herd is
+   a different animal from a suckler herd — it buys stores in and sells them on, so its
+   feed bill is most of its cost and its labour a fraction of a suckler's — and the app
+   already knows which it is, so it should not be shown the wrong one. */
+function _pfLiveStructRef(l){
+  var k=_pfLiveKey(l);
+  if(k==='cattle'){
+    var raw=(typeof _pfHerdRaw==='function')?_pfHerdRaw(l):null;
+    if(raw && typeof lvpIsFinish==='function' && lvpIsFinish(raw)) return LS_STRUCT_REF.cattleFinish;
+    return LS_STRUCT_REF.cattle;
+  }
+  if(k==='sheep'||k==='sheepWool'||k==='sheepMutton') return LS_STRUCT_REF.sheep;
+  return null;
+}
+/* The farm's own share of the same lines, and the reference recomputed over that SAME
+   set. A line the farm has none of is dropped from both sides rather than shown as a
+   zero: no tagged labour means labour is unknown here, not free, and comparing an
+   unknown against 54% would read as an alarm. Below two lines there is no shape left
+   to compare, so nothing renders. */
+function _pfLiveStruct(l, bd, ref){
+  if(!bd || !ref) return null;
+  function pick(k){ var r=bd.out.filter(function(x){ return x.k===k; })[0]; return r?r.v:0; }
+  var mine={feed:pick('keep'), vet:pick('vet'), labour:pick('labour')};
+  var keys=['feed','vet','labour'].filter(function(k){ return mine[k]>0 && ref[k]>0; });
+  if(keys.length<2) return null;
+  var mt=0, rt=0;
+  keys.forEach(function(k){ mt+=mine[k]; rt+=ref[k]; });
+  if(mt<=0 || rt<=0) return null;
+  return {partial:(keys.length<3), rows:keys.map(function(k){
+    return {k:k, mine:Math.round(mine[k]/mt*100), ref:Math.round(ref[k]/rt*100)}; })};
+}
 function _pfBenchLiveMeta(l){ return _benchResolve(BENCH.live[_pfLiveKey(l)]); }
 function _pfBenchLive(l){ return _pfBenchLiveMeta(l).v; }
-function _pfHist(cur,key){ var seed=0,i; key=String(key||''); for(i=0;i<key.length;i++) seed+=key.charCodeAt(i); var j=((seed%7)-3)/100; var mult=[0.70,0.83,0.92,1.0], fys=['FY22','FY23','FY24','FY25']; return mult.map(function(m,i){ var f=m+(i<3?j*(3-i):0); return {fy:fys[i], v:Math.round(cur*Math.max(0.4,f))}; }); }
+/* _pfHist() lived here: four "past seasons" generated by scaling the CURRENT figure by a
+   fixed 0.70/0.83/0.92/1.0 ramp. Its two callers both drew it as a bar chart of the farm's
+   own history, which it never was, and both now draw the real benchmark comparison instead.
+   Removed rather than left in place — a function that manufactures a plausible past is the
+   kind of thing that gets wired back into a report. */
 function _pfLandsOf(crop, opts){ var out=[]; var inclPlanned=!!(opts&&opts.includePlanned); (ST_CROP&&ST_CROP.lands||[]).forEach(function(l){ if(l.crop!==crop) return; if(l.stage==='fallow') return; var isPlanned=(l.stage==='planned'); if(isPlanned && !inclPlanned) return; /* Same A1/C1 fix as _pfCropEnts — this drill-down must agree with the summary above it. */
       var price=(typeof cropLandPrice==='function')?cropLandPrice(l):((ST_CROP.prices&&ST_CROP.prices[crop])||0);
       var yld=(typeof cropLandYield==='function')?cropLandYield(l):((l.actualYield!=null?l.actualYield:l.targetYield)||0);
@@ -13429,6 +13571,14 @@ function _pfSlider(id,min,max,step,val,fn){ return '<input type="range" id="'+id
 function _pfDelta(now,base){ var d=now-base; if(Math.abs(d)<1) return '<span class="flat">no change</span>'; var cls=d>0?'up':'dn', a=d>0?'\u25B2':'\u25BC'; return '<span class="'+cls+'">'+a+' '+fmt(Math.abs(d))+' vs now</span>'; }
 
 var PF_TAB='glance'; var PF_WI_SEL={kind:'crop',idx:0};
+var PF_CMP_MODE='total';
+function pfCmpMode(m){ PF_CMP_MODE=m;
+  /* Close every open panel on a measure change. The breakdown is the same money
+     whichever measure is on screen, but leaving it open under a freshly changed
+     figure invites reading one against the other. */
+  PF_CMP_OPEN={};
+  try{ renderProfit(); }catch(e){}
+}
 function pfTab(name){ PF_TAB=name; ['glance','details','whatif'].forEach(function(t){ var p=$('pf-tab-'+t), b=$('pf-tabbtn-'+t); if(p) p.classList.toggle('on',t===name); if(b) b.classList.toggle('on',t===name); }); var c=$('content'); if(c) c.scrollTop=0; }
 function pfGo(kind, idx){ pfTab('details'); pfSelectDetail(kind, idx); }
 /* Toggling re-renders the whole Profit tab, which rebuilds PF_CROPS_SORTED from the same list
@@ -13439,7 +13589,10 @@ function _pfGroups(which){
   var g=[];
   if(PF_CROPS_SORTED.length) g.push(['crop','\uD83C\uDF3E Crops',PF_CROPS_SORTED]);
   if(PF_LIVE_SORTED.length)  g.push(['live','\uD83D\uDC04 Herds',PF_LIVE_SORTED]);
-  if(which==='wi' && PF_ORCH_SORTED.length) g.push(['orch','\uD83C\uDF4A Orchards & veg',PF_ORCH_SORTED]);
+  /* Orchards were in the What-If picker but not this one, so the Details tab carried two
+     navigation models at once: a fruit-type roll-up stacked above a picker the blocks were
+     not part of. Same picker, same layout, all three. */
+  if(PF_ORCH_SORTED.length) g.push(['orch','\uD83C\uDF4A Orchards & veg',PF_ORCH_SORTED]);
   return g;
 }
 function _pfChips(which){
@@ -13478,6 +13631,7 @@ function pfSelectDetail(kind, idx){
   var chip=$('pf-det-chip-'+kind+'-'+idx); if(chip) chip.classList.add('on');
   var body=$('pf-det-body'); if(!body) return;
   if(kind==='crop'){ var c=PF_CROPS_SORTED[idx]; if(c) body.innerHTML=_pfDetailCropHTML(c); }
+  else if(kind==='orch'){ var o=PF_ORCH_SORTED[idx]; if(o) body.innerHTML=_pfDetailOrchHTML(o); }
   else { var l=PF_LIVE_SORTED[idx]; if(l) body.innerHTML=_pfDetailLiveHTML(l); }
 }
 function pfSelectWhatIf(kind, idx){
@@ -13492,56 +13646,182 @@ function pfSelectWhatIf(kind, idx){
 }
 function pfResetWhatIf(){ pfSelectWhatIf(PF_WI_SEL.kind, PF_WI_SEL.idx); }
 
+/* One hero for crops, blocks and herds. Cost per unit against income per unit is the same
+   question in all three cases — what a tonne costs to grow against what a tonne fetches,
+   what a head costs to carry against what a head brings in — so they share a renderer
+   rather than drifting apart. */
+function _pfHeroHTML(o){
+  var over=o.cost>o.inc, span=Math.max(o.cost,o.inc)||1;
+  var costPc=Math.min(100,o.cost/span*100), incPc=Math.min(100,o.inc/span*100);
+  var bar = over
+    /* Below break-even: the bar is the COST, the covered part is neutral and the tail is
+       the loss colour, so the bar reads as a shortfall. Painting the covered 71% green
+       made a herd losing money a head look mostly fine at a glance. */
+    ? '<div class="pf-rulshort" style="width:100%"></div><div class="pf-rulcov" style="left:0;width:'+incPc.toFixed(1)+'%"></div><div class="pf-rulmk" style="left:'+incPc.toFixed(1)+'%"></div>'
+    : '<div class="pf-rulc" style="width:'+costPc.toFixed(1)+'%"></div><div class="pf-rulm" style="left:'+costPc.toFixed(1)+'%;width:'+(100-costPc).toFixed(1)+'%"></div><div class="pf-rulmk" style="left:'+costPc.toFixed(1)+'%"></div>';
+  var diff=o.inc-o.cost;
+  var say = '<b>'+fmt(o.cost)+'</b> '+esc(o.verb)+', <b>'+fmt(o.inc)+'</b> '+
+    (over?'back — short by':'back — leaving')+' <b>'+fmt(Math.abs(diff))+'</b> '+esc(o.unit)+'.'+
+    (over?' <span class="pf-vpill bad">below break-even</span>'
+        :' <span class="pf-vpill ok">covering its costs</span>');
+  return '<div class="pf-hero"><div class="pf-heroh">'+
+    '<div><div class="nm">'+esc(o.name)+'</div><div class="meta">'+o.meta+'</div></div>'+
+    '<div class="rt"><div class="cap">Gross margin</div>'+
+      '<div class="big" style="color:'+(o.gm<0?'#C0392B':'var(--gm)')+'">'+_pfK(o.gm)+'</div>'+
+      '<div class="meta">'+fmt(o.rate)+esc(o.rateUnit)+'</div></div></div>'+
+    '<div class="pf-rul"><div class="pf-rultk">'+bar+'</div>'+
+      '<div class="pf-rull"><span><b>'+fmt(o.cost)+'</b><span>'+esc(o.costLbl)+'</span></span>'+
+      '<span class="hi"><b>'+fmt(o.inc)+'</b><span>'+esc(o.incLbl)+'</span></span></div>'+
+      '<div class="pf-rulsay">'+say+'</div></div></div>';
+}
+/* A signed track: the farm's own figure against its benchmark, with a zero line whenever
+   anything on the track can go below it. Replaces the four-bar "by season" chart, which was
+   fed by _pfHist() — a fixed 0.70/0.83/0.92/1.0 ramp off the CURRENT figure. Those seasons
+   never happened; the caption said so while the bars still read as a record. */
+function _pfCompareTrack(o){
+  var lo=Math.min(0,o.you)*1.15, hi=Math.max(o.you, o.bench!=null?o.bench:0, o.band?o.band[1]:0)*1.15;
+  if(o.band && o.band[0]<lo) lo=o.band[0]*1.15;
+  var sp=(hi-lo)||1, z=(0-lo)/sp*100;
+  var yw=Math.abs(o.you)/sp*100, yl=(o.you<0)?(z-yw):z;
+  return '<div class="pf-lsbmk">'+
+      (o.band?('<div class="pf-lsband" style="left:'+((o.band[0]-lo)/sp*100).toFixed(1)+'%;width:'+((o.band[1]-o.band[0])/sp*100).toFixed(1)+'%"></div>'):'')+
+      (lo<0?'<div class="pf-lsz" style="left:'+z.toFixed(1)+'%"></div>':'')+
+      '<div class="pf-lsyou'+(o.you<0?' neg':'')+'" style="left:'+Math.max(0,yl).toFixed(1)+'%;width:'+yw.toFixed(1)+'%"></div>'+
+      (o.bench!=null?('<div class="pf-lsavg" style="left:'+((o.bench-lo)/sp*100).toFixed(1)+'%"></div>'):'')+
+    '</div>'+
+    '<div class="pf-lslbl"><span><b>'+fmt(o.you)+'</b> <small>'+esc(o.youLbl)+'</small></span>'+
+      (o.bench!=null?('<span><b>'+_pfK(o.bench)+'</b> <small>'+esc(o.benchLbl)+'</small></span>'):'')+'</div>';
+}
+/* Blocks get the same three-part shape crops and herds have: what a unit costs against what
+   that unit brings back, what makes up the cost, and the one thing specific to a perennial —
+   where it sits on its own age curve. No margin benchmark: BENCH has crop and live only, and
+   AGRI_BENCH.growHa is a COST per hectare, not a margin, so drawing it on a margin track
+   would compare two different things. */
+function _pfDetailOrchHTML(o){
+  var h='', raw=null;
+  try{ raw=(ST_FRUIT&&ST_FRUIT.blocks||[]).filter(function(b){ return String(b.id)===String(o.id); })[0]||null; }catch(e){}
+  var tons=(raw&&raw.tons)||0;
+  var cost=(o.ops||0)+(o.labour||0);
+  if(tons>0 && cost>0){
+    h+=_pfHeroHTML({name:o.name, meta:(raw&&raw.cultivar?esc(raw.cultivar)+' · ':'')+(o.area||0)+' ha · '+Math.round(tons)+' t',
+      gm:o.gm, rate:o.gmHa, rateUnit:'/ha',
+      cost:Math.round(cost/tons), inc:Math.round((o.moneyBack||0)/tons),
+      costLbl:'costs to grow', incLbl:'money back a tonne',
+      verb:'to grow', unit:'a tonne'});
+  }
+  var tot=cost||1;
+  var _oTop=Math.max(o.ops||0,o.labour||0);
+  function mk(nm,v){ var pc=Math.round(v/tot*100);
+    return '<div class="pf-mk"><span class="mkn">'+nm+' <small style="color:var(--t4)">'+fmt(v)+'</small></span>'+
+      '<div class="mktk"><div class="mkfl'+((v===_oTop&&(o.ops||0)>0&&(o.labour||0)>0)?' top':'')+'" style="width:'+Math.max(4,pc)+'%"></div></div><span class="mkv">'+pc+'%</span></div>'; }
+  h+='<div class="pf-sub"><div class="pf-subt">What makes up the cost</div>';
+  if((o.ops||0)>0)    h+=mk('Growing &amp; packing',o.ops);
+  if((o.labour||0)>0) h+=mk('Labour',o.labour);
+  h+='<div class="pf-note">'+fmt(o.moneyBack||0)+' back from the packhouse and buyer, against '+fmt(cost)+' of growing costs.</div></div>';
+  var st=(typeof orpStage==='function' && raw)?orpStage(raw):null;
+  if(st){
+    var lb=orpStageLabel(st);
+    h+='<div class="pf-sub"><div class="pf-subt">Where this block is in its life</div>'+
+      '<div class="pf-lsbmk"><div class="pf-lsyou" style="left:0;width:'+Math.max(2,st.pct)+'%"></div></div>'+
+      '<div class="pf-lslbl"><span><b>'+st.pct+'%</b> <small>of full bearing</small></span>'+
+        '<span><b>Yr '+st.age+'</b> <small>'+esc(lb.t)+'</small></span></div>'+
+      '<div class="pf-note">'+(st.stage==='young'
+        ? 'Still filling out, so a lower margin per hectare is expected here — it is not the same as a block that is underperforming.'
+        : (st.stage==='old'
+          ? 'Past its peak. Yield eases off from here, which is the point at which replanting starts to be worth costing.'
+          : 'At full bearing, so this margin is a fair measure of the block.'))+'</div></div>';
+  }
+  var sw=[];
+  if((o.ops||0)>0 && cost>0) sw.push('<b>Growing &amp; packing</b> is '+Math.round(o.ops/cost*100)+'% of what this block costs to run.');
+  if(st && st.stage!=='full') sw.push('Weigh this block against others at the same stage, not against the farm’s best.');
+  if(sw.length) h+='<div class="pf-sub pf-means"><div class="pf-subt">What this means for you</div>'+
+    sw.map(function(x){return '<div class="pf-sw">'+x+'</div>';}).join('')+'</div>';
+  return h;
+}
 function _pfDetailCropHTML(c){
   /* The drill-down is the escape hatch for a part-planned crop: the summary row cannot separate
      real from budgeted costs (tagging is by crop name), but here the lands are listed one by one
      and the planned ones are badged, so the farmer can always see which is which. */
-  var lands=_pfLandsOf(c.crop,{includePlanned:PF_INCL_PLANNED}), inp=_pfInputsOf(c.crop), hist=_pfHist(c.gmHa,c.crop), bm=_pfBenchCropMeta(c), bench=bm.v, h='';
-  h+='<div class="pf-sub"><div class="pf-subt">\uD83D\uDCB0 What makes up the cost</div>';
-  if(inp.tot>0){ inp.rows.forEach(function(r){ var pc=Math.round(r.cost/inp.tot*100); h+='<div class="pf-mk"><span class="mkn">'+esc(_pfKindLabel(r.kind))+'</span><div class="mktk"><div class="mkfl" style="width:'+Math.max(4,pc)+'%"></div></div><span class="mkv">'+pc+'%</span></div>'; });
-    h+='<div class="pf-note">From input applications logged on your Crops page ('+fmt(inp.tot)+'/ha recorded so far). Log more for a fuller split.</div>'; }
-  else { h+='<div class="pf-note">No input applications logged for '+esc(c.crop)+' yet \u2014 add them on the Crops page to see where the money goes.</div>'; }
-  if(c.labour>0){ h+='<div class="pf-mk"><span class="mkn">Tagged labour</span><div class="mktk"></div><span class="mkv">'+_pfK(c.labour)+'/yr</span></div><div class="pf-note">Pay for workers tagged to '+esc(c.crop)+' \u2014 counted in this crop\u2019s margin, not in shared farm costs.</div>'; }
+  var lands=_pfLandsOf(c.crop,{includePlanned:PF_INCL_PLANNED}), inp=_pfInputsOf(c.crop), bm=_pfBenchCropMeta(c), bench=bm.v, h='';
+  /* Cost to grow a tonne against the price a tonne fetches — the figure that decides whether
+     to drill this again, and previously the last thing on the page. */
+  if(c.cop>0 && c.price>0){
+    h+=_pfHeroHTML({name:c.crop, meta:(c.area||0)+' ha · '+(c.area?Math.round(c.tons/c.area*10)/10:0)+' t/ha · '+Math.round(c.tons)+' t',
+      gm:c.gm, rate:c.gmHa, rateUnit:'/ha', cost:c.cop, inc:c.price,
+      costLbl:'costs to grow', incLbl:'price a tonne', verb:'to grow', unit:'a tonne'});
+  }
+  h+='<div class="pf-sub"><div class="pf-subt">What makes up the cost</div>';
+  var _cTop=inp.rows.length?Math.max.apply(null,inp.rows.map(function(r){return r.cost;})):0;
+  if(inp.tot>0){ inp.rows.forEach(function(r){ var pc=Math.round(r.cost/inp.tot*100); h+='<div class="pf-mk"><span class="mkn">'+esc(_pfKindLabel(r.kind))+'</span><div class="mktk"><div class="mkfl'+((r.cost===_cTop&&inp.rows.length>1)?' top':'')+'" style="width:'+Math.max(4,pc)+'%"></div></div><span class="mkv">'+pc+'%</span></div>'; });
+    h+='<div class="pf-note">From input applications logged on your Crops page ('+fmt(inp.tot)+'/ha) — log more for a fuller split.</div>';
+    /* NO FERTILISER-SHARE BENCHMARK HERE, deliberately. The South African build compares the
+       logged fertiliser share against the Grain SA regional budgets, per crop. There is no UK
+       equivalent to read: AHDB Farmbench publishes arable variable cost as ONE figure ("seeds,
+       fertiliser, crop protection, agronomy services and sundry variable items"), and its 2026
+       cost-of-production release gives whole-crop totals only. The 30-35% weight in
+       CROP_COST_LINES below is this app's own planning assumption, so measuring the farmer
+       against it would be the app marking its own homework. When an itemised UK split is
+       published this becomes data-only: add the table and this block lights up. */ }
+  else {
+    /* The section used to stop at "nothing logged", which is what every crop on a new farm
+       shows — including the one selected by default, so the first thing a farmer sees is an
+       empty panel. Name the planting budget instead: a real figure the farmer entered,
+       labelled as the plan rather than as spend. */
+    var _bud=c.budgetCost||0;
+    if(_bud>0 && c.area>0){
+      h+='<div class="pf-note">Your planting budget for '+esc(c.crop)+' is <b>'+fmt(Math.round(_bud/c.area))+'/ha</b> ('+fmt(Math.round(_bud))+' over '+c.area+' ha), and nothing has been logged against it yet. Log input applications on the Crops page and this becomes what you actually spent, split by input.</div>';
+    } else {
+      h+='<div class="pf-note">Nothing logged and no planting budget for '+esc(c.crop)+' yet — add either on the Crops page to see where the money goes.</div>';
+    }
+  }
+  if(c.labour>0){ h+='<div class="pf-mk"><span class="mkn">Tagged labour</span><div class="mktk"></div><span class="mkv">'+_pfK(c.labour)+'/yr</span></div><div class="pf-note">Pay for workers tagged to '+esc(c.crop)+' — counted in this crop’s margin, not in shared farm costs.</div>'; }
   h+='</div>';
-  h+='<div class="pf-sub"><div class="pf-subt">\uD83D\uDDFA\uFE0F Field by field</div>';
+  /* One field has nothing to compare itself against, so this was a heading, a single
+     full-width bar and a line saying it is your only field. Skipped at one field — the
+     hectares are already in the hero above. */
+  if(lands.length>1){
+  h+='<div class="pf-sub"><div class="pf-subt">Field by field</div>';
   /* Planned lands are estimates, so they must neither win nor lose the "weakest" call. Ranking a
      budget against actuals and telling the farmer to go fix the budgeted one would be a wrong
      recommendation — the same class of error as valuing a crop at a price it is not sold at.
      "Weakest" is therefore computed only over lands actually in the ground. */
-  if(lands.length){ var _realL=lands.filter(function(x){ return !x.planned; });
-    var minGm=_realL.length?Math.min.apply(null,_realL.map(function(x){return x.gmHa;})):null;
-    var mx=Math.max.apply(null,lands.map(function(x){return x.gmHa;}).concat(1));
-    lands.forEach(function(f){ var weak=(_realL.length>1 && !f.planned && f.gmHa===minGm); var pct=Math.max(4,Math.round(f.gmHa/mx*100));
-      h+='<div class="pf-fld"><div class="pf-fldh"><span class="fn">'+esc(f.name)+(weak?' <span class="weakpill">weakest</span>':'')+(f.planned?' <span class="pf-src planned">Planned</span>':'')+' <small>'+f.area+' ha · '+f.yld+' t/ha</small></span><span class="fv" style="color:'+(weak?'var(--rd)':'var(--gm)')+'">'+fmt(f.gmHa)+'/ha</span></div><div class="pf-tk" style="height:11px"><div class="pf-fl" style="width:'+pct+'%;background:'+(f.planned?'repeating-linear-gradient(135deg,#9CA3AF 0 6px,#C9CED6 6px 12px)':(weak?'#E74C3C':'#40916C'))+'"></div></div></div>'; });
-    if(_realL.length>1){ var wk=_realL.filter(function(x){return x.gmHa===minGm;})[0]; h+='<div class="pf-note"><b>'+esc(wk.name)+'</b> earns the least per hectare — worth checking its soil, inputs or yield before next season.</div>'; }
-    else if(lands.length>1) h+='<div class="pf-note">Only one field is in the ground this season — the rest are still planned, so there is nothing to compare yet.</div>';
-    else h+='<div class="pf-note">Your only '+esc(c.crop)+' field this season.</div>';
-  }
+  var _realL=lands.filter(function(x){ return !x.planned; });
+  var minGm=_realL.length?Math.min.apply(null,_realL.map(function(x){return x.gmHa;})):null;
+  var mx=Math.max.apply(null,lands.map(function(x){return x.gmHa;}).concat(1));
+  lands.forEach(function(f){ var weak=(_realL.length>1 && !f.planned && f.gmHa===minGm); var pct=Math.max(4,Math.round(f.gmHa/mx*100));
+    h+='<div class="pf-fld"><div class="pf-fldh"><span class="fn">'+esc(f.name)+(weak?' <span class="weakpill">weakest</span>':'')+(f.planned?' <span class="pf-src planned">Planned</span>':'')+' <small>'+f.area+' ha · '+f.yld+' t/ha</small></span><span class="fv" style="color:'+(weak?'var(--rd)':'var(--gm)')+'">'+fmt(f.gmHa)+'/ha</span></div><div class="pf-tk" style="height:11px"><div class="pf-fl" style="width:'+pct+'%;background:'+(f.planned?'repeating-linear-gradient(135deg,#9CA3AF 0 6px,#C9CED6 6px 12px)':(weak?'#E74C3C':'#40916C'))+'"></div></div></div>'; });
+  if(_realL.length>1){ var wk=_realL.filter(function(x){return x.gmHa===minGm;})[0]; h+='<div class="pf-note"><b>'+esc(wk.name)+'</b> earns the least per hectare — worth checking its soil, inputs or yield before next season.</div>'; }
+  else h+='<div class="pf-note">Only one field is in the ground this season — the rest are still planned, so there is nothing to compare yet.</div>';
   h+='</div>';
-  h+='<div class="pf-sub"><div class="pf-subt">\uD83D\uDCC8 Margin per hectare \u2014 by season</div>';
-  /* No benchmark -> no dashed line at all. Drawing one from an invented number was the bug. */
-  var tmx=Math.max.apply(null,hist.map(function(x){return x.v;}).concat(bm.has?bench:[],1));
-  h+='<div class="pf-trwrap">'+(bm.has
-      ? '<div class="pf-bench" style="bottom:'+Math.round(bench/tmx*100)+'%"><span>'+esc(_benchLabel(bm))+' \u2248 '+_pfK(bench)+'/ha</span></div>'
-      : '')+'<div class="pf-trbars">';
-  hist.forEach(function(x,i){ h+='<div class="pf-trb"><span class="vv">'+_pfK(x.v)+'</span><div class="bar" style="height:'+Math.max(6,Math.round(x.v/tmx*100))+'%;background:'+(i===hist.length-1?'#1B4332':'#74C69D')+'"></div><span class="yr">'+x.fy+'</span></div>'; });
-  h+='</div></div><div class="pf-note">Past seasons are sample data \u2014 your real trend fills in as you complete each season.</div>'+(bm.has?_benchSrcHTML(bm):_benchNoneHTML('crop'))+'</div>';
-  h+='<div class="pf-sub"><div class="pf-subt">\u2696\ufe0f Break-even</div>';
+  }
+  /* Was a four-bar "by season" chart fed by _pfHist(), which scales the CURRENT figure by a
+     fixed 0.70/0.83/0.92/1.0 ramp. Those seasons never happened — the caption said so while
+     the bars still read as a record. Replaced with the one comparison that is real, on a
+     track carrying a zero line because a crop margin can go negative. */
+  h+='<div class="pf-sub"><div class="pf-subt">How this compares</div>'+
+     _pfCompareTrack({you:c.gmHa, bench:(bm.has?bench:null), band:(bm.band||null),
+                      youLbl:'yours per hectare', benchLbl:_benchLabel(bm)})+
+     (bm.band?'<div class="pf-note">The shaded span is the range this crop’s margin swings across on published planning figures — a price-and-yield range, not a farm-to-farm spread.</div>':'')+
+     (bm.has?_benchSrcHTML(bm):_benchNoneHTML('crop'))+
+     '<div class="pf-note">Once you finish a season with this crop, last year’s figure will sit alongside this one.</div></div>';
+  h+='<div class="pf-sub"><div class="pf-subt">Break-even</div>';
   if(c.price>0 && c.area>0 && c.tons>0){
     var beY=Math.round((c.cost/c.area)/c.price*10)/10, cush=c.price-c.cop, curY=Math.round(c.tons/c.area*10)/10;
     h+='<div class="pf-be"><div class="pf-be-t"><div class="bel">Break-even price</div><div class="bev">'+fmt(c.cop)+'<small> /tonne</small></div><div class="bes">what covers your costs</div></div>'+
        '<div class="pf-be-t"><div class="bel">Break-even yield</div><div class="bev">'+beY+'<small> t/ha</small></div><div class="bes">minimum to not lose money</div></div></div>';
-    if(cush>0) h+='<div class="pf-note">At today\u2019s <b>'+fmt(c.price)+'/tonne</b> and your <b>'+curY+' t/ha</b>, you clear <b style="color:#1B7A3E">'+fmt(cush)+'/tonne</b> on top of covering costs.</div>';
-    else h+='<div class="pf-note">At today\u2019s <b>'+fmt(c.price)+'/tonne</b> you\u2019re <b style="color:var(--rd)">'+fmt(Math.abs(cush))+'/tonne</b> short of covering costs \u2014 you lose money below <b>'+fmt(c.cop)+'/tonne</b>.</div>';
+    if(cush>0) h+='<div class="pf-note">At today’s <b>'+fmt(c.price)+'/tonne</b> and your <b>'+curY+' t/ha</b>, you clear <b style="color:#1B7A3E">'+fmt(cush)+'/tonne</b> on top of covering costs.</div>';
+    else h+='<div class="pf-note">At today’s <b>'+fmt(c.price)+'/tonne</b> you’re <b style="color:var(--rd)">'+fmt(Math.abs(cush))+'/tonne</b> short of covering costs — you lose money below <b>'+fmt(c.cop)+'/tonne</b>.</div>';
   } else {
     h+='<div class="pf-note">Add a market price for '+esc(c.crop)+' on the Crops page to see your break-even price and yield.</div>';
   }
   h+='</div>';
-    var sw=[];
-  if(inp.tot>0 && inp.rows.length){ var topk=inp.rows[0], tpc=Math.round(topk.cost/inp.tot*100); sw.push('<b>'+esc(_pfKindLabel(topk.kind))+'</b> is your biggest logged cost on '+esc(c.crop)+' (about '+tpc+'%) \u2014 where a price rise hurts most, and where shopping around or buying early saves the most.'); }
-  if(lands.length>1){ var ss=lands.slice().sort(function(a,b){return b.gmHa-a.gmHa;}), st=ss[0], wk2=ss[ss.length-1]; if(st.gmHa>0){ sw.push('<b>'+esc(wk2.name)+'</b> earns '+fmt(wk2.gmHa)+'/ha against <b>'+esc(st.name)+'</b>\u2019s '+fmt(st.gmHa)+'/ha \u2014 same crop, very different result. That field is the first place to look for an easy win.'); } }
-  sw.push('At <b>'+fmt(c.gmHa)+'/ha</b>, '+esc(c.crop)+' is sitting <b>'+(c.gmHa>=bench?'above':'below')+'</b> '+(bm.region?('similar '+esc(bm.region)+' farms'):'the UK average')+' (\u2248'+_pfK(bench)+'/ha). '+(c.gmHa>=bench?'You\u2019re getting more out of each hectare than the average \u2014 keep doing what works.':'There may be room to close the gap on inputs or yield.'));
-  h+='<div class="pf-sub pf-means"><div class="pf-subt">\uD83D\uDCA1 What this means for you</div>'+sw.map(function(x){return '<div class="pf-sw">'+x+'</div>';}).join('')+'</div>';
+  var sw=[];
+  if(inp.tot>0 && inp.rows.length){ var topk=inp.rows[0], tpc=Math.round(topk.cost/inp.tot*100); sw.push('<b>'+esc(_pfKindLabel(topk.kind))+'</b> is your biggest logged cost on '+esc(c.crop)+' (about '+tpc+'%) — where a price rise hurts most, and where shopping around or buying early saves the most.'); }
+  if(lands.length>1){ var ss=lands.slice().sort(function(a,b){return b.gmHa-a.gmHa;}), st=ss[0], wk2=ss[ss.length-1]; if(st.gmHa>0){ sw.push('<b>'+esc(wk2.name)+'</b> earns '+fmt(wk2.gmHa)+'/ha against <b>'+esc(st.name)+'</b>’s '+fmt(st.gmHa)+'/ha — same crop, very different result. That field is the first place to look for an easy win.'); } }
+  /* Guarded on bm.has. bench is null for a crop with no entry in BENCH, and this line read it
+     regardless — "sitting below the UK average" against a blank figure. */
+  if(bm.has) sw.push('At <b>'+fmt(c.gmHa)+'/ha</b>, '+esc(c.crop)+' is sitting <b>'+(c.gmHa>=bench?'above':'below')+'</b> '+(bm.region?('the '+esc(bm.region)+' guide figure'):'the UK guide figure')+' (≈'+_pfK(bench)+'/ha). '+(c.gmHa>=bench?'You’re getting more out of each hectare than the guide — keep doing what works.':'There may be room to close the gap on inputs or yield.'));
+  h+='<div class="pf-sub pf-means"><div class="pf-subt">What this means for you</div>'+sw.map(function(x){return '<div class="pf-sw">'+x+'</div>';}).join('')+'</div>';
   return h;
 }
 // Crop input-cost lines: budget split by typical UK weights (fertiliser share
@@ -13856,37 +14136,103 @@ function pfWhatIfOrch(){
 }
 
 function _pfDetailLiveHTML(l){
-  var months=l.months||0, incBuy=(l.buy||0)>0, hist=_pfHist(l.gmLsu,l.name), bm=_pfBenchLiveMeta(l), bench=bm.v, h='';
-  var feedC=(l.feed||0)*months, vetC=(l.vet||0)*months, buyC=(l.buy||0), tot=feedC+vetC+(incBuy?buyC:0);
-  function mk(n,v){ var pc=tot>0?Math.round(v/tot*100):0; return '<div class="pf-mk"><span class="mkn">'+n+' <small style="color:var(--t4)">'+fmt(v)+'</small></span><div class="mktk"><div class="mkfl" style="width:'+Math.max(4,pc)+'%"></div></div><span class="mkv">'+pc+'%</span></div>'; }
-  h+='<div class="pf-sub"><div class="pf-subt">\uD83D\uDCB0 Cost to produce one head</div>';
-  if(incBuy) h+=mk('Buy / replacement',buyC);
-  h+=mk('Feed ('+months+' mo)',feedC)+mk('Health / vet ('+months+' mo)',vetC);
-  if(l.labour>0){ h+='<div class="pf-note" style="margin-top:8px"><b>Tagged labour:</b> '+_pfK(l.labour)+'/yr for workers tagged to '+esc(l.name)+' \u2014 counted in this herd\u2019s margin, not in shared farm costs.</div>'; }
-  h+='<div class="pf-note">Total '+fmt(tot)+'/head against a '+fmt(l.sellHead)+' sale price.</div></div>';
-  h+='<div class="pf-sub"><div class="pf-subt">\uD83D\uDCC8 Margin per grazing unit \u2014 by season</div>';
-  var tmx=Math.max.apply(null,hist.map(function(x){return x.v;}).concat(bm.has?bench:[],1));
-  h+='<div class="pf-trwrap">'+(bm.has
-      ? '<div class="pf-bench" style="bottom:'+Math.round(bench/tmx*100)+'%"><span>'+esc(_benchLabel(bm))+' \u2248 '+_pfK(bench)+'/LU</span></div>'
-      : '')+'<div class="pf-trbars">';
-  hist.forEach(function(x,i){ h+='<div class="pf-trb"><span class="vv">'+_pfK(x.v)+'</span><div class="bar" style="height:'+Math.max(6,Math.round(x.v/tmx*100))+'%;background:'+(i===hist.length-1?'#1B4332':'#74C69D')+'"></div><span class="yr">'+x.fy+'</span></div>'; });
-  h+='</div></div><div class="pf-note">Past seasons are sample data.</div>'+(bm.has?_benchSrcHTML(bm):_benchNoneHTML('live'))+'</div>';
+  var bm=_pfBenchLiveMeta(l), bench=bm.v, h='';
+  /* This section used to compute its own per-head cost as buy + feed*months + vet*months,
+     the model lsHerdCostParts() replaced. Break-even a few lines below already used the new
+     one, so the same screen reported two different costs for the same head: on the demo farm
+     Dairy cows read £2 908 here against £1 305 there — £51 296 of phantom cost across the
+     herd, enough to make the farm's best earner look ruinous.
+     Both halves now come from lsHerdCostParts via _pfHerdBreakdown, on the SAME basis
+     l.costHead uses: cost excluding labour, over head count. Labour keeps its own note. */
+  var _qty=l.qty||0;
+  var _bd=(typeof _pfHerdBreakdown==='function')?_pfHerdBreakdown(l):null;
+  var _pl=(_bd&&_qty>0) ? _bd.out.filter(function(r){ return r.k!=='labour'; })
+                              .map(function(r){ return {n:r.t, k:r.k, v:Math.round(r.v/_qty)}; }) : [];
+  var tot=_pl.reduce(function(a,r){ return a+r.v; },0);
+  var _top=_pl.length?_pl.slice().sort(function(a,b){return b.v-a.v;})[0].v:0;
+  function mk(n,v){ var pc=tot>0?Math.round(v/tot*100):0; var _t=(v===_top&&_pl.length>1)?' top':'';
+    return '<div class="pf-mk"><span class="mkn">'+esc(n)+' <small style="color:var(--t4)">'+fmt(v)+'</small></span><div class="mktk"><div class="mkfl'+_t+'" style="width:'+Math.max(4,pc)+'%"></div></div><span class="mkv">'+pc+'%</span></div>'; }
+  /* A dairy cow earns through the parlour, not the abattoir. Quoting her cull price here
+     called the farm's best herd a loss. Where production income is the larger half, the
+     comparison is what each head actually brings in. */
+  var _raw=(typeof _pfHerdRaw==='function')?_pfHerdRaw(l):null;
+  var _inc=(_raw&&typeof lsHerdIncome==='function')?lsHerdIncome(_raw):0;
+  var _prod=(_raw&&typeof lsHerdProdIn==='function')?lsHerdProdIn(_raw):0;
+  var _prodLed=(_prod>0 && _prod>(_inc-_prod));
+  var _inHead=(_prodLed&&_qty>0)?Math.round(_inc/_qty):(l.sellHead||0);
+  if(l.costHead>0 && _inHead>0){
+    h+=_pfHeroHTML({name:l.name, meta:esc(l.type||'')+' · '+(l.qty||0)+' head · '+(Math.round((l.lsu||0)*10)/10)+' LU',
+      gm:l.gm, rate:l.gmLsu, rateUnit:'/LU', cost:l.costHead, inc:_inHead,
+      costLbl:'costs to carry', incLbl:(_prodLed?'brings in a year':'sells for'),
+      verb:'to carry', unit:'a head'});
+  }
+  h+='<div class="pf-sub"><div class="pf-subt">Cost to carry one head</div>';
+  _pl.forEach(function(r){ h+=mk(r.n,r.v); });
+  if(l.labour>0){ h+='<div class="pf-note" style="margin-top:8px"><b>Tagged labour</b> '+_pfK(l.labour)+'/yr — pay for workers tagged to this herd, counted in its own margin rather than in shared farm costs.</div>'; }
+  h+='<div class="pf-note">'+(_prodLed
+      ? (fmt(tot)+'/head to carry, against the '+fmt(_inHead)+' each one brings in a year — mostly production, not stock sales.')
+      : (fmt(tot)+'/head to carry, against a sale price of '+fmt(l.sellHead)+'.'))+'</div></div>';
+  /* Was a four-bar "by season" chart whose history came from _pfHist(), a fixed ramp off the
+     CURRENT figure. Those seasons never happened. Replaced with the one comparison that is
+     real: this herd against its benchmark, on a track that carries a zero line because a
+     herd can sit below it. */
+  h+='<div class="pf-sub"><div class="pf-subt">How this compares</div>'+
+     _pfCompareTrack({you:l.gmLsu, bench:(bm.has?bench:null), band:null,
+                      youLbl:'yours per LU', benchLbl:_benchLabel(bm)})+
+     (bm.has?_benchSrcHTML(bm):_benchNoneHTML('live'))+
+     '<div class="pf-note">Once you finish a season with this herd, last year’s figure will sit alongside this one.</div></div>';
+  /* How the spend is shaped, against a published benchmark for the same kind of animal. */
+  var _ref=(typeof _pfLiveStructRef==='function')?_pfLiveStructRef(l):null;
+  var _st=(typeof _pfLiveStruct==='function')?_pfLiveStruct(l,_bd,_ref):null;
+  if(_ref && _st){
+    var _NM={feed:'Feed &amp; forage', vet:'Vet &amp; health', labour:'Labour'};
+    var _rows=_st.rows.map(function(r){
+      var out=Math.abs(r.mine-r.ref)>=10;
+      return '<div class="pf-mk"><span class="mkn">'+_NM[r.k]+'</span><div class="mktk"><div class="mkfl'+(out?' warn':'')+
+        '" style="width:'+Math.max(3,r.mine)+'%"></div></div><span class="mkv">'+r.mine+'%<small style="color:var(--t4);font-weight:600"> / '+r.ref+'%</small></span></div>';
+    }).join('');
+    var _vetRow=_st.rows.filter(function(r){ return r.k==='vet'; })[0];
+    h+='<div class="pf-sub"><div class="pf-subt">How your spend is shaped</div>'+_rows+
+      '<div class="pf-note">Your share against the benchmark, across '+
+      (_st.partial?'feed and health only — the lines both carry. Labour sits outside this because none is tagged to this herd, and a zero share would read as an alarm rather than a gap in tagging'
+                 :'feed, health and labour')+'. '+esc(_ref.src)+', '+esc(_ref.unit)+'.</div>'+
+      ((_vetRow && _vetRow.mine < _vetRow.ref-8)
+        ? '<div class="pf-note" style="color:#9A6212"><b>'+_vetRow.mine+'% vs '+_vetRow.ref+'%</b> on health. Either you spend less than that benchmark assumes, or not every treatment has been logged.</div>' : '')+
+      '</div>';
+  }
+  /* What the herd is actually made of, at the farmer's own class values. */
+  if(_raw && _raw.classes && _raw.classes.length){
+    var _cc=_raw.classes.filter(function(c){ return (c.n||0)>0; }).map(function(c){
+      var meta=(typeof lsClassMeta==='function')?lsClassMeta(_raw.type,c.k):{label:c.k};
+      return '<div class="pf-lscls"><div class="n">'+esc(meta.label||c.k)+'</div>'+
+        '<div class="m">'+c.n+' head</div><div class="v">'+fmt(c.v||0)+'</div></div>';
+    }).join('');
+    if(_cc) h+='<div class="pf-sub"><div class="pf-subt">What the herd is made of</div>'+
+      '<div class="pf-lsclsw">'+_cc+'</div>'+
+      '<div class="pf-note">Your own class values, from the Livestock page.</div></div>';
+  }
   if(l.costHead>0){
-    var lcush=(l.sellHead||0)-l.costHead;
-    h+='<div class="pf-sub"><div class="pf-subt">⚖️ Break-even</div>';
-    h+='<div class="pf-be"><div class="pf-be-t"><div class="bel">Break-even sale price</div><div class="bev">'+fmt(l.costHead)+'<small> /head</small></div><div class="bes">what covers your costs</div></div>';
-    if(l.sellHead>0) h+='<div class="pf-be-t"><div class="bel">Your margin</div><div class="bev" style="color:'+(lcush>=0?'#1B7A3E':'var(--rd)')+'">'+(lcush<0?'−':'')+fmt(Math.abs(lcush))+'<small> /head</small></div><div class="bes">'+(lcush>=0?'above break-even':'below break-even')+'</div></div>';
+    /* Measured against whatever this herd actually earns: stock sales for a beef herd,
+       everything she brings in for one carrying milk or wool. */
+    var lcush=_inHead-l.costHead;
+    h+='<div class="pf-sub"><div class="pf-subt">Break-even</div>';
+    h+='<div class="pf-be"><div class="pf-be-t"><div class="bel">'+(_prodLed?'Each head must bring in':'Break-even sale price')+'</div><div class="bev">'+fmt(l.costHead)+'<small> /head</small></div><div class="bes">what covers your costs</div></div>';
+    if(_inHead>0) h+='<div class="pf-be-t"><div class="bel">Your margin</div><div class="bev" style="color:'+(lcush>=0?'#1B7A3E':'var(--rd)')+'">'+(lcush<0?'−':'')+fmt(Math.abs(lcush))+'<small> /head</small></div><div class="bes">'+(lcush>=0?'above break-even':'below break-even')+'</div></div>';
     h+='</div>';
-    if(l.sellHead<=0) h+='<div class="pf-note">Set a sale price for '+esc(l.name)+' in Livestock to see your cushion — break-even is '+fmt(l.costHead)+'/head.</div>';
+    if(_inHead<=0) h+='<div class="pf-note">Set a sale price for '+esc(l.name)+' in Livestock to see your cushion — break-even is '+fmt(l.costHead)+'/head.</div>';
+    else if(_prodLed) h+='<div class="pf-note">Each head costs <b>'+fmt(l.costHead)+'</b> to carry and brings in <b>'+fmt(_inHead)+'</b> a year, leaving <b style="color:'+(lcush>=0?'#1B7A3E':'var(--rd)')+'">'+(lcush<0?'−':'')+fmt(Math.abs(lcush))+'</b>. Most of that is production, so the cull price is not what pays for her.</div>';
     else if(lcush>=0) h+='<div class="pf-note">You break even selling at <b>'+fmt(l.costHead)+'/head</b> — at your <b>'+fmt(l.sellHead)+'</b> price you keep <b style="color:#1B7A3E">'+fmt(lcush)+'/head</b>.</div>';
     else h+='<div class="pf-note">You break even at <b>'+fmt(l.costHead)+'/head</b>, but your <b>'+fmt(l.sellHead)+'</b> price is <b style="color:var(--rd)">'+fmt(Math.abs(lcush))+'/head</b> short — you lose money on each head sold.</div>';
     h+='</div>';
   }
-    var sw=[];
-  var comps=[{n:'Buy / replacement',v:(incBuy?buyC:0)},{n:'Feed',v:feedC},{n:'Health / vet',v:vetC}].filter(function(x){return x.v>0;}).sort(function(a,b){return b.v-a.v;});
-  if(comps.length){ var tc=comps[0], cpc=tot>0?Math.round(tc.v/tot*100):0; sw.push('<b>'+tc.n+'</b> is the biggest cost per head for '+esc(l.name)+' (about '+cpc+'%). '+(tc.n.indexOf('Buy')>=0?'Paying less for replacements moves your margin more than feed does.':'Feed and health is where the running cost sits \u2014 worth watching feed prices.')); }
-  sw.push('At <b>'+fmt(l.gmLsu)+'/LU</b>, '+esc(l.name)+' is '+(l.gmLsu>=bench?'above':'below')+' '+(bm.region?('similar '+esc(bm.region)+' farms'):'the UK average')+' (\u2248'+_pfK(bench)+'/LU) \u2014 per grazing unit is the fair way to weigh it against your other herds.');
-  h+='<div class="pf-sub pf-means"><div class="pf-subt">\uD83D\uDCA1 What this means for you</div>'+sw.map(function(x){return '<div class="pf-sw">'+x+'</div>';}).join('')+'</div>';
+  var sw=[];
+  var comps=_pl.slice().filter(function(x){return x.v>0;}).sort(function(a,b){return b.v-a.v;});
+  if(comps.length){ var tc=comps[0], cpc=tot>0?Math.round(tc.v/tot*100):0;
+    sw.push('<b>'+esc(tc.n)+'</b> is the biggest cost per head here (about '+cpc+'%). '+(tc.k==='buy'?'Paying less for replacements moves your margin more than feed does.':'Feed and health is where the running cost sits — worth watching feed prices.')); }
+  /* Guarded on bm.has, same as the crop pane: with no benchmark this asserted a comparison
+     against a figure that does not exist. */
+  if(bm.has) sw.push('At <b>'+fmt(l.gmLsu)+'/LU</b>, '+esc(l.name)+' is '+(l.gmLsu>=bench?'above':'below')+' '+(bm.region?('the '+esc(bm.region)+' guide figure'):'the UK guide figure')+' (≈'+_pfK(bench)+'/LU) — per livestock unit is the fair way to weigh it against your other herds.');
+  if(sw.length) h+='<div class="pf-sub pf-means"><div class="pf-subt">What this means for you</div>'+sw.map(function(x){return '<div class="pf-sw">'+x+'</div>';}).join('')+'</div>';
   return h;
 }
 // Livestock running-cost lines: feed & vet are the herd's REAL monthly figures —
@@ -13984,6 +14330,184 @@ function pfWhatIfHerd(){
   }
 }
 
+/* Every enterprise on the farm in one list, whatever kind it is. The Profit tab ranked each
+   domain separately and then picked a headline with a FALLBACK cascade — crops if any crops
+   exist, else livestock, else orchards — so on a farm with crops an orchard or a herd could
+   never be named however it performed. On the demo farm that made "Best earner" read Winter
+   wheat while Netted Block earned more per hectare than anything else, and made "Watch" flag
+   Spring barley, comfortably above cost, while Tunnel A ran GBP 22 796 below zero.
+
+   Ranked on TOTAL gross margin because that is the only measure all three genuinely share:
+   per-hectare is not comparable between a tunnel block and a wheat field, and livestock has
+   no hectares at all unless fields carry an area. The per-unit rate is carried alongside for
+   the subtitle, where it is real.
+   ── Comparison drill-down ────────────────────────────────────────────────────
+   The bar answers WHICH part of the farm carries it. This answers WHAT DROVE IT:
+   money in, money out, and which line is doing the damage.
+
+   Every money-out list must sum to the SAME cost the row's margin was built from,
+   so the panel can never contradict the bar above it. Each builder below returns
+   its own total and pfEntBreakdown asserts the two agree before returning — a row
+   whose lines do not reconcile shows no breakdown rather than a wrong one. */
+var PF_CMP_OPEN = {};
+function pfCmpKey(x){ return (x&&x.kind||'')+':'+(x&&x.name||''); }
+
+function _pfHerdRaw(l){
+  if(!l || l.id==null) return null;
+  try{ var f=(ST_LS&&ST_LS.herd||[]).filter(function(h){ return String(h.id)===String(l.id); });
+       return f.length?f[0]:null; }catch(e){ return null; }
+}
+/* Money out for a herd, mirroring lsHerdCost() line for line.
+
+   Two shapes, because lsHerdCost has two. With nothing tagged the model is the cost, and
+   the keep bill splits cleanly into feed and health — lsHerdKeepSplit is exact, so the two
+   lines add back to the same penny. Once real spend is tagged, lsHerdCost blends what has
+   actually been spent with the model for the months still to come, and that blend is ONE
+   number with no feed/health seam inside it: showing it as two would be inventing a split
+   the farmer never recorded. The Real costs / Budget cost badge already carries which of
+   the two the row is on. */
+function _pfHerdBreakdown(l){
+  var h=_pfHerdRaw(l); if(!h || typeof lsHerdCostParts!=='function') return null;
+  var p=lsHerdCostParts(h);
+  var ce=(typeof lsHerdCostEvents==='function')?lsHerdCostEvents(h):{planned:0,extra:0};
+  /* A generated plan line IS the feed bill and carries no health of its own, which is
+     exactly what lsHerdKeepCost is not being asked for in that case. */
+  var sp=(ce.planned>0) ? {feed:p.keep, vet:0}
+                        : ((typeof lsHerdKeepSplit==='function')?lsHerdKeepSplit(h):{feed:p.keep,vet:0});
+  var keep=(p.keep||0)+(p.bull||0);
+  var el=(typeof lsSeasonElapsed==='function')?lsSeasonElapsed():1;
+  var feedLine, vetLine;
+  if(p.source!=='model'){ feedLine=Math.round((p.tagged||0) + keep*(1-el)); vetLine=0; }
+  else { feedLine=(sp.feed||0)+(p.bull||0); vetLine=(sp.vet||0); }
+
+  var out=[];
+  if(p.buy>0)    out.push({k:'buy',    t:'Animals bought in', v:p.buy});
+  if(feedLine>0) out.push({k:'keep',   t:(p.source!=='model'?'Feed, health & keep':'Feed & forage'), v:feedLine});
+  if(vetLine>0)  out.push({k:'vet',    t:'Vet & health',      v:vetLine});
+  if(p.labour>0) out.push({k:'labour', t:'Labour',            v:p.labour});
+  if(p.extra>0)  out.push({k:'other',  t:'Other costs',       v:p.extra});
+
+  var inc=(typeof lsHerdIncome==='function')?lsHerdIncome(h):0;
+  var prod=(typeof lsHerdProdIn==='function')?lsHerdProdIn(h):0;
+  var sales=inc-prod, inn=[];
+  if(sales>0) inn.push({k:'sales', t:'Stock sales', v:sales});
+  if(prod>0)  inn.push({k:'prod',  t:(/dairy/i.test(h.type||'')?'Milk':'Milk & wool'), v:prod});
+
+  return {inn:inn, out:out, costTotal:(typeof lsHerdCost==='function')?lsHerdCost(h):null, incTotal:inc};
+}
+/* Crop cost is max(tagged, budget) + labour. When tagged spend has overtaken the budget it
+   IS the growing cost; otherwise the budget is the planting budget, which in this build is
+   a single input figure per hectare. The SA product splits that further into what goes on
+   the land and what it costs to work and move it, but that split rests on a per-land other-
+   cost model this build does not carry — so one line, honestly named, rather than a second
+   one conjured from a share. */
+function _pfCropBreakdown(c){
+  if(!c) return null;
+  var budget=Math.round(c.budgetCost||0), tagged=Math.round(c.taggedCost||0);
+  var eff=Math.max(tagged,budget), out=[];
+  if(eff>0){
+    if(tagged>=budget && tagged>0) out.push({k:'tagged', t:'Spend tagged to this crop', v:tagged});
+    else out.push({k:'inputs', t:'Seed, fertiliser & sprays', v:eff});
+  }
+  if((c.labour||0)>0) out.push({k:'labour', t:'Labour', v:Math.round(c.labour)});
+
+  var inn=[];
+  if((c.income||0)>0) inn.push({k:'harvest', t:'Harvest sold', v:Math.round(c.income),
+    sub:(c.tons?(Math.round(c.tons).toLocaleString('en-GB')+' t'+(c.price?' · '+fmt(c.price)+'/t':'')):'')});
+
+  return {inn:inn, out:out, costTotal:c.cost, incTotal:c.income};
+}
+function _pfBlockBreakdown(o){
+  if(!o) return null;
+  var out=[];
+  if((o.ops||0)>0)    out.push({k:'ops',    t:'Growing & packing costs', v:o.ops});
+  if((o.labour||0)>0) out.push({k:'labour', t:'Labour',                  v:o.labour});
+  var inn=[];
+  if((o.moneyBack||0)>0) inn.push({k:'back', t:'Money back from the pack', v:o.moneyBack});
+  return {inn:inn, out:out, costTotal:(o.ops||0)+(o.labour||0), incTotal:o.moneyBack||0};
+}
+/* Returns null whenever the lines do not add up to the cost the margin was built
+   from. Showing nothing is recoverable; showing a breakdown that disagrees with the
+   number beside it is the kind of thing a farmer sells a herd on. */
+function pfEntBreakdown(x){
+  if(!x) return null;
+  var b=null;
+  try{
+    if(x.kind==='herd')       b=_pfHerdBreakdown(x.ref);
+    else if(x.kind==='crop')  b=_pfCropBreakdown(x.ref);
+    else if(x.kind==='block') b=_pfBlockBreakdown(x.ref);
+  }catch(e){ return null; }
+  if(!b || (!b.inn.length && !b.out.length)) return null;
+  var sum=b.out.reduce(function(a,r){ return a+r.v; },0);
+  if(b.costTotal!=null && Math.abs(sum-b.costTotal)>2) return null;
+  b.totIn =b.inn.reduce(function(a,r){ return a+r.v; },0);
+  b.totOut=sum;
+  b.gm    =b.totIn-b.totOut;
+  return b;
+}
+/* One sentence naming the line that actually drove the result. Built only from
+   figures already on screen, so there is no new arithmetic to get wrong. */
+function pfEntDriver(x, b){
+  if(!b) return '';
+  if(!b.totIn){
+    return '<b>'+_pfK(b.totOut)+'</b> is what it has cost to carry so far — nothing has been sold from this yet.';
+  }
+  if(!b.out.length) return '';
+  var big=b.out.slice().sort(function(p,q){ return q.v-p.v; })[0];
+  var share=b.totOut>0?Math.round(big.v/b.totOut*100):0;
+  return '<b>'+esc(big.t)+' · '+_pfK(big.v)+'</b> is the biggest line here — '+share+'% of what this cost.';
+}
+function pfCmpToggle(key){
+  if(PF_CMP_OPEN[key]) delete PF_CMP_OPEN[key]; else PF_CMP_OPEN[key]=1;
+  try{ renderProfit(); }catch(e){}
+}
+/* Renders the money-in / money-out panel. Bars share ONE scale across both groups so
+   in-versus-out is directly comparable and the longest bar is the biggest driver. */
+function pfCmpPanel(x){
+  var b=pfEntBreakdown(x); if(!b) return '';
+  var scale=Math.max(b.totIn,b.totOut)||1;
+  function lines(list,col,emptyEn){
+    if(!list.length) return '<div class="pf-dd-lr none"><div class="nm">'+emptyEn+
+      '</div><div class="tk"></div><div class="amt">'+fmt(0)+'</div></div>';
+    var big=list.slice().sort(function(p,q){ return q.v-p.v; })[0];
+    return list.map(function(r){
+      var pc=Math.max(1.2, r.v/scale*100);
+      return '<div class="pf-dd-lr'+((r===big&&list.length>1)?' big':'')+'">'+
+        '<div class="nm">'+esc(r.t)+(r.sub?' <small>'+esc(r.sub)+'</small>':'')+'</div>'+
+        '<div class="tk"><i style="width:'+pc.toFixed(1)+'%;background:'+col+'"></i></div>'+
+        '<div class="amt">'+fmt(r.v)+'</div></div>';
+    }).join('');
+  }
+  var drv=pfEntDriver(x,b);
+  return '<div class="pf-dd"><div class="pf-dd-in">'+
+    '<div class="pf-dd-g">'+
+      '<div class="pf-dd-ml in"><span>Money in</span><span class="tot">'+fmt(b.totIn)+'</span></div>'+
+      lines(b.inn,'#40916C','Nothing sold yet')+
+    '</div>'+
+    '<div class="pf-dd-g">'+
+      '<div class="pf-dd-ml out"><span>Money out</span><span class="tot">'+fmt(b.totOut)+'</span></div>'+
+      lines(b.out,'#C0392B','—')+
+    '</div>'+
+    '<div class="pf-dd-res"><span class="l">Gross margin</span>'+
+      '<span class="v '+(b.gm<0?'neg':'pos')+'">'+fmt(b.gm)+'</span></div>'+
+    (drv?('<div class="pf-dd-drv'+(b.gm<0?'':' ok')+'">'+drv+'</div>'):'')+
+    '</div></div>';
+}
+function pfAllEnterprises(){
+  var out=[];
+  /* `ref` carries the entity the row was built from so the drill-down can show what
+     drove the number without recomputing it. Same object the card's own figure came
+     from, so the panel can never disagree with the bar above it. */
+  var _ft=(typeof getFarmType==='function')?getFarmType():'mixed';
+  try{ if(_ft!=='livestock') (_pfCropEnts()||[]).forEach(function(c){
+    if(c.noPrice) return;
+    out.push({kind:'crop', name:c.crop, crop:c.crop, gm:c.gm, rate:c.gmHa, unit:'/ha', size:(c.area||0)+' ha', ref:c}); }); }catch(e){}
+  try{ (_pfOrchardEnts()||[]).forEach(function(o){
+    out.push({kind:'block', name:o.name, gm:o.gm, rate:o.gmHa, unit:'/ha', size:(o.area||0)+' ha', ref:o}); }); }catch(e){}
+  try{ if(_ft!=='crops') (_pfLiveEnts()||[]).forEach(function(l){
+    out.push({kind:'herd', name:l.name, gm:l.gm, rate:l.gmLsu, unit:'/LU', size:(l.qty||0)+' head', ref:l}); }); }catch(e){}
+  return out.sort(function(a,b){ return b.gm-a.gm; });
+}
 function renderProfit(){
   try{ wkMigrateActivity(); }catch(e){}
   applyProfitLabel();
@@ -14029,7 +14553,54 @@ function renderProfit(){
   var totalGM=0; crops.forEach(function(c){totalGM+=c.gm;}); live.forEach(function(l){totalGM+=l.gm;}); orch.forEach(function(o){totalGM+=o.gm;});
   var profit=totalGM-overheads;
 
-  var html='<style>.pf-src{display:inline-block;font-size:8.5px;font-weight:800;text-transform:uppercase;letter-spacing:.03em;padding:2px 6px;border-radius:5px;margin-left:4px;vertical-align:middle}.pf-src.real{background:#EAF3E4;color:#2E7D4F}.pf-src.part{background:#FFF8E6;color:#B45309}.pf-src.budget{background:#F3F4F6;color:#6B7280}.pf-src.planned{background:transparent;color:#6B7280;border:1px dashed #C9CED6;padding:1px 5px}.pf-srcleg{font-size:10px;color:var(--t4);margin-top:8px;line-height:1.5}.pf-plhd{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}.pf-pldelta{font-size:11px;color:var(--t3);background:var(--gb);border:1px solid var(--gp);border-radius:8px;padding:7px 10px;margin:10px 0 0;line-height:1.45}</style><div class="pf-tabs">'+
+  var html='<style>'+
+    /* Signed track for the whole-farm comparison: the same 16px bar as every other card,
+       but with a zero line so a losing enterprise reads as one without anyone parsing a
+       minus sign. Left-anchored fills cannot show a negative, which is why this variant
+       exists rather than reusing .pf-tk directly. */
+    '.pf-tk.sgn{position:relative}'+
+    '.pf-tk.sgn .pf-z{position:absolute;top:-3px;bottom:-3px;width:2px;background:#9CA3AF;border-radius:1px;z-index:3}'+
+    '.pf-tk.sgn .pf-lossbg{position:absolute;left:0;top:0;bottom:0;background:#FBE9E7;z-index:0}'+
+    '.pf-tk.sgn .pf-fl{position:absolute;top:0;bottom:0;height:auto}'+
+    /* Drill-down: money in, money out, and the line driving the result. */
+    '.pf-bar.tap{cursor:pointer;border:1px solid transparent;border-radius:9px;padding:7px 8px;margin:0 -8px}'+
+    '.pf-bar.tap:hover{background:var(--bg);border-color:var(--br)}'+
+    '.pf-bar.tap:focus-visible{outline:2px solid var(--gm);outline-offset:1px}'+
+    '.pf-bar.tap[aria-expanded="true"]{background:var(--bg);border-color:var(--br)}'+
+    '.pf-chev{color:var(--t4);font-size:13px;display:inline-block;margin-left:3px;transition:transform .16s ease}'+
+    '.pf-chev.op{transform:rotate(90deg)}'+
+    '@media (prefers-reduced-motion:reduce){.pf-chev{transition:none}}'+
+    '.pf-dd{margin:8px -8px 4px;padding:0 8px}'+
+    '.pf-dd-in{border:1px solid var(--br);border-radius:12px;padding:13px 15px;background:#fff}'+
+    '.pf-dd-ml{font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--t4);display:flex;justify-content:space-between;align-items:baseline;margin:0 0 6px}'+
+    '.pf-dd-ml .tot{font-size:12.5px;font-weight:800;letter-spacing:0;text-transform:none;font-variant-numeric:tabular-nums}'+
+    '.pf-dd-ml.in .tot{color:var(--gm)}.pf-dd-ml.out .tot{color:#C0392B}'+
+    '.pf-dd-g+.pf-dd-g{margin-top:13px;padding-top:12px;border-top:1px solid var(--br)}'+
+    '.pf-dd-lr{display:grid;grid-template-columns:minmax(96px,150px) 1fr minmax(74px,auto);gap:10px;align-items:center;padding:3px 0}'+
+    '.pf-dd-lr .nm{font-size:12px;color:var(--t2);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}'+
+    '.pf-dd-lr .nm small{color:var(--t4);font-weight:600;font-size:10px}'+
+    '.pf-dd-lr .amt{font-size:12px;font-weight:800;text-align:right;font-variant-numeric:tabular-nums;color:var(--t1)}'+
+    '.pf-dd-lr .tk{height:9px;border-radius:5px;background:var(--bg);position:relative;overflow:hidden}'+
+    '.pf-dd-lr .tk i{position:absolute;left:0;top:0;bottom:0;border-radius:5px}'+
+    '.pf-dd-lr.big .nm{color:var(--t1);font-weight:800}'+
+    '.pf-dd-lr.none .nm,.pf-dd-lr.none .amt{color:var(--t4)}'+
+    '.pf-dd-res{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:12px;padding-top:11px;border-top:2px solid var(--br)}'+
+    '.pf-dd-res .l{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--t3)}'+
+    '.pf-dd-res .v{font-size:19px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1}'+
+    '.pf-dd-res .v.pos{color:var(--gm)}.pf-dd-res .v.neg{color:#C0392B}'+
+    '.pf-dd-drv{margin-top:11px;font-size:12.3px;line-height:1.55;color:var(--t2);background:var(--bg);border-radius:9px;padding:9px 12px;border-left:3px solid #E07B2A}'+
+    '.pf-dd-drv.ok{border-left-color:var(--gm)}'+
+    '.pf-dd-drv b{color:var(--t1);font-weight:800}'+
+    '.pf-cmp-seg{display:inline-flex;border:1.4px solid var(--br);border-radius:8px;overflow:hidden;margin-bottom:13px}'+
+    '.pf-cmp-seg button{padding:5px 13px;font-size:12px;font-weight:700;color:var(--t2);background:#fff;border:0;border-right:1px solid var(--br);cursor:pointer}'+
+    '.pf-cmp-seg button:last-child{border-right:0}'+
+    '.pf-cmp-seg button.on{background:var(--gd);color:#fff}'+
+    '.pf-cmp-k{display:inline-block;font-size:8.5px;letter-spacing:.04em;text-transform:uppercase;font-weight:800;padding:1px 5px;border-radius:4px;margin-right:5px;vertical-align:1px}'+
+    '.pf-cmp-k.c{background:#E8F2DC;color:#3F6212}.pf-cmp-k.o{background:#FFEFD9;color:#9A3412}.pf-cmp-k.l{background:#E4EEF7;color:#1E4E7A}'+
+    '.pf-cmp-cal{border-radius:8px;padding:9px 12px;font-size:11.5px;margin-top:10px;line-height:1.5}'+
+    '.pf-cmp-cal.w{background:#FFF8E6;border:1px solid #FDE68A;color:#92400E}'+
+    '.pf-cmp-cal.i{background:var(--gb);border:1px solid var(--gp);color:var(--gd)}'+
+    '.pf-src{display:inline-block;font-size:8.5px;font-weight:800;text-transform:uppercase;letter-spacing:.03em;padding:2px 6px;border-radius:5px;margin-left:4px;vertical-align:middle}.pf-src.real{background:#EAF3E4;color:#2E7D4F}.pf-src.part{background:#FFF8E6;color:#B45309}.pf-src.budget{background:#F3F4F6;color:#6B7280}.pf-src.planned{background:transparent;color:#6B7280;border:1px dashed #C9CED6;padding:1px 5px}.pf-srcleg{font-size:10px;color:var(--t4);margin-top:8px;line-height:1.5}.pf-plhd{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}.pf-pldelta{font-size:11px;color:var(--t3);background:var(--gb);border:1px solid var(--gp);border-radius:8px;padding:7px 10px;margin:10px 0 0;line-height:1.45}</style><div class="pf-tabs">'+
     '<button id="pf-tabbtn-glance" class="'+(PF_TAB==='glance'?'on':'')+'" onclick="pfTab(\'glance\')">At a glance</button>'+
     '<button id="pf-tabbtn-details" class="'+(PF_TAB==='details'?'on':'')+'" onclick="pfTab(\'details\')">Details</button>'+
     '<button id="pf-tabbtn-whatif" class="'+(PF_TAB==='whatif'?'on':'')+'" onclick="pfTab(\'whatif\')">What-if</button>'+
@@ -14037,16 +14608,35 @@ function renderProfit(){
 
   // ===== GLANCE =====
   html+='<div id="pf-tab-glance" class="pf-panel'+(PF_TAB==='glance'?' on':'')+'">';
+  /* Both headlines used to run a FALLBACK cascade over three separately-ranked domains —
+     crops if any crops exist, else livestock, else orchards — so on a farm that grows
+     anything an orchard or a herd could never be named however it performed. On the demo
+     farm "Best earner" read Winter wheat while Netted Block returned nineteen times as
+     much per hectare, and "Watch" flagged Spring barley, comfortably above cost, while
+     Tunnel A ran below zero. Ranked across all three now, on the one measure they share. */
   var best, bestTxt='';
-  if(scReal.length){ best=scReal[0]; bestTxt=fmt(best.gmHa)+'/ha gross margin'; }
-  else if(sl.length){ best=sl[0]; bestTxt=fmt(best.gmLsu)+'/LU gross margin'; }
-  else if(so.length){ best=so[0]; bestTxt=fmt(best.gmHa)+'/ha gross margin'; }
+  var _pfAll=pfAllEnterprises();
+  if(_pfAll.length){
+    best=_pfAll[0];
+    bestTxt=_pfK(best.gm)+' gross margin'+(best.rate?(' \u00b7 '+fmt(best.rate)+best.unit):'');
+  }
   var watch, watchSub='';
-  if(scReal.length){ var th=null; scReal.forEach(function(c){ if(c.price>0){ var cu=c.price-c.cop; if(th===null||cu<th.cu) th={c:c,cu:cu}; } }); if(th){ watch=th.c.crop; watchSub=fmt(th.cu)+'/tonne above cost'; } }
-  if(!watch && sl.length){ var lw=sl.slice().sort(function(a,b){return a.marginHead-b.marginHead;})[0]; watch=lw.name; watchSub=IE_R(lw.marginHead)+'/head margin'; }
+  /* The weakest enterprise on the farm, not the weakest crop. Anything below zero outranks
+     a thin-but-positive margin: a block losing money is the thing worth looking at, and the
+     old cascade only reached livestock on a farm with no crops at all. */
+  if(_pfAll.length){
+    var _worst=_pfAll[_pfAll.length-1];
+    var _losers=_pfAll.filter(function(x){ return x.gm<0; });
+    if(_losers.length){
+      watch=_worst.name;
+      watchSub=_pfK(Math.abs(_worst.gm))+' below cost'+(_losers.length>1?(' \u00b7 '+_losers.length+' running at a loss'):'');
+    } else {
+      watch=_worst.name; watchSub=_pfK(_worst.gm)+' gross margin \u00b7 thinnest on the farm';
+    }
+  }
   html+='<div class="pf-kpis" id="pf-kpis">'+
     '<div class="pf-kpi kpi-tap" onclick="kpiOpen(\'pfFarmProfit\')"><span class="kpi-i">\u24D8</span><div class="l">Farm profit this season</div><div class="v">'+_pfK(profit)+'</div><div class="s">after '+_pfK(overheads)+' shared costs</div></div>'+
-    '<div class="pf-kpi kpi-tap" onclick="kpiOpen(\'pfBestEarner\')"><span class="kpi-i">\u24D8</span><div class="l">Best earner</div><div class="v">'+esc(best.crop||best.name)+'</div><div class="s">'+bestTxt+'</div></div>'+
+    '<div class="pf-kpi kpi-tap" onclick="kpiOpen(\'pfBestEarner\')"><span class="kpi-i">\u24D8</span><div class="l">Best earner</div><div class="v">'+(best?esc(best.crop||best.name):'\u2014')+'</div><div class="s">'+bestTxt+'</div></div>'+
     (watch?'<div class="pf-kpi warn kpi-tap" onclick="kpiOpen(\'pfThird\')"><span class="kpi-i">\u24D8</span><div class="l">Watch</div><div class="v">'+esc(watch)+'</div><div class="s">'+watchSub+'</div></div>':'<div class="pf-kpi kpi-tap" onclick="kpiOpen(\'pfThird\')"><span class="kpi-i">\u24D8</span><div class="l">Crops &amp; herds</div><div class="v">'+(scReal.length+sl.length)+'</div><div class="s">tracked this season</div></div>')+
   '</div>';
   // U9: untagged income never reaches an enterprise margin — surface it
@@ -14096,16 +14686,100 @@ function renderProfit(){
         '<span onclick="nav(\'orchards\')" style="color:var(--gm);font-weight:800;cursor:pointer;text-decoration:underline">Set your block costs \u2192</span></div>'+
         '</div></div></div>';
     }
-    html+='<div class="pf-card"><div class="pf-ct">Which orchard block pays best?</div><div class="pf-cw">Money back per hectare \u2014 after packing, levy and agent \u2014 for your fruit, berry &amp; veg blocks.</div>';
+    html+='<div class="pf-card"><div class="pf-ct">Which orchard block pays best?</div><div class="pf-cw">Money back per hectare \u2014 after packing, levy and commission \u2014 for your fruit, berry &amp; veg blocks.</div>';
     so.forEach(function(o){ var pctb=Math.max(4,Math.round(Math.abs(o.gmHa)/omax*100)); var col=o.gmHa<0?'#C0392B':(o.gmHa>=omax*0.66?'#40916C':(o.gmHa>=omax*0.4?'#E07B2A':'#C8962C'));
       html+='<div class="pf-bar tap" onclick="orOpenBlock(\''+o.id+'\')"><div class="pf-bh"><div class="n">'+o.icon+' '+esc(o.name)+' <small style="color:var(--t4);font-weight:600;font-size:10.5px">\u00b7 '+o.area+' ha \u00b7 '+esc(o.kind)+'</small></div><div class="v">'+fmt(o.gmHa)+'<small>/ha</small> \u00b7 '+_pfK(o.gm)+' <span class="pf-chev">\u203A</span></div></div><div class="pf-tk"><div class="pf-fl" style="width:'+pctb+'%;background:'+col+'"></div></div></div>';
     });
     html+='<div class="pf-godrill">Tap a block to see its details</div></div>';
   }
+  /* ── Which part of the farm carries it? ─────────────────────────────────────────
+     The three cards above each rank one domain on its own measure — crops per hectare,
+     herds per LU, blocks per hectare — so none of them can answer the question a mixed
+     farm actually asks. This is the same enterprise list the Best earner and Watch KPIs
+     were rebuilt on, rendered.
+
+     Ranked on TOTAL gross margin because it is the only measure all three genuinely
+     share: an orchard and a wheat field are not comparable per hectare, and livestock has
+     no hectares at all unless its fields carry an area. The per-unit rate rides alongside
+     where it is real.
+
+     Sits here on purpose — after each domain, before the reconciliation below, so the
+     page reads as each part, then all of them, then how they become farm profit. */
+  var _cmp=(typeof pfAllEnterprises==='function')?pfAllEnterprises():[];
+  if(_cmp.length>1){
+    var _cmpMode=(typeof PF_CMP_MODE!=='undefined')?PF_CMP_MODE:'total';
+    var _rows=_cmp.slice();
+    if(_cmpMode==='ha')  _rows=_rows.filter(function(x){ return x.unit==='/ha'  && x.rate; }).sort(function(a,b){ return b.rate-a.rate; });
+    if(_cmpMode==='lsu') _rows=_rows.filter(function(x){ return x.unit==='/LU'  && x.rate; }).sort(function(a,b){ return b.rate-a.rate; });
+    var _val=function(x){ return _cmpMode==='total'?x.gm:x.rate; };
+    /* ONE linear scale across the whole track. Scaling both directions by the POSITIVE
+       half's width leaves the negative side only the left of zero to work in, so every red
+       bar draws too long and runs straight through the zero line into the green; clamping
+       losses to left:0 then flattens the difference between a small loss and a large one.
+       Span is the full range, zero sits proportionally inside it, and a bar's length is its
+       share of that span — so the deepest loss reaches exactly to zero and never past it. */
+    var _posMax=Math.max.apply(null,_rows.map(function(x){ return Math.max(0,_val(x)); }).concat(0));
+    var _negMax=Math.max.apply(null,_rows.map(function(x){ return Math.max(0,-_val(x)); }).concat(0));
+    var _span=(_posMax+_negMax)||1;
+    var _anyNeg=_negMax>0;
+    var _zero=_anyNeg?(_negMax/_span*100):0;
+    var _kcls={crop:'c', block:'o', herd:'l'}, _klbl={crop:'Crop', block:'Block', herd:'Herd'};
+    html+='<div class="pf-card"><div class="pf-ct">Which part of the farm carries it?</div>'+
+      '<div class="pf-cw">Every crop, block and herd on one measure — what each brought in after its own direct costs.</div>'+
+      '<div class="pf-cmp-seg">'+
+        '<button class="'+(_cmpMode==='total'?'on':'')+'" onclick="pfCmpMode(\'total\')">Total margin</button>'+
+        '<button class="'+(_cmpMode==='ha'?'on':'')+'" onclick="pfCmpMode(\'ha\')">Per hectare</button>'+
+        '<button class="'+(_cmpMode==='lsu'?'on':'')+'" onclick="pfCmpMode(\'lsu\')">Per LU</button>'+
+      '</div>';
+    if(!_rows.length){
+      html+='<div class="pf-cmp-cal i">Nothing to show on this measure yet.</div>';
+    } else {
+      _rows.forEach(function(x){
+        var v=_val(x), _room=v<0?_zero:(100-_zero);
+        var w=Math.min(_room, Math.max(0.8, Math.abs(v)/_span*100));
+        var _mx=Math.max(_posMax,_negMax)||1;
+        var col=v<0?'#C0392B':(Math.abs(v)>=_mx*0.66?'#40916C':(Math.abs(v)>=_mx*0.4?'#E07B2A':'#C8962C'));
+        var left=v<0?(_zero-w):_zero;
+        /* Rows open on a SINGLE click, matching the Details rows lower down this tab.
+           A row with no reconcilable breakdown stays inert rather than opening an
+           empty panel. */
+        var _k=pfCmpKey(x), _pan=pfCmpPanel(x), _op=!!(PF_CMP_OPEN[_k]&&_pan);
+        var _ka=esc(_k).replace(/'/g,'&#39;');
+        html+='<div class="pf-bar'+(_pan?' tap':'')+'"'+
+            (_pan?(' role="button" tabindex="0" aria-expanded="'+(_op?'true':'false')+'"'+
+                   ' onclick="pfCmpToggle(\''+_ka+'\')"'+
+                   ' onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();pfCmpToggle(\''+_ka+'\');}"'):'')+
+            '><div class="pf-bh"><div class="n">'+
+            '<span class="pf-cmp-k '+(_kcls[x.kind]||'c')+'">'+(_klbl[x.kind]||'')+'</span>'+esc(x.name)+
+            ' <small style="color:var(--t4);font-weight:600;font-size:10.5px">· '+esc(x.size)+'</small></div>'+
+          '<div class="v"'+(v<0?' style="color:#C0392B"':'')+'>'+
+            (_cmpMode==='total'?_pfK(v):(fmt(v)+'<small>'+x.unit+'</small>'))+
+            (_pan?' <span class="pf-chev'+(_op?' op':'')+'">›</span>':'')+'</div></div>'+
+          '<div class="pf-tk sgn">'+(_anyNeg?('<div class="pf-lossbg" style="width:'+_zero.toFixed(2)+'%"></div><div class="pf-z" style="left:'+_zero.toFixed(2)+'%"></div>'):'')+
+          '<div class="pf-fl" style="left:'+Math.max(0,left).toFixed(2)+'%;width:'+w.toFixed(2)+'%;background:'+col+'"></div></div></div>'+
+          (_op?_pan:'');
+      });
+      var _losers=_cmp.filter(function(x){ return x.gm<0; });
+      if(_losers.length && _cmpMode==='total'){
+        var _lost=_losers.reduce(function(a,x){ return a+Math.abs(x.gm); },0);
+        html+='<div class="pf-cmp-cal w">⚠ <b>'+_losers.length+' '+
+          (_losers.length===1?'enterprise cost more than it brought in':'enterprises cost more than they brought in')+'</b> — '+
+          _pfK(_lost)+' between them this season.</div>';
+      }
+      if(_cmpMode!=='total'){
+        var _missing=_cmp.filter(function(x){ return _cmpMode==='ha' ? (x.unit!=='/ha'||!x.rate) : (x.unit!=='/LU'||!x.rate); });
+        if(_missing.length) html+='<div class="pf-cmp-cal i">'+(_cmpMode==='ha'
+            ? 'Herds aren’t shown here — this needs a size on each field.'
+            : 'Only herds are measured per livestock unit. Crops and blocks are on the other two views.')+'</div>';
+      }
+    }
+    if(_anyNeg) html+='<div class="pf-note" style="margin-top:6px">Anything shaded to the left of the line cost more than it brought in.</div>';
+    html+='<div class="pf-note">Gross margin is not profit — it leaves out the shared costs below. A positive margin does not mean an enterprise is paying its share of the farm.</div></div>';
+  }
   var pct=totalGM>0?Math.round(overheads/totalGM*100):0;
   html+='<div class="pf-card"><div class="pf-ct">From gross margin to farm profit</div><div class="pf-cw">Gross margins don\u2019t include shared costs. Here\u2019s the honest bottom line.</div>'+
     '<div class="pf-flow"><div class="seg pf-gm"><div class="l">All gross margins</div><div class="v">'+_pfK(totalGM)+'</div></div><div class="op">\u2212</div><div class="seg pf-co"><div class="l">Shared costs</div><div class="v">'+_pfK(overheads)+'</div></div><div class="op">=</div><div class="seg pf-pr"><div class="l">Farm profit</div><div class="v">'+_pfK(profit)+'</div></div></div>'+
-    '<div class="pf-sw" style="margin-top:12px"><b>So what:</b> Your crops, orchards and herds made <b>'+_pfK(totalGM)+'</b> gross margin, but shared overheads take <b>'+pct+'c of every pound of margin</b>, leaving <b>'+_pfK(profit)+'</b> profit.</div><div class="pf-cw" style="margin-top:10px;font-size:11px;line-height:1.5">Loan payments count as <b>interest only</b> here \u2014 paying off a loan isn\u2019t a running cost, so it doesn\u2019t reduce your profit. You\u2019ll still see the full payment go out in <b>Money Flow</b>.</div>'+((typeof _pfTaggedLabourTotal==='function'&&_pfTaggedLabourTotal()>0)?'<div class="pf-cw" style="margin-top:10px;font-size:11px;line-height:1.5"><b>Tagged labour</b> ('+_pfK(_pfTaggedLabourTotal())+'/yr) is counted inside the crops and herds it\u2019s tagged to \u2014 already in their margins above and taken out of shared costs.</div>':'')+'</div>';
+    '<div class="pf-sw" style="margin-top:12px"><b>So what:</b> Your crops, orchards and herds made <b>'+_pfK(totalGM)+'</b> gross margin, but shared overheads take <b>'+pct+'p of every pound of margin</b>, leaving <b>'+_pfK(profit)+'</b> profit.</div><div class="pf-cw" style="margin-top:10px;font-size:11px;line-height:1.5">Loan payments count as <b>interest only</b> here \u2014 paying off a loan isn\u2019t a running cost, so it doesn\u2019t reduce your profit. You\u2019ll still see the full payment go out in <b>Money Flow</b>.</div>'+((typeof _pfTaggedLabourTotal==='function'&&_pfTaggedLabourTotal()>0)?'<div class="pf-cw" style="margin-top:10px;font-size:11px;line-height:1.5"><b>Tagged labour</b> ('+_pfK(_pfTaggedLabourTotal())+'/yr) is counted inside the crops and herds it\u2019s tagged to \u2014 already in their margins above and taken out of shared costs.</div>':'')+'</div>';
   var ins=[];
   if(scReal.length>=2){ ins.push('<b>'+esc(scReal[0].crop)+'</b> earns the most per hectare ('+fmt(scReal[0].gmHa)+'/ha); <b>'+esc(scReal[scReal.length-1].crop)+'</b> the least ('+fmt(scReal[scReal.length-1].gmHa)+'/ha) \u2014 worth weighing when you plan next season\u2019s rotation.'); }
   var thin=null; scReal.forEach(function(c){ if(c.price>0){ var cu=c.price-c.cop; if(thin===null||cu<thin.cu) thin={c:c,cu:cu}; } });
@@ -14116,8 +14790,10 @@ function renderProfit(){
   html+='</div>';
 
   // ===== DETAILS =====
+  /* The auto-listed fruit-type roll-up came out. Blocks are in the picker now, in the same
+     layout as crops and herds, so keeping the roll-up here too would show every block twice
+     in two different shapes. It renders on the Orchards overview, which is its subject. */
   html+='<div id="pf-tab-details" class="pf-panel'+(PF_TAB==='details'?' on':'')+'">'+
-    (typeof orProfitTypesHTML==='function'?orProfitTypesHTML():'')+
     '<div class="pf-pickrow"><div class="pf-picklbl">Choose what to look at</div><div class="pf-chips" id="pf-det-chips"></div></div>'+
     '<div id="pf-det-body"></div></div>';
 
@@ -35798,6 +36474,33 @@ function orpPct(b){
   if(!cv || a==null) return null;
   return cv[Math.min(Math.max(a-1,0),cv.length-1)];
 }
+/* Where a block sits on its own curve: still filling out, at full crop, or on the
+   way down. The three read identically on a flat margin-per-hectare ranking, and
+   they are completely different situations — a six-year-old block at 50% of full
+   crop is doing exactly what it should, while a nineteen-year-old at 84% is coming
+   down the other side. Ranking them together is what made the orchard section
+   misleading.
+
+   Uses orpAge(), never b.age: the stored field was seeded once and does not move
+   with the clock. */
+function orpStage(b){
+  var cv=orpCurve(b), a=orpAge(b), pct=orpPct(b);
+  if(!cv || a==null || pct==null) return null;
+  var peak=0, peakI=0;
+  for(var i=0;i<cv.length;i++){ if(cv[i]>peak){ peak=cv[i]; peakI=i; } }
+  var idx=Math.min(Math.max(a-1,0),cv.length-1);
+  /* 95% and above is full crop for this purpose. Calling a 98% block "past peak"
+     is technically true and useless — it invites a replant decision on a block
+     that is still carrying essentially everything it ever did. */
+  var stage = (idx<peakI && pct<95) ? 'young' : (pct>=95 ? 'full' : 'old');
+  return {age:a, pct:pct, stage:stage, peakYear:peakI+1};
+}
+function orpStageLabel(st){
+  if(!st) return '';
+  if(st.stage==='young') return {t:'coming into bearing', cls:'young'};
+  if(st.stage==='old')   return {t:'past peak',           cls:'old'};
+  return {t:'full bearing', cls:'full'};
+}
 function orpBearing(b){ return (b.tons||0)>0; }
 /* The year this block first carries a crop, from the curve. */
 function orpFirstPickYear(b){
@@ -40423,6 +41126,24 @@ function lsHerdKeepCost(h){
     return (typeof lvpFinishFeed==='function') ? lvpFinishFeed(h) : 0;
   }
   return Math.round(((h.feed||0)+(h.vet||0))*(h.qty||0)*12);
+}
+/* The same keep bill, split into the feed half and the health half.
+
+   DISPLAY ONLY. It changes no total anywhere: feed + vet is lsHerdKeepCost(h) to the
+   penny by construction — vet is derived and feed is the remainder — so a drill-down
+   built on it can never disagree with the herd cost above it. That mattered enough to
+   build it this way round rather than rounding both halves independently, which drifts
+   by a pound and makes a reconciliation check fail for no real reason.
+
+   A finishing herd's keep is a ration cost with no health line inside it, so its vet
+   half is zero and the whole figure stays feed. */
+function lsHerdKeepSplit(h){
+  if(!h) return {feed:0, vet:0};
+  if(typeof lvpIsFinish==='function' && lvpIsFinish(h)) return {feed:lsHerdKeepCost(h), vet:0};
+  var keep=lsHerdKeepCost(h);
+  var vet=Math.round((h.vet||0)*(h.qty||0)*12);
+  if(vet>keep) vet=keep; if(vet<0) vet=0;
+  return {feed:keep-vet, vet:vet};
 }
 /* Cost events split two ways. A GENERATED herd-plan line ("Plan: broiler feed")
    IS that herd's feed bill and replaces the model. Anything the farmer typed
@@ -56922,7 +57643,7 @@ var PAGE_TOURS = {
     { intro:true, title:'Orchards, Fruit & Veg', icon:'🍊', tab:'overview',
       text:'Everything for your fruit, berry and veg blocks in one place — what each block brings in, when it’s clear to pick, how audit-ready it is, and your spray and certificate records.', pos:'center' },
     { target:'or-ov-money', title:'Your season, at a glance', icon:'📊', tab:'overview',
-      text:'The headline up top: your forecast money back for the season, with your average per hectare and crop estimate just below — the one-line answer to “where does my season stand?”', tip:'“Money back” is what the packhouse and agent actually pay you — after commission, packing, shipping and levies.', pos:'smart' },
+      text:'The headline up top: your forecast money back for the season, with your average per hectare and crop estimate just below — the one-line answer to “where does my season stand?”', tip:'“Money back” is what the packhouse and buyer actually pay you — after commission, packing, shipping and levies.', pos:'smart' },
     { target:'or-ov-attn', title:'What needs you today', icon:'⚠️', tab:'overview',
       text:'Below the numbers, a “needs your attention” list surfaces what’s time-sensitive — blocks slipping behind where they should be, certificates about to expire, or fruit inside a spray waiting-period. Clear this list and your season is on track.', pos:'smart' },
     { target:'or-bl-blocks', title:'Your blocks, at a glance', icon:'🌳', tab:'blocks', onEnter:'orTourShowCards',
@@ -63771,7 +64492,11 @@ function orRenderOverview(){
   var k=$('or-kpis'); if(k){ k.innerHTML=''; k.style.display='none'; }
   var host=$('or-ov-blocks'); if(!host) return;
   if(!orActiveBlocks().length){ host.innerHTML=orEmptyHTML(); return; }
-  host.innerHTML=orDashboardHTML();
+  /* The per-fruit-type roll-up lives here now. It used to be stacked on top of the Profit
+     tab's picker, which it was never part of; removing it from there left it unreachable.
+     This is its subject matter — its own heading reads "Orchards — profit per fruit type" —
+     and it brings the block maturity badges with it. */
+  host.innerHTML=orDashboardHTML()+(typeof orProfitTypesHTML==='function'?orProfitTypesHTML():'');
 }
 function orDashboardHTML(){
   var t=orTotals();
@@ -63781,7 +64506,7 @@ function orDashboardHTML(){
   var hero='<div class="kpi-tap" id="or-ov-money" onclick="kpiOpen(\'orMoneyBack\')" style="position:relative;cursor:pointer;background:linear-gradient(135deg,#1B4332,#2D6A4F);color:#fff;border-radius:16px;padding:17px 18px;margin-bottom:11px"><span class="kpi-i" style="border-color:rgba(255,255,255,.5);color:rgba(255,255,255,.85)">\u24D8</span>'+
     '<div style="font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:rgba(255,255,255,.82)">Forecast money back \u00b7 this season</div>'+
     '<div style="font-size:31px;font-weight:800;font-family:Georgia,serif;margin:3px 0 2px">'+orRm(t.money)+'</div>'+
-    '<div style="font-size:11.5px;color:rgba(255,255,255,.85)">after packing, levy &amp; agent \u00b7 '+bearing.length+' bearing block'+(bearing.length!==1?'s':'')+' \u00b7 '+t.prodHa.toFixed(1)+' ha</div></div>';
+    '<div style="font-size:11.5px;color:rgba(255,255,255,.85)">after packing, levy &amp; commission \u00b7 '+bearing.length+' bearing block'+(bearing.length!==1?'s':'')+' \u00b7 '+t.prodHa.toFixed(1)+' ha</div></div>';
   var kpis='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:18px">'+
     orDashKpi('Average per hectare', orRm(avgHa), '/ha across orchards','orMoneyHa')+
     orDashKpi('Crop estimate', t.tons.toLocaleString('en-GB')+' t', 'all blocks','orEstimate')+
@@ -65062,7 +65787,7 @@ function _pfOrchardEnts(){
   if(typeof entOn==="function" && !entOn("orchards")) return [];
   return ST_FRUIT.blocks.filter(function(b){return !b.plan && !b.removed && (b.tons||0)>0;}).map(function(b){
     var area=b.ha||0; var ops=(typeof orOpsCost==='function')?orOpsCost(b):0; var mb=orBlockTotal(b); var lab=(typeof wkEnterpriseLabour==='function')?wkEnterpriseLabour('or:'+b.id):0; var gm=mb-ops-lab;
-    return {id:b.id, name:b.name, kind:OR_CATS[b.cat]?OR_CATS[b.cat].nm:'Orchard', icon:b.icon, area:area, gmHa:area?Math.round(gm/area):0, gm:gm, moneyBack:mb, ops:ops, labour:lab};
+    return {id:b.id, name:b.name, cat:b.cat, kind:OR_CATS[b.cat]?OR_CATS[b.cat].nm:'Orchard', icon:b.icon, area:area, gmHa:area?Math.round(gm/area):0, gm:gm, moneyBack:mb, ops:ops, labour:lab};
   });
 }
 var OR_PFCOL={topfruit:'#E07B2A',fruit:'#40916C',berry:'#7C3AED',veg:'#0E7490'};
@@ -65083,15 +65808,39 @@ function orProfitTypesHTML(){
     var a=agg[k]; var perha=a.ha?Math.round(a.total/a.ha):0; var op=!!OR_PF_OPEN[k]; var gm=a.total-a.ops;
     var w=Math.max(7,Math.round(a.total/maxTot*100));
     var blocks=a.blocks.slice().sort(function(x,y){return orBlockTotal(y)-orBlockTotal(x);});
+    /* Age is the missing half of every one of these rows. A block filling out and a
+       block coming down carry the same short bar for opposite reasons. */
+    var _young=[], _old=[];
     var rows=blocks.map(function(b){
       var bw=Math.max(6,Math.round(orBlockMargin(b)/maxPh*100));
-      return '<div class="opf-row" onclick="orOpenBlock(\''+b.id+'\')"><div class="opf-bn">'+esc(b.name)+'<small>'+esc(b.cultivar)+' · '+b.ha+' ha</small><div class="opf-bb"><i style="width:'+bw+'%;background:'+OR_PFCOL[k]+'"></i></div></div>'+
+      var st=(typeof orpStage==='function')?orpStage(b):null;
+      var lb=st?orpStageLabel(st):null;
+      if(st && st.stage==='young') _young.push(b.name);
+      if(st && st.stage==='old')   _old.push(b.name);
+      /* Year and stage in ONE badge. As two pieces the year lengthened the cultivar line
+         enough to wrap it, and a wrapped line plus a chip made every row far taller. */
+      var chip = lb ? (' <span class="opf-mat '+lb.cls+'">Yr '+st.age+' · '+lb.t+(st.stage==='full'?'':(' '+st.pct+'%'))+'</span>') : '';
+      return '<div class="opf-row" onclick="orOpenBlock(\''+b.id+'\')"><div class="opf-bn">'+esc(b.name)+chip+'<small>'+esc(b.cultivar)+' · '+b.ha+' ha</small><div class="opf-bb"><i style="width:'+bw+'%;background:'+OR_PFCOL[k]+'"></i></div></div>'+
         '<div class="opf-bv"><div class="t">'+orRm(orBlockTotal(b))+'</div><div class="p">'+orR(orBlockMargin(b))+'/ha</div></div></div>';
     }).join('');
-    var ledger='<div style="border-top:1px solid var(--br2);padding:9px 14px 11px;font-size:12px">'+
-      '<div style="display:flex;justify-content:space-between;color:var(--t2);padding:2px 0"><span>Money back</span><span style="font-weight:600">'+orRm(a.total)+'</span></div>'+
-      '<div style="display:flex;justify-content:space-between;color:var(--rd);padding:2px 0"><span>\u2212 Growing costs</span><span style="font-weight:600">\u2212'+orRm(a.ops)+'</span></div>'+
-      '<div style="display:flex;justify-content:space-between;border-top:1px dashed var(--br);margin-top:4px;padding-top:6px;font-weight:800;color:var(--t1)"><span>= Gross margin</span><span style="color:var(--gm);font-family:Georgia,serif">'+orRm(gm)+'</span></div>'+
+    /* One line naming what the ages mean, so a low margin on a young block is not read
+       as a bad block. Only rendered when there is something to explain. */
+    var matNote='';
+    if(_young.length||_old.length){
+      var bits=[];
+      if(_young.length) bits.push('<b>'+_young.map(esc).join(', ')+'</b> '+(_young.length===1?'is still filling out':'are still filling out'));
+      if(_old.length)   bits.push('<b>'+_old.map(esc).join(', ')+'</b> '+(_old.length===1?'is past its peak':'are past their peak'));
+      matNote='<div class="opf-matnote">'+bits.join(' · ')+
+        ' — a lower margin per hectare is expected here, and is not the same as a block that is underperforming.</div>';
+    }
+    /* Each fruit type carried a three-line ledger stack, and together they were most of
+       this section's height for three numbers apiece. Same three numbers, one row. */
+    var ledger='<div class="opf-led">'+
+      '<span><i>Money back</i><b>'+orRm(a.total)+'</b></span>'+
+      '<span class="op">\u2212</span>'+
+      '<span><i>Growing costs</i><b class="neg">'+orRm(a.ops)+'</b></span>'+
+      '<span class="op">=</span>'+
+      '<span><i>Gross margin</i><b class="'+(gm<0?'neg':'tot')+'">'+orRm(gm)+'</b></span>'+
       '</div>';
     return '<div class="opf-card"><div class="opf-head" onclick="orPfTypeToggle(\''+k+'\')"><div class="opf-ic" style="background:'+OR_PFTINT[k]+'">'+OR_CATS[k].ic+'</div>'+
       '<div><div class="opf-nm">'+OR_CATS[k].nm+'</div><div class="opf-mt">'+a.blocks.length+' block'+(a.blocks.length>1?'s':'')+' · '+a.ha.toFixed(1)+' ha · '+orRm(perha)+'/ha avg</div></div>'+
@@ -65099,10 +65848,10 @@ function orProfitTypesHTML(){
       '<span class="opf-car'+(op?' open':'')+'" id="opf-car-'+k+'">\u203A</span></div>'+
       ledger+
       '<div class="opf-barw"><div class="opf-bar"><i style="width:'+w+'%;background:'+OR_PFCOL[k]+'"></i></div></div>'+
-      '<div class="opf-blk'+(op?' open':'')+'" id="opf-blk-'+k+'">'+rows+'</div></div>';
+      '<div class="opf-blk'+(op?' open':'')+'" id="opf-blk-'+k+'">'+rows+matNote+'</div></div>';
   }).join('');
   return '<div class="opf-wrap"><div class="opf-h">Orchards \u2014 profit per fruit type</div>'+cards+
-    '<div style="font-size:11.5px;color:var(--t3);margin:4px 2px 2px">\u201CMoney back\u201D is what the packhouse &amp; agent pay you. Growing costs (spray, fertiliser, labour) then come off to give your <b>gross margin</b> \u2014 the figure that feeds Farm Profit. Shared overheads come off once at farm level.</div></div>';
+    '<div style="font-size:11.5px;color:var(--t3);margin:4px 2px 2px">\u201CMoney back\u201D is what the packhouse &amp; buyer pay you. Growing costs (spray, fertiliser, labour) then come off to give your <b>gross margin</b> \u2014 the figure that feeds Farm Profit. Shared overheads come off once at farm level.</div></div>';
 }
 function orPfTypeToggle(k){ if(!OR_PF_OPEN)OR_PF_OPEN={}; OR_PF_OPEN[k]=!OR_PF_OPEN[k]; var b=document.getElementById('opf-blk-'+k),c=document.getElementById('opf-car-'+k); if(b)b.classList.toggle('open',OR_PF_OPEN[k]); if(c)c.classList.toggle('open',OR_PF_OPEN[k]); }
 /* #4 audit pack + pack-out exports (print/PDF via printWindow) */
@@ -67210,26 +67959,29 @@ function _lsRegCertsCard(){
       label:'Farm profit this season', value:_pfK(profit), warn:profit<0,
       verdict: profit>0?{tone:'good',head:'Healthy season',text:'After every growing cost and the shared running costs, the farm should clear about '+_pfK(profit)+'.'}:{tone:'watch',head:'Running at a loss',text:'Shared costs are outweighing your margins this season \u2014 worth a close look.'},
       mean:'What the whole farm makes after all growing costs and the running costs that keep it going (loan interest, salaries, wear \u0026 tear).',
-      breakdown:{title:'From margins down to profit', rows:rows, tot:{nm:'Farm profit', amt:_pfK(profit)}, note:'Shared running costs take about '+oc+'c of every pound of margin. Loan repayments count as interest only \u2014 paying off a loan isn\u2019t a running cost.'},
+      breakdown:{title:'From margins down to profit', rows:rows, tot:{nm:'Farm profit', amt:_pfK(profit)}, note:'Shared running costs take about '+oc+'p of every pound of margin. Loan repayments count as interest only \u2014 paying off a loan isn\u2019t a running cost.'},
       jump:{label:'See the full breakdown', tone:'', go:function(){ if(typeof pfTab==='function') pfTab('details'); }, back:function(){ if(typeof pfTab==='function') pfTab('glance'); kpiOpen('pfFarmProfit'); }, trail:'\u2039 Back to profit overview', show:'Showing the details tab'}
     };
   };
   REG.pfBestEarner=function(){
     var e=_pfE();
-    var sc=e.crops.slice().sort(function(a,b){return b.gmHa-a.gmHa;});
-    var sl=e.live.slice().sort(function(a,b){return b.gmLsu-a.gmLsu;});
-    var so=e.orch.slice().sort(function(a,b){return b.gmHa-a.gmHa;});
-    var best,bestTxt='',kind='',list=[],unit='/ha',title='',perWord='hectare';
-    if(sc.length){ best=sc[0]; kind='crop'; unit='/ha'; perWord='hectare'; title='Crops by gross margin per hectare'; list=sc.map(function(c){return {nm:c.crop,val:c.gmHa};}); bestTxt=fmt(best.gmHa)+'/ha gross margin'; }
-    else if(sl.length){ best=sl[0]; kind='herd'; unit='/LU'; perWord='grazing unit'; title='Herds by gross margin per LU'; list=sl.map(function(l){return {nm:l.name,val:l.gmLsu};}); bestTxt=fmt(best.gmLsu)+'/LU gross margin'; }
-    else if(so.length){ best=so[0]; kind='block'; unit='/ha'; perWord='hectare'; title='Blocks by money back per hectare'; list=so.map(function(o){return {nm:o.name,val:o.gmHa};}); bestTxt=fmt(best.gmHa)+'/ha money back'; }
+    /* Was a fallback cascade over three separately-ranked domains, so the headline could only
+       ever name a crop on a farm that grows anything. Ranked across all of them now, on total
+       gross margin — the one measure an orchard block, a wheat field and a herd all share. */
+    var _all=(typeof pfAllEnterprises==='function')?pfAllEnterprises():[];
+    var best,bestTxt='',kind='',list=[],title='Every enterprise by gross margin';
+    if(_all.length){
+      best=_all[0]; kind=best.kind;
+      list=_all.map(function(x){ return {nm:x.name, val:x.gm}; });
+      bestTxt=_pfK(best.gm)+' gross margin'+(best.rate?(' \u00b7 '+fmt(best.rate)+best.unit):'');
+    }
     var mx=list.length?Math.max(list[0].val,1):1;
-    var rows=list.slice(0,5).map(function(x,i){return {nm:x.nm,amt:fmt(x.val)+unit,pct:Math.round(Math.max(0,x.val)/mx*100),cls:(i>0?'gold':'')};});
+    var rows=list.slice(0,5).map(function(x,i){return {nm:x.nm,amt:_pfK(x.val),pct:Math.round(Math.max(0,x.val)/mx*100),cls:(i>0?'gold':'')};});
     return {
-      label:'Best earner', value:(best?(best.crop||best.name):'\u2014'), chip:'Per '+perWord,
-      verdict:{tone:'info',head: best?('Your top earner: '+(best.crop||best.name)):'No earners yet', text: best?((best.crop||best.name)+' returns '+bestTxt+' \u2014 your strongest '+kind+' per '+perWord+' this season.'):'Add a crop, block or herd to compare.'},
-      mean:'The '+(kind||'item')+' bringing in the most per '+perWord+'. This is about return on land \u2014 a bigger block can earn more in total but less per '+perWord+'.',
-      breakdown: rows.length?{title:title, rows:rows, note:'Ranked by gross margin per '+perWord+' \u2014 the same measure as the headline, so your top earner sits first.'}:null,
+      label:'Best earner', value:(best?(best.crop||best.name):'\u2014'), chip:'Whole farm',
+      verdict:{tone:'info',head: best?('Your top earner: '+(best.crop||best.name)):'No earners yet', text: best?((best.crop||best.name)+' returns '+bestTxt+' \u2014 the strongest '+kind+' on the farm this season.'):'Add a crop, block or herd to compare.'},
+      mean:'The crop, block or herd that brought in the most this season after its own direct costs. Ranked on total gross margin, which is the only measure all three share \u2014 an orchard block and a wheat field are not comparable per hectare, and a herd has no hectares at all unless its field carries an area.',
+      breakdown: rows.length?{title:title, rows:rows, note:'Every enterprise on the farm, crops and blocks and herds together, ranked by what each brought in after its own costs.'}:null,
       jump:{label:'See each earner in detail', tone:'', go:function(){ if(typeof pfTab==='function') pfTab('details'); }, back:function(){ if(typeof pfTab==='function') pfTab('glance'); kpiOpen('pfBestEarner'); }, trail:'\u2039 Back to profit overview', show:'Showing the details tab'}
     };
   };
@@ -67237,16 +67989,27 @@ function _lsRegCertsCard(){
     var e=_pfE();
     var sc=e.crops.slice().sort(function(a,b){return b.gmHa-a.gmHa;});
     var sl=e.live.slice().sort(function(a,b){return b.gmLsu-a.gmLsu;});
-    var watch=null,cushion=null;
-  if(sc.length){ var th=null; sc.forEach(function(c){ if(c.price>0){ var cu=c.price-c.cop; if(th===null||cu<th.cu) th={c:c,cu:cu}; } }); if(th){ watch=th.c.crop; cushion=th; } }
-    if(!watch && sl.length){ var lw=sl.slice().sort(function(a,b){return a.marginHead-b.marginHead;})[0]; watch=lw.name; }
+    /* The old order looked at crop cushions first and only reached livestock on a farm with no
+       crops at all, so a block or herd running at a loss was invisible behind a crop that was
+       still making money. Anything below zero comes first now, whatever kind it is. */
+    var _all=(typeof pfAllEnterprises==='function')?pfAllEnterprises():[];
+    var _losers=_all.filter(function(x){ return x.gm<0; });
+    var watch=null,cushion=null,_worst=null;
+    if(_losers.length){ _worst=_all[_all.length-1]; watch=_worst.name; }
+    else if(sc.length){ var th=null; sc.forEach(function(c){ if(c.price>0){ var cu=c.price-c.cop; if(th===null||cu<th.cu) th={c:c,cu:cu}; } }); if(th){ watch=th.c.crop; cushion=th; } }
+    else if(_all.length){ _worst=_all[_all.length-1]; watch=_worst.name; }
     if(watch){
       var rows=null;
       if(cushion){ var c=cushion.c; rows=[{nm:'Sells for',amt:fmt(c.price)+'/tonne',pct:100},{nm:'\u2212 Costs to grow',amt:'\u2212'+fmt(c.cop)+'/tonne',pct:c.price>0?Math.round(c.cop/c.price*100):0,neg:true}]; }
       return {
         label:'Watch', value:watch, warn:true,
-        verdict:{tone:'watch',head:'Thinnest cushion',text:watch+' has the least room before it stops making money this season.'},
-        mean:'The crop or herd with the smallest gap between what it earns and what it costs \u2014 the first to feel a price dip.',
+        verdict: _losers.length
+          ? {tone:'watch',head:(_losers.length===1?'Running at a loss':(_losers.length+' running at a loss')),
+             text:watch+' cost '+_pfK(Math.abs(_worst.gm))+' more than it brought in this season'+(_losers.length>1?', and it is not the only one':'')+'.'}
+          : {tone:'watch',head:'Thinnest cushion',text:watch+' has the least room before it stops making money this season.'},
+        mean: _losers.length
+          ? 'The enterprise furthest below zero on its own direct costs. Crops, blocks and herds are all considered \u2014 a block losing money used to sit behind a crop that was still profitable.'
+          : 'The crop, block or herd with the smallest gap between what it earns and what it costs \u2014 the first to feel a price dip.',
         breakdown: rows?{title:'How thin is the cushion?', rows:rows, tot:{nm:'Cushion', amt:(cushion?fmt(cushion.cu)+'/tonne':'')}, note:(cushion?'Below '+fmt(cushion.c.cop)+'/tonne this crop would lose money.':'')}:null,
         todo: watch+': worth locking in a price where you can, or trimming input cost.',
         jump:{label:'See '+watch+' in detail', tone:'gold', go:function(){ if(typeof pfTab==='function') pfTab('details'); }, back:function(){ if(typeof pfTab==='function') pfTab('glance'); kpiOpen('pfThird'); }, trail:'\u2039 Back to profit overview', show:'Showing the details tab'}
