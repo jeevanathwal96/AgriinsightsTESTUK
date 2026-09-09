@@ -10891,7 +10891,25 @@ function cropLandYield(l){ return (l.actualYield!=null ? l.actualYield : l.targe
 // Effective price/ton: the land's own price if set, otherwise the AHDB reference for the crop.
 function cropLandPrice(l){ return (l && l.price>0) ? l.price : cropPrice(l ? l.crop : ''); }
 function cropLandIncomePerHa(l){ var p=cropLandPrice(l); return p ? cropLandYield(l)*p : 0; }
-function cropLandGMperHa(l){ return cropLandIncomePerHa(l) - (l.inputPerHa||0); }
+/* The second half of a crop's variable cost: contract work, drying, haulage and levy.
+   The farmer already enters it — Planning's crop form has had an "Other cost (£/ha)" box
+   all along and planCropToDb has always synced other_cost — but nothing outside Planning
+   read it, so Crops, Profit and the Season Tracker all costed a crop on its inputs alone.
+   On the demo farm that is £102 600 the farmer typed in and no margin counted, and it put
+   Planning and Profit 29-42% apart on cost per tonne for the same crop in the same season.
+
+   Deliberately NO invented fallback. The South African build defaults this to a share of
+   input cost when it is blank; here a blank means blank, so a crop with nothing entered
+   keeps exactly the number it has today. An honest gap beats a plausible wrong figure,
+   and it is the same rule _benchResolve already follows. */
+function cropOtherPerHa(l){
+  if(!l) return 0;
+  var p=null;
+  try{ if(typeof ST_PLAN!=='undefined' && ST_PLAN.crops && l.planId)
+        p=ST_PLAN.crops.filter(function(c){ return c && c.linkId===l.planId; })[0]; }catch(e){}
+  return (p && p.otherCost>0) ? (Number(p.otherCost)||0) : 0;
+}
+function cropLandGMperHa(l){ return cropLandIncomePerHa(l) - (l.inputPerHa||0) - cropOtherPerHa(l); }
 function cropExpectedTons(){ return ST_CROP.lands.filter(cropPlanted).reduce(function(s,l){return s+cropLandYield(l)*(l.area||0);},0); }
 function cropForecastGM(){ return ST_CROP.lands.filter(cropPlanted).reduce(function(s,l){return s+cropLandGMperHa(l)*(l.area||0);},0); }
 function cropStageLabel(s){ return {growing:'Growing',harvest:'Ready to harvest',harvested:'Harvested',planned:'Planned',fallow:'Fallow / grazing'}[s] || s; }
@@ -10942,7 +10960,7 @@ function cropForecastReady(land){
   return cropForecastable(land) && cropLandPrice(land)>0 && cropLandYield(land)>0 && (land.area||0)>0 && cropMonthLabel(land.planted) && cropMonthLabel(land.harvest);
 }
 // Create/update/remove the linked Planning crop line so the forecast counts each crop ONCE
-function cropSyncToPlan(land){
+function cropSyncToPlan(land, seedOther){
   if(typeof ST_PLAN==='undefined' || !ST_PLAN.crops) return;
   var idx=cropFindPlanLine(land);
   if(!cropForecastable(land)){
@@ -10960,7 +10978,7 @@ function cropSyncToPlan(land){
     yield: cropLandYield(land),
     price: cropLandPrice(land),
     inputCost: land.inputPerHa||0,
-    otherCost: 0,
+    otherCost: (seedOther>0)?Number(seedOther):0,
     repeat: 'none',
     linkId: land.planId
   };
@@ -11924,7 +11942,7 @@ function _cropOverviewTotals(){
   var plantedArea=0, expValue=0, putIn=0, paying=0, payTotal=0, byCrop={};
   active.forEach(function(l){
     var area=l.area||0; plantedArea+=area;
-    var inc=cropLandIncomePerHa(l)*area, inp=(l.inputPerHa||0)*area;
+    var inc=cropLandIncomePerHa(l)*area, inp=((l.inputPerHa||0)+cropOtherPerHa(l))*area;
     expValue+=inc; putIn+=inp;
     var est=cropEffStage(l);
     if(est!=='planned'){ payTotal++; if(cropLandGMperHa(l)>=0) paying++; }
@@ -12004,7 +12022,7 @@ function _cropKpiPanel(key){
     var gauge=(T.marginPct==null)?'':'<div class="cr-gauge"><span class="be" style="left:28.6%"></span><span class="pin" style="left:'+_gp.toFixed(1)+'%"></span></div><div class="cr-gaugel"><span>−20%</span><span>break-even</span><span>good +20%</span><span>strong +50%</span></div>';
     var cand=(ST_CROP.lands||[]).filter(function(l){return l.crop && cropEffStage(l)!=='fallow' && cropPrice(l.crop)>0 && cropLandYield(l)>0;}).sort(function(a,b){return (b.area||0)-(a.area||0);})[0];
     var safex='';
-    if(cand){ var be=Math.round((cand.inputPerHa||0)/cropLandYield(cand));
+    if(cand){ var be=Math.round(((cand.inputPerHa||0)+cropOtherPerHa(cand))/cropLandYield(cand));
       safex='<div class="ls-kpimean" style="background:var(--gb);border:1px solid #cfe9d8"><b>At today\u2019s AHDB '+_curSym()+_grpInt(cropPrice(cand.crop))+'/t, '+esc(cand.name)+' clears '+cropFmtR(Math.round(cropLandGMperHa(cand)))+'/ha</b> \u2014 your break-even is about '+_curSym()+_grpInt(be)+'/t.</div>'; }
     var verdict = (T.marginPct==null)?'<div class="ls-kpimean">Add a price to each land to see your margin.</div>':
       ('<div class="ls-kpimean"><b>'+(g>=0?('Your lands are set to pay back '+_lsCompactRand(g)+' over what you put in.'):('Right now your lands are forecast to lose '+_lsCompactRand(Math.abs(g))+'.'))+'</b></div>');
@@ -12084,7 +12102,7 @@ function _cropLandCardBody(l){
   var col3='<div><div class="cr-bh">Land actions</div><div class="cr-acts">'+acts+'</div></div>';
   var strip='';
   if(!fallow && l.crop){
-    var putIn=(l.inputPerHa||0)*(l.area||0), exp=cropLandIncomePerHa(l)*(l.area||0), gain=exp-putIn;
+    var putIn=((l.inputPerHa||0)+cropOtherPerHa(l))*(l.area||0), exp=cropLandIncomePerHa(l)*(l.area||0), gain=exp-putIn;
     strip='<div class="cr-money-strip"><span>Put in: <b>'+_lsCompactRand(putIn)+'</b></span><span>Expected: <b>'+_lsCompactRand(exp)+'</b></span><span>Margin: <b class="'+(gain>=0?'pos':'neg')+'">'+(gain>=0?'+':'−')+_lsCompactRand(Math.abs(gain))+'</b></span></div>';
   }
   return '<div class="cr-cardbody"><div class="cr-cols">'+col1+col2+col3+'</div>'+strip+'</div>';
@@ -12533,6 +12551,11 @@ function cropRenderAddForm(){
       '<div class="crop-field"><label>Expected harvest</label><input id="crop-f-harvest" type="date"></div></div>'+
     '<div class="crop-two"><div class="crop-field"><label>Target yield (t/ha)</label><input id="crop-f-yield" type="number" step="0.1" placeholder="6.2"></div>'+
       '<div class="crop-field"><label>Budgeted input cost (£/ha)</label><input id="crop-f-input" type="number" placeholder="11200"></div></div>'+
+    /* Planning's own crop form has asked for this since it was written; this one never did,
+       so every land planted from Crops seeded its plan line with otherCost 0 and the crop
+       was costed on seed, fertiliser and sprays alone. Same label and same units as the
+       Planning form, so the two agree on what the farmer is being asked for. */
+    '<div class="crop-field"><label>Other cost (£/ha) <span style="font-weight:400;color:var(--t4);font-size:11px">contract work, drying, haulage, levy</span></label><input id="crop-f-other" type="number" placeholder="e.g. 260"></div>'+
     '<div class="crop-field"><label>Price (£ per tonne)</label><input id="crop-f-price" type="number" inputmode="decimal" placeholder="e.g. 4180" oninput="cropPriceTouched=true"><div id="crop-f-price-chip"></div></div>'+
     '<div class="crop-field"><label>Irrigated?</label><select id="crop-f-irr"><option value="no">Dryland (rain-fed)</option><option value="yes">Irrigated \u2014 links to water-use tracking</option></select></div>'+
     '<button class="crop-formbtn" onclick="cropSaveLand()">Plant this land</button>'+
@@ -12589,6 +12612,7 @@ var gmo=false;
   var harvest=$('crop-f-harvest').value;
   var ty=parseFloat($('crop-f-yield').value)||0;
   var inp=parseFloat($('crop-f-input').value)||0;
+  var oth=parseFloat($('crop-f-other') && $('crop-f-other').value)||0;
   var prc=parseFloat($('crop-f-price') && $('crop-f-price').value)||0;
   if(!crop){ toast('Please choose a crop','error'); return; }
   if(area<=0){ toast('Please enter the area in hectares','error'); return; }
@@ -12606,7 +12630,7 @@ var gmo=false;
   land.planted=planted; land.harvest=harvest; land.targetYield=ty; land.actualYield=null; land.inputPerHa=inp; land.price=prc;
   land.stage = planted ? 'growing' : 'planned';
   if(planted) ST_CROP.events.unshift({id:cropNextId(ST_CROP.events,'ce'), land:land.id, kind:'planted', date:planted, note:crop+(cultivar?(' '+cultivar):'')});
-  cropSyncToPlan(land);
+  cropSyncToPlan(land, oth);
   ST_CROP.activeTab='overview';
   dataChanged('crop');
   toast('Land planted \u2014 '+land.name, 'success');
@@ -12918,7 +12942,7 @@ function openCropGMReport(){
   var planted=ST_CROP.lands.filter(cropPlanted);
   var rows='', T={area:0,inc:0,inp:0,gm:0};
   planted.forEach(function(l){
-    var inc=cropLandIncomePerHa(l)*l.area, inp=(l.inputPerHa||0)*l.area, gm=inc-inp;
+    var inc=cropLandIncomePerHa(l)*l.area, inp=((l.inputPerHa||0)+cropOtherPerHa(l))*l.area, gm=inc-inp;
     T.area+=l.area; T.inc+=inc; T.inp+=inp; T.gm+=gm;
     rows+='<tr><td>'+escTxHtml(l.name)+'</td><td>'+escTxHtml(l.crop)+'</td><td class="amt">'+l.area+'</td><td class="amt">'+cropLandYield(l)+'</td><td class="amt">'+(cropPrice(l.crop)?cropRand(cropPrice(l.crop)):'\u2014')+'</td><td class="amt">'+cropRand(l.inputPerHa)+'</td><td class="amt '+(cropLandGMperHa(l)<0?'neg':'')+'">'+cropRand(cropLandGMperHa(l))+'</td><td class="amt '+(gm<0?'neg':'pos')+'">'+cropRand(gm)+'</td></tr>';
   });
@@ -13288,7 +13312,7 @@ function _pfCropEnts(opts){
     var yld=(typeof cropLandYield==='function')?cropLandYield(l):((l.actualYield!=null?l.actualYield:l.targetYield)||0);
     var area=l.area||0;
     if(!by[l.crop]){ by[l.crop]={crop:l.crop,area:0,tons:0,income:0,cost:0,budgetCost:0,plannedArea:0,plannedCount:0,pricedArea:0,price:price,refPrice:(ST_CROP.prices&&ST_CROP.prices[l.crop])||0}; order.push(l.crop); }
-    var e=by[l.crop]; e.area+=area; e.tons+=area*yld; e.income+=area*yld*price; e.budgetCost+=area*(l.inputPerHa||0);
+    var e=by[l.crop]; e.area+=area; e.tons+=area*yld; e.income+=area*yld*price; e.budgetCost+=area*((l.inputPerHa||0)+cropOtherPerHa(l));
     if(price>0) e.pricedArea+=area;
     if(isPlanned){ e.plannedArea+=area; e.plannedCount++; }
   });
@@ -13564,7 +13588,7 @@ function _pfBenchLive(l){ return _pfBenchLiveMeta(l).v; }
 function _pfLandsOf(crop, opts){ var out=[]; var inclPlanned=!!(opts&&opts.includePlanned); (ST_CROP&&ST_CROP.lands||[]).forEach(function(l){ if(l.crop!==crop) return; if(l.stage==='fallow') return; var isPlanned=(l.stage==='planned'); if(isPlanned && !inclPlanned) return; /* Same A1/C1 fix as _pfCropEnts — this drill-down must agree with the summary above it. */
       var price=(typeof cropLandPrice==='function')?cropLandPrice(l):((ST_CROP.prices&&ST_CROP.prices[crop])||0);
       var yld=(typeof cropLandYield==='function')?cropLandYield(l):((l.actualYield!=null?l.actualYield:l.targetYield)||0);
-      out.push({name:l.name||'Field', area:l.area||0, yld:yld, input:l.inputPerHa||0, gmHa:Math.round(yld*price-(l.inputPerHa||0)), planned:isPlanned}); }); return out; }
+      out.push({name:l.name||'Field', area:l.area||0, yld:yld, input:(l.inputPerHa||0)+cropOtherPerHa(l), gmHa:Math.round(yld*price-(l.inputPerHa||0)-cropOtherPerHa(l)), planned:isPlanned}); }); return out; }
 function _pfInputsOf(crop){ var ids={}; (ST_CROP&&ST_CROP.lands||[]).forEach(function(l){ if(l.crop===crop) ids[l.id]=1; }); var by={},order=[],tot=0; (ST_CROP&&ST_CROP.inputs||[]).forEach(function(ip){ if(!ids[ip.land]) return; var c=ip.costPerHa||0; if(c<=0) return; var k=ip.kind||'other'; if(by[k]==null){by[k]=0;order.push(k);} by[k]+=c; tot+=c; }); return {rows:order.map(function(k){return {kind:k,cost:by[k]};}).sort(function(a,b){return b.cost-a.cost;}), tot:tot}; }
 
 function _pfSlider(id,min,max,step,val,fn){ return '<input type="range" id="'+id+'" min="'+min+'" max="'+max+'" step="'+step+'" value="'+val+'" oninput="'+fn+'()">'; }
@@ -39826,7 +39850,7 @@ function stCropRows(){
     var price=(typeof cropLandPrice==='function')?cropLandPrice(l):((ST_CROP.prices&&ST_CROP.prices[l.crop])||0);
     if(!by[l.crop]){ by[l.crop]={crop:l.crop,area:0,plRev:0,acRev:0,budget:0,harvArea:0,tY:0,aY:0,pricedArea:0}; order.push(l.crop); }
     var e=by[l.crop], a=l.area||0, ty=l.targetYield||0, ay=(l.actualYield!=null?l.actualYield:ty);
-    e.area+=a; e.plRev+=a*ty*price; e.acRev+=a*ay*price; e.budget+=a*(l.inputPerHa||0);
+    e.area+=a; e.plRev+=a*ty*price; e.acRev+=a*ay*price; e.budget+=a*((l.inputPerHa||0)+cropOtherPerHa(l));
     if(price>0) e.pricedArea+=a;
     e.tY+=a*ty; e.aY+=a*ay; if(l.actualYield!=null) e.harvArea+=a;
   });
