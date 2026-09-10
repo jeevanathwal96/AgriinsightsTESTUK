@@ -1578,6 +1578,19 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     // crops + events both replace-all (small per-farm sets; sort_idx preserves order)
     async saveAll(stp){
       if(!stp) return;
+      /* This takes the plan STATE (ST_PLAN), and every caller passes it. Called with
+         anything else — a farm id, say — `stp.crops` reads undefined, `crops` falls back
+         to [], and replaceAllRows below then deletes every plan row and inserts nothing.
+         It returns true while doing it, so the caller sees a successful save.
+
+         The test is the SHAPE of the argument, never whether the plan is empty: an empty
+         plan is a real state that must sync. deleteCrop(), cropDeleteLand() and obFinish()
+         all legitimately leave `crops` as [], and refusing that would strand the deletion
+         on the server and hand the crop back on the next device that loaded. */
+      if(typeof stp!=='object' || !Array.isArray(stp.crops)){
+        throw new TypeError('plan.saveAll expects the plan state object (ST_PLAN), got '+
+          (stp===null?'null':typeof stp));
+      }
       const fid=farm.active(); if(!fid) return;
       var _prev=_planGate, _rel; _planGate=new Promise(function(r){ _rel=r; });
       try{ await _prev; }catch(e){}
