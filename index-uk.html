@@ -53459,7 +53459,18 @@ function ukTaxExtrasHTML(fy){
 
   /* --- Farmers' averaging. Repeatable here, unlike the SA election, so the honest
          question is simply "does it beat not averaging this year". --- */
+  /* Profit on the SAME basis the rest of the Tax tab uses. This block used to total
+     income minus expenses straight off the ledger, which counts the capital half of a
+     loan repayment as a cost — _taxFYProfit runs every expense through
+     ukAllowableExpense() and does not. On the sample farm the two disagreed by £16,650
+     for one year, and averaging was deciding a claim on the lower figure.
+
+     NOT the full statutory measure: HS224 wants profit after capital allowances and
+     balancing charges (box 64), and taxCapitalAllowances() takes no year, so it cannot
+     be asked for the earlier one. The screen says so rather than implying otherwise. */
   function fyProfit(y){
+    var off=(typeof getCurrentFY==='function') ? (y-getCurrentFY()) : 0;
+    if(typeof _taxFYProfit==='function'){ try{ return Math.round(_taxFYProfit(off).profit); }catch(e){} }
     var inc=0,exp=0;
     ((window.ST&&ST.txns)||[]).forEach(function(t){
       if(!t||typeof fyOf!=='function'||fyOf(t.date)!==y) return;
@@ -53468,8 +53479,18 @@ function ukTaxExtrasHTML(fy){
     });
     return Math.round(inc-exp);
   }
+  /* A year with nothing recorded is UNKNOWN, not a nil year. ukAveragingCheck treats a
+     zero as the "either year is nil" limb of the test, which makes the claim eligible and
+     prints a saving — on the sample farm a first year on the app scored £3,266 off a year
+     that simply is not in the ledger. Ask whether the year has any transactions before
+     letting it stand as a figure. */
+  function fyHasRecords(y){
+    try{ return ((window.ST&&ST.txns)||[]).some(function(t){
+      return t && typeof fyOf==='function' && fyOf(t.date)===y; }); }catch(e){ return false; }
+  }
   var thisY=fyProfit(fy), lastY=fyProfit(fy-1);
-  var av=(typeof ukAveragingCheck==='function')?ukAveragingCheck([lastY,thisY],ent):null;
+  var priorKnown=fyHasRecords(fy-1);
+  var av=(priorKnown && typeof ukAveragingCheck==='function')?ukAveragingCheck([lastY,thisY],ent):null;
   /* Is the year being viewed still running? If it is, `thisY` is a few months of trading
      measured against a whole year, and the "swing" between them is mostly the calendar.
      On 15 Aug the demo farm read "£426,078 vs £215,613 — a 49% swing" off four months of
@@ -53495,9 +53516,9 @@ function ukTaxExtrasHTML(fy){
   var avHtml;
   if(ent!=='sole' && ent!=='partnership'){
     avHtml='<div class="txb-note">Averaging is for sole traders and partners. A company pays corporation tax instead.</div>';
-  } else if(!av){ avHtml='<div class="txb-note">Not enough history yet \u2014 averaging compares two years.</div>'; }
+  } else if(!av){ avHtml='<div class="txb-note">We do not have last year\u2019s figures, so there is nothing to compare. Averaging weighs two complete years against each other.</div>'; }
   else if(av.blockedByCashBasis){
-    avHtml='<div class="txb-note" style="border-left:3px solid var(--rd)"><b>Blocked by the cash basis.</b> You cannot average while using it. If your profits swing, averaging is usually worth more \u2014 change the basis in Settings and ask your accountant.</div>';
+    avHtml='<div class="txb-note" style="border-left:3px solid var(--rd)"><b>You cannot average on the cash basis.</b> If your profits swing about, averaging is usually worth more than the cash basis is. Changing over is a decision for your accountant \u2014 the basis is in Settings.</div>';
   } else if(!av.eligible){
     avHtml='<div class="txb-note">'+
       (partYear ? 'On the year so far, your ' : 'Your ')+'two years are within '+av.gapPct+
@@ -53909,6 +53930,17 @@ function taxReportsHTML(){
      with a deadline and a penalty attached. */
   var h = '<p class="tx-rep-intro">Every HMRC report this app builds, in the order you file them. A section only appears if it applies to your farm &mdash; payroll shows when you have workers, VAT when you are registered.</p>';
   h += ukMtdReportHTML(selFY);
+  /* Restored. The Reports rebuild in a1ea0c5 replaced one composed line —
+       var h = ukMtdReportHTML(selFY) + ukBalanceSheetHTML() + ukTaxExtrasHTML(selFY);
+     — with a sequence of bands, and re-added only the first of the three. Both other
+     functions stayed defined and exported to window with no caller, so five working
+     sections went off the screen and stayed off: the balance sheet, which income tax
+     rates apply, farmers' averaging, payments on account, and the VAT nine boxes.
+     Wired back after the averaging figures inside ukTaxExtrasHTML were put on the same
+     profit basis as the rest of this tab — connecting it before that would have shown a
+     claim decided on the wrong number. */
+  h += ukTaxExtrasHTML(selFY);
+  h += ukBalanceSheetHTML();
   var _unused='<div style="display:none">Each section shows only if it applies to you, and carries the right period picker.</div>';
 
   if(wk){
