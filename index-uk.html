@@ -14886,9 +14886,19 @@ function bootAgriInsights() {
   try { demoRepairCrops(); } catch(e){}
   try { demoRepairCropLands(); } catch(e){}
   try { if(typeof planSyncToCurrentYear==='function') planSyncToCurrentYear(); } catch(e){}
-  try { demoSeedPlanning(!loaded); } catch(e){}
-  try { demoSeedFuel(!loaded); } catch(e){}
-  try { demoSeedSeasonal(!loaded); } catch(e){}
+  /* Seeded only for the ?demo=1 sandbox. `!loaded` alone also fired for a REAL signed-in
+     farmer opening the app on a new device, because nothing is in localStorage yet: the
+     sample farm's planning, fuel and seasonal-labour rows were written into their session,
+     then overwritten a moment later when hydrate() brought their own data down.
+
+     Nothing escaped to the server — saveState() is localStorage only — and the sign-in
+     overlay covers the whole sequence, so no farmer ever saw it. But it left the sample
+     farm one regression away from a real account, and the correct test was always which
+     mode we are in rather than whether storage happened to be empty. */
+  var _seedDemo = !loaded && !!window.__AI_GUEST;
+  try { demoSeedPlanning(_seedDemo); } catch(e){}
+  try { demoSeedFuel(_seedDemo); } catch(e){}
+  try { demoSeedSeasonal(_seedDemo); } catch(e){}
   /* Stamp the weekly line in the sand AFTER the plan and demo seed have settled,
      so the snapshot records the farm the farmer is about to look at. */
   try { if(typeof recomputePlan==='function') recomputePlan(); stSnapTake(); } catch(e){}
