@@ -52088,7 +52088,7 @@ function renderTax(){
     ".mtd-askb:hover{background:var(--gb);border-color:var(--gd);color:var(--gd)}"+
     ".mtd-askb:focus-visible{outline:2px solid var(--gd);outline-offset:2px}"+
     ".mtd-fix{margin:7px 0 0;padding-left:18px}"+
-    ".mtd-strip.worth{background:var(--ap);border-color:#F0DCA8;color:#7A5A20}"+
+    ".mtd-strip.worth{background:var(--ap);border-color:#F0DCA8;color:#7A5A20}.mtd-strip.info{background:#EFF6FF;border-color:#BFDBFE;color:#1E3A8A}.mtd-strip.info a{color:#1D4ED8;font-weight:700;white-space:nowrap}"+
     ".mtd-worth{display:flex;gap:10px;align-items:flex-start;margin-top:8px}"+
     ".mtd-worth-amt{font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap;color:#8A5B06;text-align:right}"+
     ".mtd-worth-amt div{font-weight:600;font-size:10.5px;margin-top:1px}"+
@@ -53689,6 +53689,20 @@ function ukMtdReportHTML(fy){
         'return. If that is wrong, your real start date is earlier. '+
         '<a href="#" onclick="ukMtdSetDeferral(null);return false">Change my answer</a></div>';
     }
+  }
+
+  /* Filing happens somewhere else. The band tells a mandated farmer they are overdue and
+     that each miss is a penalty point, then offered no way to send anything: the app has
+     no HMRC connection. Say so before the deadlines, and point at HMRC's own list. */
+  var _swUrl='https://www.gov.uk/guidance/choose-the-right-software-for-making-tax-digital-for-income-tax';
+  var _swLink='<a href="'+_swUrl+'" target="_blank" rel="noopener noreferrer">Find software HMRC accepts &#8599;</a>';
+  if(st && st.inScope){
+    scope+= st.live
+      ? '<div class="mtd-strip info"><b>Send these to HMRC with other software.</b> '+
+        'AgriInsights can&rsquo;t send updates to HMRC yet. Copy the figures below into software that can, '+
+        'then click a quarter&rsquo;s status to mark it filed. '+_swLink+'</div>'
+      : '<div class="mtd-strip info"><b>From '+esc(D(st.from))+' you&rsquo;ll need software that sends updates to HMRC.</b> '+
+        'AgriInsights can&rsquo;t send them yet &mdash; it keeps the records and works out the figures. '+_swLink+'</div>';
   }
 
   /* The deadline, and anything already missed. */
