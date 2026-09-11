@@ -1780,8 +1780,21 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     farmId=farmId||farm.active();
     const r=await client().from('farms').select('name,owner_name,region,farm_ha,farm_type,fy_start_month,lang,vat_registered,utr,vat_number,entity_type,partners,herd_mark,herd_mark_type,farm_address,paye_ref').eq('id',farmId).single();
     if(r.error) throw r.error;
-    return profileFromDb(r.data);
+    var p=profileFromDb(r.data);
+    /* Payments on account the farmer copied from their HMRC account live in farms.prefs.
+       Read in their OWN request, so a database without the column still loads the
+       profile - the same rule the save side follows for every optional column. */
+    try{
+      const rp=await client().from('farms').select('prefs').eq('id',farmId).single();
+      if(!rp.error && rp.data){
+        var pr=rp.data.prefs; if(typeof pr==='string'){ try{ pr=JSON.parse(pr); }catch(e){ pr=null; } }
+        _farmPrefs=(pr && typeof pr==='object') ? pr : {};
+        if(p && _farmPrefs.poa && typeof _farmPrefs.poa==='object') p.poaHmrc=_farmPrefs.poa;
+      }
+    }catch(e){}
+    return p;
   };
+  var _farmPrefs=null;
   var _profSnap=null;
   const profile = {
     // Update only the fields actually provided — never null out an existing value.
@@ -1822,11 +1835,15 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
         cons.consent_version    = st.consent.policyVersion;
         cons.consent_accepted_at= st.consent.acceptedAt || new Date().toISOString();
       }
-      var snap=JSON.stringify({c:core,e:extra,k:cons}); if(snap===_profSnap) return;
+      /* Payments on account from HMRC, merged into farms.prefs so any other key there
+         survives. Its own statement: a database without the column still saves the rest. */
+      var pref=(st.poaHmrc && typeof st.poaHmrc==='object') ? Object.assign({}, _farmPrefs||{}, {poa:st.poaHmrc}) : null;
+      var snap=JSON.stringify({c:core,e:extra,k:cons,p:pref}); if(snap===_profSnap) return;
       if(Object.keys(core).length){ const e=(await client().from('farms').update(core).eq('id',fid)).error; if(e) throw e; }
       var extraOk=true;
       if(Object.keys(extra).length){ const e=(await client().from('farms').update(extra).eq('id',fid)).error; if(e){ extraOk=false; console.warn('Profile: optional fields (VAT/tax/business-type) not saved \u2014 run the profile-schema migrations in Supabase. (' + (e.message||e) + ')'); } }
       if(Object.keys(cons).length){ const e=(await client().from('farms').update(cons).eq('id',fid)).error; if(e){ extraOk=false; console.warn('Profile: privacy consent not recorded \u2014 run the consent migration in Supabase. (' + (e.message||e) + ')'); } }
+      if(pref){ const e=(await client().from('farms').update({prefs:pref}).eq('id',fid)).error; if(e){ extraOk=false; console.warn('Profile: payments on account not saved — '+(e.message||e)); } else { _farmPrefs=pref; } }
       if(extraOk) _profSnap=snap;
       return true;
     }
