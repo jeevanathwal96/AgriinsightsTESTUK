@@ -7029,9 +7029,10 @@ body.no-livestock .tours-menu-item.ent-livestock{display:none}
         </div>
       </div>
       <div class="pills">
+        <button class="pill on" id="inc-pill-fy" onclick="setIncPeriod('fy')">Tax year</button>
         <button class="pill" id="inc-pill-1" onclick="setIncPeriod('1')">1M</button>
         <button class="pill" id="inc-pill-3" onclick="setIncPeriod('3')">3M</button>
-        <button class="pill on" id="inc-pill-6" onclick="setIncPeriod('6')">6M</button>
+        <button class="pill" id="inc-pill-6" onclick="setIncPeriod('6')">6M</button>
         <button class="pill" id="inc-pill-12" onclick="setIncPeriod('12')">12M</button>
       </div>
     </div>
@@ -7283,9 +7284,10 @@ body.no-livestock .tours-menu-item.ent-livestock{display:none}
           </div>
         </div>
         <div class="pills">
+          <button class="pill on" id="exp-pill-fy" onclick="setExpPeriod('fy')">Tax year</button>
           <button class="pill" id="exp-pill-1" onclick="setExpPeriod('1')">1M</button>
           <button class="pill" id="exp-pill-3" onclick="setExpPeriod('3')">3M</button>
-          <button class="pill on" id="exp-pill-6" onclick="setExpPeriod('6')">6M</button>
+          <button class="pill" id="exp-pill-6" onclick="setExpPeriod('6')">6M</button>
           <button class="pill" id="exp-pill-12" onclick="setExpPeriod('12')">12M</button>
         </div>
       </div>
@@ -16677,7 +16679,7 @@ setEl('inc-banner-val',    fmt(R.income));
   setEl('inc-metric-in',     fmt(R.income));
   setEl('inc-metric-profit', fmt(Math.abs(R.profit)));
   setEl('inc-chart-title',   'Income Overview — ' + lbl);
-  ['1','3','6','12'].forEach(function(x){ var b=$('inc-pill-'+x); if(b) b.className='pill'+(p===x?' on':''); });
+  _incPillsOn(fyMode ? 'fy' : p);
 
 setEl('inc-lbl-in',     'Money In (' + lbl + ')');
   setEl('inc-lbl-profit', 'Profit');
@@ -16748,7 +16750,7 @@ setEl('exp-banner-val',   fmt(R.expenses));
   _ieBannerChg('exp-banner-chg', R.expenses, _prevBaseE.expenses, prevLbl);
   setEl('exp-metric-total', fmt(R.expenses));
   setEl('exp-chart-title',  'Expenses Overview — ' + lbl);
-  ['1','3','6','12'].forEach(function(x){ var b=$('exp-pill-'+x); if(b) b.className='pill'+(p===x?' on':''); });
+  _expPillsOn(fyMode ? 'fy' : p);
 
 setEl('exp-lbl-total', 'Total Expenses (' + lbl + ')');
   setEl('exp-lbl-ratio', 'Expense Ratio (' + lbl + ')');
@@ -17268,13 +17270,28 @@ function ieSortSave(){
   }
 }
 
+/* The tax-year pill is 'fy', not a month count, so the highlight cannot be driven by
+   ST.incPeriod alone - in tax-year mode that holds the resolved month count and would
+   light 6M as well. */
+function _incPillsOn(sel){
+  ['fy','1','3','6','12'].forEach(function(x){
+    var b=$('inc-pill-'+x); if(b) b.className='pill'+(String(sel)===x?' on':'');
+  });
+}
+function _expPillsOn(sel){
+  ['fy','1','3','6','12'].forEach(function(x){
+    var b=$('exp-pill-'+x); if(b) b.className='pill'+(String(sel)===x?' on':'');
+  });
+}
 function setIncPeriod(p) {
   closeDrawer('income');
   try{ IE_RANGE.income={from:'',to:''}; }catch(e){}   // a pill click ends any custom window
-  ST.incPeriod = p;
-  ['1','3','6','12'].forEach(function(x){
-    var b=$('inc-pill-'+x); if(b) b.className='pill'+(p===x?' on':'');
-  });
+  /* A pill is a CHOICE, and the choice - not the month count - is what updateIncPage
+     reads. Setting only the count left incPeriodSel on 'fy', which re-resolved the count
+     on every render, so 1M, 3M and 12M did nothing at all. */
+  if(p==='fy'){ ST.incPeriodSel='fy'; ST.incPeriod=String(_txPeriodMonths('fy')); }
+  else { ST.incPeriodSel=p; ST.incPeriod=p; }
+  _incPillsOn(p);
   CHARTS_INITED['income'] = false;
   try{ lazyInitCharts('income'); }catch(e){}      // a chart failure must not block the list
   try{ updateIncPage(); }catch(e){}
@@ -17378,10 +17395,9 @@ function _txSyncPeriodControls(kind){
 function setExpPeriod(p) {
   closeDrawer('expense');
   try{ IE_RANGE.expense={from:'',to:''}; }catch(e){}  // a pill click ends any custom window
-  ST.expPeriod = p;
-  ['1','3','6','12'].forEach(function(x){
-    var b=$('exp-pill-'+x); if(b) b.className='pill'+(p===x?' on':'');
-  });
+  if(p==='fy'){ ST.expPeriodSel='fy'; ST.expPeriod=String(_txPeriodMonths('fy')); }
+  else { ST.expPeriodSel=p; ST.expPeriod=p; }
+  _expPillsOn(p);
   CHARTS_INITED['expenses'] = false;
   try{ lazyInitCharts('expenses'); }catch(e){}    // a chart failure must not block the list
   try{ updateExpPage(); }catch(e){}
@@ -33888,7 +33904,7 @@ function renderHealthMed(){
   var spend=all.reduce(function(s,t){return s+(t.cost||0);},0);
   var kpi=$('ls-hm-kpi');
   if(kpi) kpi.innerHTML=
-    '<div class="lskpi-c"><div class="lskpi-l">Health spend \u00b7 this year</div><div class="lskpi-v">£'+spend.toLocaleString('en-GB')+'</div><div class="lskpi-s">Claim off tax (S11a)</div></div>'+
+    '<div class="lskpi-c"><div class="lskpi-l">Health spend \u00b7 this year</div><div class="lskpi-v">£'+spend.toLocaleString('en-GB')+'</div><div class="lskpi-s">Deductible against your profit</div></div>'+
     '<div class="lskpi-c"><div class="lskpi-l">Under withdrawal now</div><div class="lskpi-v" style="color:'+(active.length?'var(--rd)':'var(--gd)')+'">'+active.length+'</div><div class="lskpi-s">clears automatically</div></div>'+
     '<div class="lskpi-c"><div class="lskpi-l">Treatments logged</div><div class="lskpi-v">'+all.length+'</div><div class="lskpi-s">total on record</div></div>';
   var chips=[['all','All'],['wd','Under withdrawal'],['vaccine','Vaccinations'],['dipdose','Dips & doses'],['vet','Vet visits']];
@@ -45303,8 +45319,13 @@ function saveIncomeTarget() {
 // ============================================================
 
 // ============================================================
+/* ONE monthly spending target, wherever it is shown. This read ST.budgetExpenseTarget -
+   a legacy single value seeded with the ANNUAL 1,080,000 - so the Expenses page called
+   September's 164,460 "15% of the Sep 2026 expense budget" while the bell, the dashboard
+   card and Budgets were all using the month's own 145,000 and saying it was exceeded. */
 function getExpBudgetTarget() {
-  return ST.budgetExpenseTarget || 0;
+  var m = (typeof getExpenseBudgetTarget === 'function') ? getExpenseBudgetTarget() : 0;
+  return m || ST.budgetExpenseTarget || 0;
 }
 
 function renderExpBar() {
@@ -45445,8 +45466,11 @@ function saveExpTarget() {
   var val = parseFloat(inp && inp.value) || 0;
   if (val <= 0) { toast('Please enter an amount greater than 0', 'error'); return; }
   ST.budgetExpenseTarget = val;
+  /* Write it where every other screen reads it, or a limit set here disagrees with
+     Budgets and the bell the moment it is saved. */
+  try{ if(ST.budgets && ST.budgets.monthlyExpenses) ST.budgets.monthlyExpenses[ST.budgets.currentMonth] = val; }catch(e){}
   dataChanged('budget');
-  toast('Expense limit set: '+_curSym()+ _grpInt(val), 'success');
+  toast('Expense limit set for '+(ST.budgets&&ST.budgets.currentMonth?ST.budgets.currentMonth:'this month')+': '+_curSym()+ _grpInt(val), 'success');
 }
 
 function renderTable(type) {
@@ -48069,7 +48093,7 @@ function buildPLReport() {
       return '<tr><td>'+k+'</td><td class="amt">'+fmt(R.byIncCat[k]||0)+'</td></tr>';
     }).join('') : '<tr><td style="color:#9ca3af" colspan="2">No income recorded for this period</td></tr>')+
     '<tr class="total"><td>TOTAL INCOME</td><td class="amt pos">'+fmt(R.totalIncome)+'</td></tr></table>'+
-    '<h2>Cost of Sales (S11a)</h2>'+
+    '<h2>Cost of Sales</h2>'+
     '<table><tr><th>Category</th><th class="amt">Amount</th></tr>'+
     ['Seeds & Planting','Fertiliser','Crop Protection','Labour & Wages'].map(function(k){
       return '<tr><td>'+k+'</td><td class="amt">'+fmt(R.byCat[k]||0)+'</td></tr>';
@@ -48095,6 +48119,13 @@ function buildPLReport() {
 function buildCFReport() {
   var R = computeRPT();
   var lbl = getPeriodLabel();
+  var _cfRows = function(kind){ return ST.txns.filter(function(t){
+      if(t.type!==kind) return false;
+      var d=parseDate(t.date); if(!d) return false;
+      return R.months.indexOf(MONTH_LABELS[d.m]+' '+d.y)>=0; }); };
+  var _cfIn = _cfRows('income').reduce(function(s,t){ return s+(t.amt||0); },0);
+  var _cfOut = _cfRows('expense').reduce(function(s,t){ return s+(t.amt||0); },0);
+  var _cfNet = _cfIn - _cfOut;
   var html =
     '<h1>Cash Flow Statement</h1>'+
     '<div class="meta">'+FARM.name+' &nbsp;·&nbsp; Period: '+lbl+'</div>'+
@@ -48109,7 +48140,7 @@ function buildCFReport() {
     }).map(function(t){
       return '<tr><td>'+esc(t.desc)+'</td><td>'+esc(t.cat)+'</td><td class="amt pos">'+fmt(t.amt)+'</td></tr>';
     }).join('')+
-    '<tr class="total"><td colspan="2">TOTAL INFLOWS</td><td class="amt pos">'+fmt(R.totalIncome)+'</td></tr></table>'+
+    '<tr class="total"><td colspan="2">TOTAL INFLOWS</td><td class="amt pos">'+fmt(_cfIn)+'</td></tr></table>'+
     '<h2>Cash Outflows</h2>'+
     '<table><tr><th>Description</th><th>Category</th><th class="amt">Amount</th></tr>'+
     ST.txns.filter(function(t){
@@ -48120,11 +48151,12 @@ function buildCFReport() {
     }).map(function(t){
       return '<tr><td>'+esc(t.desc)+'</td><td>'+esc(t.cat)+'</td><td class="amt neg">'+fmt(t.amt)+'</td></tr>';
     }).join('')+
-    '<tr class="total"><td colspan="2">TOTAL OUTFLOWS</td><td class="amt neg">'+fmt(R.totalCOS+R.totalOpex)+'</td></tr></table>'+
+    '<tr class="total"><td colspan="2">TOTAL OUTFLOWS</td><td class="amt neg">'+fmt(_cfOut)+'</td></tr></table>'+
     '<h2>Net Cash Position</h2>'+
     '<table>'+
-    '<tr class="total"><td>Net Cash Flow</td><td class="amt '+(R.netProfitBT>=0?'pos':'neg')+'">'+IE_R(R.netProfitBT)+'</td></tr>'+
-    '</table>';
+    '<tr class="total"><td>Net Cash Flow</td><td class="amt '+(_cfNet>=0?'pos':'neg')+'">'+IE_R(_cfNet)+'</td></tr>'+
+    '</table>'+
+    '<p style="font-size:11px;color:#6B7280;margin-top:14px">Cash basis: every payment at the amount that left the bank, including the capital part of a loan repayment. The profit statement leaves that capital out, because it is not a cost for tax \u2014 which is why the two net figures differ.</p>';
   printWindow('Cash Flow — '+lbl, html);
 }
 
@@ -48160,7 +48192,7 @@ function buildTaxReport() {
     '<table>'+
     '<tr><td>Output VAT (sales)</td><td class="amt">'+fmt(R.vatOut)+'</td></tr>'+
     '<tr><td>Input VAT (purchases)</td><td class="amt">'+fmt(R.vatIn)+'</td></tr>'+
-    '<tr class="total"><td>VAT payable to HMRC</td><td class="amt '+(R.vatPayable>=0?'neg':'pos')+'">'+fmt(Math.abs(R.vatPayable))+'</td></tr>'+
+    '<tr class="total"><td>'+(R.vatPayable>=0?'VAT payable to HMRC':'VAT to reclaim from HMRC')+'</td><td class="amt '+(R.vatPayable>=0?'neg':'pos')+'">'+fmt(Math.abs(R.vatPayable))+'</td></tr>'+
     '</table>':'');
   printWindow('Tax Summary — FY '+fy, html);
 }
@@ -49193,7 +49225,7 @@ function buildPreviewPL(R, meta) {
     }).join('') : '<tr><td style="color:#9CA3AF" colspan="2">No income recorded for this period</td></tr>')+
     '<tr class="total"><td>TOTAL INCOME</td><td class="amt pv-pos">'+fmt(R.totalIncome)+'</td></tr>'+
     '</tbody></table></div>'+
-    '<div class="pv-section"><h2>Cost of Sales <span style="font-weight:400;color:#9CA3AF">(S11a)</span></h2>'+
+    '<div class="pv-section"><h2>Cost of Sales <span style="font-weight:400;color:#9CA3AF">what it cost to grow and rear</span></h2>'+
     '<table class="pv-table"><thead><tr><th>Category</th><th class="amt">Amount</th></tr></thead><tbody>'+
     ['Seeds & Planting','Fertiliser','Crop Protection','Labour & Wages'].map(function(k){
       return '<tr><td>'+k+'</td><td class="amt pv-neg">'+fmt(R.byCat[k]||0)+'</td></tr>';
@@ -49232,12 +49264,18 @@ function buildPreviewCF(R, meta) {
     var d=parseDate(t.date); if(!d) return false;
     return R.months.indexOf(MONTH_LABELS[d.m]+' '+d.y) >= 0;
   });
-  var net = R.totalIncome - (R.totalCOS+R.totalOpex);
+  /* This totalled the TAX-basis expenses while listing every payment at the amount that
+     actually left the bank, so the rows did not add up to the statement's own total - on
+     the demo month, by the 3,330 of loan capital the profit statement strips out. A cash
+     flow statement totals the cash. */
+  var _sum = function(a){ return a.reduce(function(s,t){ return s+(t.amt||0); },0); };
+  var cashIn = _sum(inflows), cashOut = _sum(outflows);
+  var net = cashIn - cashOut;
 
   return meta +
     '<div class="pv-hero">'+
-      '<div class="pv-card"><div class="pv-card-lbl">Total Inflows</div><div class="pv-card-val pv-pos">'+fmt(R.totalIncome)+'</div></div>'+
-      '<div class="pv-card"><div class="pv-card-lbl">Total Outflows</div><div class="pv-card-val pv-neg">'+fmt(R.totalCOS+R.totalOpex)+'</div></div>'+
+      '<div class="pv-card"><div class="pv-card-lbl">Total Inflows</div><div class="pv-card-val pv-pos">'+fmt(cashIn)+'</div></div>'+
+      '<div class="pv-card"><div class="pv-card-lbl">Total Outflows</div><div class="pv-card-val pv-neg">'+fmt(cashOut)+'</div></div>'+
       '<div class="pv-card"><div class="pv-card-lbl">Net Cash Position</div><div class="pv-card-val '+(net>=0?'pv-pos':'pv-neg')+'">'+fmt(Math.abs(net))+'</div></div>'+
     '</div>'+
     '<div class="pv-section"><h2>Cash Inflows</h2>'+
@@ -49245,19 +49283,22 @@ function buildPreviewCF(R, meta) {
     (inflows.length ? inflows.map(function(t){
       return '<tr><td style="color:#6B7280;font-size:12px">'+t.date+'</td><td>'+esc(t.desc)+'</td><td><span style="background:#DCFCE7;color:#16A34A;padding:2px 7px;border-radius:10px;font-size:11px;font-weight:600">'+esc(t.cat)+'</span></td><td class="amt pv-pos">'+fmt(t.amt)+'</td></tr>';
     }).join('') : '<tr><td colspan="4" style="color:#9CA3AF;text-align:center">No income transactions for this period</td></tr>')+
-    '<tr class="total"><td colspan="3">TOTAL INFLOWS</td><td class="amt pv-pos">'+fmt(R.totalIncome)+'</td></tr>'+
+    '<tr class="total"><td colspan="3">TOTAL INFLOWS</td><td class="amt pv-pos">'+fmt(cashIn)+'</td></tr>'+
     '</tbody></table></div>'+
     '<div class="pv-section"><h2>Cash Outflows</h2>'+
     '<table class="pv-table"><thead><tr><th>Date</th><th>Description</th><th>Category</th><th class="amt">Amount</th></tr></thead><tbody>'+
     (outflows.length ? outflows.map(function(t){
       return '<tr><td style="color:#6B7280;font-size:12px">'+t.date+'</td><td>'+esc(t.desc)+'</td><td><span style="background:#FEE2E2;color:#DC2626;padding:2px 7px;border-radius:10px;font-size:11px;font-weight:600">'+esc(t.cat)+'</span></td><td class="amt pv-neg">'+fmt(t.amt)+'</td></tr>';
     }).join('') : '<tr><td colspan="4" style="color:#9CA3AF;text-align:center">No expense transactions for this period</td></tr>')+
-    '<tr class="total-neg"><td colspan="3">TOTAL OUTFLOWS</td><td class="amt pv-neg">'+fmt(R.totalCOS+R.totalOpex)+'</td></tr>'+
+    '<tr class="total-neg"><td colspan="3">TOTAL OUTFLOWS</td><td class="amt pv-neg">'+fmt(cashOut)+'</td></tr>'+
     '</tbody></table></div>'+
     '<div class="pv-section"><h2>Net Position</h2>'+
     '<table class="pv-table"><tbody>'+
     '<tr class="'+(net>=0?'total':'total-neg')+'"><td>NET CASH FLOW</td><td class="amt '+(net>=0?'pv-pos':'pv-neg')+'">'+fmt(Math.abs(net))+'</td></tr>'+
-    '</tbody></table></div>';
+    '</tbody></table>'+
+    /* Say why this differs from the profit statement, on the statement itself. */
+    '<div class="pv-disclaimer">Cash basis: every payment at the amount that left the bank, including the capital part of a loan repayment. The profit statement leaves that capital out, because it is not a cost for tax \u2014 which is why the two net figures differ.</div>'+
+    '</div>';
 }
 
 function buildPreviewTax(R, meta) {
@@ -49294,7 +49335,7 @@ function buildPreviewTax(R, meta) {
     '<table class="pv-table"><tbody>'+
     '<tr><td>Output VAT (on sales)</td><td class="amt">'+fmt(R.vatOut)+'</td></tr>'+
     '<tr><td>Input VAT (on purchases)</td><td class="amt">'+fmt(R.vatIn)+'</td></tr>'+
-    '<tr class="'+(R.vatPayable>=0?'total-neg':'total')+'"><td>VAT PAYABLE TO HMRC</td><td class="amt '+(R.vatPayable>=0?'pv-neg':'pv-pos')+'">'+fmt(Math.abs(R.vatPayable))+'</td></tr>'+
+    '<tr class="'+(R.vatPayable>=0?'total-neg':'total')+'"><td>'+(R.vatPayable>=0?'VAT PAYABLE TO HMRC':'VAT TO RECLAIM FROM HMRC')+'</td><td class="amt '+(R.vatPayable>=0?'pv-neg':'pv-pos')+'">'+fmt(Math.abs(R.vatPayable))+'</td></tr>'+
     '</tbody></table>'+
     '<div style="margin-top:8px;font-size:12px;color:#6B7280">Submit VAT return via HMRC online services. Due: last business day of month after period.</div>'+
     '</div>' : '')+
@@ -54816,9 +54857,9 @@ function shareWhatsApp() {
   } catch (e) {}
   var msg = '*AgriInsights Farm Report*' + nl +
     farm + ' | ' + period + nl + nl +
-    '\uD83D\uDCB0 *Income:* R ' + Math.round(R.totalIncome).toLocaleString('en-GB') + nl +
-    '\uD83D\uDCC9 *Expenses:* R ' + Math.round(R.totalCOS + R.totalOpex).toLocaleString('en-GB') + nl +
-    '\u2705 *Net Profit:* R ' + Math.round(R.netProfitAT).toLocaleString('en-GB') + nl +
+    '\uD83D\uDCB0 *Income:* \u00a3' + Math.round(R.totalIncome).toLocaleString('en-GB') + nl +
+    '\uD83D\uDCC9 *Expenses:* \u00a3' + Math.round(R.totalCOS + R.totalOpex).toLocaleString('en-GB') + nl +
+    '\u2705 *Net Profit:* \u00a3' + Math.round(R.netProfitAT).toLocaleString('en-GB') + nl +
     '\uD83D\uDCCA *Net Margin:* ' + R.netMargin + '%' + nl + nl +
     '*Top expense:* ' + topExpCat().cat + nl +
     vsLine + nl +
@@ -59298,7 +59339,7 @@ var _sc = _hmrcByCat(fy), byCat = _sc.byCat;
     '<table>'+
     '<tr><td>Output VAT on sales</td><td style="text-align:right">'+fmt2(R.vatOut)+'</td></tr>'+
     '<tr><td>Input VAT on purchases</td><td style="text-align:right">('+fmt2(R.vatIn)+')</td></tr>'+
-    '<tr class="total"><td>NET VAT PAYABLE TO HMRC</td><td style="text-align:right">'+fmt2(Math.abs(R.vatPayable))+'</td></tr>'+
+    '<tr class="total"><td>'+(R.vatPayable>=0?'NET VAT PAYABLE TO HMRC':'NET VAT RECLAIMABLE FROM HMRC')+'</td><td style="text-align:right">'+fmt2(Math.abs(R.vatPayable))+'</td></tr>'+
     '</table>' : '')+
 
     '<div style="margin-top:28px;padding:14px;background:#F3F4F6;border-radius:8px;font-size:12px;color:#6B7280;line-height:1.7">'+
@@ -60714,7 +60755,11 @@ function computeNotifications(){
       });
     }
   } else if(pPrv > 0 && pNow < pPrv){
-    var d = pctChange(pPrv, pNow);
+    /* The arguments were the wrong way round, so the fall was measured against the
+       SMALLER number: £100,400 against £195,855 was announced as "down 95%" while the
+       Reports insight, doing the same sum correctly, said 49% - and the body line right
+       under the title carried both figures for anyone to check. */
+    var d = Math.abs(pctChange(pNow, pPrv));
     if(d >= 15){
       n.push({
         color: 'var(--rd)', score: 90,
