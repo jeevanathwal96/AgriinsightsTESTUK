@@ -596,6 +596,9 @@ label{font-size:13px;color:var(--t3);font-weight:500;display:block;margin-bottom
 .pt-plan{background:#f3eefb;border-color:#e0d6f3;color:#5f4599}
 /* On the dark hero cards the light chips shouted; these sit in the surface instead. */
 .mc-hero .ptag, #tax-hero-card .ptag{background:rgba(255,255,255,.16);border-color:rgba(255,255,255,.30);color:#eaf6ee}
+/* The hero card carries one fact the others do not - the cash-profit bridge. It reads
+   as one short line with a tap target rather than two wrapped lines of explanation. */
+.mc-more{flex-shrink:0;display:inline-grid;place-items:center;width:14px;height:14px;border-radius:50%;border:1.2px solid rgba(255,255,255,.42);color:rgba(255,255,255,.88);font-size:8.5px;font-weight:800;margin-left:3px}
 /* Inside a flex label the row already supplies the gap. */
 /* Only a tag row that is itself a flex ITEM gets its spacing from the row's gap. On
    Budgets the tag sits INSIDE the label span, so zeroing the margin left it touching
@@ -7647,7 +7650,7 @@ body.no-livestock .tours-menu-item.ent-livestock{display:none}
 
   <!-- Dynamic metrics -->
   <div class="metrics mrow-hero" style="grid-template-columns:1fr 1fr 1fr 1fr;margin-bottom:16px">
-    <div class="mc mc-hero"><div class="mc-lbl">Profit before tax<span id="rpt-tags"></span></div><div class="mc-val" id="rpt-net">£9,295</div><div class="mc-chg"><b id="rpt-margin" style="color:#eaf6ee">34.9%</b> margin · before tax</div><div class="mc-chg" id="rpt-cash" style="display:none;margin-top:3px;color:#bcdcc7"></div></div>
+    <div class="mc mc-hero kpi-tap" onclick="kpiOpen('rptProfitBT')"><div class="mc-lbl">Profit before tax<span id="rpt-tags"></span></div><div class="mc-val" id="rpt-net">£9,295</div><div class="mc-chg"><b id="rpt-margin" style="color:#eaf6ee">34.9%</b> margin · before tax</div><div class="mc-chg" id="rpt-cash" style="display:none;margin-top:3px;color:#bcdcc7"></div></div>
     <div class="mc"><div class="mc-tic up">↑</div><div class="mc-lbl">Total Income</div><div class="mc-val g" id="rpt-income">£55,365</div><div class="mc-chg" id="rpt-income-lbl" style="color:var(--t3)">May 2024</div></div>
     <div class="mc"><div class="mc-tic dn">↓</div><div class="mc-lbl">Total Expenses</div><div class="mc-val" style="color:var(--rd)" id="rpt-expenses">£43,472</div><div class="mc-chg" id="rpt-expenses-lbl" style="color:var(--t3)">May 2024</div></div>
     <div class="mc"><div class="mc-tic eq">=</div><div class="mc-lbl">Gross Profit</div><div class="mc-val b" id="rpt-gross">£11,893</div><div class="mc-chg" style="color:var(--t3)">Before allowances</div></div>  </div>
@@ -47998,7 +48001,7 @@ function updateRptDisplay() {
   if (_rc) {
     var _cap = (R.loanSplit && R.loanSplit.capital) || 0;
     if (_cap > 0) {
-      _rc.textContent = 'Cash profit ' + IE_R(R.netProfitBT - _cap) + ' — ' + IE_R(_cap) + ' of loan capital left the bank but is not a cost for tax';
+      _rc.innerHTML = 'Cash profit ' + esc(IE_R(R.netProfitBT - _cap)) + '<span class="mc-more">ⓘ</span>';
       _rc.style.display = 'block';
     } else _rc.style.display = 'none';
   }
@@ -69092,6 +69095,40 @@ function _lsRegCertsCard(){
       mean:'What\u2019s left after this month\u2019s money out is taken off money in.',
       breakdown:{title:'How it\u2019s worked out', rows:rows, tot:{nm:'Profit this month', amt:(profit<0?'\u2212':'')+fmt(Math.abs(profit))}, note:'Updates live as you capture income and costs.'},
       jump:{label:'Open Money Flow', tone:(profit<0?'gold':''), go:function(){ nav('cashflow'); }, back:function(){ nav('dashboard'); kpiOpen('dashNet'); }, trail:'\u2039 Back to dashboard', show:'Showing Money Flow'}
+    };
+  };
+
+  /* Why this card shows two numbers. The header figure is on the TAX basis and the
+     insight card lower down the same page counts cash, so a farmer meets 103,730 and
+     100,400 within one screen. That bridge used to be two wrapped lines inside the card
+     itself, which crowded a four-fact tile; it belongs here with the rest of the
+     workings. */
+  REG.rptProfitBT=function(){
+    var R=null; try{ R=computeRPT(); }catch(e){}
+    if(!R) return null;
+    var lbl=''; try{ lbl=getPeriodLabel(); }catch(e){}
+    var cap=(R.loanSplit&&R.loanSplit.capital)||0;
+    var cash=R.netProfitBT-cap, costs=R.totalCOS+R.totalOpex;
+    var pc=function(n){ return R.totalIncome>0?Math.max(2,Math.round(Math.abs(n)/R.totalIncome*100)):0; };
+    var rows=[{nm:'Income', amt:fmt(R.totalIncome), pct:100},
+              {nm:'− Costs that come off before tax', amt:'−'+fmt(costs), pct:pc(costs), neg:true}];
+    if(cap>0) rows.push({nm:'− Loan capital repaid', amt:'−'+fmt(cap), pct:pc(cap), neg:true, cls:'gold'});
+    return {
+      label:'Profit before tax', value:IE_R(R.netProfitBT), chip:lbl,
+      verdict: cap>0
+        ? {tone:'info', head:'Two profits, both right',
+           text:' '+fmt(R.netProfitBT)+' is what HMRC taxes. '+fmt(cash)+' is what the farm actually kept, because '+fmt(cap)+' of loan capital left the bank as well — paying back what you borrowed is not a cost, so tax does not let you take it off.'}
+        : {tone:'info', head:'What HMRC taxes',
+           text:' Your income for '+(lbl||'the period')+' less the costs HMRC lets you take off. Nothing separates it from your cash profit this period.'},
+      mean:'The profit your tax is worked out on — income less allowable costs, before any tax comes off.',
+      breakdown:{title:'Profit before tax vs cash profit', rows:rows,
+        tot:{nm:(cap>0?'Cash profit':'Profit before tax'), amt:IE_R(cap>0?cash:R.netProfitBT)},
+        note:(cap>0
+          ? 'The loan interest is already in the costs above — it is only the capital half of each repayment that comes off your bank balance without coming off your profit.'
+          : 'No loan capital was repaid in this period, so the two figures are the same.')},
+      jump:{label:'Open Money Flow', tone:'', go:function(){ nav('cashflow'); },
+            back:function(){ nav('reports'); kpiOpen('rptProfitBT'); },
+            trail:'‹ Back to reports', show:'Showing Money Flow'}
     };
   };
 
