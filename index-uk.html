@@ -33,8 +33,8 @@
 <script defer src="vendor/chart.umd.js"></script>
 <!-- AgriInsights backend: Supabase client + data service (load order matters) -->
 <script src="vendor/supabase.js"></script>
-<script src="ai-data-uk.js?v=uk94"></script>
-<script src="ai-auth-uk.js?v=uk92"></script>
+<script src="ai-data-uk.js?v=uk95"></script>
+<script src="ai-auth-uk.js?v=uk93"></script>
 <link rel="stylesheet" href="fonts.css"/>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -577,6 +577,17 @@ label{font-size:13px;color:var(--t3);font-weight:500;display:block;margin-bottom
 .season-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
 .skpi{background:#fff;border:1px solid var(--br);border-radius:var(--rl);padding:16px 18px;box-shadow:var(--sh)}
 .skpi-lbl{font-size:11px;color:var(--t3);text-transform:uppercase;letter-spacing:.05em;font-weight:700;margin-bottom:6px}
+/* Period + basis tags. One farm had eight figures all called "profit" - year so
+   far, this month, projected, planned, cash, tax rules - and nothing on screen
+   said which was which. Green = what has happened, blue = as HMRC counts it,
+   amber = where the year is heading, violet = what you planned. */
+.ptags{display:inline-flex;gap:4px;flex-wrap:wrap;vertical-align:middle;margin-left:6px}
+.ptag{display:inline-block;font-size:9px;font-weight:800;letter-spacing:.04em;text-transform:none;
+  padding:2px 7px;border-radius:20px;border:1px solid transparent;white-space:nowrap;line-height:1.5}
+.pt-act{background:#eaf6ee;border-color:#cfe3d4;color:#2f6b45}
+.pt-tax{background:#e9eff8;border-color:#ccd9ec;color:#2c4f86}
+.pt-proj{background:#fdf4e6;border-color:#efdfbd;color:#8a5a12}
+.pt-plan{background:#f2ecfa;border-color:#ded2f2;color:#5b3f96}
 .skpi-val{font-size:24px;font-weight:800;letter-spacing:-.5px;color:var(--gd);font-variant-numeric:tabular-nums}
 .skpi-sub{font-size:11px;color:var(--gl);font-weight:600;margin-top:3px}
 .skpi-sub.dn{color:var(--rd)}
@@ -6799,7 +6810,7 @@ body.no-livestock .tours-menu-item.ent-livestock{display:none}
       </div>
       <div class="cf-op">=</div>
       <div class="cf-item kpi-tap" onclick="kpiOpen('dashNet')" style="position:relative"><span class="kpi-i">&#9432;</span>
-        <div class="cf-lbl"><div class="cf-dot p"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>Total Profit</div>
+        <div class="cf-lbl"><div class="cf-dot p"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>Total Profit<span id="dash-cf-net-tags"></span></div>
         <div class="cf-val g" id="dash-cf-net">—</div>
         <div class="cf-chg" id="dash-cf-net-chg"></div>
         <div class="cf-detail" id="cf-margin-detail" style="color:var(--gm);font-weight:600"></div>
@@ -6863,7 +6874,7 @@ body.no-livestock .tours-menu-item.ent-livestock{display:none}
         <div class="skpi-sub muted" id="season-ytd-expenses-sub">Season costs so far</div>
       </div>
       <div class="skpi kpi-tap" onclick="kpiOpen('seasonProfit')" style="position:relative"><span class="kpi-i">&#9432;</span>
-        <div class="skpi-lbl">Profit Year-to-date</div>
+        <div class="skpi-lbl">Profit Year-to-date<span class="ptags"><span class="ptag pt-act">Year so far</span></span></div>
         <div class="skpi-val" id="season-ytd-profit">£0</div>
         <div class="skpi-sub" id="season-ytd-profit-sub">↑ vs last season</div>
       </div>
@@ -6981,7 +6992,7 @@ body.no-livestock .tours-menu-item.ent-livestock{display:none}
   </div>
   <div class="inc-banner" style="background:linear-gradient(135deg,var(--gd),var(--gl))">
     <div class="hero-ov"></div>
-    <div class="ib-ov"><div class="ib-left"><div class="ib-sub">This Month's Income</div><div class="ib-val" id="inc-banner-val">£55,365</div><div><span class="ib-chg">↑ 16% vs last month</span></div></div><div class="ib-worth" id="inc-worth" style="display:none"></div></div>
+    <div class="ib-ov"><div class="ib-left"><div class="ib-sub" id="inc-banner-lbl">Income</div><div class="ib-val" id="inc-banner-val">£55,365</div><div><span class="ib-chg" id="inc-banner-chg"></span></div></div><div class="ib-worth" id="inc-worth" style="display:none"></div></div>
   </div>
 
   <!-- INCOME TARGET BAR -->
@@ -7005,8 +7016,8 @@ body.no-livestock .tours-menu-item.ent-livestock{display:none}
 
   <div class="metrics m4" style="margin-bottom:20px">
     <div class="mc"><div class="mc-icon g"><svg viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg></div><div class="mc-lbl" id="inc-lbl-in">Money In (This Month)</div><div class="mc-val g" id="inc-metric-in">£55,365</div><div class="mc-chg up" id="inc-chg-in">↑ 16% vs last month</div></div>
-    <div class="mc"><div class="mc-icon g"><svg viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></div><div class="mc-lbl" id="inc-lbl-profit">Profit (This Month)</div><div class="mc-val g" id="inc-metric-profit">£11,893</div><div class="mc-chg up" id="inc-chg-profit">↑ 18% vs last month</div></div>
-    <div class="mc"><div class="mc-icon b"><svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/></svg></div><div class="mc-lbl">Year-to-Date Income</div><div class="mc-val b" id="inc-metric-ytd">—</div><div class="mc-chg" id="inc-chg-ytd">↑ 22% vs last year</div></div>
+    <div class="mc"><div class="mc-icon g"><svg viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></div><div class="mc-lbl" id="inc-lbl-profit">Profit</div><span id="inc-tag-profit"></span><div class="mc-val g" id="inc-metric-profit">£11,893</div><div class="mc-chg up" id="inc-chg-profit">↑ 18% vs last month</div></div>
+    <div class="mc"><div class="mc-icon b"><svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/></svg></div><div class="mc-lbl" id="inc-lbl-ytd">Year-to-Date Income</div><div class="mc-val b" id="inc-metric-ytd">—</div><div class="mc-chg" id="inc-chg-ytd">↑ 22% vs last year</div></div>
     <div class="mc"><div class="mc-icon p"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div><div class="mc-lbl">Best Month This Year</div><div class="mc-val p" id="inc-metric-best">—</div><div class="mc-chg" id="inc-chg-best" style="color:var(--t3)">—</div></div>
   </div>
   <div class="chart-sec">
@@ -7227,9 +7238,9 @@ body.no-livestock .tours-menu-item.ent-livestock{display:none}
     <div class="hero-ov"></div>
     <div class="ib-ov">
       <div class="ib-left">
-      <div class="ib-sub">This Month's Expenses</div>
+      <div class="ib-sub" id="exp-banner-lbl">Spending</div>
       <div class="ib-val" id="exp-banner-val">£43,472</div>
-      <div><span class="ib-chg" style="background:rgba(255,255,255,.2)">↑ 9% vs last month</span></div>
+      <div><span class="ib-chg" id="exp-banner-chg" style="background:rgba(255,255,255,.2)"></span></div>
       </div>
       <div class="ib-worth" id="exp-worth" style="display:none"></div>
     </div>
@@ -7611,7 +7622,7 @@ body.no-livestock .tours-menu-item.ent-livestock{display:none}
 
   <!-- Dynamic metrics -->
   <div class="metrics mrow-hero" style="grid-template-columns:1fr 1fr 1fr 1fr;margin-bottom:16px">
-    <div class="mc mc-hero"><div class="mc-lbl">Net Profit · this period</div><div class="mc-val" id="rpt-net">£9,295</div><div class="mc-chg"><b id="rpt-margin" style="color:#eaf6ee">34.9%</b> margin · after tax</div></div>
+    <div class="mc mc-hero"><div class="mc-lbl">Profit before tax<span id="rpt-tags"></span></div><div class="mc-val" id="rpt-net">£9,295</div><div class="mc-chg"><b id="rpt-margin" style="color:#eaf6ee">34.9%</b> margin · before tax</div><div class="mc-chg" id="rpt-cash" style="display:none;margin-top:3px;color:#bcdcc7"></div></div>
     <div class="mc"><div class="mc-tic up">↑</div><div class="mc-lbl">Total Income</div><div class="mc-val g" id="rpt-income">£55,365</div><div class="mc-chg" id="rpt-income-lbl" style="color:var(--t3)">May 2024</div></div>
     <div class="mc"><div class="mc-tic dn">↓</div><div class="mc-lbl">Total Expenses</div><div class="mc-val" style="color:var(--rd)" id="rpt-expenses">£43,472</div><div class="mc-chg" id="rpt-expenses-lbl" style="color:var(--t3)">May 2024</div></div>
     <div class="mc"><div class="mc-lbl">Gross Profit</div><div class="mc-val b" id="rpt-gross">£11,893</div><div class="mc-chg" style="color:var(--t3)">Before allowances</div></div>  </div>
@@ -7804,7 +7815,7 @@ body.no-livestock .tours-menu-item.ent-livestock{display:none}
         <div class="bgt-trackfoot"><span id="bgt-kpi-out-f1"></span><span id="bgt-kpi-out-f2"></span></div>
       </div>
       <div class="bgt-kpi kpi-tap" style="--stripe:var(--bl)" onclick="kpiOpen('bgtNet')"><span class="kpi-i">&#9432;</span>
-        <div class="bgt-kpi-l"><span>Profit goal</span><span id="bgt-kpi-net-chip"></span></div>
+        <div class="bgt-kpi-l"><span>Profit goal</span><span id="bgt-kpi-net-tags"></span><span id="bgt-kpi-net-chip"></span></div>
         <div class="bgt-kpi-v" id="bgt-kpi-net-v">&#8212;</div>
         <div class="bgt-kpi-t" id="bgt-kpi-net-t"></div>
         <div class="bgt-track"><div class="bgt-fill" id="bgt-kpi-net-fill" style="--fillc:var(--bl);width:0%"></div><div class="bgt-tick" id="bgt-kpi-net-tick" style="display:none"></div></div>
@@ -9381,7 +9392,7 @@ body.no-livestock .tours-menu-item.ent-livestock{display:none}
     </div>
     <div class="cb-totalwrap kpi-tap" onclick="kpiOpen('planTotal')">
       <div>
-        <div class="cb-l" data-t="plan.totalProfit">Total planned profit</div>
+        <div class="cb-l" data-t="plan.totalProfit">Planned margin<span class="ptags"><span class="ptag pt-plan">Season plan</span><span class="ptag pt-plan">Before overheads</span></span></div>
         <div class="cb-total" id="plan-cb-total">£0</div>
       </div>
       <span class="kpi-i">&#9432;</span>
@@ -10802,12 +10813,12 @@ var ST_CROP = {
   ],
   // Lands
   lands: [
-    {id:1, name:'Home Field', area:120, crop:'Winter wheat', cultivar:'Skyfall', gmo:false, irrigated:false, planted:'2025-10-04', harvest:'2026-08-18', stage:'harvest', targetYield:9.0, actualYield:null, inputPerHa:690, prevCrop:'Field beans'},
-    {id:2, name:'Long Meadow', area:90, crop:'Oilseed rape', cultivar:'Aurelia', gmo:false, irrigated:false, planted:'2025-09-03', harvest:'2026-07-24', stage:'harvest', targetYield:3.6, actualYield:3.4, inputPerHa:620, prevCrop:'Winter wheat'},
-    {id:3, name:'Church Field', area:70, crop:'Field beans', cultivar:'Vespa', gmo:false, irrigated:false, planted:'2025-11-06', harvest:'2026-09-08', stage:'growing', targetYield:4.2, actualYield:null, inputPerHa:430, prevCrop:'Winter wheat'},
-    {id:4, name:'Brook Field', area:60, crop:'Spring barley', cultivar:'Laureate', gmo:false, irrigated:false, planted:'2026-03-22', harvest:'2026-08-14', stage:'harvest', targetYield:6.4, actualYield:6.1, inputPerHa:520, prevCrop:'Oilseed rape'},
+    {id:1, name:'Home Field', area:120, crop:'Winter wheat', cultivar:'Skyfall', gmo:false, irrigated:false, planted:'2025-10-04', harvest:'2026-08-18', stage:'harvested', targetYield:9.0, actualYield:9.0, inputPerHa:690, prevCrop:'Field beans'},
+    {id:2, name:'Long Meadow', area:90, crop:'Oilseed rape', cultivar:'Aurelia', gmo:false, irrigated:false, planted:'2025-09-03', harvest:'2026-07-24', stage:'harvested', targetYield:3.6, actualYield:3.4, inputPerHa:620, prevCrop:'Winter wheat'},
+    {id:3, name:'Church Field', area:70, crop:'Field beans', cultivar:'Vespa', gmo:false, irrigated:false, planted:'2025-11-06', harvest:'2026-09-22', stage:'growing', targetYield:4.2, actualYield:null, inputPerHa:430, prevCrop:'Winter wheat'},
+    {id:4, name:'Brook Field', area:60, crop:'Spring barley', cultivar:'Laureate', gmo:false, irrigated:false, planted:'2026-03-22', harvest:'2026-08-14', stage:'harvested', targetYield:6.4, actualYield:6.1, inputPerHa:520, prevCrop:'Oilseed rape'},
     {id:5, name:'Top Field', area:15, crop:'', cultivar:'', gmo:false, irrigated:false, planted:'', harvest:'', stage:'fallow', targetYield:0, actualYield:0, inputPerHa:0, prevCrop:'Winter wheat'},
-    {id:6, name:'Twelve Acre', area:80, crop:'Winter wheat', cultivar:'Dawsum', gmo:false, irrigated:false, planted:'2025-10-11', harvest:'2026-08-24', stage:'growing', targetYield:8.2, actualYield:null, inputPerHa:710, prevCrop:'Oilseed rape'}
+    {id:6, name:'Twelve Acre', area:80, crop:'Winter wheat', cultivar:'Dawsum', gmo:false, irrigated:false, planted:'2025-10-11', harvest:'2026-08-24', stage:'harvested', targetYield:8.2, actualYield:8.2, inputPerHa:710, prevCrop:'Oilseed rape'}
   ],
   // Field events (planting / harvest / delivery)
   events: [
@@ -10817,7 +10828,12 @@ var ST_CROP = {
     {id:'ce4', land:1, kind:'planted', date:'2025-10-04', note:'Winter wheat Skyfall'},
     {id:'ce5', land:3, kind:'planted', date:'2025-11-06', note:'Field beans Vespa'},
     {id:'ce6', land:6, kind:'planted', date:'2025-10-11', note:'Winter wheat Dawsum'},
-    {id:'ce7', land:4, kind:'harvested', date:'2026-08-14', note:'Spring barley 6.1 t/ha', tons:366, yield:6.1}
+    {id:'ce7', land:4, kind:'harvested', date:'2026-08-14', note:'Spring barley 6.1 t/ha', tons:366, yield:6.1},
+    {id:'ce8', land:4, kind:'delivered', date:'2026-08-17', note:'Frontier store', tons:366, cert:'FR-2218'},
+    {id:'ce9', land:1, kind:'harvested', date:'2026-08-18', note:'Winter wheat 9.0 t/ha', tons:1080, yield:9.0},
+    {id:'ce10', land:1, kind:'delivered', date:'2026-08-20', note:'Openfield store', tons:1080, cert:'OF-4488'},
+    {id:'ce11', land:6, kind:'harvested', date:'2026-08-24', note:'Winter wheat 8.2 t/ha', tons:656, yield:8.2},
+    {id:'ce12', land:6, kind:'delivered', date:'2026-08-26', note:'Openfield store', tons:656, cert:'OF-4492'}
   ],
   // Inputs & spray applications
   /* Inputs & spray applications. This block was South African end to end and the
@@ -10851,10 +10867,10 @@ var ST_CROP = {
   compliance: {
     // Which areas the farmer chooses to track (auto-relevant ones default on)
     tracked: { chem:true, water:true, gmo:false, invasive:true, seed:true, soil:true, ohs:true, diesel:true, export:false },
-    waterLicence:'AN/033/0021/012', waterAuthorised:480000, waterUsed:312400, waterMetered:true,
+    waterLicence:'AN/033/0021/012', waterAuthorised:480000, waterUsed:341800, waterMetered:true,
     invasiveRegister:true, invasiveOutstanding:'Top Field firebreak', invasiveLastAction:'Pompom weed · Feb 2025',
     seedCertified:true, retainedSeed:false, seedNote:'',
-    soilPractice:'Min-till + contours', soilTest:'Home Field · Aug 2024',
+    soilPractice:'Min-till + contours', soilTest:'Home Field · Sep 2025',
     operatorsTrained:2, operatorsTotal:2, ppeIssued:true, firstAidKit:true, workerTraining:'2 operators P2 \u00b7 May 2024',
     sdsRegister:true, containerDisposal:true,
     dieselLitres:18400, dieselLogbook:true,
@@ -10862,10 +10878,19 @@ var ST_CROP = {
     // Reminder cadence per area, in months (0 = no periodic check). Editable per farm.
     cadence: { chem:0, water:1, gmo:12, invasive:4, seed:12, soil:12, ohs:24, diesel:2, export:12 },
     // Dated check/test logs per area: [{date:'YYYY-MM-DD', what, note, photos:[{name,url,kind}]}]
+    /* Dated checks, newest first. These used to stop in early 2025, which made a
+       well-run demo farm open on nine overdue statutory items - a fabricated
+       backlog, not a teaching example. The only one left open is the soil plan,
+       whose annual review falls due this month. */
     logs: {
-      water:[ {date:'2025-02-05', what:'Monthly meter reading', note:'Reading 312,400 m\u00b3. Pump 2 serviced.', photos:[]} ],
-      soil:[ {date:'2024-08-14', what:'Soil test', note:'Home Field composite sample sent to lab.', photos:[]} ],
-      ohs:[ {date:'2024-05-10', what:'Operator training & PPE', note:'2 operators certified P2.', photos:[]} ]
+      water:[ {date:'2026-09-05', what:'Monthly meter reading', note:'Reading 341,800 m\u00b3 \u00b7 71% of the authorised volume.', photos:[]},
+              {date:'2026-08-06', what:'Monthly meter reading', note:'Reading 320,100 m\u00b3.', photos:[]},
+              {date:'2026-07-08', what:'Monthly meter reading', note:'Reading 298,400 m\u00b3. Pump 2 serviced.', photos:[]} ],
+      soil:[ {date:'2025-09-20', what:'Soil management plan review', note:'Min-till retained; contour banks checked on Home Field and Brook Field.', photos:[]} ],
+      ohs:[ {date:'2026-05-10', what:'Operator training & PPE', note:'2 operators re-certified NPTC PA1/PA2; PPE reissued.', photos:[]} ],
+      seed:[ {date:'2026-03-02', what:'Seed certification check', note:'Certified seed invoices filed for Skyfall, Dawsum, Laureate and Vespa.', photos:[]} ],
+      invasive:[ {date:'2026-07-15', what:'Invasive species walk', note:'Top Field firebreak cleared; no new outbreaks.', photos:[]} ],
+      diesel:[ {date:'2026-08-20', what:'Red diesel stock check', note:'Tank dipped and reconciled to the machine log.', photos:[]} ]
     },
     // Standing documents on file per area: [{name,url,kind,expiry:'YYYY-MM'|'',added}]
     docs: {
@@ -10873,7 +10898,7 @@ var ST_CROP = {
       export:[]
     },
     // Structured water meter readings (item 7): [{date:'YYYY-MM-DD', m3}]
-    waterReadings:[ {date:'2025-01-08', m3:286100}, {date:'2025-02-05', m3:312400} ]
+    waterReadings:[ {date:'2026-07-08', m3:298400}, {date:'2026-08-06', m3:320100}, {date:'2026-09-05', m3:341800} ]
   }
 };
 
@@ -10921,6 +10946,39 @@ function cropEffStage(l){
     if(!isNaN(h) && LS_TODAY>=h) return 'harvest';
   }
   return l.stage;
+}
+/* Past the harvest date we ask; we never record a harvest the farmer has not confirmed.
+   Returns whole days since the planned date (0 = due today), or null when the question
+   does not apply. */
+function cropHarvestDueDays(l){
+  if(!l || !l.crop || !l.harvest || cropEffStage(l)!=='harvest') return null;
+  var h=new Date(l.harvest+'T00:00:00'); if(isNaN(h)) return null;
+  return Math.floor((LS_TODAY.getTime()-h.getTime())/86400000);
+}
+function cropHarvestLandById(id){
+  var ls=(window.ST_CROP&&ST_CROP.lands)||[];
+  for(var i=0;i<ls.length;i++){ if(ls[i].id===id) return ls[i]; }
+  return null;
+}
+/* "Not yet" moves the question on a week and records nothing at all. */
+function cropHarvestDefer(id){
+  var l=cropHarvestLandById(id); if(!l) return;
+  var base=new Date((l.harvest||'')+'T00:00:00');
+  if(isNaN(base) || base.getTime()<LS_TODAY.getTime()) base=new Date(LS_TODAY.getTime());
+  base.setDate(base.getDate()+7);
+  l.harvest=base.toISOString().slice(0,10);
+  dataChanged('crop');
+  toast('Moved on a week \u2014 we\u2019ll ask again on '+cropDispDate(l.harvest)+'. Nothing recorded.','info');
+}
+function cropHarvestAskHTML(l){
+  var d=cropHarvestDueDays(l); if(d==null) return '';
+  if(_cropPhiByLand()[l.id]) return '';   /* a spray waiting period outranks the question */
+  return '<div onclick="event.stopPropagation()" style="margin-top:9px;border:1px solid #e5d4a8;background:#fdf8ec;border-radius:10px;padding:9px 10px">'+
+    '<div style="font-size:12px;font-weight:700;color:#7a5a12;line-height:1.4">Did you harvest? It was due '+cropDispDate(l.harvest)+'.</div>'+
+    '<div style="display:flex;gap:7px;margin-top:8px">'+
+    '<button onclick="event.stopPropagation();cropHarvestChoose('+l.id+')" style="flex:1;padding:7px 8px;border:none;border-radius:8px;background:var(--gl);color:#fff;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer">Yes \u2014 record yield</button>'+
+    '<button onclick="event.stopPropagation();cropHarvestDefer('+l.id+')" style="width:86px;padding:7px 8px;border:1px solid var(--br);border-radius:8px;background:#fff;color:var(--t3);font-family:inherit;font-size:12px;font-weight:600;cursor:pointer">Not yet</button>'+
+    '</div></div>';
 }
 
 // ---- Crop <-> Planning link (Option A: shared identity via linkId) ----
@@ -11966,8 +12024,12 @@ function _cropAttention(){
   (ST_CROP.lands||[]).forEach(function(l){ if(l.crop){ var est=cropEffStage(l);
     if(est!=='planned'&&est!=='fallow'&&est!=='harvested'&&cropLandGMperHa(l)<0)
       items.push({ic:'\uD83D\uDCC9', tx:'<b>'+esc(l.name)+'</b> is forecast to run at a loss (<b>'+cropFmtR(cropLandGMperHa(l))+'/ha</b>)', go:"cropOpenLand("+l.id+")"}); } });
-  var ready=(ST_CROP.lands||[]).filter(function(l){return cropEffStage(l)==='harvest';});
-  if(ready.length) items.push({ic:'\uD83C\uDF3E', tx:'<b>'+ready.length+' land'+(ready.length===1?'':'s')+'</b> ready to harvest \u2014 '+esc(ready.slice(0,3).map(function(l){return l.name;}).join(', ')), go:"cropHarvestPick()"});
+  var ready=(ST_CROP.lands||[]).filter(function(l){return cropEffStage(l)==='harvest';})
+    .sort(function(a,b){ return String(a.harvest||'').localeCompare(String(b.harvest||'')); });
+  if(ready.length===1)
+    items.push({ic:'\uD83C\uDF3E', tx:'Did you harvest <b>'+esc(ready[0].name)+'</b>? It was due <b>'+cropDispDate(ready[0].harvest)+'</b>', go:"cropHarvestChoose("+ready[0].id+")"});
+  else if(ready.length)
+    items.push({ic:'\uD83C\uDF3E', tx:'<b>'+ready.length+' lands</b> are past their harvest date \u2014 did you harvest? '+esc(ready.slice(0,3).map(function(l){return l.name;}).join(', ')), go:"cropHarvestPick()"});
   return items;
 }
 function _cropHeroHTML(att, T){
@@ -12113,7 +12175,8 @@ function _cropLandCard(l){
   var phi=_cropPhiByLand()[l.id];
   var chipCls, chip;
   if(phi){ chipCls='s-harv'; chip='⛔ wait to '+lsFmtDate(phi.safe); }
-  else { chipCls=cropStageClass(est); chip=cropStageLabel(est); }
+  else { chipCls=cropStageClass(est); chip=cropStageLabel(est);
+    if(est==='harvest' && cropHarvestDueDays(l)>0) chip='Harvest due'; }
   var money = (planned) ? '<div class="cr-money mut">Not planted yet</div>'
             : (fallow||!l.crop) ? '<div class="cr-money mut">—</div>'
             : '<div class="cr-money">'+_lsCompactRand(cropLandIncomePerHa(l)*(l.area||0))+'</div>';
@@ -12124,11 +12187,12 @@ function _cropLandCard(l){
   var body='';
   if(!planned && !fallow && l.crop){
     body='<div class="crop-progress" style="margin-top:10px"><i style="width:'+cropGrowthPct(l)+'%;background:'+(phi?'var(--am,#B45309)':'var(--gl)')+'"></i></div>'+
-      '<div class="cr-sub2"><span>'+(est==='harvest'?'Ready to harvest':(est==='harvested'?'Harvested':'Harvest · '+cropDispDate(l.harvest)))+'</span><span><b>'+cropFmtR(cropLandGMperHa(l))+'/ha</b></span></div>'+
+      '<div class="cr-sub2"><span>'+(est==='harvest'?(cropHarvestDueDays(l)>0?'Harvest due':'Ready to harvest'):(est==='harvested'?'Harvested':'Harvest · '+cropDispDate(l.harvest)))+'</span><span><b>'+cropFmtR(cropLandGMperHa(l))+'/ha</b></span></div>'+
       /* The UK drilling/harvest window for this crop, so a date that looks wrong for
          the hemisphere is obvious on the card rather than three screens away. */
       ((typeof ukCalendarNote==='function' && ukCalendarNote(l.crop))
-        ? ('<div style="font-size:10.5px;color:var(--t4);margin-top:4px">'+ukCalendarNote(l.crop)+'</div>') : '');
+        ? ('<div style="font-size:10.5px;color:var(--t4);margin-top:4px">'+ukCalendarNote(l.crop)+'</div>') : '')+
+      cropHarvestAskHTML(l);
   } else if(planned){
     body='<div class="cr-sub2" style="margin-top:10px"><span>Budgeted margin '+cropFmtR(cropLandGMperHa(l))+'/ha — out of season totals until planted</span></div>';
   } else {
@@ -14659,7 +14723,7 @@ function renderProfit(){
     }
   }
   html+='<div class="pf-kpis" id="pf-kpis">'+
-    '<div class="pf-kpi kpi-tap" onclick="kpiOpen(\'pfFarmProfit\')"><span class="kpi-i">\u24D8</span><div class="l">Farm profit this season</div><div class="v">'+_pfK(profit)+'</div><div class="s">after '+_pfK(overheads)+' shared costs</div></div>'+
+    '<div class="pf-kpi kpi-tap" onclick="kpiOpen(\'pfFarmProfit\')"><span class="kpi-i">\u24D8</span><div class="l">Farm profit, after recurring bills'+profitTags('actual', seasonShortLabel())+'</div><div class="v">'+_pfK(profit)+'</div><div class="s">after '+_pfK(overheads)+' of shared costs \u2014 loans, insurance, admin</div></div>'+
     '<div class="pf-kpi kpi-tap" onclick="kpiOpen(\'pfBestEarner\')"><span class="kpi-i">\u24D8</span><div class="l">Best earner</div><div class="v">'+(best?esc(best.crop||best.name):'\u2014')+'</div><div class="s">'+bestTxt+'</div></div>'+
     (watch?'<div class="pf-kpi warn kpi-tap" onclick="kpiOpen(\'pfThird\')"><span class="kpi-i">\u24D8</span><div class="l">Watch</div><div class="v">'+esc(watch)+'</div><div class="s">'+watchSub+'</div></div>':'<div class="pf-kpi kpi-tap" onclick="kpiOpen(\'pfThird\')"><span class="kpi-i">\u24D8</span><div class="l">Crops &amp; herds</div><div class="v">'+(scReal.length+sl.length)+'</div><div class="s">tracked this season</div></div>')+
   '</div>';
@@ -14953,7 +15017,7 @@ window.COUNTRY = COUNTRY;
    the app empty. Both ST and FARM read from here so the two cannot drift; several screens
    read FARM.name where others read ST.farmName. */
 var DEMO_FARM = {
-  name:'Oakvale Farm', owner:'James Whitaker', ha:5462,
+  name:'Oakvale Farm', owner:'James Whitaker', ha:480,
   vat:true, province:'Herefordshire', region:'England'
 };
 window.DEMO_FARM = DEMO_FARM;
@@ -15698,6 +15762,56 @@ function txSummary(monthLabel) {
   return { income: income, expenses: expenses, profit: income - expenses, byCat: byCat };
 }
 
+/* ── THE PROFIT LADDER ───────────────────────────────────────────────────────
+   Every "profit" on the app is one of five rungs, and the only differences
+   between them are the period and whose rules were applied:
+
+     money in - money out              = profit, cash        (what happened)
+     + loan capital and disallowed cost = taxable profit      (HMRC's rules)
+     the same sum run to 5 April        = projected           (where it is heading)
+     the same sum on planned figures    = planned margin      (before overheads)
+
+   The tags below are the only place those words are written, so two screens
+   cannot describe the same rung differently. */
+var PROFIT_TAG_CLS = {actual:'pt-act', tax:'pt-tax', proj:'pt-proj', plan:'pt-plan'};
+function profitTag(kind, text){
+  return '<span class="ptag '+(PROFIT_TAG_CLS[kind]||'pt-act')+'">'+esc(String(text||''))+'</span>';
+}
+/* profitTags('actual','Year so far','tax','Tax rules') */
+function profitTags(){
+  var h='', i;
+  for(i=0;i+1<arguments.length;i+=2){ if(arguments[i+1]) h+=profitTag(arguments[i], arguments[i+1]); }
+  return h ? '<span class="ptags">'+h+'</span>' : '';
+}
+function setTags(id){
+  var el=$(id); if(!el) return;
+  el.innerHTML=profitTags.apply(null, Array.prototype.slice.call(arguments,1));
+}
+/* "6 Apr - 12 Sep 2026": the window every "year so far" figure actually covers. */
+function profitFyToDateLabel(){
+  try{
+    var M=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    var d=(typeof APP_TODAY!=='undefined'&&APP_TODAY)?new Date(APP_TODAY):new Date();
+    var sm=(typeof fyStartMonth==='function')?fyStartMonth():4;
+    var sd=(typeof fyStartDay==='function')?fyStartDay():6;
+    return (sd||6)+' '+M[(sm||4)-1]+' \u2013 '+d.getDate()+' '+M[d.getMonth()]+' '+d.getFullYear();
+  }catch(e){ return 'the year so far'; }
+}
+/* The five rungs for the year so far, from the same two calls every screen uses. */
+/* "Season 26/27" - the growing season, which is NOT the tax year and must never
+   borrow its label. */
+function seasonShortLabel(){
+  try{
+    var y=(typeof seasonOf==='function')?seasonOf():(new Date()).getFullYear();
+    return 'Season '+String(y).slice(2)+'/'+String(y+1).slice(2);
+  }catch(e){ return 'This season'; }
+}
+function profitLadder(){
+  var c=ytdSummary(), t=ytdSummary({taxBasis:true});
+  var cash=c.income-c.expenses, taxable=t.income-t.expenses;
+  return {income:c.income, expenses:c.expenses, cash:cash, adj:taxable-cash,
+          taxable:taxable, period:profitFyToDateLabel()};
+}
 function ytdSummary(opts) {
   /* Default is the CASH view - what actually left the account - because that is what the
      dashboard and Money Flow are asking. Pass {taxBasis:true} for anything feeding a tax
@@ -15721,10 +15835,46 @@ function ytdSummary(opts) {
   return { income: income, expenses: expenses, profit: income - expenses };
 }
 
-function bestMonth() {
+/* Last tax year to the same point in the year. Farm income is seasonal, so "vs the
+   previous six months" compares harvest with spring and tells the farmer nothing. */
+function _txFyToDatePrev(){
+  var out={income:0,expenses:0,profit:0};
+  try{
+    var cur=getCurrentFY(), now=_txNow(), fyStart=((ST.fyStartMonth||4)-1);
+    var rel=function(m,d){ return (((m-fyStart)%12+12)%12)*100 + d; };
+    var cut=rel(now.getMonth(), now.getDate());
+    (ST.txns||[]).forEach(function(t){
+      if(typeof fyOf!=='function' || fyOf(t.date)!==cur-1) return;
+      var d=parseDate(t.date); if(!d) return;
+      if(rel(d.m, d.d||1) > cut) return;
+      if(t.type==='income') out.income+=(t.amt||0);
+      else if(t.type==='expense') out.expenses+=(t.amt||0);
+    });
+    out.profit=out.income-out.expenses;
+  }catch(e){}
+  return out;
+}
+function _txSamePointLabel(){
+  try{ var n=_txNow(); return n.getDate()+' '+['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][n.getMonth()]+' '+(n.getFullYear()-1); }
+  catch(e){ return 'the same point last year'; }
+}
+/* The banner's change chip was fixed text in the HTML - it read "16% vs last month"
+   whatever the farm had done. */
+function _ieBannerChg(id, cur, prev, prevLbl){
+  var el=document.getElementById(id); if(!el) return;
+  if(!prev || prev<=0){ el.textContent='no figure for '+prevLbl; return; }
+  var pct=Math.round((cur-prev)/Math.abs(prev)*100);
+  if(Math.abs(pct)>500){ el.textContent='vs '+prevLbl; return; }
+  el.textContent=(pct>=0?'↑ ':'↓ ')+Math.abs(pct)+'% on '+prevLbl;
+}
+/* fyOnly: "best month this year" means this TAX year - it used to scan every year on
+   the farm and answer with November 2025. */
+function bestMonth(fyOnly) {
+  var _bmFy = (fyOnly && typeof getCurrentFY==='function') ? getCurrentFY() : null;
   var totals = {}, best = {label:'—', income:0};
   ST.txns.forEach(function(t) {
     var d = parseDate(t.date); if (!d) return;
+    if (_bmFy != null && typeof fyOf === 'function' && fyOf(t.date) !== _bmFy) return;
     var label = MONTH_NAMES[('0'+(d.m+1)).slice(-2)] + ' ' + d.y;
     if (!totals[label]) totals[label] = 0;
     if (t.type === 'income') totals[label] += t.amt;
@@ -16471,7 +16621,11 @@ function clearExpFilters() {
 
 // ── Period-aware data aggregation ────────────────────────────
 
-function txSummaryPeriod(months) {
+/* fyOnly: the tax year starts on 6 April. A month-label window that opens in April
+   otherwise counts rows dated 1-5 April, which belong to the PREVIOUS tax year - the
+   demo farm carried four of them (1,900 in, 6,710 out) into this year's figures. */
+function txSummaryPeriod(months, fyOnly) {
+  var _fyCur = (fyOnly && typeof getCurrentFY === 'function') ? getCurrentFY() : null;
   var curMonth = currentPeriodLabel();
   var MN = {Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
 
@@ -16493,6 +16647,7 @@ var parts = (curMonth||'May 2024').split(' ');
     var d = parseDate(t.date); if (!d) return;
     var lbl = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.m] + ' ' + d.y;
     if (periodMonths.indexOf(lbl) < 0) return;
+    if (_fyCur != null && typeof fyOf === 'function' && fyOf(t.date) !== _fyCur) return;
     if (t.type === 'income')  income   += t.amt;
     else if (t.type === 'expense') expenses += t.amt;
     else return; // account payments etc. are cash movements, not P&L lines
@@ -16502,24 +16657,36 @@ var parts = (curMonth||'May 2024').split(' ');
 }
 
 function updateIncPage() {
+  /* 'fy' is the farmer's CHOICE; ST.incPeriod is the month count a dozen readers parse.
+     Keep the count in step with the tax year, or the month after a rollover every
+     one of them is a month short. */
+  var fyMode = ((ST.incPeriodSel || 'fy') === 'fy');
+  if (fyMode && typeof _txFyMonths === 'function') ST.incPeriod = String(_txFyMonths());
   var p  = ST.incPeriod || '6';
   var n  = parseInt(p);
-  var R  = txSummaryPeriod(n);
+  var R  = txSummaryPeriod(n, fyMode);
   var Rp = txSummaryPeriod(n * 2);
   var lbl     = _txPeriodTitle(n);
-  var prevLbl = n === 1 ? 'last month' : 'prev ' + p + ' months';
+  var prevLbl = fyMode ? 'the same point last year' : (n === 1 ? 'last month' : 'prev ' + p + ' months');
+  var _prevBase = fyMode ? _txFyToDatePrev()
+                         : { income:Rp.income-R.income, expenses:Rp.expenses-R.expenses, profit:Rp.profit-R.profit };
 
 setEl('inc-banner-val',    fmt(R.income));
+  setEl('inc-banner-lbl',   'Income \u00b7 ' + lbl);
+  _ieBannerChg('inc-banner-chg', R.income, _prevBase.income, prevLbl);
   setEl('inc-metric-in',     fmt(R.income));
   setEl('inc-metric-profit', fmt(Math.abs(R.profit)));
   setEl('inc-chart-title',   'Income Overview — ' + lbl);
   ['1','3','6','12'].forEach(function(x){ var b=$('inc-pill-'+x); if(b) b.className='pill'+(p===x?' on':''); });
 
 setEl('inc-lbl-in',     'Money In (' + lbl + ')');
-  setEl('inc-lbl-profit', 'Profit (' + lbl + ')');
+  setEl('inc-lbl-profit', 'Profit');
+  /* The same figure the Dashboard shows for the year so far, tagged so the two read
+     as one number rather than two that happen to match. */
+  if(typeof setTags==='function') setTags('inc-tag-profit','actual', fyMode ? 'Year so far' : lbl, 'actual', 'Cash');
 
-var prevInc  = Rp.income  - R.income;
-  var prevProf = Rp.profit  - R.profit;
+var prevInc  = _prevBase.income;
+  var prevProf = _prevBase.profit;
 
   function setPctChg(id, cur, prev, higherIsBetter) {
     var el = $(id); if (!el) return;
@@ -16536,12 +16703,22 @@ var prevInc  = Rp.income  - R.income;
 
   var ytdChgEl = $('inc-chg-ytd');
   if (ytdChgEl) {
-    var ytd = ytdSummary();
-    ytdChgEl.textContent = 'Season total ('+fyLabel()+')';
+    if (fyMode) {
+      /* In the tax-year view the banner already shows this year's total - repeating it
+         here is what put two year-to-date incomes side by side. */
+      var _pv = _txFyToDatePrev();
+      setEl('inc-lbl-ytd', 'Same point last year');
+      setEl('inc-metric-ytd', fmt(_pv.income));
+      ytdChgEl.textContent = 'to ' + _txSamePointLabel();
+    } else {
+      var ytd = ytdSummary();
+      setEl('inc-lbl-ytd', 'Year-to-Date Income');
+      ytdChgEl.textContent = 'Season total ('+fyLabel()+')';
+      setEl('inc-metric-ytd', fmt(ytd.income));
+    }
     ytdChgEl.className = 'mc-chg';
-    setEl('inc-metric-ytd', fmt(ytd.income));
   }
-  var bm = bestMonth();
+  var bm = bestMonth(true);
   setEl('inc-metric-best', bm.income > 0 ? fmt(bm.income) : '\u2014');
   setEl('inc-chg-best', bm.label || '\u2014');
 
@@ -16552,15 +16729,23 @@ filterIncomeTx && filterIncomeTx();
   ieCompanion && ieCompanion('income');
 }
 function updateExpPage() {
+  /* 'fy' is the farmer's CHOICE; ST.expPeriod is the month count a dozen readers parse.
+     Keep the count in step with the tax year, or the month after a rollover every
+     one of them is a month short. */
+  var fyMode = ((ST.expPeriodSel || 'fy') === 'fy');
+  if (fyMode && typeof _txFyMonths === 'function') ST.expPeriod = String(_txFyMonths());
   var p  = ST.expPeriod || '6';
   var n  = parseInt(p);
-  var R  = txSummaryPeriod(n);
+  var R  = txSummaryPeriod(n, fyMode);
   var Rp = txSummaryPeriod(n * 2);
   var lbl     = _txPeriodTitle(n);
-  var prevLbl = n === 1 ? 'last month' : 'prev ' + p + ' months';
+  var prevLbl = fyMode ? 'the same point last year' : (n === 1 ? 'last month' : 'prev ' + p + ' months');
+  var _prevBaseE = fyMode ? _txFyToDatePrev() : { expenses:Rp.expenses-R.expenses };
   var ha = ST.farmHa || 1;
 
 setEl('exp-banner-val',   fmt(R.expenses));
+  setEl('exp-banner-lbl',  'Spending \u00b7 ' + lbl);
+  _ieBannerChg('exp-banner-chg', R.expenses, _prevBaseE.expenses, prevLbl);
   setEl('exp-metric-total', fmt(R.expenses));
   setEl('exp-chart-title',  'Expenses Overview — ' + lbl);
   ['1','3','6','12'].forEach(function(x){ var b=$('exp-pill-'+x); if(b) b.className='pill'+(p===x?' on':''); });
@@ -16569,8 +16754,8 @@ setEl('exp-lbl-total', 'Total Expenses (' + lbl + ')');
   setEl('exp-lbl-ratio', 'Expense Ratio (' + lbl + ')');
   setEl('exp-lbl-top',   'Biggest Category (' + lbl + ')');
 
-var prevExp = Rp.expenses - R.expenses;
-  var prevExp2 = Rp.expenses - R.expenses;
+var prevExp = _prevBaseE.expenses;
+  var prevExp2 = prevExp;
   var expChgEl = $('exp-chg-total');
   if (expChgEl) {
     if (prevExp2 > 0 && Math.abs(Math.round((R.expenses - prevExp2) / prevExp2 * 100)) <= 200) {
@@ -16823,12 +17008,18 @@ function ieInsights(kind){
       text:'Spend is high, but <b>normal for this month</b> — '+_best.label+' are <span class="fig">'+Math.round(_best.shN*100)+'%</span> of it, just as a year ago.', basis:'seasonal pattern'}); }
   }
 
-  // 4) Season-to-date pace vs last season
-  var std=_ieSeasonToDate(0, type), stdLast=_ieSeasonToDate(1, type);
+  /* 4) Year to date, against the SAME POINT last year - the same two numbers the
+        headline above uses. This counted whole elapsed months, so twelve days of
+        September were set against the whole of last September: the card read
+        "19% below last season" directly beneath a headline saying "+50% on the same
+        point last year". Same period, same source, one answer. */
+  var _p0=(typeof _txFyToDatePrev==='function')?_txFyToDatePrev():null;
+  var std=_ieSeasonToDate(0, type);
+  var stdLast=_p0 ? (type==='income'?_p0.income:_p0.expenses) : _ieSeasonToDate(1, type);
   if(stdLast>0){ var pctp=Math.round((std-stdLast)/stdLast*100);
     if(Math.abs(pctp)<=200){ var dir=pctp>=0?'above':'below';
       out.push({type:'pace', icon:'📊',
-        text:'Season-to-date '+(type==='income'?'income is ':'you’ve spent ')+'<span class="fig">'+_ieK(std)+'</span>, tracking <span class="fig">'+Math.abs(pctp)+'%</span> '+dir+' last season.', basis:'season-to-date vs last season'}); } }
+        text:'This tax year '+(type==='income'?'income is ':'you’ve spent ')+'<span class="fig">'+_ieK(std)+'</span>, tracking <span class="fig">'+Math.abs(pctp)+'%</span> '+dir+' the same point last year.', basis:'tax year to date vs the same point last year'}); } }
 
   // 5) INCOME — enterprise spread (diversification), counted over the season
   if(type==='income'){ var seen={}; (ST.txns||[]).forEach(function(t){ if(t.type==='income' && t.ent && _ieInCurFY(t)) seen[t.ent]=1; });
@@ -17442,6 +17633,8 @@ setEl('dash-budget-period', month);
   setEl('dash-cf-in',  fmt(cur.income));
   setEl('dash-cf-out', fmt(cur.expenses));
   setEl('dash-cf-net', fmt(Math.abs(profit)));
+  /* Which month, and on what basis - the same two words the Reports header uses. */
+  if(typeof setTags==='function') setTags('dash-cf-net-tags','actual',month,'actual','Cash');
 
 var prev       = txSummary(prevMonthLabel(month));
   var prevProfit = prev.income - prev.expenses;
@@ -17515,7 +17708,7 @@ var txCount = ST.txns.filter(function(t){
 
   // ── Budget progress bars ──
   var budgetInc = getBudgetTarget() || 1;
-  var budgetExp = ST.budgetExpenseTarget || 1;
+  var budgetExp = getExpenseBudgetTarget() || 1;
   updateBpBar('bp-income', cur.income, budgetInc);
   updateBpBar('bp-expense', cur.expenses, budgetExp);
   updateBpBar('bp-profit', profit, budgetInc - budgetExp);
@@ -17561,19 +17754,17 @@ var pEl = $('season-ytd-profit');
 
 var pSub = $('season-ytd-profit-sub');
   if (pSub) {
-    if (typeof lastYearProfit === 'function') {
-      var lastP = lastYearProfit();
-      if (lastP && Math.abs(lastP) > 0) {
-        var diff = profit - lastP;
-        var pct  = Math.round(diff / Math.abs(lastP) * 100);
-        pSub.textContent = (diff >= 0 ? '↑ ' : '↓ ') + Math.abs(pct) + '% vs last season';
-        pSub.className = 'skpi-sub' + (diff >= 0 ? '' : ' dn');
-      } else {
-        pSub.textContent = profit >= 0 ? 'Profit so far this season' : 'Loss so far this season';
-        pSub.className = 'skpi-sub muted';
-      }
+    /* This tile counts the TAX year, so it cannot say "season", and lastYearProfit()
+       never existed - the branch below it was the only one that ever ran. It now
+       compares with the same point last year, the way Income does. */
+    var _lp = (typeof _txFyToDatePrev === 'function') ? _txFyToDatePrev() : null;
+    if (_lp && Math.abs(_lp.profit) > 0) {
+      var diff = profit - _lp.profit;
+      var pct  = Math.round(diff / Math.abs(_lp.profit) * 100);
+      pSub.textContent = (diff >= 0 ? '↑ ' : '↓ ') + Math.abs(pct) + '% on the same point last year';
+      pSub.className = 'skpi-sub' + (diff >= 0 ? '' : ' dn');
     } else {
-      pSub.textContent = profit >= 0 ? 'Profit so far this season' : 'Loss so far this season';
+      pSub.textContent = profit >= 0 ? 'Profit so far this tax year' : 'Loss so far this tax year';
       pSub.className = 'skpi-sub muted';
     }
   }
@@ -18127,7 +18318,7 @@ function updateBpBar(id, actual, budget) {
   var pct = budget > 0 ? Math.min(Math.round(actual/budget*100), 100) : 0;
   var over = actual > budget;
   var el = $(id+'-pct'); if(el){ el.textContent = pct+'%'; el.className = 'bp-pct'+(over?' over':''); }
-  var el2 = $(id+'-vals'); if(el2) el2.textContent = fmt(actual)+' / '+fmt(budget);
+  var el2 = $(id+'-vals'); if(el2) el2.textContent = fmt(actual)+' / '+fmt(budget)+(over?' \u00b7 '+fmt(actual-budget)+' over':'');
   var fill = $(id+'-fill'); if(fill){ fill.style.width = pct+'%'; fill.className = 'bp-fill'+(over?' over':actual/budget>0.85?' red':''); }
 }
 
@@ -19640,20 +19831,20 @@ function saveExpense() {
 // ============================================================
 var ST_ASSETS = {
   assets: [
-    {id:1,  name:'Oakvale Farm — 480 ha',          cat:'Land & Buildings',      date:'2005-06-01', price:4560000, deprType:'none', life:0,  notes:'Title deed: T4521/2005 · Herefordshire'},
-    {id:2,  name:'Farmhouse (5-bedroom)',              cat:'Land & Buildings',      date:'2005-06-01', price:640000, deprType:'none', life:0,  notes:'280m2 main residence'},
-    {id:3,  name:'Grain store & general purpose barn',       cat:'Land & Buildings',      date:'2010-03-12', price:185000,  deprType:'wda18', life:20, notes:'Brick construction'},
-    {id:4,  name:'John Deere 6140M Tractor',           cat:'Vehicles & Tractors',   date:'2022-03-15', price:118000, deprType:'aia', life:5,  notes:'Reg: JD6140-NW · 4WD, 140HP', financed:true, lender:'John Deere Financial', outstanding:52000, instalment:990, rate:6.9, insuredValue:98000, insurer:'NFU Mutual', renewalDate:'2026-06-25', docs:[{name:'Invoice-JD6140.pdf',kind:'doc',data:''},{name:'Vehicle-registration.pdf',kind:'doc',data:''}]},
-    {id:5,  name:'Massey Ferguson 5711 Tractor',       cat:'Vehicles & Tractors',   date:'2019-08-20', price:68000,  deprType:'aia', life:5,  notes:'Reg: MF5711-22 · 110HP utility'},
+    {id:1,  name:'Oakvale Farm — 480 ha',          cat:'Land & Buildings',      date:'2005-06-01', price:4560000, deprType:'none', life:0,  subtype:'land', notes:'Title deed: T4521/2005 · Herefordshire'},
+    {id:2,  name:'Farmhouse (5-bedroom)',              cat:'Land & Buildings',      date:'2005-06-01', price:640000, deprType:'none', life:0,  insuredValue:720000, insurer:'NFU Mutual', renewalDate:'2027-03-31', notes:'280m2 main residence'},
+    {id:3,  name:'Grain store & general purpose barn',       cat:'Land & Buildings',      date:'2010-03-12', price:185000,  deprType:'none', life:0, subtype:'building', insuredValue:210000, insurer:'NFU Mutual', renewalDate:'2027-03-31', notes:'Brick construction · built before 29 Oct 2018 — no Structures and Buildings Allowance'},
+    {id:4,  name:'John Deere 6140M Tractor',           cat:'Vehicles & Tractors',   date:'2022-03-15', price:118000, deprType:'aia', life:5,  notes:'Reg: JD6140-NW · 4WD, 140HP', financed:true, lender:'John Deere Financial', outstanding:52000, instalment:990, rate:6.9, insuredValue:98000, insurer:'NFU Mutual', renewalDate:'2027-06-25', docs:[{name:'Invoice-JD6140.pdf',kind:'doc',data:''},{name:'Vehicle-registration.pdf',kind:'doc',data:''}]},
+    {id:5,  name:'Massey Ferguson 5711 Tractor',       cat:'Vehicles & Tractors',   date:'2019-08-20', price:68000,  deprType:'aia', life:5,  insuredValue:44000, insurer:'NFU Mutual', renewalDate:'2027-06-25', notes:'Reg: MF5711-22 · 110HP utility'},
     {id:6,  name:'Toyota Hilux Invincible (4x4)',      cat:'Vehicles & Tractors',   date:'2023-07-01', price:38000,  deprType:'wda18', life:5,  notes:'Reg: FP 45 NW · White', financed:true, lender:'Barclays', outstanding:24500, instalment:610, rate:6.9, insuredValue:29000, insurer:'NFU Mutual'},
-    {id:7,  name:'5-Furrow Reversible Plough',         cat:'Machinery & Equipment', date:'2022-04-01', price:26000,  deprType:'aia', life:5,  notes:'Kuhn Vari-Master'},
-    {id:8,  name:'4m Combination Drill',               cat:'Machinery & Equipment', date:'2021-01-18', price:42000,  deprType:'aia', life:5,  notes:'John Deere 7000 series'},
-    {id:9,  name:'Combine Harvester (50% share)',      cat:'Machinery & Equipment', date:'2018-05-10', price:96000, deprType:'aia', life:5,  notes:'John Deere S680 · shared with neighbour', financed:true, lender:'Barclays', outstanding:78000, instalment:1490, rate:7.4},
-    {id:10, name:'Trailed Sprayer 24m (3000L)',        cat:'Machinery & Equipment', date:'2020-03-08', price:34000,  deprType:'aia', life:5,  notes:''},
-    {id:11, name:'Orchard Trickle Irrigation (60 ha)', cat:'Irrigation & Water',    date:'2021-08-10', price:74000,  deprType:'aia', life:5,  notes:'Valley pivot · Electric drive', insuredValue:70000, insurer:'NFU Mutual', renewalDate:'2026-08-10'},
+    {id:7,  name:'5-Furrow Reversible Plough',         cat:'Machinery & Equipment', date:'2022-04-01', price:26000,  deprType:'aia', life:5,  insuredValue:20000, insurer:'NFU Mutual', renewalDate:'2027-06-25', notes:'Kuhn Vari-Master'},
+    {id:8,  name:'4m Combination Drill',               cat:'Machinery & Equipment', date:'2021-01-18', price:42000,  deprType:'aia', life:5,  insuredValue:33000, insurer:'NFU Mutual', renewalDate:'2027-06-25', notes:'John Deere 7000 series'},
+    {id:9,  name:'Combine Harvester (50% share)',      cat:'Machinery & Equipment', date:'2018-05-10', price:96000, deprType:'aia', life:5,  insuredValue:82000, insurer:'NFU Mutual', renewalDate:'2027-06-25', notes:'John Deere S680 · shared with neighbour', financed:true, lender:'Barclays', outstanding:78000, instalment:1490, rate:7.4},
+    {id:10, name:'Trailed Sprayer 24m (3000L)',        cat:'Machinery & Equipment', date:'2020-03-08', price:34000,  deprType:'aia', life:5,  insuredValue:26000, insurer:'NFU Mutual', renewalDate:'2027-06-25', notes:''},
+    {id:11, name:'Orchard Trickle Irrigation (60 ha)', cat:'Irrigation & Water',    date:'2021-08-10', price:74000,  deprType:'aia', life:5,  notes:'Valley pivot · Electric drive', insuredValue:70000, insurer:'NFU Mutual', renewalDate:'2027-08-10'},
     {id:12, name:'Abstraction Pump & Ring Main',     cat:'Irrigation & Water',    date:'2015-06-01', price:21000,   deprType:'aia', life:5,  notes:'120m depth, 8kW submersible'},
-    {id:13, name:'Grain Drying Floor (1,200 t)',       cat:'Storage & Silos',       date:'2020-01-20', price:88000,  deprType:'aia', life:5,  notes:'Behlen galvanised · Aeration system'},
-    {id:14, name:'Workshop & Tool Store',            cat:'Storage & Silos',       date:'2012-04-15', price:52000,  deprType:'wda18', life:20, notes:'Steel frame, concrete floor'},
+    {id:13, name:'Grain Drying Floor (1,200 t)',       cat:'Storage & Silos',       date:'2020-01-20', price:88000,  deprType:'aia', life:5,  insuredValue:80000, insurer:'NFU Mutual', renewalDate:'2027-03-31', notes:'Behlen galvanised · Aeration system'},
+    {id:14, name:'Workshop & Tool Store',            cat:'Storage & Silos',       date:'2012-04-15', price:52000,  deprType:'none', life:0, subtype:'shed', insuredValue:60000, insurer:'NFU Mutual', renewalDate:'2027-03-31', notes:'Steel frame, concrete floor · built before 29 Oct 2018 — no Structures and Buildings Allowance'},
     {id:15, name:'Openfield Co-operative Shares',      cat:'Financial Assets',      date:'2010-01-01', price:9500,  deprType:'none', life:0,  notes:'500 x £1 par value shares'},
     {id:16, name:'Crop Insurance Policy (2026/27)',    cat:'Financial Assets',      date:'2026-04-01', price:9800,   deprType:'none', life:0,  notes:'Hail + drought cover · NFU Mutual'},
     {id:17, name:'Solar PV (60 kW + 120 kWh battery)', cat:'Renewable Energy',      date:'2024-09-01', price:74000, deprType:'renew', life:1,  notes:'Sunsynk 60kW inverter + battery bank', insuredValue:74000, insurer:'NFU Mutual'},
@@ -26915,9 +27106,16 @@ var ST_WORK = {
     { id:'w6', name:'Andrei Popescu', role:'Seasonal picker \u00b7 paid hourly', type:'Seasonal', start:'', onFarm:false, idNo:'', basis:'hour', amt:12.71, hoursWeek:39, hoursDay:8, taxCode:'1257L', niNo:'', pension:false, contract:'missing', activity:'or:f1', adv:null, fund:null },
     { id:'w7', name:'Joanna Nowak', role:'Seasonal picker \u00b7 paid hourly', type:'Seasonal', start:'', onFarm:false, idNo:'', basis:'hour', amt:12.71, hoursWeek:39, hoursDay:8, taxCode:'1257L', niNo:'', pension:false, contract:'missing', activity:'', adv:null, fund:null }
   ],
+  /* The statutory records a farm with staff must hold. Absent from the seed, so the
+     demo opened on two red legal items that say nothing about the app. */
+  compliance: {
+    niPayments: [ {amt:2184, date:'2026-08-19'}, {amt:2184, date:'2026-07-20'}, {amt:2184, date:'2026-06-19'} ],
+    empLiability: { insurer:'NFU Mutual', policy:'EL-4471822', cover:10000000, iso:'2026-04-01' },
+    empLiabilityFiled: true
+  },
   payRuns: [
     { id:'pr-apr', label:'April 2026', kind:'4 permanent', net:8642, date:'2026-04-25' },
-    { id:'pr-hg',  label:'Seasonal pickers', kind:'week of 13 Jul', net:4231, date:'2026-07-17' },
+    { id:'pr-hg',  label:'Seasonal pickers', kind:'week of 13 Jul', net:4231, date:'2026-07-17', seasonal:true },
     { id:'pr-mar', label:'March 2026', kind:'4 permanent', net:8642, date:'2026-03-25' }
   ]
 };
@@ -27561,7 +27759,14 @@ function _lsCampBar(groups){
 }
 // ===== Concept A livestock helpers =====
 function _lsIsDairy(h){ return String((h&&h.type)||'').toLowerCase().indexOf('dairy')>=0; }
-function _lsSpeciesLabel(h){ var b=animalBase(h.type); if(_lsIsDairy(h)) return 'dairy cattle'; if(b==='Cattle') return 'beef cattle'; return String(animalBaseLabel(h.type)).toLowerCase(); }
+/* Species BEFORE dairy. Testing dairy first captioned a dairy GOAT herd "dairy cattle" -
+   the same fault that sent goats to a dairy-cow benchmark in _pfLiveKey. */
+function _lsSpeciesLabel(h){
+  var b=animalBase(h.type);
+  if(b==='Cattle') return _lsIsDairy(h) ? 'dairy cattle' : 'beef cattle';
+  var lbl=String(animalBaseLabel(h.type)).toLowerCase();
+  return _lsIsDairy(h) ? ('dairy '+lbl) : lbl;
+}
 function _lsCampAvatar(groups){
   if(!groups||!groups.length) return {e:'🌿',bg:'#EDEDEA'};
   var byHead={}; groups.forEach(function(h){ var k=_lsIsDairy(h)?'Dairy':(animalBase(h.type)||h.type); byHead[k]=(byHead[k]||0)+(h.qty||0); });
@@ -29069,7 +29274,8 @@ function _hpRenderPoultryRes(){
   }
   box.innerHTML=html;
 }
-function _thsep(n){ return String(Math.round(n||0)).replace(/\B(?=(\d{3})+(?!\d))/g,' '); }
+/* UK grouping is a comma: 1,003,252. The space is the South African convention. */
+function _thsep(n){ return String(Math.round(n||0)).replace(/\B(?=(\d{3})+(?!\d))/g,','); }
 
 function _hpHerdValue2_placeholder(){}
 
@@ -37728,6 +37934,9 @@ function bgtCompute() {
   for (i = 0; i < 12; i++) { aIn[fyMonths[i]] = 0; aOut[fyMonths[i]] = 0; }
   ST.txns.forEach(function(t) {
     var d = parseDate(t.date); if (!d) return;
+    /* 6 April, not 1 April: a row dated 1-5 Apr belongs to the previous tax year. It
+       used to land in this year's April bucket and move the whole projection. */
+    if (typeof fyOf === 'function' && fyOf(t.date) !== fy) return;
     var lbl = MONTH_LABELS_SHORT[d.m] + ' ' + d.y;
     if (aIn[lbl] === undefined) return;
     if (t.type === 'income') aIn[lbl] += (t.amt||0); else aOut[lbl] += (t.amt||0);
@@ -37877,6 +38086,8 @@ function bgtRenderKpis(c) {
   var projNet = c.projIn - c.projOut;
   var bothSet = c.annualIn > 0 && c.annualOut > 0;
   setEl('bgt-kpi-net-v', bgtFmt(projNet));
+  /* Projected to the end of the tax year - the rung above 'year so far'. */
+  if(typeof setTags==='function') setTags('bgt-kpi-net-tags','proj','Projected to 5 Apr');
   var t3 = $('bgt-kpi-net-t');
   if (t3) t3.innerHTML = bothSet ? 'projected year-end · goal <b>' + bgtFmt(c.annualNet) + '</b>' : 'set both targets to see your goal';
   var ch3 = $('bgt-kpi-net-chip');
@@ -44005,6 +44216,18 @@ function mkrSigned(v,unit){
   if(v==null) return '—';
   return (v>=0?'+':'')+mkrPer(v,unit);
 }
+/* A land whose harvest has been recorded is no longer an estimate: the tonnage on its
+   market row is what came off the field, so the row must not keep saying "expected". */
+function _mkrHarvestedLand(c){
+  if(!c || typeof ST_CROP==='undefined' || !ST_CROP.lands) return null;
+  var fld=String(c.field||'').trim().toLowerCase(), crp=String(c.crop||'').trim().toLowerCase();
+  for(var i=0;i<ST_CROP.lands.length;i++){ var l=ST_CROP.lands[i];
+    if(String(l.name||'').trim().toLowerCase()!==fld) continue;
+    if(crp && String(l.crop||'').trim().toLowerCase()!==crp && String(l.prevCrop||'').trim().toLowerCase()!==crp) continue;
+    if(l.stage==='harvested' && l.actualYield!=null) return l;
+  }
+  return null;
+}
 function mkrRows(){
   var G=[];
   function grp(key){
@@ -44017,7 +44240,7 @@ function mkrRows(){
     var d=(typeof cropMktData==='function')?cropMktData(i):null; if(!d) return;
     grp('grain').rows.push({
       name:c.field||c.crop, sub:c.crop+' · '+Math.round(c.ha||0)+' ha', icon:d.icon,
-      qty:d.tons, qtyU:'t', qtyNote:'expected',
+      qty:d.tons, qtyU:'t', qtyNote:(_mkrHarvestedLand(c)?'harvested':'expected'),
       cost:d.costTon, price:d.mp.price, unit:'tonne',
       plan:c.price, worth:d.worthToday, kind:'crop', ref:i
     });
@@ -44907,6 +45130,13 @@ var LSK_DATA = [
 // ============================================================
 function getBudgetTarget() {
   return ST.budgets.monthlyIncome[ST.budgets.currentMonth] || 0;
+}
+/* The spending half of the same month's budget. The Dashboard card used to read the
+   ANNUAL target here while reading the monthly one for income, so September's £164,460
+   showed as 15% of £1,080,000 and the profit goal came out at minus £740,000 - while
+   the bell correctly said the £145,000 monthly budget was exceeded. */
+function getExpenseBudgetTarget() {
+  try { return ST.budgets.monthlyExpenses[ST.budgets.currentMonth] || 0; } catch (e) { return 0; }
 }
 
 function setBudgetMonthTarget(month, amount) {
@@ -46771,7 +47001,7 @@ function renderCfBankBalance(){
   var sub=$('cf-bb-sub');
   var confirmBtn=$('cf-bb-confirm');
   if (typeof ST.bankBalance==='number' && !isNaN(ST.bankBalance)){
-    inp.value = Math.round(ST.bankBalance).toLocaleString('en-GB').replace(/,/g,' ');
+    inp.value = Math.round(ST.bankBalance).toLocaleString('en-GB');
     if(sub) sub.textContent = 'The forecast below starts from this. Update it whenever you like.';
     if(confirmBtn) confirmBtn.style.display='none';
   } else {
@@ -46779,8 +47009,8 @@ function renderCfBankBalance(){
     // estimate to stand behind; a new farm with no history just types it in.
     var est=cfCurrentCashEstimate();
     if(est>0){
-      inp.value = Math.round(est).toLocaleString('en-GB').replace(/,/g,' ');
-      if(sub) sub.innerHTML = 'We\u2019ve estimated <b>'+_curSym()+Math.round(est).toLocaleString('en-GB').replace(/,/g,' ')+'</b> from your records \u2014 confirm it, or type the real figure so the forecast is accurate.';
+      inp.value = Math.round(est).toLocaleString('en-GB');
+      if(sub) sub.innerHTML = 'We\u2019ve estimated <b>'+_curSym()+Math.round(est).toLocaleString('en-GB')+'</b> from your records \u2014 confirm it, or type the real figure so the forecast is accurate.';
       if(confirmBtn) confirmBtn.style.display='';
     } else {
       inp.value = '';
@@ -47060,7 +47290,7 @@ function renderRecentIncome() {
 
 
 // Key-based dictionary — elements tagged data-t translate exactly and reversibly
-var I18N = {"nav.group.daily":{"en":"Daily"},"nav.dashboard":{"en":"Dashboard"},"nav.transactions":{"en":"Transactions"},"nav.group.money":{"en":"Money"},"nav.income":{"en":"Income"},"nav.expenses":{"en":"Expenses"},"nav.cashflow":{"en":"Money Flow"},"nav.budgets":{"en":"Budgets"},"nav.loans":{"en":"Loans & Debt"},"nav.tax":{"en":"Tax & HMRC"},"tax.title":{"en":"Tax & HMRC"},"tax.sub":{"en":"What to set aside, what’s due and when — in plain words."},"nav.reports":{"en":"Reports"},"nav.group.farm":{"en":"My Farm"},"nav.planning":{"en":"Planning"},"nav.crop":{"en":"Crops"},"nav.orchards":{"en":"Orchards, Fruit & Veg"},"nav.livestock":{"en":"Livestock"},"nav.profit":{"en":"Profit"},"nav.assets":{"en":"Assets"},"nav.workers":{"en":"Workers"},"nav.group.market":{"en":"Market"},"nav.market":{"en":"Market Prices"},"nav.settings":{"en":"Settings"},"offline.sub":{"en":"Working offline. Data syncs when online."},"or.title":{"en":"Orchards, Fruit & Veg"},"or.sub":{"en":"Trees, vines, berries and veg — what each block costs, yields and earns"},"or.tab.overview":{"en":"Overview"},"or.tab.blocks":{"en":"Blocks"},"or.tab.spray":{"en":"Spray & Safety"},"or.tab.harvest":{"en":"Harvest & Pack"},"or.tab.comply":{"en":"Compliance"},"or.tab.add":{"en":"＋ Add block"},"or.add.btn":{"en":"＋ Add block"},"or.view.cards":{"en":"Cards"},"or.view.compare":{"en":"Compare"},"or.spray.safe":{"en":"Safe to pick — all markets"},"or.spray.safesub":{"en":"Green = clear to pick · amber = waiting on a spray rule"},"or.local":{"en":"Local"},"or.spray.diary":{"en":"Spray diary"},"or.spray.log":{"en":"＋ Log spray"},"or.harvest.calc":{"en":"What one packed unit pays you"},"or.harvest.calcsub":{"en":"Edit any number — your money-back updates live"},"or.harvest.block":{"en":"Block"},"or.harvest.recent":{"en":"Recent picks"},"or.harvest.log":{"en":"＋ Log pick"},"or.arch.all":{"en":"🗂️ All records"},"or.cmp.certs":{"en":"Certificates & audits"},"or.cmp.pests":{"en":"Pests & diseases watched"},"or.cmp.other":{"en":"Other records on file"},"or.add.title":{"en":"Add a block"},"or.add.sub":{"en":"Tell us what you're growing — we set up the rest"},"or.add.tree":{"en":"Tree / vine"},"or.add.treesub":{"en":"top fruit, avo, apple…"},"or.add.berry":{"en":"Berry"},"or.add.berrysub":{"en":"blueberry, rasp…"},"or.add.veg":{"en":"Vegetable"},"or.add.vegsub":{"en":"replanted each season"},"or.add.name":{"en":"Block name"},"or.add.crop":{"en":"What are you growing?"},"or.add.area":{"en":"Area (ha)"},"or.add.spacing":{"en":"Spacing"},"or.add.yield":{"en":"Target yield once mature"},"or.add.save":{"en":"Save block"},"or.add.spray":{"en":"Do you spray this block?"},"or.add.spray.y":{"en":"Yes — we spray"},"or.add.spray.n":{"en":"No — organic / no-spray"},"or.add.markets":{"en":"Where do you sell it?"},"or.add.markets.h":{"en":"pick all that apply"},"or.add.markets.note":{"en":"Export markets bring stricter safe-to-pick rules and extra certificates. Local-only skips them."},"hero.h":{"en":"Let's grow your profit this season."},"offline.title":{"en":"Offline Mode"},"or.add.root":{"en":"Rootstock"},"or.add.carton":{"en":"Carton size"},"or.add.estab":{"en":"What it cost to establish"},"sync.last":{"en":"Saved"},"crop.tab.inputs":{"en":"Inputs & Spray"},"crop.plant.btn":{"en":"＋ Plant a land"},"plan.spill.head":{"en":"crops finish after this season ends"},"plan.spill.head1":{"en":"crop finishes after this season ends"},"plan.spill.sub":{"en":"Normal for summer grain. The growing costs sit in this season; the sale lands in the next financial year, so plan the tax for it there."},"plan.miss.head":{"en":"lines have no month in this season"},"plan.miss.head1":{"en":"line has no month in this season"},"plan.miss.sub":{"en":"They are not counted anywhere. Give them a planting and harvest month, or step to the season they belong to."},"st.marginNote":{"en":"Margin is what each crop, block and herd earns after its own growing costs — before farm overheads like loans, insurance and admin."},"st.planIs":{"en":"Your plan is"},"st.marginFrom":{"en":"margin from crops, orchards and livestock"},"st.notStarted":{"en":"not started"},"st.notStartedCap":{"en":"Not started"},"st.nothingYet":{"en":"nothing harvested or sold yet"},"st.progNone":{"en":"Season progress — nothing harvested yet"},"st.progSome":{"en":"Season progress — money in so far"},"st.stillExpecting":{"en":"Still expecting"},"st.nothingThisOne":{"en":"nothing harvested from this one yet"},"st.marginPace":{"en":"margin at this pace"},"st.planIfSeason":{"en":"margin, if the season went to plan"},"st.plannedToMake":{"en":"You planned to make"},"st.onTrackFor":{"en":"Now on track for"},"plan.title":{"en":"My Plan"},"plan.sub":{"en":"Crops, orchards, livestock and your year ahead."},"plan.thisYear":{"en":"This year"},"plan.addCrop":{"en":"+ Add a crop"},"plan.addEvent":{"en":"+ Add livestock event"},"plan.totalProfit":{"en":"Total planned profit"},"plan.orchPulled":{"en":"Pulled from your Orchards module."},"plan.thisSeason":{"en":"This season"},"plan.expExceed":{"en":"Expenses exceed income"},"plan.realData":{"en":"Real data from transactions"},"plan.inMoney":{"en":"Your plan, in money"},"plan.stress":{"en":"Stress-test your crop plan"},"plan.drag":{"en":"Drag a lever to see how your year changes"},"plan.needsAttn":{"en":"Needs your attention"},"plan.lever.grain":{"en":"Grain prices"},"plan.lever.input":{"en":"Input costs"},"plan.lever.sale":{"en":"Sale prices"},"plan.lever.run":{"en":"Running & buy costs"},"plan.helps":{"en":"helps your profit"},"plan.hurts":{"en":"costs you profit"}};
+var I18N = {"nav.group.daily":{"en":"Daily"},"nav.dashboard":{"en":"Dashboard"},"nav.transactions":{"en":"Transactions"},"nav.group.money":{"en":"Money"},"nav.income":{"en":"Income"},"nav.expenses":{"en":"Expenses"},"nav.cashflow":{"en":"Money Flow"},"nav.budgets":{"en":"Budgets"},"nav.loans":{"en":"Loans & Debt"},"nav.tax":{"en":"Tax & HMRC"},"tax.title":{"en":"Tax & HMRC"},"tax.sub":{"en":"What to set aside, what’s due and when — in plain words."},"nav.reports":{"en":"Reports"},"nav.group.farm":{"en":"My Farm"},"nav.planning":{"en":"Planning"},"nav.crop":{"en":"Crops"},"nav.orchards":{"en":"Orchards, Fruit & Veg"},"nav.livestock":{"en":"Livestock"},"nav.profit":{"en":"Profit"},"nav.assets":{"en":"Assets"},"nav.workers":{"en":"Workers"},"nav.group.market":{"en":"Market"},"nav.market":{"en":"Market Prices"},"nav.settings":{"en":"Settings"},"offline.sub":{"en":"Working offline. Data syncs when online."},"or.title":{"en":"Orchards, Fruit & Veg"},"or.sub":{"en":"Trees, vines, berries and veg — what each block costs, yields and earns"},"or.tab.overview":{"en":"Overview"},"or.tab.blocks":{"en":"Blocks"},"or.tab.spray":{"en":"Spray & Safety"},"or.tab.harvest":{"en":"Harvest & Pack"},"or.tab.comply":{"en":"Compliance"},"or.tab.add":{"en":"＋ Add block"},"or.add.btn":{"en":"＋ Add block"},"or.view.cards":{"en":"Cards"},"or.view.compare":{"en":"Compare"},"or.spray.safe":{"en":"Safe to pick — all markets"},"or.spray.safesub":{"en":"Green = clear to pick · amber = waiting on a spray rule"},"or.local":{"en":"Local"},"or.spray.diary":{"en":"Spray diary"},"or.spray.log":{"en":"＋ Log spray"},"or.harvest.calc":{"en":"What one packed unit pays you"},"or.harvest.calcsub":{"en":"Edit any number — your money-back updates live"},"or.harvest.block":{"en":"Block"},"or.harvest.recent":{"en":"Recent picks"},"or.harvest.log":{"en":"＋ Log pick"},"or.arch.all":{"en":"🗂️ All records"},"or.cmp.certs":{"en":"Certificates & audits"},"or.cmp.pests":{"en":"Pests & diseases watched"},"or.cmp.other":{"en":"Other records on file"},"or.add.title":{"en":"Add a block"},"or.add.sub":{"en":"Tell us what you're growing — we set up the rest"},"or.add.tree":{"en":"Tree / vine"},"or.add.treesub":{"en":"top fruit, avo, apple…"},"or.add.berry":{"en":"Berry"},"or.add.berrysub":{"en":"blueberry, rasp…"},"or.add.veg":{"en":"Vegetable"},"or.add.vegsub":{"en":"replanted each season"},"or.add.name":{"en":"Block name"},"or.add.crop":{"en":"What are you growing?"},"or.add.area":{"en":"Area (ha)"},"or.add.spacing":{"en":"Spacing"},"or.add.yield":{"en":"Target yield once mature"},"or.add.save":{"en":"Save block"},"or.add.spray":{"en":"Do you spray this block?"},"or.add.spray.y":{"en":"Yes — we spray"},"or.add.spray.n":{"en":"No — organic / no-spray"},"or.add.markets":{"en":"Where do you sell it?"},"or.add.markets.h":{"en":"pick all that apply"},"or.add.markets.note":{"en":"Export markets bring stricter safe-to-pick rules and extra certificates. Local-only skips them."},"hero.h":{"en":"Let's grow your profit this season."},"offline.title":{"en":"Offline Mode"},"or.add.root":{"en":"Rootstock"},"or.add.carton":{"en":"Carton size"},"or.add.estab":{"en":"What it cost to establish"},"sync.last":{"en":"Saved"},"crop.tab.inputs":{"en":"Inputs & Spray"},"crop.plant.btn":{"en":"＋ Plant a land"},"plan.spill.head":{"en":"crops finish after this season ends"},"plan.spill.head1":{"en":"crop finishes after this season ends"},"plan.spill.sub":{"en":"Normal for summer grain. The growing costs sit in this season; the sale lands in the next financial year, so plan the tax for it there."},"plan.miss.head":{"en":"lines have no month in this season"},"plan.miss.head1":{"en":"line has no month in this season"},"plan.miss.sub":{"en":"They are not counted anywhere. Give them a planting and harvest month, or step to the season they belong to."},"st.marginNote":{"en":"Margin is what each crop, block and herd earns after its own growing costs — before farm overheads like loans, insurance and admin."},"st.planIs":{"en":"Your plan is"},"st.marginFrom":{"en":"margin from crops, orchards and livestock"},"st.notStarted":{"en":"not started"},"st.notStartedCap":{"en":"Not started"},"st.nothingYet":{"en":"nothing harvested or sold yet"},"st.progNone":{"en":"Season progress — nothing harvested yet"},"st.progSome":{"en":"Season progress — money in so far"},"st.stillExpecting":{"en":"Still expecting"},"st.nothingThisOne":{"en":"nothing harvested from this one yet"},"st.marginPace":{"en":"margin at this pace"},"st.planIfSeason":{"en":"margin, if the season went to plan"},"st.plannedToMake":{"en":"You planned to make"},"st.onTrackFor":{"en":"Now on track for"},"plan.title":{"en":"My Plan"},"plan.sub":{"en":"Crops, orchards, livestock and your year ahead."},"plan.thisYear":{"en":"This year"},"plan.addCrop":{"en":"+ Add a crop"},"plan.addEvent":{"en":"+ Add livestock event"},"plan.totalProfit":{"en":"Planned margin"},"plan.orchPulled":{"en":"Pulled from your Orchards module."},"plan.thisSeason":{"en":"This season"},"plan.expExceed":{"en":"Expenses exceed income"},"plan.realData":{"en":"Real data from transactions"},"plan.inMoney":{"en":"Your plan, in money"},"plan.stress":{"en":"Stress-test your crop plan"},"plan.drag":{"en":"Drag a lever to see how your year changes"},"plan.needsAttn":{"en":"Needs your attention"},"plan.lever.grain":{"en":"Grain prices"},"plan.lever.input":{"en":"Input costs"},"plan.lever.sale":{"en":"Sale prices"},"plan.lever.run":{"en":"Running & buy costs"},"plan.helps":{"en":"helps your profit"},"plan.hurts":{"en":"costs you profit"}};
 I18N['demo.ribbon']={en:"You’re exploring a sample farm — nothing here is saved to an account."};
 I18N['demo.watch']={en:"▶ Watch demo"};
 I18N['demo.restart']={en:"↺ Restart demo"};
@@ -47673,6 +47903,18 @@ function updateRptDisplay() {
   setEl('rpt-gross',    IE_R(R.grossProfit));
   setEl('rpt-net',      IE_R(R.netProfitBT));
   setEl('rpt-margin',   R.netMargin+'%');
+  if(typeof setTags==='function') setTags('rpt-tags','actual', lbl, 'tax', 'Tax rules');
+  /* The figure above is on the TAX basis - the capital half of a loan repayment is money
+     out of the bank but not a cost. The insight card on this same page counts it, which is
+     why the header said £103,730 and the card said £100,400 with nothing to explain it. */
+  var _rc = $('rpt-cash');
+  if (_rc) {
+    var _cap = (R.loanSplit && R.loanSplit.capital) || 0;
+    if (_cap > 0) {
+      _rc.textContent = 'Cash profit ' + IE_R(R.netProfitBT - _cap) + ' — ' + IE_R(_cap) + ' of loan capital left the bank but is not a cost for tax';
+      _rc.style.display = 'block';
+    } else _rc.style.display = 'none';
+  }
   setEl('rpt-income-lbl', lbl);
   setEl('rpt-expenses-lbl', lbl);
   var _ss=$('rpt-stmt-sub'); if(_ss) _ss.innerHTML='Showing figures for <strong>'+lbl+'</strong> — preview inline or open to print.';
@@ -52130,11 +52372,14 @@ function taxWhatIf(){
   setEl('tax-wi-pv',_curSym()+_grpInt(p)); setEl('tax-wi-cv',_curSym()+_grpInt(cap)); setEl('tax-wi-rv',_curSym()+_grpInt(raCap));
   var rc=$('tax-wi-racap'); if(rc) rc.textContent=(raRaw>raCap?'capped at '+_curSym()+_grpInt(raCap)+' \u2014 the lower of the annual allowance and your earnings':'annual allowance '+_curSym()+_grpInt(_pa)+', and no more than your profit');
   setEl('tax-wi-taxable',_curSym()+_grpInt(ti));
-  var t=calcAnnualIncomeTax(ti,et), t0=calcAnnualIncomeTax(p,et), keep=p-t;
-  var effp=ti>0?Math.round(t/ti*100):0, taxPct=p>0?Math.round(t/p*100):0, mrg=Math.round((calcAnnualIncomeTax(ti+100000,et)-t)/100000*100);
-  setEl('tax-wi-ann',_curSym()+_grpInt(t)); setEl('tax-wi-eff',effp+'% effective');
+  /* Class 4 NI belongs in a sole trader's bill: without it "you keep" was overstated by
+     £3,257 on a £100,000 profit. `t` stays income tax; `tot` is what HMRC asks for. */
+  var _c4=function(x){ return ((et==='sole'||et==='partnership') && typeof ukClass4NI==='function') ? Math.round(ukClass4NI(Math.max(0,x))) : 0; };
+  var t=calcAnnualIncomeTax(ti,et), tot=t+_c4(ti), t0=calcAnnualIncomeTax(p,et)+_c4(p), keep=p-tot;
+  var effp=ti>0?Math.round(tot/ti*100):0, taxPct=p>0?Math.round(tot/p*100):0, mrg=Math.round(((calcAnnualIncomeTax(ti+100000,et)+_c4(ti+100000))-tot)/100000*100);
+  setEl('tax-wi-ann',_curSym()+_grpInt(tot)); setEl('tax-wi-eff',effp+'% effective');
   var bt=$('tax-wi-bartax'), bk=$('tax-wi-barkeep'); if(bt) bt.style.width=taxPct+'%'; if(bk) bk.style.width=(100-taxPct)+'%';
-  setEl('tax-wi-bartaxv',_curSym()+_grpInt(t)); setEl('tax-wi-barkeepv',_curSym()+_grpInt(keep));
+  setEl('tax-wi-bartaxv',_curSym()+_grpInt(tot)); setEl('tax-wi-barkeepv',_curSym()+_grpInt(keep));
   /* A company pays the whole bill in one instalment, so halving it across 31 January and
      31 July describes the wrong regime AND the wrong amount. Show the single payment, and
      retitle the tiles - their labels are static in the template, so they are set here. */
@@ -52142,13 +52387,24 @@ function taxWhatIf(){
     var _wiEnd=ukFyPeriodEnd(fyOf(_txNow()));
     setEl('tax-wi-p1lbl','Due '+_shortDate(ukCtPaymentDue(_wiEnd)));
     setEl('tax-wi-p2lbl','CT600 by');
-    setEl('tax-wi-p1',_curSym()+_grpInt(t));
+    setEl('tax-wi-p1',_curSym()+_grpInt(tot));
     setEl('tax-wi-p2',_shortDate(ukCtReturnDue(_wiEnd)));
   } else {
-    setEl('tax-wi-p1lbl','1st \u00b7 31 Jan'); setEl('tax-wi-p2lbl','2nd \u00b7 31 Jul');
-    setEl('tax-wi-p1',_curSym()+_grpInt(Math.round(t/2))); setEl('tax-wi-p2',_curSym()+_grpInt(t-Math.round(t/2)));
-  } setEl('tax-wi-mo',_curSym()+_grpInt(Math.round(t/12))); setEl('tax-wi-marg',mrg+'%');
-  var sv=$('tax-wi-save'), ded=t0-t; if(sv){ if(ded>0){ sv.style.display='block'; sv.innerHTML='🛠️ Your deductions cut this year’s tax by about <b>'+_curSym()+_grpInt(ded)+'</b>.'; } else sv.style.display='none'; }
+    /* Instalments are half of LAST year's bill, not half of this scenario's - splitting
+       the scenario in two was the South African provisional-tax rule. Show what HMRC has
+       set, and what this profit would let the farmer reduce them to. */
+    var _wiSch=(typeof ukPoaSchedule==='function')?ukPoaSchedule((typeof getCurrentFY==='function')?getCurrentFY():0, ti):null;
+    var _wiEach=(_wiSch && _wiSch.applies && _wiSch.known) ? _wiSch.each : null;
+    if(_wiEach!=null){
+      setEl('tax-wi-p1lbl','Set by last year'); setEl('tax-wi-p2lbl','Could reduce to');
+      setEl('tax-wi-p1',_curSym()+_grpInt(_wiEach)+' each');
+      setEl('tax-wi-p2',_curSym()+_grpInt(Math.round(tot/2))+' each');
+    } else {
+      setEl('tax-wi-p1lbl','1st · 31 Jan'); setEl('tax-wi-p2lbl','2nd · 31 Jul');
+      setEl('tax-wi-p1',_curSym()+_grpInt(Math.round(tot/2))); setEl('tax-wi-p2',_curSym()+_grpInt(tot-Math.round(tot/2)));
+    }
+  } setEl('tax-wi-mo',_curSym()+_grpInt(Math.round(tot/12))); setEl('tax-wi-marg',mrg+'%');
+  var sv=$('tax-wi-save'), ded=t0-tot; if(sv){ if(ded>0){ sv.style.display='block'; sv.innerHTML='🛠️ Your deductions cut this year’s tax by about <b>'+_curSym()+_grpInt(ded)+'</b>.'; } else sv.style.display='none'; }
   var vo=$('tax-wi-vatout'); if(vo){ var vr=taxVatIfRegistered();
     if(TAX_WI_VAT==='yes') vo.innerHTML='<b style="color:var(--gm)">If you register:</b> reclaim about <b>'+_curSym()+_grpInt(vr.inputVat)+'</b> input VAT on your standard-rated costs (machinery, repairs, vet, admin)'+'. Most of what you sell is food, so it is zero-rated — you would charge nothing on it and still reclaim, which is why farms are usually owed money by HMRC'+(vr.outputVat>0?', though your standard-rated sales (wool, contracting, rent) would carry 20% — about '+_curSym()+_grpInt(vr.outputVat)+' of output VAT':'')+'. Below '+fmt(vatRegThreshold())+' turnover it is your choice.';
     else vo.innerHTML='<b>Not registered.</b> No VAT returns to file — but you can’t reclaim the ~<b>'+_curSym()+_grpInt(vr.inputVat)+'</b> input VAT on your standard-rated costs'+'. Tap “Registered” to weigh it up.';
@@ -52301,16 +52557,23 @@ function taxGlanceHTML(){
   var priorTax=(typeof calcAnnualIncomeTax==='function')?calcAnnualIncomeTax(Math.max(0,priorRF.taxable),(ST.entityType||'sole')):0;
   var bank=(typeof ST!=='undefined')?ST.bankBalance:null, diesel=(typeof ST_CROP!=='undefined'&&ST_CROP.compliance&&ST_CROP.compliance.dieselLitres)||0;
   var ft=(typeof getFarmType==='function')?getFarmType():'', h='';
-  var incomeTax=prov.ok?prov.annualTax:0, vatComp=Math.max(0,vatFY), total=incomeTax+vatComp+pay.total;
+  /* Class 4 NI is part of what a sole trader or partner sends HMRC. Leaving it out
+     under-stated the year by £2,887 on the demo farm and flattered the effective rate,
+     while the payments-on-account schedule two cards below already counted it. */
+  var _glEnt=(typeof ukEntityType==='function')?ukEntityType(ST.entityType):'sole';
+  var class4=(prov.ok && (_glEnt==='sole'||_glEnt==='partnership') && typeof ukClass4NI==='function')
+    ? Math.round(ukClass4NI(Math.max(0,prov.taxableProfit))) : 0;
+  var incomeTax=prov.ok?prov.annualTax:0, vatComp=Math.max(0,vatFY), total=incomeTax+class4+vatComp+pay.total;
 
   // total tax hero
   if(prov.ok){
     h+='<div id="tax-hero-card" style="background:linear-gradient(135deg,#1B4332,#2D6A4F);color:#fff;border-radius:16px;padding:18px 22px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px">'+
-      '<div><div style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;opacity:.75">Your estimated tax to HMRC this year</div>'+
+      '<div><div style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;opacity:.75">Your estimated tax to HMRC this year'+profitTags('proj','Projected to 5 Apr','tax','Tax rules')+'</div>'+
       '<div style="font-size:32px;font-weight:800">'+fmt(total)+'</div>'+
-      (bank!=null&&prov.provPayment!=null?'<div style="font-size:12px;opacity:.85">after the next set-aside, <b>'+fmt(Math.max(0,Math.round(bank-prov.provPayment)))+'</b> of your balance is yours</div>':'<div style="font-size:12px;opacity:.85">income tax, VAT and payroll combined</div>')+'</div>'+
+      (bank!=null&&prov.provPayment!=null?'<div style="font-size:12px;opacity:.85">after the next set-aside, <b>'+fmt(Math.max(0,Math.round(bank-prov.provPayment)))+'</b> of your balance is yours</div>':'<div style="font-size:12px;opacity:.85">income tax, '+(class4>0?'Class 4 NI, ':'')+'VAT and payroll combined</div>')+'</div>'+
       '<div style="display:flex;gap:8px;flex-wrap:wrap">'+
         '<div class="tx-tile"><div class="k">Income tax</div><div class="v">'+fmt(incomeTax)+'</div></div>'+
+        (class4>0?'<div class="tx-tile"><div class="k">Class 4 NI</div><div class="v">'+fmt(class4)+'</div></div>':'')+
         '<div class="tx-tile"><div class="k">VAT</div><div class="v">'+fmt(vatComp)+'</div></div>'+
         '<div class="tx-tile"><div class="k">Payroll</div><div class="v">'+fmt(pay.total)+'</div></div>'+
       '</div></div>';
@@ -52322,6 +52585,14 @@ function taxGlanceHTML(){
        is left is the one fact that belongs to the number: it is a projection. The
        comparison with Reports goes behind the same "what is this" disclosure the VAT
        card already uses, because it only matters to a farmer who has noticed the gap. */
+    /* The ladder's top rung, on the page that owns it: what the farm's taxable profit
+       actually IS so far, sitting next to where the year is heading. */
+    try{ var _L=profitLadder();
+      h+='<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;background:#fff;border:1px solid var(--br);border-radius:12px;padding:11px 14px;margin:0 0 12px">'+
+         '<div style="font-size:12.5px;color:var(--t3)">Taxable profit so far'+profitTags('actual','Year so far','tax','Tax rules')+
+         '<div style="font-size:10.5px;color:var(--t4);margin-top:2px">'+esc(_L.period)+' · cash profit '+fmt(_L.cash)+' plus '+fmt(_L.adj)+' of loan capital and costs HMRC doesn’t allow</div></div>'+
+         '<div style="font-size:20px;font-weight:800;color:var(--gd)">'+fmt(_L.taxable)+'</div></div>';
+    }catch(e){}
     h+='<div style="font-size:12px;color:var(--t3);margin:-4px 0 12px;padding:0 2px">'+
        'A projection for the full year — the '+prov.monthsElapsed+' month'+(prov.monthsElapsed===1?'':'s')+' banked so far, '+
        (prov.basis==='plan'?'plus your plan for the rest of it':'carried on at the same rate to April')+'.'+
@@ -52354,8 +52625,8 @@ function taxGlanceHTML(){
   /* Against TAXABLE profit, not cash profit. Divided by cash profit this could read
      over 100% on a farm with a big income-tax payment in its books — the effective
      rate is a share of what HMRC actually charges tax on, and is bounded by the tables. */
-  if(prov.ok){ var eff=prov.taxableProfit>0?Math.round(prov.annualTax/prov.taxableProfit*100):0;
-    h+='<div class="tx-card"><div class="tx-h">Effective tax rate</div>'+_taxGauge(eff/45)+'<div style="text-align:center;font-size:20px;font-weight:800;margin-top:-6px">'+eff+'%</div><div style="text-align:center;font-size:10.5px;color:var(--t4)">of taxable profit · '+esc(_entityTaxLabel(prov.entity))+'</div></div>';
+  if(prov.ok){ var eff=prov.taxableProfit>0?Math.round((prov.annualTax+class4)/prov.taxableProfit*100):0;
+    h+='<div class="tx-card"><div class="tx-h">Effective tax rate</div>'+_taxGauge(eff/45)+'<div style="text-align:center;font-size:20px;font-weight:800;margin-top:-6px">'+eff+'%</div><div style="text-align:center;font-size:10.5px;color:var(--t4)">'+(class4>0?'income tax and Class 4 NI on taxable profit':'of taxable profit')+' · '+esc(_entityTaxLabel(prov.entity))+'</div></div>';
     /* Set aside for the NEXT payment, from the one schedule: that payment spread over the months
        left before it is due. This divided THIS year's income tax by 12 and labelled it "to cover
        31 Jan" - £1,670 a month against a £150,410 payment. */
@@ -59825,6 +60096,16 @@ function txRender() {
     return true;
   });
 
+  /* Newest first. The list was in save order, so the demo's two unshifted fuel rows sat
+     above 1 August, August sat above September, and a backdated entry landed wherever it
+     happened to be saved. _idx is already stashed above, so sorting is safe. */
+  list.sort(function(a, b){
+    var da = parseDate(a.date), db = parseDate(b.date);
+    var na = da ? (da.y*10000 + (da.m+1)*100 + (da.d||1)) : 0;
+    var nb = db ? (db.y*10000 + (db.m+1)*100 + (db.d||1)) : 0;
+    return (nb - na) || (b._idx - a._idx);
+  });
+
   /* Count flagged rows INSIDE the active filters, so the button never promises more
      than clicking it will show ("25 need a look" -> 4 rows was this bug). */
   var _needHere = 0;
@@ -60465,7 +60746,8 @@ function computeNotifications(){
       n.push({
         color: 'var(--rd)', score: 95,
         title: 'Monthly expense budget exceeded',
-        body:  fmtMoney(curOut) + ' against a ' + fmtMoney(mb) + ' budget.',
+        body:  fmtMoney(curOut) + ' against a ' + fmtMoney(mb) + ' budget \u2014 ' + fmtMoney(curOut-mb) + ' over.',
+        st:    fmtMoney(curOut-mb) + ' over',
         time:  '1 hour ago',
         action: function(){ nav('budgets'); }
       });
@@ -60778,7 +61060,15 @@ function attnItems(){
       /* "Overdue 515 days" if the check has a due date; a check never logged is
          overdue too, just without a number. */
       var m = body.match(/Overdue\s+(\d+)\s+day/i);
-      var when = m ? -parseInt(m[1], 10) : (isLaw ? -1 : 0);
+      /* A check that is COMING UP is not a check never logged. Without this the
+         soil plan, due in eight days, was filed as overdue with "none logged"
+         against it while Crops correctly said "Due in 8 days". */
+      var soon = m ? null : body.match(/Due\s+in\s+(\d+)\s+day/i);
+      /* An operational nudge with no date - "budget exceeded", "calving window open" -
+         is a STATE, not a deadline. It used to arrive as when:0, which the card read as
+         "due today" and the headline printed as "exceeded in 0 days". It has no date, so
+         it says so and sits under "no deadline" instead of crowding out dated duties. */
+      var when = m ? -parseInt(m[1], 10) : (soon ? parseInt(soon[1], 10) : (isLaw ? -1 : 9999));
       var raw   = String(n.title).replace(/^[^\w]+\s*/, '');
       /* The red diesel records arrives tagged 'Compliance', which put "You haven't claimed
          your red diesel records" in the LEGAL tier at sev 95 — above actual statutory duties.
@@ -60791,12 +61081,12 @@ function attnItems(){
         tier: isLaw ? 'legal' : 'house',
         sev:  Math.max(1, Math.min(100, n.score || 60)),
         nm:   plain.nm,
-        lead: plain.lead + (m ? ' — ' + m[1] + ' days' : ''),
+        lead: plain.lead + (m ? ' — ' + m[1] + ' days' : (soon ? ' — due in ' + soon[1] + ' day' + (soon[1]==='1'?'':'s') : '')),
         /* `st` already carries the overdue count; leave the statute standing alone. */
         sub:  body.replace(/\s*·\s*tap to log it\s*$/i, '')
                   .replace(/\s*·\s*Overdue\s+\d+\s+days?\s*/i, '')
                   .replace(/\s*·\s*No check logged yet\s*/i, '').trim(),
-        st:   m ? (m[1] + ' days over') : (isLaw ? 'none logged' : (n.time || '')),
+        st:   m ? (m[1] + ' days over') : (soon ? ('in '+soon[1]+' day'+(soon[1]==='1'?'':'s')) : (n.st || (isLaw ? 'none logged' : (n.time || '')))),
         cta:  isLaw ? 'Log it' : 'Open',
         when: when,
         action: n.action
@@ -60886,7 +61176,14 @@ function attnItems(){
   /* 3 · Gear carrying no cover at all. */
   try{
     var A = (typeof astOwned==='function') ? astOwned() : ((typeof ST_ASSETS !== 'undefined' && ST_ASSETS.assets) || []);
-    var un = A.filter(function(a){ return a && (a.price > 0) && !a.insuredValue; });
+    /* Bare land and financial assets cannot be insured against loss, so counting them
+       put the 4.56m title deed into "you'd replace yourself". Both carry a subtype the
+       register already knows - land and financial, the two with no working life. */
+    var un = A.filter(function(a){
+      if(!a || !(a.price > 0) || a.insuredValue) return false;
+      var sub=a.subtype || ((typeof astInferSubtype==='function') ? astInferSubtype(a.name||'', a.cat).v : '');
+      return sub!=='land' && sub!=='financial';
+    });
     if(un.length){
       var val = un.reduce(function(s, a){ return s + (a.price || 0); }, 0);
       out.push({tier:'house', sev:80, nm:'Uninsured equipment',
@@ -60917,7 +61214,15 @@ function attnItems(){
       }
       var runs = W.payRuns || [];
       if(runs.length){
-        var last = runs[runs.length - 1];
+        /* The newest monthly run, not whichever happens to sit last in the array: a
+           posted run is unshifted to the front, so runs[length-1] is the OLDEST one
+           and the gap was measured from the wrong end. Seasonal runs are skipped -
+           a week of picking is not the monthly payroll. */
+        var _mrun=runs.filter(function(r){ return r && !r.seasonal; }).slice().sort(function(a,b){
+          var da=(typeof parseDate==='function')?parseDate(a.date):null, db=(typeof parseDate==='function')?parseDate(b.date):null;
+          var ta=da?new Date(da.y,da.m,da.d||1).getTime():0, tb=db?new Date(db.y,db.m,db.d||1).getTime():0;
+          return ta-tb; });
+        var last = _mrun.length ? _mrun[_mrun.length-1] : runs[runs.length - 1];
         var lm = _attnDaysTo(last && last.paidOn) ;
         if(lm === null && last && last.label){
           /* Pay runs are labelled "March 2026" rather than dated. */
@@ -60967,6 +61272,25 @@ function attnItems(){
         lead: _attnPlural(un2, 'expense', 'expenses') + ' still need a category',
         sub:'So your reports add up properly', st:un2 + ' items', cta:'Sort them', when:9999,
         action: function(){ nav('expenses'); }});
+    }
+  }catch(e){}
+
+  /* 6b · A land is past its harvest date. The app never marks it harvested on its own
+     say-so - the farmer answers, or moves the question on a week. */
+  try{
+    if(window.ST_CROP && typeof cropEffStage==='function'){
+      var _hdue=(ST_CROP.lands||[]).filter(function(l){ return l.crop && cropEffStage(l)==='harvest'; })
+        .sort(function(a,b){ return String(a.harvest||'').localeCompare(String(b.harvest||'')); });
+      if(_hdue.length){
+        var _h0=_hdue[0], _hd=cropHarvestDueDays(_h0); if(_hd==null) _hd=0;
+        out.push({tier:'house', sev:(_hd>14?58:44),
+          nm:(_hdue.length===1 ? ('Did you harvest '+_h0.name+'?') : (_hdue.length+' lands past their harvest date')),
+          lead:(_hdue.length===1 ? ('It was due '+cropDispDate(_h0.harvest)) : ('Oldest was due '+cropDispDate(_h0.harvest))),
+          sub:'Nothing is recorded until you say so',
+          st:(_hd<=0?'today':(_hd+' day'+(_hd===1?'':'s')+' ago')),
+          when:-_hd, cta:'Open Crops',
+          action:function(){ nav('crops'); }});
+      }
     }
   }catch(e){}
 
@@ -61032,13 +61356,18 @@ function attnGrouped(items){
 var ATTN_MAX_ROWS = 4, ATTN_MAX_GROUPS = 2;
 
 function _attnVerdict(items){
-  var law  = items.filter(function(i){ return i.tier === 'legal'; }).length;
+  /* "(N by law)" qualifies the overdue count, so it must count the overdue items that
+     are legal - not every legal item on the farm. It read "1 overdue (2 by law)" while
+     both legal items were a week away and neither was late. */
+  var law  = items.filter(function(i){ return i.tier === 'legal' && i.when < 0; }).length;
   var over = items.filter(function(i){ return i.when < 0; }).length;
-  var next = items.filter(function(i){ return i.when >= 0 && i.when < 9999; })
+  var today= items.filter(function(i){ return i.when === 0; }).length;
+  var next = items.filter(function(i){ return i.when > 0 && i.when < 9999; })
                   .sort(function(a, b){ return a.when - b.when; })[0];
   var bits = [];
   if(over) bits.push('<em>' + over + ' overdue</em>' + (law ? ' <b>(' + law + ' by law)</b>' : ''));
-  if(next) bits.push(esc(next.nm.toLowerCase()) + ' in <b>' + next.when + ' days</b>');
+  else if(today) bits.push('<em>' + today + '</em> due today');
+  if(next) bits.push(esc(next.nm.toLowerCase()) + ' in <b>' + next.when + ' day' + (next.when===1?'':'s') + '</b>');
   if(!bits.length) bits.push('nothing with a deadline');
   return bits.join('<i>·</i>');
 }
@@ -63155,7 +63484,9 @@ function bankToggleRow(i, on){
   bankUpdateSummary();
 }
 
-function bankAmtGrouped(n){ var p=Math.abs(Number(n)||0).toFixed(2).split('.'); p[0]=p[0].replace(/\B(?=(\d{3})+(?!\d))/g,' '); return p.join('.'); }
+/* The import boxes are editable; bankSetAmt strips everything but digits and '.', so
+   commas are safe here. */
+function bankAmtGrouped(n){ var p=Math.abs(Number(n)||0).toFixed(2).split('.'); p[0]=p[0].replace(/\B(?=(\d{3})+(?!\d))/g,','); return p.join('.'); }
 function bankMoney2(n){ n=Number(n)||0; return (n<0?'-'+_curSym():_curSym())+bankAmtGrouped(n); }
 function bankEscAttr(s){ return escTxHtml(s).replace(/"/g,'&quot;'); }
 function bankSetDate(i,v){ if(BANK.parsed[i]) BANK.parsed[i].date=v; }
@@ -67123,7 +67454,7 @@ var AI_PAY_L={
 };
 function aiPayMoney(n){
   n=Number(n)||0;
-  return n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,'\u00a0');
+  return n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,',');
 }
 /* Reads the SAME computation the on-screen payslip uses, so the paper and the
    screen can never disagree. Handles both the monthly run and seasonal day-rate. */
@@ -68386,13 +68717,26 @@ function _lsRegCertsCard(){
     };
   };
   REG.seasonProfit=function(){
-    var y=ytdSummary(); var profit=y.income-y.expenses, margin=y.income>0?(profit/y.income*100):0;
-    var rows=[{nm:'Income this season', amt:fmt(y.income), pct:100},{nm:'\u2212 Costs this season', amt:'\u2212'+fmt(y.expenses), pct:y.income>0?Math.round(y.expenses/y.income*100):0, neg:true}];
+    /* THE PROFIT LADDER. This i is the one place that shows how the farm's several
+       "profits" relate: money in less money out is the cash figure on this tile and on
+       Income; add back the loan capital and the costs HMRC disallows and you have the
+       taxable profit, which is what Tax & HMRC works from. Same period throughout. */
+    var L=profitLadder();
+    var y=ytdSummary(); var profit=L.cash, margin=y.income>0?(profit/y.income*100):0;
+    var _pc=function(v){ return y.income>0?Math.max(0,Math.min(100,Math.round(Math.abs(v)/y.income*100))):0; };
+    var rows=[
+      {nm:'Money in', amt:fmt(L.income), pct:100},
+      {nm:'\u2212 Money out', amt:'\u2212'+fmt(L.expenses), pct:_pc(L.expenses), neg:true},
+      {nm:'Profit \u00b7 cash', amt:(L.cash<0?'\u2212':'')+fmt(Math.abs(L.cash)), pct:_pc(L.cash)},
+      {nm:'+ Loan capital and costs HMRC doesn\u2019t allow', amt:'+'+fmt(L.adj), pct:_pc(L.adj)}
+    ];
     return {
-      label:'Profit this season', value:(profit<0?'\u2212':'')+fmt(Math.abs(profit)), warn:profit<0, chip:'Year to date',
-      verdict: profit>=0?{tone:(margin>=15?'good':'info'),head:(margin>=15?'Healthy season so far':'In profit this season'),text:'You\u2019ve kept '+fmt(profit)+' so far this year \u2014 a '+margin.toFixed(0)+'% margin.'}:{tone:'watch',head:'Behind so far this season',text:'Costs are ahead of income by '+fmt(Math.abs(profit))+' this year so far.'},
-      mean:'What\u2019s left this farming year after costs are taken off income.',
-      breakdown:{title:'How it\u2019s worked out', rows:rows, tot:{nm:'Profit this season', amt:(profit<0?'\u2212':'')+fmt(Math.abs(profit))}, note:'Adds up every income and cost booked this financial year.'},
+      label:'Profit this tax year', value:(profit<0?'\u2212':'')+fmt(Math.abs(profit)), warn:profit<0, chip:'Year so far \u00b7 cash',
+      verdict: profit>=0?{tone:(margin>=15?'good':'info'),head:(margin>=15?'Healthy year so far':'In profit this year'),text:'You\u2019ve kept '+fmt(profit)+' so far this tax year \u2014 a '+margin.toFixed(0)+'% margin.'}:{tone:'watch',head:'Behind so far this year',text:'Costs are ahead of income by '+fmt(Math.abs(profit))+' this tax year so far.'},
+      mean:'What\u2019s left this tax year after costs are taken off income.',
+      breakdown:{title:'How '+fmt(Math.abs(L.cash))+' is worked out \u00b7 '+L.period, rows:rows,
+        tot:{nm:'Taxable profit so far', amt:(L.taxable<0?'\u2212':'')+fmt(Math.abs(L.taxable))},
+        note:'The cash figure is what the Dashboard and Income show; the taxable one is what Tax &amp; HMRC works from. This month, the projected year and the season plan each carry their own tag.'},
       jump:{label:'Open Money Flow', tone:(profit<0?'gold':''), go:function(){ nav('cashflow'); }, back:function(){ nav('dashboard'); kpiOpen('seasonProfit'); }, trail:'\u2039 Back to dashboard', show:'Showing Money Flow'}
     };
   };
@@ -68401,7 +68745,7 @@ function _lsRegCertsCard(){
     var rows=[{nm:'Profit this season', amt:(profit<0?'\u2212':'')+fmt(Math.abs(profit)), pct:Math.max(0,Math.min(100,Math.round(margin)))},{nm:'Income this season', amt:fmt(y.income), pct:100, cls:'gold'}];
     return {
       label:'Profit margin', value:margin.toFixed(0)+'%', warn:(margin<15&&y.income>0), chip:'Year to date',
-      verdict: y.income<=0?{tone:'info',head:'No income yet this season',text:'Once income comes in, your margin will show here.'}:(margin>=15?{tone:'good',head:'Above the industry average',text:'You\u2019re keeping '+margin.toFixed(0)+'c of every rand \u2014 ahead of the ~15% farm average.'}:{tone:'watch',head:'Below the industry average',text:'You\u2019re keeping '+margin.toFixed(0)+'c of every rand. The typical farm keeps about 15%.'}),
+      verdict: y.income<=0?{tone:'info',head:'No income yet this season',text:'Once income comes in, your margin will show here.'}:(margin>=15?{tone:'good',head:'Above the industry average',text:'You\u2019re keeping '+margin.toFixed(0)+'p in every pound \u2014 ahead of the ~15% farm average.'}:{tone:'watch',head:'Below the industry average',text:'You\u2019re keeping '+margin.toFixed(0)+'p in every pound. The typical farm keeps about 15%.'}),
       mean:'How many cents of every rand of income you keep as profit, after costs.',
       breakdown:{title:'How it\u2019s worked out', rows:rows, note:'Margin = profit \u00f7 income, for the year so far.'},
       jump:{label:'See your profit picture', tone:'', go:function(){ nav('profit'); }, back:function(){ nav('dashboard'); kpiOpen('seasonMargin'); }, trail:'\u2039 Back to dashboard', show:'Showing Profit'}
