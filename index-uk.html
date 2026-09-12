@@ -52723,7 +52723,23 @@ function renderTax(){
     ".tx-btn{display:block;text-align:center;background:var(--gd);color:#fff;font-weight:700;font-size:13.5px;border-radius:12px;padding:13px;margin-bottom:12px;cursor:pointer}"+
     ".tx-nudge{background:#FFF3E0;border:1px solid #F5D9A8;border-left:4px solid #B45309;border-radius:0 10px 10px 0;padding:11px 14px;font-size:12.5px;color:#7a4a10;margin-bottom:12px}"+
     ".tx-disc{background:var(--gb);border:1px solid var(--gp);border-radius:12px;padding:12px 14px;font-size:11.5px;color:var(--gd);line-height:1.55}"+
-    ".tx-wi{margin-top:8px;font-size:11.5px;color:var(--t3)}.tx-wi summary{cursor:pointer;color:var(--gm);font-weight:600;list-style:none}.tx-wi summary::-webkit-details-marker{display:none}.tx-wi[open] summary{margin-bottom:4px}"+
+    ".tx-why{background:#fff;border:1px solid var(--br);border-radius:12px;padding:11px 14px;margin:0 0 12px}"+
+    ".tx-why-t{font-size:12px;color:var(--t3);line-height:1.5}"+
+    ".tx-why-q{display:flex;flex-wrap:wrap;gap:7px 22px;margin-top:9px;padding-top:9px;border-top:1px solid var(--br2)}"+
+    /* A question sits on one line with a chevron that turns, so it reads as something
+       to open. Opened, it takes the full width so its answer is not squeezed into a
+       half-width column beside the other question. */
+    ".tx-wi{font-size:11.5px;color:var(--t3);flex:1 1 280px;min-width:0}"+
+    ".tx-wi[open]{flex-basis:100%}"+
+    ".tx-wi summary{cursor:pointer;color:var(--gm);font-weight:700;list-style:none;display:flex;align-items:center;gap:7px;line-height:1.4}"+
+    ".tx-wi summary::-webkit-details-marker{display:none}"+
+    ".tx-wi summary::before{content:'\\203A';font-size:15px;font-weight:800;line-height:1;flex:none;transition:transform .15s ease}"+
+    /* Two shapes in the wild: <details class="tx-wi"> here, and <div class="tx-wi">
+       wrapping a <details> on the VAT and workers cards. Match both, or the chevron
+       turns on some of them and not others. */
+    ".tx-wi[open] summary::before,.tx-wi details[open] summary::before{transform:rotate(90deg)}"+
+    ".tx-wi summary:hover{text-decoration:underline}"+
+    ".tx-wi-b{margin:5px 0 0 18px;line-height:1.55}"+
     /* Equal-weight answer buttons. Neither is styled as the expected reply. */
     /* Manual payment picker inside the reconcile card. */
     ".taxrec-pick{border:1px solid var(--gp);border-radius:11px;background:var(--gb);padding:11px 12px;margin-top:10px}"+
@@ -52964,27 +52980,30 @@ function taxGlanceHTML(){
          '<div style="font-size:11px;color:var(--t4);margin-top:2px">'+esc(_L.period)+' · cash profit '+fmt(_L.cash)+' plus '+fmt(_L.adj)+' of loan capital and costs HMRC doesn’t allow</div></div>'+
          '<div style="font-size:20px;font-weight:800;color:var(--gd)">'+fmt(_L.taxable)+'</div></div>';
     }catch(e){}
-    h+='<div style="font-size:12px;color:var(--t3);margin:-4px 0 12px;padding:0 2px">'+
+    /* The caption and its two questions were three loose blocks stacked under the hero:
+       a grey sentence, then two bare green lines with no chevron and no container, which
+       read as orphaned links rather than as things you can open. They are one card now -
+       the sentence, a hairline, then the questions side by side. */
+    h+='<div class="tx-why">'+
+       '<div class="tx-why-t">'+
        (prov.tooNew
          ? 'Tax on what you have recorded so far — not a full-year figure. Your records start this month, so there is no rate yet to carry forward; the full-year projection appears once you have a month of trading behind you.'
          : 'A projection for the full year — the '+prov.monthsElapsed+' month'+(prov.monthsElapsed===1?'':'s')+' banked so far, '+
            (prov.basis==='plan'?'plus your plan for the rest of it':'carried on at the same rate to April')+'.')+
-       /* on its own line, flush with the caption above it: as an inline-block it wrapped
-          to a second line anyway and carried its 6px left margin with it, so the link sat
-          indented from the sentence it belongs to */
-       (prov.tooNew ? '' : '<span class="tx-wi" style="display:block;margin:2px 0 0"><details><summary>Why is it bigger than my Reports profit?</summary>'+
-       ' The Reports tab counts only what has actually happened. This one carries your banked months on to 5 April, to show what the whole year is heading for.</details></span>')+
-       /* Income tax, VAT and employer NI are the farm's own. PAYE and employee NI are the
-          worker's tax: the farm withholds them from wages and passes them on, so they are
-          in the total HMRC receives but they are not a cost to the business. Reading the
-          whole number as money the farm loses overstates what it actually bears. */
-       ((pay.withheld>0)
-         ? '<span class="tx-wi" style="display:block;margin:2px 0 0"><details><summary>How much of this does the farm actually bear?</summary>'+
-           ' '+fmt(pay.withheld)+' of the payroll figure is PAYE and employee National Insurance. That comes out of your workers\u2019 wages \u2014 you hold it back and pass it on, so HMRC receives it but it never was your money. What the farm itself pays on top of wages is the employer National Insurance, '+fmt(pay.farmBears)+'.'+
-           ((pay.paidSoFar>0) ? ' '+fmt(pay.paidSoFar)+' of the year\u2019s payroll has already gone across in the runs you have posted.' : '')+
-           '</details></span>'
-         : '')+
        '</div>';
+    var _whyQ='';
+    if(!prov.tooNew) _whyQ+='<details class="tx-wi"><summary>Why is it bigger than my Reports profit?</summary>'+
+       '<div class="tx-wi-b">The Reports tab counts only what has actually happened. This one carries your banked months on to 5 April, to show what the whole year is heading for.</div></details>';
+    /* Income tax, VAT and employer NI are the farm's own. PAYE and employee NI are the
+       worker's tax: the farm withholds them from wages and passes them on, so they are
+       in the total HMRC receives but they are not a cost to the business. Reading the
+       whole number as money the farm loses overstates what it actually bears. */
+    if(pay.withheld>0) _whyQ+='<details class="tx-wi"><summary>How much of this does the farm actually bear?</summary>'+
+       '<div class="tx-wi-b">'+fmt(pay.withheld)+' of the payroll figure is PAYE and employee National Insurance. That comes out of your workers’ wages — you hold it back and pass it on, so HMRC receives it but it never was your money. What the farm itself pays on top of wages is the employer National Insurance, '+fmt(pay.farmBears)+'.'+
+       ((pay.paidSoFar>0) ? ' '+fmt(pay.paidSoFar)+' of the year’s payroll has already gone across in the runs you have posted.' : '')+
+       '</div></details>';
+    if(_whyQ) h+='<div class="tx-why-q">'+_whyQ+'</div>';
+    h+='</div>';
     /* The caption above explains the PROJECTION in the tiles; this ladder is the year
        so far. Emitted after it so the sentence sits with the number it describes. */
     h+=_ladderHtml;
