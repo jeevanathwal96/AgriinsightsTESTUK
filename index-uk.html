@@ -4485,6 +4485,7 @@ select.tx-fctl{padding-right:30px}
 .acc-chev{width:18px;height:18px;stroke:#7C3AED;stroke-width:2.4;fill:none;transition:transform .22s ease-out;flex-shrink:0}
 .acc-card.collapsible.open .acc-chev{transform:rotate(180deg)}
 .acc-card-body{max-height:0;overflow:hidden;transition:max-height .28s ease-out}
+.acc-card.collapsible:not(.open) .acc-card-body{visibility:hidden}
 .acc-card.collapsible.open .acc-card-body{max-height:600px}
 .acc-card-inner{padding:14px 18px 16px;border-top:1px dashed #DDD6FE;margin:0 4px}
 .acc-card-inner .acc-sub{margin-bottom:13px}
@@ -13092,9 +13093,22 @@ function _ukCropSections(){
   var R=_ukCropInputRows(), byKind=R.byKind, total=R.total;
   var rows=Object.keys(byKind).map(function(k){return '<tr><td>'+k+'</td><td class="amt neg">'+cropRand(byKind[k])+'</td></tr>';}).join('');
   var diesel=(ST_CROP.compliance&&ST_CROP.compliance.dieselLitres)||0;
+  var _ds=_dslC(), _dL=function(n){ return Math.round(n||0).toLocaleString('en-GB')+' L'; };
+  var _dRows=
+    ((_ds.bought>0||_ds.logged>0)
+      ? '<tr><td>Red diesel bought, from your fuel records</td><td class="amt">'+_dL(_ds.bought)+'</td></tr>'+
+        '<tr><td>Logged to a machine in the app</td><td class="amt">'+_dL(_ds.logged)+'</td></tr>'+
+        (_ds.unlogged>0?'<tr><td>Not yet logged to a machine</td><td class="amt">'+_dL(_ds.unlogged)+'</td></tr>':'')
+      : '')+
+    (diesel>0?'<tr><td>Logged on paper, outside the app</td><td class="amt">'+_dL(diesel)+'</td></tr>':'')+
+    '<tr class="total"><td>Usage records</td><td class="amt">'+
+      ((_ds.logged>0 && !(_ds.unlogged>0)) ? '\u2713 every litre logged to a machine'
+        : (_ds.logged>0 ? ('part-logged in the app'+(diesel>0?', rest on paper':''))
+        : ((ST_CROP.compliance&&ST_CROP.compliance.dieselLogbook) ? 'paper logbook only \u2014 nothing logged in the app' : 'incomplete')))+
+    '</td></tr>';
   return '<h2>1 \u00b7 Input cost by category</h2><table><tbody>'+rows+'</tbody><tfoot><tr class="total"><td>Total direct crop inputs</td><td class="amt">'+cropRand(total)+'</td></tr></tfoot></table>'+
     '<div class="lsr-note">Seed, fertiliser and agrochemicals are allowable production costs. They are recorded against the land and season so the spend can be traced. Where a crop is still in the ground at the year end, these are the costs that carry it \u2014 HS232 section 3.4.</div>'+
-    '<h2>2 \u00b7 Red diesel records (primary production)</h2><table><tbody><tr><td>Eligible diesel litres logged</td><td class="amt">'+diesel.toLocaleString('en-GB')+' L</td></tr><tr><td>Logbook detail</td><td class="amt">'+((ST_CROP.compliance&&ST_CROP.compliance.dieselLogbook)?'\u2713 per activity':'incomplete')+'</td></tr></tbody></table>'+
+    '<h2>2 \u00b7 Red diesel records (primary production)</h2><table><tbody>'+_dRows+'</tbody></table>'+
     '<div class="lsr-note">Red diesel is bought with the duty already rebated, so there is nothing to reclaim \u2014 this record exists because HMRC can ask you to evidence that the fuel went to a qualifying agricultural use.</div>'+
     '<div class="lsr-disc"><b>Not tax advice.</b> Compiled from your records to support your accountant.</div>';
 }
@@ -13116,7 +13130,7 @@ function openCropInputCostReport(){
     _ukCropSections();
   var csv=lsCsvRow(['Crop input costs',FARM.name||'Farm','Season',cropSeasonStr()])+lsCsvRow([])+lsCsvRow(['Category','Cost (GBP)']);
   Object.keys(byKind).forEach(function(k){csv+=lsCsvRow([k,Math.round(byKind[k])]);});
-  csv+=lsCsvRow(['Total',Math.round(total)])+lsCsvRow([])+lsCsvRow(['Eligible diesel litres',diesel]);
+  csv+=lsCsvRow(['Total',Math.round(total)])+lsCsvRow([])+lsCsvRow(['Red diesel bought (fuel records), litres',Math.round(_dslC().bought)])+lsCsvRow(['Logged to a machine in the app, litres',Math.round(_dslC().logged)])+lsCsvRow(['Logged on paper, outside the app, litres',diesel]);
   lsShowReport('Crop input costs','linear-gradient(135deg,#2563EB,#1E3A8A)',html,csv,'crop-input-cost.csv');
 }
 function openCropWaterReport(){
@@ -52676,6 +52690,10 @@ function renderTax(){
     ".txfold[open]>summary:before{transform:rotate(90deg)}"+
     ".txfold>summary .s{font-weight:500;color:var(--t3);font-size:11.5px}"+
     ".txfold-b{padding:0 16px 15px 33px;font-size:12.5px;color:var(--t2);line-height:1.6;max-width:76ch}"+
+    /* Do not rely on the browser hiding a closed <details>: the body was still being
+       laid out below the 45px summary box and only happened to be invisible because
+       .txfold clips. Say it outright. */
+    ".txfold:not([open]) .txfold-b{display:none}"+
     ".txfold-b .txb-note{max-width:76ch}"+
     /* THE BLOCKS INSIDE A BAND HAD NO CSS AT ALL. band() emits .txb / .txb-t / .txb-m /
        .txb-bd, while the stylesheet only ever defined .txb-tt and .txb-meta for the band
@@ -52762,8 +52780,9 @@ function taxGlanceHTML(){
        card already uses, because it only matters to a farmer who has noticed the gap. */
     /* The ladder's top rung, on the page that owns it: what the farm's taxable profit
        actually IS so far, sitting next to where the year is heading. */
+    var _ladderHtml='';
     try{ var _L=profitLadder();
-      h+='<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;background:#fff;border:1px solid var(--br);border-radius:12px;padding:11px 14px;margin:0 0 12px">'+
+      _ladderHtml='<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;background:#fff;border:1px solid var(--br);border-radius:12px;padding:11px 14px;margin:0 0 12px">'+
          '<div style="font-size:12.5px;color:var(--t3)">Taxable profit so far'+profitTags('actual','Year so far','tax','Tax rules')+
          '<div style="font-size:10.5px;color:var(--t4);margin-top:2px">'+esc(_L.period)+' · cash profit '+fmt(_L.cash)+' plus '+fmt(_L.adj)+' of loan capital and costs HMRC doesn’t allow</div></div>'+
          '<div style="font-size:20px;font-weight:800;color:var(--gd)">'+fmt(_L.taxable)+'</div></div>';
@@ -52787,6 +52806,9 @@ function taxGlanceHTML(){
            '</details></span>'
          : '')+
        '</div>';
+    /* The caption above explains the PROJECTION in the tiles; this ladder is the year
+       so far. Emitted after it so the sentence sits with the number it describes. */
+    h+=_ladderHtml;
     if(prov.nudge && prov.nudge.show) h+='<div class="tx-nudge" style="background:#FEF6E7;border-color:#F1DBA6"><b>A sharper number is waiting.</b> You haven\u2019t added your '+esc(prov.nudge.enterprise)+' to the season plan yet, so we spread your income evenly across the year. <span onclick="nav(\'planning\')" style="text-decoration:underline;cursor:pointer">Finish your plan \u2192</span></div>';
   }
 
@@ -52817,7 +52839,7 @@ function taxGlanceHTML(){
 
   // waterfall + calendar
   h+='<div class="tx-g2">';
-  h+='<div class="tx-card" style="display:flex;flex-direction:column"><div class="tx-h">How your profit becomes tax</div>';
+  h+='<div class="tx-card" style="display:flex;flex-direction:column"><div class="tx-h">How your profit becomes tax'+profitTags('proj','Projected to 5 Apr')+'</div>';
   var _rf=prov.ringFence||{allowed:0,carried:0,brought:0};
   if(prov.ok){
     /* The steps a farmer's money actually goes through, in HMRC's order — not a plain
@@ -54244,6 +54266,14 @@ function ukMtdSetDeferral(v){
     if(v===null||v===undefined) delete ST.mtdAvgDeferral; else ST.mtdAvgDeferral=v;
     if(typeof dataChanged==='function') dataChanged();
     if(typeof _txRerenderReports==='function') _txRerenderReports();
+    /* The question is asked in two places - on the tab and inside the quarterly update
+       panel that opens from it. Re-rendering the tab left the panel showing the question
+       it had just answered, so the farmer clicked and nothing appeared to happen. If the
+       panel is the thing on screen, rebuild it too. */
+    var bg=document.getElementById('stmt-preview-bg');
+    var ttl=document.getElementById('stmt-preview-title');
+    if(bg && getComputedStyle(bg).display!=='none' && ttl && /Quarterly update/.test(ttl.textContent)
+       && typeof taxRep==='function') taxRep('mtd');
   }catch(e){}
 }
 window.ukMtdSetDeferral=ukMtdSetDeferral;
@@ -54471,7 +54501,9 @@ function ukMtdReportHTML(fy, asPanel){
   /* The table's own footnote already says updates are cumulative - saying it twice, two
      lines apart, was the same noise in a quieter typeface. */
   /* asPanel: the same contents without the band header, for the row that opens it. */
-  if(asPanel) return scope+dl+table+swNote+estimate+boxes+ready+acts;
+  /* The band's own Preview/Print/CSV row makes no sense inside the panel it opens -
+     the panel IS the preview, and its export sits in the panel's action bar. */
+  if(asPanel) return scope+dl+table+swNote+estimate+boxes+ready;
   return '<section class="txband">'+head+scope+dl+table+swNote+estimate+boxes+ready+acts+'</section>';
 }
 function ukMtdCsv(fy){
@@ -54582,10 +54614,12 @@ function taxOpenReport(preview, csv){
   else { cb.style.display='none'; cb.onclick=null; }
 }
 var TAX_REPS = {
-  mtd:   function(){ var fy=_txResolveFy(); var nx=(typeof ukMtdNextObligation==='function')?ukMtdNextObligation(fy):null;
+  mtd:   function(){ var fy=(typeof getCurrentFY==='function')?getCurrentFY():_txResolveFy();
+           var nx=(typeof ukMtdNextObligation==='function')?ukMtdNextObligation(fy):null;
            ukReportPreview({ title:'Quarterly update', icon:'📅', colour:'#1E4B8F',
              period:(nx?('Q'+nx.q+' · due '+_txD(nx.due)):_txFyLabel(fy)),
-             html:ukMtdReportHTML(fy,true) }); },
+             html:ukMtdReportHTML(fy,true),
+             csv:function(){ if(typeof ukMtdCsv==='function') ukMtdCsv(fy); } }); },
   fps:   function(){ taxOpenEmp201(); },
   slips: function(){ taxOpenPayslips(); },
   /* Clicking "VAT return" used to open the Income & Expenses statement scoped to the
@@ -54599,7 +54633,14 @@ var TAX_REPS = {
            ukReportPreview({ title:'VAT return', icon:'%', colour:'#5F4599',
              period:_txResolveVatp().label, html:p.vat,
              csv:function(){ taxOpenIE('csv','vat'); } }); },
-  diesel:function(){ if(typeof fuelOpen==='function') fuelOpen(0); else nav('tax'); },
+  /* A row in a library of reports must open a document. This opened the weekly fuel
+     entry form straight away - useful, but not the record. The record is what HMRC can
+     ask for, and the panel keeps its own "Log fuel used" button for the entry form. */
+  diesel:function(){
+           var html=''; try{ html=_txDieselPanel(); }catch(e){}
+           if(!html){ if(typeof fuelOpen==='function') fuelOpen(0); return; }
+           ukReportPreview({ title:'Red diesel record', icon:'\u26FD', colour:'#8A5A12',
+             period:_txResolveVatp().label, html:html }); },
   sa:    function(){ taxOpenReport(function(){ previewHMRCExport(_txResolveFy()); }, null); },
   ie:    function(){ taxOpenReport(function(){ taxOpenIE('preview','fy'); },
                                    function(){ taxOpenIE('csv','fy'); }); },
@@ -54760,7 +54801,11 @@ function taxReportsHTML(){
      elsewhere on the same tab, so the page printed them twice. */
   var h = '<p class="tx-rep-intro">Every HMRC report this app builds, in the order you file them. A section only appears if it applies to your farm &mdash; payroll shows when you have workers, VAT when you are registered.</p>';
 
-  h += taxDueStripHTML(selFY, wk, hasVat);
+  /* Deadlines belong to the year the farm is IN. Stepping the year-end picker back to
+     2025/26 emptied the strip and stripped the "Q1 overdue" pill off the quarterly row -
+     the picker scopes the reports beneath it, as the footnote says, not today's
+     obligations. */
+  h += taxDueStripHTML(curFY, wk, hasVat);
 
   h += '<div class="txz"><div class="txz-h"><h3>Your reports</h3>'+
        '<span class="hint">each opens with its figures &middot; print and export are inside</span></div>';
@@ -54769,7 +54814,7 @@ function taxReportsHTML(){
   var _mtdS=null; try{ _mtdS=ukMtdStatus(); }catch(e){}
   if(_mtdS && _mtdS.inScope){
     var _nx=null, _lt=[];
-    try{ _nx=ukMtdNextObligation(selFY); _lt=ukMtdLateObligations(selFY)||[]; }catch(e){}
+    try{ _nx=ukMtdNextObligation(curFY); _lt=ukMtdLateObligations(curFY)||[]; }catch(e){}
     h += '<div class="txr-grp">Every quarter &middot; Making Tax Digital'+
          '<span class="m">'+(_mtdS.live?'mandated now':'mandated from '+_txD(_mtdS.from))+
          ' &middot; basis: '+((typeof ST!=='undefined'&&ST.cashBasis)?'cash':'accruals')+'</span></div>'+
@@ -59246,13 +59291,13 @@ var SEASONAL_DATA = {
           action:'Log an expense', actionFn:"openAddExpense()" },
     2:  { type:'warning', icon:'🚜', title:'March — Spring drilling and first nitrogen',
           body:'Spring barley and beans go in as soon as the land travels, and the first nitrogen goes on the winter crops. In an NVZ the closed period has ended — record every application against the field.',
-          action:'Open Crops', actionFn:"nav('crops')" },
+          action:'Open Crops', actionFn:"nav('crop')" },
     3:  { type:'warning', icon:'📅', title:'April — New tax year',
           body:'The tax year starts <b>6 April</b>. Everything from here belongs to the new year, so make sure the old one is complete before you move on. Spring drilling finishes and crops start moving.',
           action:'View reports', actionFn:"nav('reports')" },
     4:  { type:'info', icon:'💧', title:'May — Crop protection and growth',
           body:'The busiest spraying month. Log every application with the product, the rate and the operator — that record is your Red Tractor evidence as well as your cost.',
-          action:'Open Crops', actionFn:"nav('crops')" },
+          action:'Open Crops', actionFn:"nav('crop')" },
     5:  { type:'info', icon:'☀️', title:'June — Final sprays, harvest prep',
           body:'Last fungicides go on and the combine comes out of the shed. A good month to check your grain store, book haulage and agree movement contracts before everyone else does.',
           action:'Check budget', actionFn:"nav('budgets')" },
@@ -59264,10 +59309,10 @@ var SEASONAL_DATA = {
           action:'Record income', actionFn:"openAddIncome('sale')" },
     8:  { type:'warning', icon:'🌱', title:'September — Winter drilling',
           body:'Oilseed rape and the first winter cereals go in. Seed, fertiliser and contractor costs land now against a crop you will not sell for eleven months — which is exactly why the season basis, not the tax year, is the right way to judge it.',
-          action:'Open Crops', actionFn:"nav('crops')" },
+          action:'Open Crops', actionFn:"nav('crop')" },
     9:  { type:'info', icon:'🚜', title:'October — Drilling continues',
           body:'Winter wheat drilling runs through the month. The NVZ closed period for nitrogen begins on most soils — check the dates for your land before spreading.',
-          action:'Open Crops', actionFn:"nav('crops')" },
+          action:'Open Crops', actionFn:"nav('crop')" },
     10: { type:'info', icon:'📊', title:'November — Budget for next year',
           body:'Crops are in and the pressure is off. The best month of the year to build next season’s budget, while this harvest is still fresh and before the January paperwork starts.',
           action:'Open Budgets', actionFn:"nav('budgets')" },
@@ -59340,7 +59385,7 @@ var SEASONAL_DATA = {
           action:'Record income', actionFn:"openAddIncome('sale')" },
     8:  { type:'success', icon:'🌱', title:'September — Drilling and peak selling',
           body:'Winter crops go in while the store trade is at its best. Money is moving both ways at once — tag everything to an enterprise or the margins will not mean anything.',
-          action:'Open Crops', actionFn:"nav('crops')" },
+          action:'Open Crops', actionFn:"nav('crop')" },
     9:  { type:'warning', icon:'🏠', title:'October — Drilling finishes, cattle housed',
           body:'The NVZ closed period for nitrogen begins on most soils, and the winter feed bill restarts. Check your dates before spreading anything.',
           action:'Open Livestock', actionFn:"nav('livestock')" },
@@ -61705,7 +61750,7 @@ function attnItems(){
           sub:'Nothing is recorded until you say so',
           st:(_hd<=0?'today':(_hd+' day'+(_hd===1?'':'s')+' ago')),
           when:-_hd, cta:'Open Crops',
-          action:function(){ nav('crops'); }});
+          action:function(){ nav('crop'); }});
       }
     }
   }catch(e){}
