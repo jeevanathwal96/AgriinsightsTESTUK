@@ -17707,11 +17707,14 @@ var txCount = ST.txns.filter(function(t){
   setEl('cashflow-detail', 'You earned ' + (profit>=0 ? fmt(Math.abs(profit)) + ' more' : fmt(Math.abs(profit)) + ' less') + ' than you spent in ' + month + '.');
 
   // ── Budget progress bars ──
-  var budgetInc = getBudgetTarget() || 1;
-  var budgetExp = getExpenseBudgetTarget() || 1;
+  /* The || 1 that kept the percentages from dividing by zero was reaching the LABEL
+     as well, so a farm with no budget yet read "£0 / £1" on all three bars. A target
+     nobody has set is not £1; the bar says so instead. */
+  var budgetInc = getBudgetTarget() || 0;
+  var budgetExp = getExpenseBudgetTarget() || 0;
   updateBpBar('bp-income', cur.income, budgetInc);
   updateBpBar('bp-expense', cur.expenses, budgetExp);
-  updateBpBar('bp-profit', profit, budgetInc - budgetExp);
+  updateBpBar('bp-profit', profit, (budgetInc && budgetExp) ? (budgetInc - budgetExp) : 0);
 
   // ── Payment on account estimate ──
   renderProvTax();
@@ -17779,8 +17782,9 @@ var _MN = {Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,De
 var pill = $('dash-season-pill');
   if (pill && typeof getCurrentFY === 'function') {
     var fy = getCurrentFY();
-    var labels = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    pill.textContent = labels[fyStart] + ' ' + fy + ' — ' + labels[(fyStart+11)%12] + ' ' + (fy+1) +
+    /* "Apr 2026 - Mar 2027" is not the UK tax year: it runs 6 April to 5 April, and
+       every other screen says so. fyLabel() is where that sentence lives. */
+    pill.textContent = ((typeof fyLabel==='function') ? fyLabel(fy) : (fy+' – '+(fy+1))) +
                        ' · ' + monthsIn + ' of 12 months in';
   }
 
@@ -18315,11 +18319,14 @@ function setEl(id, val) {
 }
 
 function updateBpBar(id, actual, budget) {
-  var pct = budget > 0 ? Math.min(Math.round(actual/budget*100), 100) : 0;
-  var over = actual > budget;
-  var el = $(id+'-pct'); if(el){ el.textContent = pct+'%'; el.className = 'bp-pct'+(over?' over':''); }
-  var el2 = $(id+'-vals'); if(el2) el2.textContent = fmt(actual)+' / '+fmt(budget)+(over?' \u00b7 '+fmt(actual-budget)+' over':'');
-  var fill = $(id+'-fill'); if(fill){ fill.style.width = pct+'%'; fill.className = 'bp-fill'+(over?' over':actual/budget>0.85?' red':''); }
+  var none = !(budget > 0);
+  var pct = none ? 0 : Math.min(Math.round(actual/budget*100), 100);
+  var over = !none && actual > budget;
+  var el = $(id+'-pct'); if(el){ el.textContent = none ? '\u2014' : (pct+'%'); el.className = 'bp-pct'+(over?' over':''); }
+  var el2 = $(id+'-vals');
+  if(el2) el2.textContent = none ? (fmt(actual)+' \u00b7 no target set')
+                                 : (fmt(actual)+' / '+fmt(budget)+(over?' \u00b7 '+fmt(actual-budget)+' over':''));
+  var fill = $(id+'-fill'); if(fill){ fill.style.width = pct+'%'; fill.className = 'bp-fill'+(over?' over':(!none && actual/budget>0.85)?' red':''); }
 }
 
 // ============================================================
@@ -52634,7 +52641,7 @@ function taxGlanceHTML(){
     var _saAmt=(_nx.amt!=null?_nx.amt:null), _saMo=(_saAmt!=null?Math.round(_saAmt/_mo):null);
     var _saNote=(_saAmt==null?'Payments on account are half of last year\u2019s bill':(_nx.per==='balancing'?'This year\u2019s estimated bill, less the instalments':(_nx.per==='ct'?'Corporation tax on this year\u2019s estimated profit':('Spread over '+_mo+' month'+(_mo===1?'':'s')+' \u00b7 '+((prov.poa&&prov.poa.source==='hmrc')?'HMRC\u2019s figure':'half of last year\u2019s bill')))));
     h+='<div class="tx-card" style="display:flex;flex-direction:column"><div class="tx-h">Set aside each month</div><div style="flex:1;display:flex;flex-direction:column;justify-content:center;text-align:center"><div style="font-size:24px;font-weight:800">'+(_saMo!=null?fmt(_saMo):'\u2014')+'</div><div style="font-size:11px;color:var(--t3);margin-top:3px">'+(_saAmt!=null?('to cover '+fmt(_saAmt)+' due '+esc(_nx.lbl||'')):'add your payment on account from HMRC')+' \u00b7 '+(prov.daysAway>0?prov.daysAway+' days to go':'due now')+'</div><div style="font-size:10px;color:var(--t4);margin-top:3px">'+_saNote+'</div></div></div>';
-  } else { h+='<div class="tx-card"><div class="tx-h">Set aside for tax</div><div style="font-size:12.5px;color:var(--t3)">Once your season shows a profit, your payment-on-account set-aside appears here.</div></div>'; }
+  } else { h+='<div class="tx-card"><div class="tx-h">Set aside for tax</div><div style="font-size:12.5px;color:var(--t3)">Once your tax year shows a profit, your payment-on-account set-aside appears here.</div></div>'; }
   if(trend.length){ var mx=Math.max.apply(null,trend.map(function(t){return Math.abs(t.net);}).concat(1));
     h+='<div class="tx-card" style="display:flex;flex-direction:column"><div class="tx-h">VAT — last 3 periods</div><div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;padding-bottom:4px"><div style="display:flex;align-items:flex-end;gap:10px;height:62px">'+trend.map(function(t,i){var pc=Math.max(6,Math.round(Math.abs(t.net)/mx*100));return '<div style="flex:1;text-align:center"><div style="height:'+Math.round(pc*0.44)+'px;background:'+(i===trend.length-1?'#DC2626':'#F87171')+';border-radius:4px 4px 0 0"></div><div style="font-size:9px;color:var(--t4);margin-top:3px">'+t.label+'</div></div>';}).join('')+'</div><div style="font-size:10.5px;color:var(--t4);margin-top:6px;text-align:center">Net VAT payable per period</div></div></div>';
   } else { h+='<div class="tx-card"><div class="tx-h">VAT</div><div style="font-size:12.5px;color:var(--t3)">Not registered for VAT — no VAT to track.</div></div>'; }
