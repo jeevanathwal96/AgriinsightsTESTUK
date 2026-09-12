@@ -24977,9 +24977,9 @@ function wkPostPayRun(){
   if((ST_WORK.payRuns||[]).some(function(r){return r.label===label && !r.seasonal;})){ if(typeof toast==='function') toast('Already posted for '+label+'.','info'); return; }
   var rows=wkPayRows();
   if(!rows.length){ if(typeof toast==='function') toast('No monthly workers to pay.','info'); return; }
-  var totGross=0, totNI=0, totNet=0, applied=[];
+  var totGross=0, totNI=0, totNet=0, totPAYE=0, applied=[];
   rows.forEach(function(r){
-    totGross+=r.gross; totNI+=r.ni; totNet+=r.net;
+    totGross+=r.gross; totNI+=r.ni; totNet+=r.net; totPAYE+=(r.paye||0);
     var w=r.w; var rec={wid:w.id};
     if(w.adv && r.advRepay>0){ wkLedgerAdd(w,'advance-repaid',r.advRepay,label); w.adv.owing=Math.max(0,(w.adv.owing||0)-r.advRepay); if(w.adv.owing<=0) w.adv=null; rec.advRepay=r.advRepay; }
     if(w.fund && w.fund.on && w.fund.where==='hold' && r.savings>0){ w.fund.balance=(w.fund.balance||0)+r.savings; wkLedgerAdd(w,'savings-in',r.savings,label); rec.savings=r.savings; }
@@ -25008,6 +25008,7 @@ function wkPostPayRun(){
      allowance run down correctly for the rest of the year. */
   ST_WORK.payRuns.unshift({ id:runId, label:label, kind:rows.length+' permanent', net:Math.round(totNet), gross:Math.round(totGross),
     employeeNI:Math.round(totNI*100)/100, employerNI:Math.round(_erNI*100)/100, eaUsed:Math.round(_eaUsed*100)/100,
+    paye:Math.round(totPAYE*100)/100,
     ni:Math.round((totNI+Math.max(0,_erNI-_eaUsed))*100)/100, date:wkTodayStr(), applied:applied });
   try { if(typeof dataChanged==='function') dataChanged('transaction'); } catch(e){}
   if(typeof saveState==='function') saveState();
@@ -27136,10 +27137,29 @@ var ST_WORK = {
     empLiability: { insurer:'NFU Mutual', policy:'EL-4471822', cover:10000000, iso:'2026-04-01' },
     empLiabilityFiled: true
   },
+  /* Payroll actually run, month by month, with the figures this app's own payroll
+     computes for this workforce: gross 10,280, PAYE 1,217.40, employee NI 487.20,
+     employer NI 1,292 covered in full by the Employment Allowance, so 487.20 goes to
+     HMRC. Net 8,025 after PAYE, NI, pension and the savings scheme.
+
+     The seed used to stop in April, carrying a net of 8,642 that no longer matched what
+     the payroll computes - so a farm whose ledger pays Labour & Wages every month looked
+     like one that had not run payroll since the spring, and the attention card said so.
+     Newest first, the order a posted run is written in. September is deliberately NOT
+     here: pay day is the 25th and the demo's today is the 12th, so the farmer can still
+     post this month's run. */
   payRuns: [
-    { id:'pr-apr', label:'April 2026', kind:'4 permanent', net:8642, date:'2026-04-25' },
-    { id:'pr-hg',  label:'Seasonal pickers', kind:'week of 13 Jul', net:4231, date:'2026-07-17', seasonal:true },
-    { id:'pr-mar', label:'March 2026', kind:'4 permanent', net:8642, date:'2026-03-25' }
+    { id:'pr-aug', label:'August 2026', kind:'4 permanent', net:8025, gross:10280, employeeNI:487.2, employerNI:1292, eaUsed:1292, paye:1217.4, ni:487.2, date:'2026-08-25' },
+    { id:'pr-jul', label:'July 2026',   kind:'4 permanent', net:8025, gross:10280, employeeNI:487.2, employerNI:1292, eaUsed:1292, paye:1217.4, ni:487.2, date:'2026-07-25' },
+    /* The casual run: three pickers, 18 + 20 + 16 days, from the same seasonal day map
+       the forecast reads - it used to say "week of 13 Jul" against a month of days. */
+    { id:'pr-hg',  label:'Seasonal pickers', kind:'3 pickers \u00b7 54 days', seasonal:true, net:5081, gross:6153, employeeNI:240.87, employerNI:735.52, eaUsed:735.52, paye:601.74, ni:240.87, date:'2026-07-17' },
+    { id:'pr-jun', label:'June 2026',   kind:'4 permanent', net:8025, gross:10280, employeeNI:487.2, employerNI:1292, eaUsed:1292, paye:1217.4, ni:487.2, date:'2026-06-25' },
+    { id:'pr-may', label:'May 2026',    kind:'4 permanent', net:8025, gross:10280, employeeNI:487.2, employerNI:1292, eaUsed:1292, paye:1217.4, ni:487.2, date:'2026-05-25' },
+    { id:'pr-apr', label:'April 2026',  kind:'4 permanent', net:8025, gross:10280, employeeNI:487.2, employerNI:1292, eaUsed:1292, paye:1217.4, ni:487.2, date:'2026-04-25' },
+    /* 25 March 2026 is in the PREVIOUS tax year, so its Employment Allowance belongs to
+       that year - which is what the date filter in wkEaUsedThisTaxYear is for. */
+    { id:'pr-mar', label:'March 2026',  kind:'4 permanent', net:8025, gross:10280, employeeNI:487.2, employerNI:1292, eaUsed:1292, paye:1217.4, ni:487.2, date:'2026-03-25' }
   ]
 };
 
@@ -52362,7 +52382,17 @@ function taxPayrollAnnual(){
       if(!r) return;
       if(_st){ var d=(typeof parseDate==='function')?parseDate(r.date):null;
         if(!d || new Date(d.y,d.m,d.d||1) < _st) return; }
-      paid += (r.paye||0) + (r.employeeNI||0) + (r.ni||0);
+      /* r.ni is what the run sent to HMRC as National Insurance: the employee's share
+         PLUS the employer's share after the Employment Allowance. Adding r.employeeNI
+         to it counted the worker's NI twice. The three parts of what actually went
+         across are PAYE, employee NI and employer NI after the allowance - so take
+         those when the run records them, and fall back to r.ni for a legacy row that
+         only has the combined figure. */
+      if(r.employerNI!=null || r.eaUsed!=null){
+        paid += (r.paye||0) + (r.employeeNI||0) + Math.max(0,(r.employerNI||0)-(r.eaUsed||0));
+      } else {
+        paid += (r.paye||0) + (r.ni||0);
+      }
     });
   }catch(e){}
   paid=Math.round(paid);
