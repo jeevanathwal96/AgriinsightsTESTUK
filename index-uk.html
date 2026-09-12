@@ -211,6 +211,7 @@ label{font-size:13px;color:var(--t3);font-weight:500;display:block;margin-bottom
 .mc-tic{width:26px;height:26px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;margin-bottom:7px;background:var(--gp);color:var(--gm)}
 .mc-tic.up{background:var(--gp);color:var(--gm)}
 .mc-tic.dn{background:var(--rp);color:var(--rd)}
+.mc-tic.eq{background:#EEF2F7;color:var(--t3)}
 
 .profit-sec{background:#fff;border:1px solid var(--br);border-radius:var(--rl);padding:18px;margin-bottom:20px;box-shadow:var(--sh)}
 .profit-sec h3{font-size:14px;font-weight:700;margin-bottom:12px}
@@ -596,12 +597,19 @@ label{font-size:13px;color:var(--t3);font-weight:500;display:block;margin-bottom
 /* On the dark hero cards the light chips shouted; these sit in the surface instead. */
 .mc-hero .ptag, #tax-hero-card .ptag{background:rgba(255,255,255,.16);border-color:rgba(255,255,255,.30);color:#eaf6ee}
 /* Inside a flex label the row already supplies the gap. */
-.cf-lbl .ptags, .bgt-kpi-l .ptags{margin-left:0}
+/* Only a tag row that is itself a flex ITEM gets its spacing from the row's gap. On
+   Budgets the tag sits INSIDE the label span, so zeroing the margin left it touching
+   the word before it. */
+.cf-lbl>.ptags{margin-left:0}
 .mc-lbl .ptags, .skpi-lbl .ptags, .pf-kpi .l .ptags{margin-left:6px}
 /* A tagged label must occupy exactly the same height as an untagged one, or the value
    under it sits lower than the values in the cards beside it. */
 .mc-lbl{display:flex;align-items:center;line-height:15px;min-height:15px}
 .mc-lbl .ptag{height:14px;font-size:8px}
+.skpi-lbl{display:flex;align-items:center;line-height:14px;min-height:14px}
+.skpi-lbl .ptag{height:13px;font-size:8px}
+.pf-kpi .l{display:flex;align-items:center;line-height:13px;min-height:13px}
+.pf-kpi .l .ptag{height:13px;font-size:8px}
 .skpi-val{font-size:24px;font-weight:800;letter-spacing:-.5px;color:var(--gd);font-variant-numeric:tabular-nums}
 .skpi-sub{font-size:11px;color:var(--gl);font-weight:600;margin-top:3px}
 .skpi-sub.dn{color:var(--rd)}
@@ -7641,7 +7649,7 @@ body.no-livestock .tours-menu-item.ent-livestock{display:none}
     <div class="mc mc-hero"><div class="mc-lbl">Profit before tax<span id="rpt-tags"></span></div><div class="mc-val" id="rpt-net">£9,295</div><div class="mc-chg"><b id="rpt-margin" style="color:#eaf6ee">34.9%</b> margin · before tax</div><div class="mc-chg" id="rpt-cash" style="display:none;margin-top:3px;color:#bcdcc7"></div></div>
     <div class="mc"><div class="mc-tic up">↑</div><div class="mc-lbl">Total Income</div><div class="mc-val g" id="rpt-income">£55,365</div><div class="mc-chg" id="rpt-income-lbl" style="color:var(--t3)">May 2024</div></div>
     <div class="mc"><div class="mc-tic dn">↓</div><div class="mc-lbl">Total Expenses</div><div class="mc-val" style="color:var(--rd)" id="rpt-expenses">£43,472</div><div class="mc-chg" id="rpt-expenses-lbl" style="color:var(--t3)">May 2024</div></div>
-    <div class="mc"><div class="mc-lbl">Gross Profit</div><div class="mc-val b" id="rpt-gross">£11,893</div><div class="mc-chg" style="color:var(--t3)">Before allowances</div></div>  </div>
+    <div class="mc"><div class="mc-tic eq">=</div><div class="mc-lbl">Gross Profit</div><div class="mc-val b" id="rpt-gross">£11,893</div><div class="mc-chg" style="color:var(--t3)">Before allowances</div></div>  </div>
 
   <!-- Statement cards -->
   <div style="font-size:14px;font-weight:700;margin-bottom:4px">Your Statements</div>
