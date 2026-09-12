@@ -581,13 +581,27 @@ label{font-size:13px;color:var(--t3);font-weight:500;display:block;margin-bottom
    far, this month, projected, planned, cash, tax rules - and nothing on screen
    said which was which. Green = what has happened, blue = as HMRC counts it,
    amber = where the year is heading, violet = what you planned. */
-.ptags{display:inline-flex;gap:4px;flex-wrap:wrap;vertical-align:middle;margin-left:6px}
-.ptag{display:inline-block;font-size:9px;font-weight:800;letter-spacing:.04em;text-transform:none;
-  padding:2px 7px;border-radius:20px;border:1px solid transparent;white-space:nowrap;line-height:1.5}
-.pt-act{background:#eaf6ee;border-color:#cfe3d4;color:#2f6b45}
-.pt-tax{background:#e9eff8;border-color:#ccd9ec;color:#2c4f86}
-.pt-proj{background:#fdf4e6;border-color:#efdfbd;color:#8a5a12}
-.pt-plan{background:#f2ecfa;border-color:#ded2f2;color:#5b3f96}
+.ptags{display:inline-flex;gap:4px;flex-wrap:nowrap;vertical-align:middle;margin-left:7px}
+/* Small, square and uppercase: a tag has to read as a note ABOUT the figure, not as a
+   button next to it. Fixed line-height and height so a tagged label is exactly as tall
+   as an untagged one - a pill on its own line pushed one card's value 21px below the
+   three beside it. */
+.ptag{display:inline-flex;align-items:center;height:16px;box-sizing:border-box;
+  font-size:8.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;
+  padding:0 5px;border-radius:4px;border:1px solid transparent;white-space:nowrap;line-height:1}
+.pt-act{background:#edf6f0;border-color:#d4e6da;color:#356f4b}
+.pt-tax{background:#ecf1f8;border-color:#d3deee;color:#33578c}
+.pt-proj{background:#fbf4e8;border-color:#eee0c4;color:#8a6018}
+.pt-plan{background:#f3eefb;border-color:#e0d6f3;color:#5f4599}
+/* On the dark hero cards the light chips shouted; these sit in the surface instead. */
+.mc-hero .ptag, #tax-hero-card .ptag{background:rgba(255,255,255,.16);border-color:rgba(255,255,255,.30);color:#eaf6ee}
+/* Inside a flex label the row already supplies the gap. */
+.cf-lbl .ptags, .bgt-kpi-l .ptags{margin-left:0}
+.mc-lbl .ptags, .skpi-lbl .ptags, .pf-kpi .l .ptags{margin-left:6px}
+/* A tagged label must occupy exactly the same height as an untagged one, or the value
+   under it sits lower than the values in the cards beside it. */
+.mc-lbl{display:flex;align-items:center;line-height:15px;min-height:15px}
+.mc-lbl .ptag{height:14px;font-size:8px}
 .skpi-val{font-size:24px;font-weight:800;letter-spacing:-.5px;color:var(--gd);font-variant-numeric:tabular-nums}
 .skpi-sub{font-size:11px;color:var(--gl);font-weight:600;margin-top:3px}
 .skpi-sub.dn{color:var(--rd)}
@@ -7016,7 +7030,7 @@ body.no-livestock .tours-menu-item.ent-livestock{display:none}
 
   <div class="metrics m4" style="margin-bottom:20px">
     <div class="mc"><div class="mc-icon g"><svg viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg></div><div class="mc-lbl" id="inc-lbl-in">Money In (This Month)</div><div class="mc-val g" id="inc-metric-in">£55,365</div><div class="mc-chg up" id="inc-chg-in">↑ 16% vs last month</div></div>
-    <div class="mc"><div class="mc-icon g"><svg viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></div><div class="mc-lbl" id="inc-lbl-profit">Profit</div><span id="inc-tag-profit"></span><div class="mc-val g" id="inc-metric-profit">£11,893</div><div class="mc-chg up" id="inc-chg-profit">↑ 18% vs last month</div></div>
+    <div class="mc"><div class="mc-icon g"><svg viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></div><div class="mc-lbl">Profit<span id="inc-tag-profit"></span></div><div class="mc-val g" id="inc-metric-profit">£11,893</div><div class="mc-chg up" id="inc-chg-profit">↑ 18% vs last month</div></div>
     <div class="mc"><div class="mc-icon b"><svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/></svg></div><div class="mc-lbl" id="inc-lbl-ytd">Year-to-Date Income</div><div class="mc-val b" id="inc-metric-ytd">—</div><div class="mc-chg" id="inc-chg-ytd">↑ 22% vs last year</div></div>
     <div class="mc"><div class="mc-icon p"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div><div class="mc-lbl">Best Month This Year</div><div class="mc-val p" id="inc-metric-best">—</div><div class="mc-chg" id="inc-chg-best" style="color:var(--t3)">—</div></div>
   </div>
@@ -7817,7 +7831,7 @@ body.no-livestock .tours-menu-item.ent-livestock{display:none}
         <div class="bgt-trackfoot"><span id="bgt-kpi-out-f1"></span><span id="bgt-kpi-out-f2"></span></div>
       </div>
       <div class="bgt-kpi kpi-tap" style="--stripe:var(--bl)" onclick="kpiOpen('bgtNet')"><span class="kpi-i">&#9432;</span>
-        <div class="bgt-kpi-l"><span>Profit goal</span><span id="bgt-kpi-net-tags"></span><span id="bgt-kpi-net-chip"></span></div>
+        <div class="bgt-kpi-l"><span>Profit goal<span id="bgt-kpi-net-tags"></span></span><span id="bgt-kpi-net-chip"></span></div>
         <div class="bgt-kpi-v" id="bgt-kpi-net-v">&#8212;</div>
         <div class="bgt-kpi-t" id="bgt-kpi-net-t"></div>
         <div class="bgt-track"><div class="bgt-fill" id="bgt-kpi-net-fill" style="--fillc:var(--bl);width:0%"></div><div class="bgt-tick" id="bgt-kpi-net-tick" style="display:none"></div></div>
@@ -16682,9 +16696,8 @@ setEl('inc-banner-val',    fmt(R.income));
   _incPillsOn(fyMode ? 'fy' : p);
 
 setEl('inc-lbl-in',     'Money In (' + lbl + ')');
-  setEl('inc-lbl-profit', 'Profit');
-  /* The same figure the Dashboard shows for the year so far, tagged so the two read
-     as one number rather than two that happen to match. */
+    /* The tile is simply "Profit"; the tag says which period and on what basis, so the
+     figure reads as one number with the Dashboard rather than two that happen to match. */
   if(typeof setTags==='function') setTags('inc-tag-profit','actual', fyMode ? 'Year so far' : lbl, 'actual', 'Cash');
 
 var prevInc  = _prevBase.income;
@@ -52597,7 +52610,28 @@ function renderTax(){
     ".txc-btns{display:flex;gap:7px;margin-top:auto;padding-top:4px}"+
     ".txb-b{flex:1;text-align:center;font-size:12px;font-weight:700;border-radius:8px;padding:8px 6px;cursor:pointer}"+
     ".txb-b.pri{color:var(--gd);background:var(--gb);border:1px solid var(--gp)}.txb-b.sec{color:var(--t2);background:var(--br2);border:1px solid transparent}"+
-    ".txb-note{font-size:11px;color:var(--t4);margin-top:9px;line-height:1.45}";
+    ".txb-note{font-size:11.5px;color:var(--t3);margin-top:10px;line-height:1.6;max-width:96ch}"+
+    /* A note carrying a left rule needs room between the rule and the first letter, or
+       the two read as one struck-through block. */
+    ".txb-note[style*=\'border-left\']{padding:2px 0 2px 11px;border-radius:0 6px 6px 0}"+
+    /* THE BLOCKS INSIDE A BAND HAD NO CSS AT ALL. band() emits .txb / .txb-t / .txb-m /
+       .txb-bd, while the stylesheet only ever defined .txb-tt and .txb-meta for the band
+       headers - so every section inside the year-end report rendered at body weight with
+       no space above it, and each heading ran straight into the paragraph before it. */
+    ".txb{margin:0}"+
+    ".txb+.txb{margin-top:20px;padding-top:18px;border-top:1px solid var(--br)}"+
+    ".txb-t{font-size:13.5px;font-weight:800;letter-spacing:-.01em;line-height:1.2;color:var(--t1)}"+
+    ".txb-m{font-size:11px;color:var(--t4);font-weight:600;margin-top:2px;line-height:1.35}"+
+    ".txb-bd{font-size:12px;color:var(--t2);line-height:1.6}"+
+    ".txb-bd .tx-kv,.txb-bd table{margin-top:2px}"+
+    /* Breathing room before the next statutory section and its month stepper. */
+    ".txband{margin-bottom:30px}"+
+    ".txband+.txband{padding-top:24px}"+
+    /* The report blocks and the statutory sections are SIBLINGS, so the last block of one
+       report sat flush against the next section's heading - "Open full statement" touching
+       "Every month - Payroll". A crossing between the two is a major boundary; two blocks
+       within one report (.txb+.txb above) is a minor one. */
+    ".txb+.txband,.txband+.txb{margin-top:30px;padding-top:24px;border-top:1px solid var(--br)}";
     document.head.appendChild(st); }
 
   var h='<div class="tx2">'+
@@ -54161,7 +54195,9 @@ function ukMtdReportHTML(fy){
     /* ST.accountingBasis is written nowhere. The Settings control writes ST.cashBasis,
        which is what every other reader uses — so this card told a cash-basis farm it was
        on accruals, on the one screen that decides what its quarterly updates contain. */
-    '<div class="txb-meta">Running totals for '+esc(_txFyLabel(fy))+' &middot; basis: '+esc((window.ST&&ST.cashBasis)?'cash':'accruals')+'</div></div></div>';
+    '<div class="txb-meta">Running totals for '+esc(_txFyLabel(fy))+' &middot; basis: '+esc((window.ST&&ST.cashBasis)?'cash':'accruals')+
+      ((st&&st.inScope)?(' &middot; <b style="color:var(--gd)">'+(st.live?'mandated now':'mandated from '+esc(D(st.from)))+'</b>'):'')+
+      '</div></div></div>';
 
   /* Scope. A farmer who is not caught should not be shown four deadlines. */
   var scope;
@@ -54172,8 +54208,12 @@ function ukMtdReportHTML(fy){
       (st.watch?(' '+esc(st.watch)):'')+'</div>'+
       '<div class="txb-note">Qualifying income is <b>turnover</b>, not profit &mdash; a farm on thin margins is still caught.</div>';
   } else {
-    scope='<div class="mtd-strip ok"><b>'+(st.live?'Mandated now':'Mandated from '+esc(D(st.from)))+'.</b> '+
-      _mtdBasisPhrase()+' of '+money(st.income)+' is over the '+money(st.threshold)+' threshold.'+
+    /* Four full-width banners stood between the farmer and the figures: the mandate, the
+       question, how to file, and what was late. Only the question needs an answer, so only
+       the question gets a card. The mandate is now a word in the header with its working
+       on one quiet line; how to file sits with the figures it applies to; what is late
+       goes on the deadline strip that already says which quarter is next. */
+    scope='<div class="txb-note">'+_mtdBasisPhrase()+' of '+money(st.income)+' is over the '+money(st.threshold)+' threshold.'+
       (st.deferred?' You are on the <b>farmers&rsquo; averaging deferral</b>, which moves you to '+esc(D(st.from))+'.':'')+'</div>';
     /* The deferral is worth a year, so it is worth asking for properly rather than
        assuming. It is automatic ONLY where averaging was claimed on the 2024-25 return;
@@ -54205,12 +54245,13 @@ function ukMtdReportHTML(fy){
      no HMRC connection. Say so before the deadlines, and point at HMRC's own list. */
   var _swUrl='https://www.gov.uk/guidance/choose-the-right-software-for-making-tax-digital-for-income-tax';
   var _swLink='<a href="'+_swUrl+'" target="_blank" rel="noopener noreferrer">Find software HMRC accepts &#8599;</a>';
+  var swNote='';
   if(st && st.inScope){
-    scope+= st.live
-      ? '<div class="mtd-strip info"><b>Send these to HMRC with other software.</b> '+
-        'AgriInsights can&rsquo;t send updates to HMRC yet. Copy the figures below into software that can, '+
+    swNote= st.live
+      ? '<div class="txb-note"><b>Send these to HMRC with other software.</b> '+
+        'AgriInsights can&rsquo;t send updates yet. Copy the figures above into software that can, '+
         'then click a quarter&rsquo;s status to mark it filed. '+_swLink+'</div>'
-      : '<div class="mtd-strip info"><b>From '+esc(D(st.from))+' you&rsquo;ll need software that sends updates to HMRC.</b> '+
+      : '<div class="txb-note"><b>From '+esc(D(st.from))+' you&rsquo;ll need software that sends updates to HMRC.</b> '+
         'AgriInsights can&rsquo;t send them yet &mdash; it keeps the records and works out the figures. '+_swLink+'</div>';
   }
 
@@ -54218,8 +54259,8 @@ function ukMtdReportHTML(fy){
   var dl='';
   if(late.length){
     dl+='<div class="mtd-strip bad"><b>&#9888; '+late.length+' update'+(late.length>1?'s':'')+' past the deadline.</b> '+
-      late.map(function(o){ return 'Q'+o.q+' was due '+esc(D(o.due))+' ('+o.daysLate+' day'+(o.daysLate===1?'':'s')+' ago)'; }).join(' &middot; ')+
-      '. Updates are cumulative, so the next one restates the year and brings you back up to date &mdash; but each missed deadline is a penalty point.</div>';
+      late.map(function(o){ return 'Q'+o.q+' was due '+esc(D(o.due))+', '+o.daysLate+' day'+(o.daysLate===1?'':'s')+' ago'; }).join(' &middot; ')+
+      '. Each one is a penalty point.</div>';
   }
   if(next){
     dl+='<div class="mtd-next"><div><div class="mtd-next-l">Next update</div>'+
@@ -54357,7 +54398,9 @@ function ukMtdReportHTML(fy){
     '<span class="txb-b sec" onclick="ukMtdPrint('+fy+')">Print / PDF</span>'+
     '<span class="txb-b sec" onclick="ukMtdCsv('+fy+')">CSV</span></div>';
 
-  return '<section class="txband">'+head+scope+dl+table+estimate+boxes+ready+acts+'</section>';
+  /* The table's own footnote already says updates are cumulative - saying it twice, two
+     lines apart, was the same noise in a quieter typeface. */
+  return '<section class="txband">'+head+scope+dl+table+swNote+estimate+boxes+ready+acts+'</section>';
 }
 function ukMtdCsv(fy){
   var next=ukMtdNextObligation(fy), q=(next?next.q:4);
