@@ -17593,6 +17593,11 @@ function updateDashboardFigures() {
   var prevLbl   = prevMonthLabel(month).split(' ')[0];
 
 var noData = (cur.income === 0 && cur.expenses === 0);
+  /* Income recorded and not one cost. A farming month always has costs, so this is a
+     half-filled ledger, not a 100% margin - and "Profitable / 100.0% Healthy / profit
+     secured" off a farmer's first entry is the app at its most confident when it knows
+     least. Name what is missing instead, and hold the margin until it is there. */
+  var noCosts = (!noData && cur.income > 0 && cur.expenses === 0);
 
 var stripe = $('dash-combo-stripe');
   if (stripe) stripe.className = 'combo-stripe' + (profit < 0 ? ' bad' : '');
@@ -17604,10 +17609,10 @@ var badgeSvg = $('dash-combo-badge-svg');
       : '<polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/>';
   }
 
-setEl('dash-combo-lbl', noData ? 'Nothing recorded yet' : (profit >= 0 ? 'Yes, your farm is' : 'No — your farm made a'));
-  setEl('dash-combo-val', noData ? 'Waiting for your first entries' : (profit >= 0 ? 'Profitable' : 'Loss this month'));
+setEl('dash-combo-lbl', noData ? 'Nothing recorded yet' : (noCosts ? 'So far this month' : (profit >= 0 ? 'Yes, your farm is' : 'No — your farm made a')));
+  setEl('dash-combo-val', noData ? 'Waiting for your first entries' : (noCosts ? 'Costs not recorded yet' : (profit >= 0 ? 'Profitable' : 'Loss this month')));
 
-var dotState = noData ? 'amber' : (profit < 0 ? 'red' : (parseFloat(margin) >= 15 ? 'green' : 'amber'));
+var dotState = (noData || noCosts) ? 'amber' : (profit < 0 ? 'red' : (parseFloat(margin) >= 15 ? 'green' : 'amber'));
   var dotEl = $('dash-combo-dot');
   if (dotEl) dotEl.className = 'tl-dot ' + dotState;
 
@@ -17616,6 +17621,8 @@ var subEl = $('dash-combo-sub');
     var subText;
     if (noData) {
       subText = 'Nothing here yet. Add your first sale or expense with the + button.';
+    } else if (noCosts) {
+      subText = fmt(cur.income) + ' of income in, and no costs yet — add this month’s costs to see what you actually kept.';
     } else if (profit >= 0) {
       if (profDelta !== 0 && Math.abs(prevProf) > 0.01) {
         var arrow = profDelta >= 0 ? '↑ ' : '↓ ';
@@ -17631,7 +17638,7 @@ var subEl = $('dash-combo-sub');
   }
 
 var _mEl=$('dash-combo-margin');
-  if(_mEl) _mEl.innerHTML = noData ? '—' : (margin + '% <span style="font-size:9.5px;font-weight:800;padding:2px 7px;border-radius:999px;margin-left:5px;vertical-align:middle;background:'+_mh.bg+';color:'+_mh.color+'">'+_mh.word+'</span>');
+  if(_mEl) _mEl.innerHTML = (noData || noCosts) ? '—' : (margin + '% <span style="font-size:9.5px;font-weight:800;padding:2px 7px;border-radius:999px;margin-left:5px;vertical-align:middle;background:'+_mh.bg+';color:'+_mh.color+'">'+_mh.word+'</span>');
   var marginChgEl = $('dash-combo-margin-chg');
   if (marginChgEl) {
     var prevMargin = prevPrf.income > 0 ? (prevProf / prevPrf.income * 100) : null;
@@ -17734,8 +17741,8 @@ var prev       = txSummary(prevMonthLabel(month));
 
 var marginEl = $('cf-margin-detail');
   if (marginEl) {
-    marginEl.innerHTML = margin + '% margin';
-    marginEl.style.color = _mh.color;
+    marginEl.innerHTML = (noData || noCosts) ? 'margin once costs are in' : (margin + '% margin');
+    marginEl.style.color = (noData || noCosts) ? 'var(--t4)' : _mh.color;
   }
 
 var txCount = ST.txns.filter(function(t){
@@ -18649,48 +18656,134 @@ var farmNameEl = document.getElementById('farm-name');
   toast('Settings saved!', 'success');
 }
 
-// Empty every data-bearing module in memory (records the user sees), leaving
-// config/UI keys (rates, cropTypes, activeTab, prices) intact. Type-safe so an
-// unexpected shape can never throw. Used by both the onboarding "fresh" path and
-// the Settings "Start fresh" button.
-/* opts.keepIdentity leaves the farm name, owner, region, hectares and tax settings
-   alone and clears only the records. Three callers, two different needs: wiping the
-   identity is right when the data on this device is not yours (a demo seed, or the
-   previous account on a shared farm-office machine), and wrong when a farmer who has
-   already set up their own farm just wants the example records gone. */
+/* WHAT A FRESH FARM STARTS WITH
+   -----------------------------------------------------------------------------
+   The sample farm is not seeded on top of an empty app - it IS the declared value
+   of ST_WORK, ST_LS, ST.schemes and the rest. So the wipe below is the only thing
+   standing between a pilot farmer and another farm's records, and the old version
+   worked by naming keys: it emptied the arrays it knew about and left every sibling
+   key, and every module it did not name, exactly as declared. Walking a genuinely
+   fresh farm found what a new farmer inherited - an employers' liability policy
+   marked "in force" (compulsory cover, so the one inherited record that could cost
+   them money), a bovine TB testing history, a 1.2m machinery loan application
+   offered as "pick up where you left off", the demo's delinked and SFI agreements,
+   four named grazing fields, seasonal headcounts and a wheat hedge.
+
+   Two lists per module now, and the SECOND one is the safety net. FRESH_SHAPE names
+   every record-bearing key and the value it goes back to. FRESH_CONFIG names the
+   keys that are settings rather than records, and are kept. A key in NEITHER list is
+   reported by freshResidue() - so the next key added to a module surfaces as a fault
+   instead of surviving a fresh start in silence, which is how all of the above got
+   through. */
+var FRESH_SHAPE = {
+  ST:         { txns:[], deletedTxns:[], importBatches:[], coopSettlements:[], recurring:[],
+                schemes:[], stSnap:[], capIgnore:{}, bankBalance:null, budgetExpenseTarget:0 },
+  ST_ASSETS:  { assets:[], nextId:1 },
+  ST_LOANS:   { loans:[], overdrafts:[], coopAccounts:[], archived:[],
+                confirmed:{month:null,paid:{}}, nextId:1, nextOdId:1, nextCoId:1 },
+  /* nmwRate and hoursWeek are statute, not records, and stay. Everything the farm
+     has DONE about employment law goes: the NI it has paid over, the liability
+     policy and whether it was filed, the documents, the seasonal headcounts. */
+  ST_WORK:    { workers:[], payRuns:[], seasonal:{}, paye:{},
+                compliance:{ niPayments:[], empLiability:null, empLiabilityFiled:false, untracked:{}, docs:[] } },
+  /* tb.area back to blank, not to a risk area: ukTbArea() then derives it from the
+     farm's own country instead of asserting the sample farm's HRA. */
+  ST_LS:      { camps:[], herd:[], animals:[], moves:[], treatments:[], health:[], breedings:[], fields:[],
+                tb:{ area:'', lastWholeHerdTest:'', intervalMonths:0, restriction:null, tests:[] } },
+  ST_FRUIT:   { blocks:[], pricing:{}, sprayDiary:{}, phi:{}, harvest:[] },
+  ST_CROP:    { lands:[], events:[], inputs:[], compliance:{}, season:'' },
+  ST_PLAN:    { crops:[], events:[], hedge:{}, orchSpill:0 },
+  ST_LOANAPP: { req:{}, income:{}, estimates:{}, track:{}, landWater:{}, savedAt:'' }
+};
+var FRESH_CONFIG = {
+  /* ST.budgets and ST_PLAN.months keep their frame and lose their figures, in code
+     below, because a farm keeps its spread pattern and its twelve month rows. */
+  ST:         ['budgets','farmName','ownerName','province','region','farmHa','farmType','farmEnterprise',
+               'vatRegistered','vatCategory','vatNumber','taxNumber','cphNumber','entityType',
+               'fyStartMonth','fyStartDay','seasonStartMonth','seasonStartDay','planYear','capThreshold',
+               'lang','firstRun','diagnostics','simpleView','nudgeSeen','lastActivity','lastSaved','charts',
+               'period','cfPeriod','incPeriod','incPeriodSel','expPeriod','expPeriodSel','txPeriodSel',
+               'saleType','saleFreq','expType','expFreq','showDemoBtn','showTourBtn','showTargetBar',
+               'showExpBar','demoData','demoNudgeHidden','consent','_ukYears'],
+  ST_ASSETS:  [],
+  ST_LOANS:   ['activeTab'],
+  ST_WORK:    ['activeTab','nmwRate','hoursWeek','taxThreshold','payRepPeriod'],
+  ST_LS:      ['filterHealth'],
+  ST_FRUIT:   ['activeTab','market','comply'],
+  ST_CROP:    ['activeTab','filter','complyView','cropTypes','prices'],
+  ST_PLAN:    ['activeTab','view','months','editingIdx','editingEventIdx'],
+  ST_LOANAPP: []
+};
+function _freshCopy(v){
+  if (v === null || typeof v !== 'object') return v;
+  try { return JSON.parse(JSON.stringify(v)); } catch(e){ return Array.isArray(v) ? [] : {}; }
+}
+/* Anything a module still holds after a fresh start that is neither a record we reset
+   nor a setting we keep. Call it in any test of the first-run path - an empty list is
+   the pass. It reports two kinds of fault: a record that did not go back to its fresh
+   value, and a key nobody has classified yet. */
+function freshResidue(){
+  var out = [];
+  Object.keys(FRESH_SHAPE).forEach(function(mod){
+    var o = window[mod]; if (!o || typeof o !== 'object') return;
+    var shape = FRESH_SHAPE[mod] || {}, cfg = FRESH_CONFIG[mod] || [];
+    Object.keys(o).forEach(function(k){
+      if (Object.prototype.hasOwnProperty.call(shape, k)) {
+        var now, fresh;
+        try { now = JSON.stringify(o[k]); fresh = JSON.stringify(shape[k]); } catch(e){ return; }
+        if (now !== fresh) out.push({ module:mod, key:k, why:'record not cleared', holds:String(now).slice(0,80) });
+        return;
+      }
+      if (cfg.indexOf(k) >= 0) return;
+      out.push({ module:mod, key:k, why:'unclassified - add to FRESH_SHAPE (record) or FRESH_CONFIG (setting)' });
+    });
+  });
+  return out;
+}
+/* Empty every data-bearing module in memory (the records the farmer sees), leaving
+   settings intact. Used by the onboarding "fresh" path, by the Settings "Start fresh"
+   button, and by ai-auth when the signed-in farm does not match this device's data.
+   opts.keepIdentity leaves the farm name, owner, region, hectares and tax settings
+   alone and clears only the records: wiping the identity is right when the data on
+   this device is not yours (a sample seed, or the previous account on a shared
+   farm-office machine) and wrong when a farmer who has already set up their own farm
+   just wants the example records gone. */
 function clearAllToFresh(opts) {
   var keepIdentity = !!(opts && opts.keepIdentity);
-  function E(o, k){ if (o && (k in o)) { var v = o[k]; o[k] = Array.isArray(v) ? [] : (v && typeof v === 'object' ? {} : v); } }
   try {
-    if (typeof ST !== 'undefined') {
-      E(ST,'txns'); E(ST,'importBatches'); E(ST,'coopSettlements'); E(ST,'recurring');
-      if (ST.budgets) { E(ST.budgets,'monthlyIncome'); E(ST.budgets,'monthlyExpenses'); }
-      ST.budgetExpenseTarget = 0;
-      // Clear the demo FARM IDENTITY too — otherwise a fresh/new user keeps seeing
-      // "Oakvale Farm / James Whitaker" in the header + profile, and the
-      // demo entityType ('sole') would silently drive the tax calc. Blank = "not set
-      // yet" so the user fills in their own; leave UI-preference fields (lang etc.)
-      // and the AHDB reference prices untouched.
-      if (!keepIdentity) {
-        ST.farmName = ''; ST.ownerName = ''; ST.province = ''; ST.region = '';
-        ST.farmHa = 0; ST.vatRegistered = false; ST.entityType = '';
-        if ('taxNumber' in ST) ST.taxNumber = '';
-        if ('vatNumber' in ST) ST.vatNumber = '';
-      }
+    Object.keys(FRESH_SHAPE).forEach(function(mod){
+      var o = window[mod]; if (!o || typeof o !== 'object') return;
+      var shape = FRESH_SHAPE[mod];
+      Object.keys(shape).forEach(function(k){
+        // Only keys the module actually declares, so this never invents state.
+        if (k in o) o[k] = _freshCopy(shape[k]);
+      });
+    });
+    // The budget keeps its spread pattern and its current month; only the figures go.
+    if (typeof ST !== 'undefined' && ST.budgets) { ST.budgets.monthlyIncome = {}; ST.budgets.monthlyExpenses = {}; }
+    // The plan keeps its twelve rows; each one goes back to zero.
+    if (typeof ST_PLAN !== 'undefined' && Array.isArray(ST_PLAN.months)) {
+      ST_PLAN.months.forEach(function(m){ if(!m) return; m.income=0; m.expenses=0; m.activity=''; m.actIncome=0; m.actExpenses=0; m.events=[]; });
+    }
+    /* Rebuilt, not emptied: a farm still has the same certificates to hold, with
+       nothing recorded against them yet. This was already the one module done this
+       way, and it is why it was the only one that came back clean. */
+    if (typeof ST_FRUIT !== 'undefined') ST_FRUIT.comply = (typeof orComplyScaffold === 'function') ? orComplyScaffold() : {};
+    /* Blank = "not set yet", so the farmer fills in their own. The sample identity has
+       to go with the sample records - otherwise a new user keeps seeing "Oakvale Farm /
+       James Whitaker", and the sample entityType would silently drive the tax calc. */
+    if (typeof ST !== 'undefined' && !keepIdentity) {
+      ST.farmName = ''; ST.ownerName = ''; ST.province = ''; ST.region = '';
+      ST.farmHa = 0; ST.vatRegistered = false; ST.entityType = '';
+      if ('taxNumber' in ST) ST.taxNumber = '';
+      if ('vatNumber' in ST) ST.vatNumber = '';
+      if ('cphNumber' in ST) ST.cphNumber = '';
+      if ('farmType' in ST) ST.farmType = '';
+      if ('farmEnterprise' in ST) ST.farmEnterprise = null;
     }
     if (typeof FARM !== 'undefined' && !keepIdentity) {
       FARM.name = ''; FARM.owner = ''; FARM.ha = 0;
       FARM.vat = false; FARM.vatNo = ''; FARM.taxNo = '';
-    }
-    if (typeof ST_ASSETS !== 'undefined') { E(ST_ASSETS,'assets'); ST_ASSETS.nextId = 1; }
-    if (typeof ST_LOANS !== 'undefined') { ['loans','overdrafts','coopAccounts','archived'].forEach(function(k){ E(ST_LOANS,k); }); }
-    if (typeof ST_WORK !== 'undefined') { ['workers','payRuns'].forEach(function(k){ E(ST_WORK,k); }); }
-    if (typeof ST_LS !== 'undefined') { ['camps','herd','animals','moves','treatments','health','breedings'].forEach(function(k){ E(ST_LS,k); }); }
-    if (typeof ST_FRUIT !== 'undefined') { ['blocks','pricing','sprayDiary','phi','harvest'].forEach(function(k){ E(ST_FRUIT,k); }); ST_FRUIT.comply=(typeof orComplyScaffold==='function'?orComplyScaffold():{}); }
-    if (typeof ST_CROP !== 'undefined') { ['lands','events','inputs','compliance'].forEach(function(k){ E(ST_CROP,k); }); }
-    if (typeof ST_PLAN !== 'undefined') {
-      E(ST_PLAN,'crops'); E(ST_PLAN,'events');
-      if (Array.isArray(ST_PLAN.months)) ST_PLAN.months.forEach(function(m){ m.income=0; m.expenses=0; m.activity=''; m.actIncome=0; m.actExpenses=0; m.events=[]; });
     }
   } catch(e){ console.error('clearAllToFresh', e); }
 }
@@ -40103,6 +40196,9 @@ var ST_SNAP_MAX = 60;
 function stSnapTake(){
   try{
     if(typeof ST==='undefined') return;
+    /* Nothing recorded, nothing to snapshot. Without this a fresh farm carries an
+       all-zero baseline row that freshResidue() cannot tell from real residue. */
+    if(!((ST.txns||[]).length)) return;
     var V=(typeof stComputeVariance==='function')?stComputeVariance():null;
     if(!V) return;
     var today=(typeof APP_TODAY!=='undefined'&&APP_TODAY)?APP_TODAY:new Date();
@@ -50585,12 +50681,39 @@ function _provIncomeLumpy(){
 /* A figure that is not a number is not a figure. One transaction row with no amount
    turned the whole year's income into NaN, and everything built on it. */
 function _txNum(v){ var n=Number(v); return isFinite(n) ? n : 0; }
+/* Months of RECORDS in this tax year - the span from the farm's first recorded entry
+   to this month - not the calendar's count of months since 6 April. On a farm whose
+   books open in September the two are 1 and 6, and the difference is not cosmetic:
+   dividing a single wheat sale by six and multiplying by twelve turned 18,400 into a
+   36,800 year and a 6,300 tax estimate on a farm five minutes old. */
+function _txLedgerMonths(fy, fyMonths, meCal){
+  var first=-1;
+  try{
+    ((typeof ST!=='undefined'&&ST.txns)||[]).forEach(function(t){
+      if(!t || (t.type!=='income' && t.type!=='expense')) return;
+      if(typeof fyOf==='function' && fyOf(t.date)!==fy) return;
+      var d=parseDate(t.date); if(!d) return;
+      var i=fyMonths.indexOf(MONTH_LABELS_SHORT[d.m]+' '+d.y);
+      if(i<0 || i>=meCal) return;
+      if(first<0 || i<first) first=i;
+    });
+  }catch(e){ return 0; }
+  if(first<0) return 0;
+  return Math.max(1, meCal-first);
+}
 function taxProvEstimate(){
   var ytd=ytdSummary({taxBasis:true}), fy=getCurrentFY(), fyMonths=getFYMonths(fy), cur=currentPeriodLabel();
-  var me=fyMonths.indexOf(cur)+1; if(me<1) me=5;
+  var meCal=fyMonths.indexOf(cur)+1; if(meCal<1) meCal=5;
+  var meLedger=_txLedgerMonths(fy, fyMonths, meCal);
+  var me=meLedger||meCal;
+  /* Under two months of records there is no rate to carry forward, so nothing is
+     annualised: the figures below are what the farm has actually recorded, and every
+     screen that shows them says so instead of calling them a projection. */
+  var tooNew=(meLedger>0 && meLedger<2);
   var entity=(ST.entityType)||'sole';
   // Straight-line baseline (also the fallback)
-  var slIncome=Math.round(ytd.income/me*12), slExpense=Math.round(ytd.expenses/me*12);
+  var slIncome=tooNew?Math.round(ytd.income):Math.round(ytd.income/me*12),
+      slExpense=tooNew?Math.round(ytd.expenses):Math.round(ytd.expenses/me*12);
   // Rolling forecast: actuals to date + planned remainder of the tax year (run-rate for any
   // tax-FY month the May-Apr plan doesn't cover, e.g. the Mar/Apr edge)
   var planMap=_provPlanMap(), rrIncome=ytd.income/me, rrExpense=ytd.expenses/me;
@@ -50608,7 +50731,7 @@ function taxProvEstimate(){
   var missingEnt=(ent.crops&&!hasCrops)?'crop':((ent.livestock&&!hasLive)?'livestock':((ent.orchards&&!hasOrch)?'orchard':null));
   var sparse=(planTotIncome<=0)||(slIncome>0&&planTotIncome<slIncome*0.5);
   var planComplete=(!missingEnt&&!sparse&&planTotIncome>0);
-  var basis=planComplete?'plan':'straight';
+  var basis=(planComplete && !tooNew)?'plan':'straight';
   var annualIncome=_txNum((basis==='plan')?planIncome:slIncome);
   var annualExpense=_txNum((basis==='plan')?planExpense:slExpense);
   var annualProfit=annualIncome-annualExpense;
@@ -50667,7 +50790,8 @@ function taxProvEstimate(){
           taxableProfit:taxableProfit,nonDed:annualNonDed,nonDedByCat:_sp.nonDedByCat,
           otherDed:annualOtherDed,capital:annualCapital,capAllow:annualCapAllow,balancingCharge:_bal,balancingProceeds:_balGot,capLim:0,ringFence:ringFence,
           provPayment:next.amt,pay1:pay1,pay2:pay2,entity:entity,next:next,dts:dts,poa:poaSch,total:annualTax,basis:basis,planComplete:planComplete,
-          monthsElapsed:me,nudge:nudge,daysAway:Math.ceil((next.d-now)/86400000),ok:(annualProfit>0&&annualIncome>0)};
+          monthsElapsed:me,monthsLedger:meLedger,tooNew:tooNew,
+          nudge:nudge,daysAway:Math.ceil((next.d-now)/86400000),ok:(annualProfit>0&&annualIncome>0)};
 }
 // VAT filing period for the farm's HMRC category (audit #7): A/B = 2-monthly
 // (HMRC assigns which); C = monthly; D = 6-monthly farming cycle; E = annual.
@@ -52764,7 +52888,7 @@ function taxGlanceHTML(){
   // total tax hero
   if(prov.ok){
     h+='<div id="tax-hero-card" style="background:linear-gradient(135deg,#1B4332,#2D6A4F);color:#fff;border-radius:16px;padding:18px 22px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px">'+
-      '<div><div style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;opacity:.75">Your estimated tax to HMRC this year'+profitTags('proj','Projected to 5 Apr','tax','Tax rules')+'</div>'+
+      '<div><div style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;opacity:.75">Your estimated tax '+(prov.tooNew?'on what you have recorded':'to HMRC this year')+(prov.tooNew?profitTags('actual','Year so far','tax','Tax rules'):profitTags('proj','Projected to 5 Apr','tax','Tax rules'))+'</div>'+
       '<div style="font-size:32px;font-weight:800">'+fmt(total)+'</div>'+
       (bank!=null&&prov.provPayment!=null?'<div style="font-size:12px;opacity:.85">after the next set-aside, <b>'+fmt(Math.max(0,Math.round(bank-prov.provPayment)))+'</b> of your balance is yours</div>':'<div style="font-size:12px;opacity:.85">income tax, '+(class4>0?'Class 4 NI, ':'')+'VAT and payroll combined</div>')+'</div>'+
       '<div style="display:flex;gap:8px;flex-wrap:wrap">'+
@@ -52791,13 +52915,15 @@ function taxGlanceHTML(){
          '<div style="font-size:20px;font-weight:800;color:var(--gd)">'+fmt(_L.taxable)+'</div></div>';
     }catch(e){}
     h+='<div style="font-size:12px;color:var(--t3);margin:-4px 0 12px;padding:0 2px">'+
-       'A projection for the full year — the '+prov.monthsElapsed+' month'+(prov.monthsElapsed===1?'':'s')+' banked so far, '+
-       (prov.basis==='plan'?'plus your plan for the rest of it':'carried on at the same rate to April')+'.'+
+       (prov.tooNew
+         ? 'Tax on what you have recorded so far — not a full-year figure. Your records start this month, so there is no rate yet to carry forward; the full-year projection appears once you have a month of trading behind you.'
+         : 'A projection for the full year — the '+prov.monthsElapsed+' month'+(prov.monthsElapsed===1?'':'s')+' banked so far, '+
+           (prov.basis==='plan'?'plus your plan for the rest of it':'carried on at the same rate to April')+'.')+
        /* on its own line, flush with the caption above it: as an inline-block it wrapped
           to a second line anyway and carried its 6px left margin with it, so the link sat
           indented from the sentence it belongs to */
-       '<span class="tx-wi" style="display:block;margin:2px 0 0"><details><summary>Why is it bigger than my Reports profit?</summary>'+
-       ' The Reports tab counts only what has actually happened. This one carries your banked months on to 5 April, to show what the whole year is heading for.</details></span>'+
+       (prov.tooNew ? '' : '<span class="tx-wi" style="display:block;margin:2px 0 0"><details><summary>Why is it bigger than my Reports profit?</summary>'+
+       ' The Reports tab counts only what has actually happened. This one carries your banked months on to 5 April, to show what the whole year is heading for.</details></span>')+
        /* Income tax, VAT and employer NI are the farm's own. PAYE and employee NI are the
           worker's tax: the farm withholds them from wages and passes them on, so they are
           in the total HMRC receives but they are not a cost to the business. Reading the
@@ -52842,7 +52968,7 @@ function taxGlanceHTML(){
 
   // waterfall + calendar
   h+='<div class="tx-g2">';
-  h+='<div class="tx-card" style="display:flex;flex-direction:column"><div class="tx-h">How your profit becomes tax'+profitTags('proj','Projected to 5 Apr')+'</div>';
+  h+='<div class="tx-card" style="display:flex;flex-direction:column"><div class="tx-h">How your profit becomes tax'+(prov.tooNew?profitTags('actual','Year so far'):profitTags('proj','Projected to 5 Apr'))+'</div>';
   var _rf=prov.ringFence||{allowed:0,carried:0,brought:0};
   if(prov.ok){
     /* The steps a farmer's money actually goes through, in HMRC's order — not a plain
@@ -61841,12 +61967,20 @@ function renderAttnCard(){
   var items = ATTN_CACHE = attnItems();
 
   if(!items.length){
+    /* An empty list means nothing is OVERDUE - which on a farm that has recorded
+       almost nothing is not the same as everything being in order. Claiming "every
+       check is logged" to a farmer on their first day is the same over-confidence as
+       a full-year tax projection built from one sale, so say which it is. */
+    var _attnNew = false;
+    try{ _attnNew = ((ST.txns||[]).length < 5); }catch(e){}
     el.innerHTML =
       '<div class="attn-head"><div class="sec-title" style="margin:0">Needs your attention</div>' +
-      '<span class="attn-count ok">All clear</span></div>' +
+      '<span class="attn-count ok">' + (_attnNew ? 'Nothing due' : 'All clear') + '</span></div>' +
       '<div class="attn-clear"><div class="ring">&#10003;</div>' +
-      '<div class="t">Nothing needs you today</div>' +
-      '<div class="s">Every check is logged, nothing has run out, and the books are up to date.</div></div>';
+      '<div class="t">' + (_attnNew ? 'Nothing due yet' : 'Nothing needs you today') + '</div>' +
+      '<div class="s">' + (_attnNew
+        ? 'Deadlines, licences and checks appear here as you record them. Nothing is overdue \u2014 there is not much on the books yet.'
+        : 'Every check is logged, nothing has run out, and the books are up to date.') + '</div></div>';
     return;
   }
 
