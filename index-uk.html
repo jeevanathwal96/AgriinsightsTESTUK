@@ -33,8 +33,8 @@
 <script defer src="vendor/chart.umd.js"></script>
 <!-- AgriInsights backend: Supabase client + data service (load order matters) -->
 <script src="vendor/supabase.js"></script>
-<script src="ai-data-uk.js?v=uk95"></script>
-<script src="ai-auth-uk.js?v=uk93"></script>
+<script src="ai-data-uk.js?v=uk97"></script>
+<script src="ai-auth-uk.js?v=uk94"></script>
 <link rel="stylesheet" href="fonts.css"/>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -62712,6 +62712,26 @@ function catRules(){
     return ST.catRules;
   }catch(e){ return []; }
 }
+/* Rules reach the server through their own table. Gated twice over: without a farm,
+   or on a project whose category_rules table is missing, AI.rules.saveAll returns
+   immediately and the rules stay on the device - the same behaviour as before this
+   was wired, never an error in the farmer's face.
+
+   Fire-and-forget on purpose. Making a rule is a UI action that must stay instant;
+   the save is small and the next change re-sends the whole list anyway, so a failed
+   round trip costs nothing but a console line.
+
+   Called from the three functions that MUTATE the list (add, remove, move) rather
+   than from the screens above them, so no future caller can forget it. Note that
+   hits/lastFired are bumped on every categorised row and deliberately do NOT sync
+   on their own - they ride along with the next structural change, so a usage count
+   read on a second device can lag. That is a display figure, not a record. */
+function catRuleSync(){
+  try{
+    if(!(window.AI && AI.farm && AI.farm.active() && AI.rules && AI.rules.saveAll)) return;
+    AI.rules.saveAll(catRules()).catch(function(e){ console.error('Backend rule save failed:', e); });
+  }catch(e){}
+}
 /* Bank descriptions carry card numbers, references and dates that differ line to
    line. The rule has to key on the part that repeats, so strip the noise and keep
    the first few words a human would recognise as the merchant. */
@@ -62798,6 +62818,7 @@ function catRuleMove(id, dir){
   var j=i+(dir<0?-1:1); if(j<0 || j>=list.length) return;
   var tmp=list[i]; list[i]=list[j]; list[j]=tmp;
   try{ saveState && saveState(); }catch(e){}
+  catRuleSync();                 // order is data: sort_idx comes from the position
 }
 /* The documented way a rules engine goes wrong: "a rule set up wrong quietly
    miscategorises every transaction it touches going forward, often for months
@@ -63071,17 +63092,24 @@ function catRuleAdd(match, cat, type){
   var list=catRules();
   var dup=null;
   list.forEach(function(r){ if(r.match===match && (r.type||'any')===(type||'any')) dup=r; });
-  if(dup){ dup.cat=cat; return dup; }                            // editing beats stacking
+  if(dup){ dup.cat=cat;
+    /* Was returning without saving, so re-pointing a rule at another category
+       survived only until the next reload. */
+    try{ saveState && saveState(); }catch(e){}
+    catRuleSync();
+    return dup; }                                                // editing beats stacking
   var r={ id:'cr'+(Date.now().toString(36))+Math.floor(Math.random()*1000).toString(36),
           match:match, cat:cat, type:type||'any', made:_catRuleToday(), hits:0 };
   list.push(r);
   try{ saveState && saveState(); }catch(e){}
+  catRuleSync();
   return r;
 }
 function catRuleRemove(id){
   var list=catRules();
   for(var i=0;i<list.length;i++){ if(list[i].id===id){ list.splice(i,1); break; } }
   try{ saveState && saveState(); }catch(e){}
+  catRuleSync();
 }
 /* Put back what a rule changed. Only rows this rule touched, only where the prior
    category was recorded.
