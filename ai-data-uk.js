@@ -1317,9 +1317,19 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
        still a whole-table replace, but no worse than before the change. */
     let oldIds = _srvIds(table);
     if (oldIds === null){
-      const prior = await selectAll(function(){ return client().from(table).select('id').eq('farm_id', fid); });
-      if (prior.error) throw prior.error;
-      oldIds = (prior.data || []).map(function(r){ return r.id; });
+      /* Never loaded here, so there is nothing this device is entitled to remove.
+         Reading the table's ids NOW and deleting them - which this did until a
+         harness caught it - destroys rows another device wrote, which is the whole
+         hazard the row memory exists to prevent. Prune nothing and insert anyway:
+         a visible duplicate is recoverable, a silent deletion is not. The
+         _srvSetIds below then gives the next save a proper scope, so at worst this
+         doubles once and corrects itself. */
+      if (!_pruneWarned[table]){
+        _pruneWarned[table] = 1;
+        console.warn('AgriInsights: ' + table + ' was never loaded on this device - '
+          + 'leaving its rows alone rather than replacing what it cannot see.');
+      }
+      oldIds = [];
     }
     /* Insert BEFORE deleting, so a failed write leaves the previous state intact -
        the 6 Sep 2026 behaviour this function was written for, kept exactly. */
