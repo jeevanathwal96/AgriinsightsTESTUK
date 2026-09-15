@@ -524,6 +524,26 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
   /* Server primary keys this device loaded - the scope for a replace-all child
      table, whose rows are positional and have no identity of their own. */
   function _srvIds(table){ var t=_SRV[table]; return t ? t.ids.slice() : null; }
+  /* Rows THIS device wrote belong in its row memory too. The memory was only ever filled
+     by a load, so a row added and then removed in the same session was never in it: the
+     prune skipped it, the server kept it, and it came back on the next load - proven on
+     both live test accounts with a filing rule (14 Sep 2026). Only rows the memory does
+     not already hold are added: a loaded row keeps the server's copy, whose updated_at
+     is what stops an unchanged row reading as freshly edited on the next save. Rows
+     another device wrote are still never in here, so they are still never pruned. */
+  function _srvWrote(table, rows){
+    var t = _SRV[table];
+    if(!t){ t = _SRV[table] = { rows:Object.create(null), ids:[], maxUa:false }; }
+    (rows||[]).forEach(function(r){ var k = _srvKey(table, r); if(k != null && !(k in t.rows)) t.rows[k] = r; });
+  }
+  /* And a row the prune has deleted leaves the memory, so the next save does not try again. */
+  function _srvForgetRows(table, field, values, filter){
+    var t = _SRV[table]; if(!t || !values || !values.length) return;
+    var gone = Object.create(null); values.forEach(function(v){ gone[String(v)] = 1; });
+    Object.keys(t.rows).forEach(function(k){ var r = t.rows[k];
+      if(filter && !filter(r)) return;
+      if(gone[String(r[field])]) delete t.rows[k]; });
+  }
   /* After a replace-all save, the rows this device holds are the ones it just
      wrote. Without this the SECOND save of a session would still be pointing at
      the ids it loaded - already deleted by the first save - so the first save's
@@ -1518,6 +1538,7 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
         const e=(await client().from('category_rules')
           .upsert(list.map(function(r,i){ return ruleToDb(r,fid,i); }),{onConflict:'farm_id,local_id'})).error;
         if(e) throw e;
+        _srvWrote('category_rules', list.map(function(r,i){ return ruleToDb(r,fid,i); }));
       }
       /* A rule removed here has to disappear on the other devices too - but only a
          rule THIS device loaded may be dropped, or a rule written elsewhere since
@@ -1527,6 +1548,7 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
       if(goneRu && goneRu.length){
         const e2=(await client().from('category_rules').delete().eq('farm_id',fid).in('local_id',goneRu)).error;
         if(e2) throw e2;
+        _srvForgetRows('category_rules','local_id',goneRu);
       }
       _ruleSnap=snap;
       return true;
@@ -1578,7 +1600,7 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
         }
       }
       var allClasses=[]; herds.forEach(function(h){ allClasses=allClasses.concat(classRows(h,fid)); });
-      if(allClasses.length){ const e=(await client().from('herd_classes').upsert(allClasses,{onConflict:'farm_id,herd_local_id,class_key'})).error; if(e) throw e; }
+      if(allClasses.length){ const e=(await client().from('herd_classes').upsert(allClasses,{onConflict:'farm_id,herd_local_id,class_key'})).error; if(e) throw e; _srvWrote('herd_classes', allClasses); }
       for(const h of herds){ var keys=(h.classes||[]).map(function(c){return c.k;});
         /* Only the classes THIS device loaded for THIS herd, so a class added
            elsewhere since is not destroyed by a tab that never saw it. Never
@@ -1588,15 +1610,15 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
         var goneHc=_srvGone('herd_classes',keepHc,'class_key',function(r){ return String(r.herd_local_id)===hidHc; });
         if(goneHc && goneHc.length){
           const e=(await client().from('herd_classes').delete().eq('farm_id',fid)
-                .eq('herd_local_id',hidHc).in('class_key',goneHc)).error; if(e) throw e;
+                .eq('herd_local_id',hidHc).in('class_key',goneHc)).error; if(e) throw e; _srvForgetRows('herd_classes','class_key',goneHc,function(r){ return String(r.herd_local_id)===hidHc; });
         } }
       var bkeys=Object.keys(bench);
-      if(bkeys.length){ const e=(await client().from('livestock_benchmarks').upsert(bkeys.map(function(k){return {farm_id:fid,bench_key:k,bench_value:Number(bench[k])};}),{onConflict:'farm_id,bench_key'})).error; if(e) throw e; }
+      if(bkeys.length){ const e=(await client().from('livestock_benchmarks').upsert(bkeys.map(function(k){return {farm_id:fid,bench_key:k,bench_value:Number(bench[k])};}),{onConflict:'farm_id,bench_key'})).error; if(e) throw e; _srvWrote('livestock_benchmarks', bkeys.map(function(k){ return {farm_id:fid,bench_key:k}; })); }
       { var keepBm={}; bkeys.forEach(function(k){ keepBm[String(k)]=1; });
         var goneBm=_srvGone('livestock_benchmarks',keepBm,'bench_key');
         if(goneBm && goneBm.length){
           const e=(await client().from('livestock_benchmarks').delete()
-                .eq('farm_id',fid).in('bench_key',goneBm)).error; if(e) throw e;
+                .eq('farm_id',fid).in('bench_key',goneBm)).error; if(e) throw e; _srvForgetRows('livestock_benchmarks','bench_key',goneBm);
         } }
       // append-only logs: upsert by local_id, no prune (no delete UI except animals→removeAnimal)
       if(moves.length){ const e=(await client().from('livestock_moves').upsert(moves.map(function(m){return moveToDb(m,fid);}),{onConflict:'farm_id,local_id'})).error; if(e) throw e; }
@@ -1835,7 +1857,7 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
       const snap=JSON.stringify({b:stf.blocks,p:stf.pricing,s:stf.sprayDiary,h:stf.harvest,c:stf.comply});
       if(snap===_orSnap) return true;
       const blocks=(stf.blocks||[]); const blockIds=blocks.map(function(b){return String(b.id);});
-      if(blocks.length){ const e=(await client().from('orchard_blocks').upsert(blocks.map(function(b){return obToDb(b,fid);}),{onConflict:'farm_id,local_id'})).error; if(e) throw e; }
+      if(blocks.length){ const e=(await client().from('orchard_blocks').upsert(blocks.map(function(b){return obToDb(b,fid);}),{onConflict:'farm_id,local_id'})).error; if(e) throw e; _srvWrote('orchard_blocks', blocks.map(function(b){ return {farm_id:fid,local_id:String(b.id)}; })); }
       /* Blocks the farmer deleted. Scoped to blocks this device loaded, so a block
          added elsewhere since is not destroyed by a tab that never saw it. */
       { var keepBl={}; blockIds.forEach(function(k){ keepBl[String(k)]=1; });
@@ -1843,7 +1865,7 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
         /* null = this device never loaded the table. Prune nothing: a blind
            whole-farm wipe is exactly the behaviour being removed. */
         if(goneBl && goneBl.length){ const e=(await client().from('orchard_blocks').delete()
-              .eq('farm_id',fid).in('local_id',goneBl)).error; if(e) throw e; } }
+              .eq('farm_id',fid).in('local_id',goneBl)).error; if(e) throw e; _srvForgetRows('orchard_blocks','local_id',goneBl); } }
       // block docs: replace-all (small metadata child set)
       var docRows=[]; blocks.forEach(function(b){ (b.docs||[]).forEach(function(d,i){
         var _r={farm_id:fid,block_local_id:String(b.id),name:d.name||null,kind:d.kind||null,added:d.added||null,sort_idx:i};
@@ -1854,11 +1876,11 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
       await replaceAllRows('orchard_block_docs', fid, docRows);
       // pricing upsert + prune
       var pricing=stf.pricing||{}; var pkeys=Object.keys(pricing).filter(function(k){return blockIds.indexOf(String(k))>=0;});
-      if(pkeys.length){ const e=(await client().from('orchard_pricing').upsert(pkeys.map(function(k){return opToDb(k,pricing[k],fid);}),{onConflict:'farm_id,block_local_id'})).error; if(e) throw e; }
+      if(pkeys.length){ const e=(await client().from('orchard_pricing').upsert(pkeys.map(function(k){return opToDb(k,pricing[k],fid);}),{onConflict:'farm_id,block_local_id'})).error; if(e) throw e; _srvWrote('orchard_pricing', pkeys.map(function(k){ return {farm_id:fid,block_local_id:String(k)}; })); }
       { var keepPr={}; pkeys.forEach(function(k){ keepPr[String(k)]=1; });
         var gonePr=_srvGone('orchard_pricing',keepPr,'block_local_id');
         if(gonePr && gonePr.length){ const e=(await client().from('orchard_pricing').delete()
-              .eq('farm_id',fid).in('block_local_id',gonePr)).error; if(e) throw e; } }
+              .eq('farm_id',fid).in('block_local_id',gonePr)).error; if(e) throw e; _srvForgetRows('orchard_pricing','block_local_id',gonePr); } }
       // pricing others: replace-all
       var othRows=[]; pkeys.forEach(function(k){ ((pricing[k]&&pricing[k].others)||[]).forEach(function(o,i){ othRows.push({farm_id:fid,block_local_id:String(k),label:o.label||null,amt:_n(o.amt),sort_idx:i}); }); });
       await replaceAllRows('orchard_pricing_others', fid, othRows);
@@ -1869,11 +1891,11 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
       if(harvRows.length){ const e=(await client().from('orchard_harvest').upsert(harvRows,{onConflict:'farm_id,local_id'})).error; if(e) throw e; }
       // compliance: items upsert + prune; docs/checks/readings replace-all per farm
       var comply=stf.comply||{}; var ckeys=Object.keys(comply);
-      if(ckeys.length){ const e=(await client().from('orchard_compliance_items').upsert(ckeys.map(function(k){return ociToDb(k,comply[k],fid);}),{onConflict:'farm_id,item_key'})).error; if(e) throw e; }
+      if(ckeys.length){ const e=(await client().from('orchard_compliance_items').upsert(ckeys.map(function(k){return ociToDb(k,comply[k],fid);}),{onConflict:'farm_id,item_key'})).error; if(e) throw e; _srvWrote('orchard_compliance_items', ckeys.map(function(k){ return {farm_id:fid,item_key:String(k)}; })); }
       { var keepCi={}; ckeys.forEach(function(k){ keepCi[String(k)]=1; });
         var goneCi=_srvGone('orchard_compliance_items',keepCi,'item_key');
         if(goneCi && goneCi.length){ const e=(await client().from('orchard_compliance_items').delete()
-              .eq('farm_id',fid).in('item_key',goneCi)).error; if(e) throw e; } }
+              .eq('farm_id',fid).in('item_key',goneCi)).error; if(e) throw e; _srvForgetRows('orchard_compliance_items','item_key',goneCi); } }
       var cdRows=[]; ckeys.forEach(function(k){ ((comply[k]&&comply[k].docs)||[]).forEach(function(d,i){
         var _c={farm_id:fid,item_key:k,name:d.name||null,kind:d.kind||null,added:d.added||null,sort_idx:i};
         if(CAN_ORCH_DOCFILE){ _c.local_id=d.id||null; _c.path=d.path||null; }
