@@ -2197,6 +2197,9 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
       if(col === 'partners'){ try{ v = (typeof v === 'string') ? JSON.parse(v) : v; }catch(e){ return; } }
       st[key] = v;
     });
+    /* Settings may be on screen with the OLD value still in its inputs - and Save settings reads the
+       inputs, so it would write the old value straight back (seen live, 16 Sep 2026). Tell the app. */
+    try{ if(typeof global.aiProfileAdopted === 'function') global.aiProfileAdopted(); }catch(e){}
   }
   function _profChanged(payload){
     var out = {};

@@ -33,7 +33,7 @@
 <script defer src="vendor/chart.umd.js"></script>
 <!-- AgriInsights backend: Supabase client + data service (load order matters) -->
 <script src="vendor/supabase.js"></script>
-<script src="ai-data-uk.js?v=uk105"></script>
+<script src="ai-data-uk.js?v=uk106"></script>
 <script src="ai-auth-uk.js?v=uk97"></script>
 <link rel="stylesheet" href="fonts.css"/>
 <style>
@@ -18579,6 +18579,12 @@ function updateTopbarGreeting() {
   el.textContent = greetLine(false);
 }
 
+/* Another device changed a setting this device did not touch, and the app has just taken their
+   value. If Settings is open its inputs still hold the old one - and Save settings reads the inputs,
+   so the old value would be written straight back. Re-fill the page. */
+window.aiProfileAdopted = function(){
+  try{ if (typeof CURRENT_PAGE !== 'undefined' && CURRENT_PAGE === 'settings' && typeof nav === 'function') nav('settings'); }catch(e){}
+};
 function syncSettingsHeader(){
   // Show what was accepted, so there's a visible record of consent.
   try{
