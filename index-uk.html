@@ -33,7 +33,7 @@
 <script defer src="vendor/chart.umd.js"></script>
 <!-- AgriInsights backend: Supabase client + data service (load order matters) -->
 <script src="vendor/supabase.js"></script>
-<script src="ai-data-uk.js?v=uk100"></script>
+<script src="ai-data-uk.js?v=uk101"></script>
 <script src="ai-auth-uk.js?v=uk96"></script>
 <link rel="stylesheet" href="fonts.css"/>
 <style>
@@ -15003,6 +15003,8 @@ function bootAgriInsights() {
   /* Before anything is saved: number past the ids this device already holds, and renumber any
      that arrived twice (see "facility ids"). */
   try{ if(typeof ST_LOANS!=='undefined') lnRepairFacilityIds(ST_LOANS); if(typeof ST_ASSETS!=='undefined') astRepairIds(ST_ASSETS); }catch(e){}
+  /* This device's own copy is in place: the queues may now send what an earlier session never sent. */
+  try{ if(window.AI && AI.sync && AI.sync.localReady) AI.sync.localReady(); }catch(e){}
   try{ if(ST_WORK&&ST_WORK.workers){ var _ws=ST_WORK.workers,_add=[]; for(var _i=0;_i<_ws.length;_i++){ var _w=_ws[_i]; if(_w.basis==='day'&&_w.count&&_w.count>1){ var _c=_w.count,_base=_w.name||'Worker'; delete _w.count; _w.name=_base+' 1'; for(var _k=2;_k<=_c;_k++){ var _cp=JSON.parse(JSON.stringify(_w)); _cp.id=_w.id+'-'+_k; _cp.name=_base+' '+_k; _add.push(_cp); } } else if(_w.count){ delete _w.count; } } if(_add.length) ST_WORK.workers=_ws.concat(_add); } }catch(e){}
   try{ wkSyncLabourBudget(); }catch(e){}
   if (!loaded) {
