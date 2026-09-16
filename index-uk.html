@@ -33,8 +33,8 @@
 <script defer src="vendor/chart.umd.js"></script>
 <!-- AgriInsights backend: Supabase client + data service (load order matters) -->
 <script src="vendor/supabase.js"></script>
-<script src="ai-data-uk.js?v=uk107"></script>
-<script src="ai-auth-uk.js?v=uk97"></script>
+<script src="ai-data-uk.js?v=uk108"></script>
+<script src="ai-auth-uk.js?v=uk98"></script>
 <link rel="stylesheet" href="fonts.css"/>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -19741,7 +19741,9 @@ function saveSale() {
         if (ST.saleFreq === 'Monthly') { rrec.freq = 'monthly'; }
         else { rrec.freq = 'specific'; var rpd = parseDate(dateStr); rrec.months = [rpd ? rpd.m : new Date().getMonth()]; }
         ST.recurring.push(rrec);
-        try { if (window.AI && AI.farm && AI.farm.active()) { AI.recurring.add(rrec).then(function(s){ if(s && s.id) rrec.id = s.id; }).catch(function(e){ console.error('Backend recurring save failed:', e); }); } } catch(e){}
+        /* The bill keeps the name this device gave it. Taking the server's id in its
+           place threw away the only key a retry could have used (-330). */
+        try { if (window.AI && AI.farm && AI.farm.active()) { AI.recurring.add(rrec).catch(function(e){ console.error('Backend recurring save failed:', e); }); } } catch(e){}
         dataChanged('recurring');
         toast('Added to your recurring items \u2014 the Money Flow forecast knows about it now.', 'info');
       }
@@ -20066,7 +20068,7 @@ function saveExpense() {
         if (ST.expFreq === 'Monthly') { erec.freq = 'monthly'; }
         else { erec.freq = 'specific'; var epd = parseDate(dateStr); erec.months = [epd ? epd.m : new Date().getMonth()]; }
         ST.recurring.push(erec);
-        try { if (window.AI && AI.farm && AI.farm.active()) { AI.recurring.add(erec).then(function(s){ if(s && s.id) erec.id = s.id; }).catch(function(e){ console.error('Backend recurring save failed:', e); }); } } catch(e){}
+        try { if (window.AI && AI.farm && AI.farm.active()) { AI.recurring.add(erec).catch(function(e){ console.error('Backend recurring save failed:', e); }); } } catch(e){}
         dataChanged('recurring');
         toast('Added to your recurring items \u2014 the Money Flow forecast knows about it now.', 'info');
       }
@@ -24600,7 +24602,9 @@ function saveAsset() {
     entry.id = ST_ASSETS.assets[editIdx].id;
     entry._aiId = ST_ASSETS.assets[editIdx]._aiId;
     ST_ASSETS.assets[editIdx] = entry;
-    try { if (window.AI && AI.farm && AI.farm.active() && entry._aiId) { AI.asset.update(entry._aiId, entry).catch(function(e){ console.error('Backend asset update failed:', e); }); } } catch(e){}
+    /* No longer gated on _aiId: an asset whose first write failed has none, and the
+       write is keyed on the farm's own number for it, so the edit still lands (-330). */
+    try { if (window.AI && AI.farm && AI.farm.active()) { AI.asset.update(entry._aiId || null, entry).then(function(row){ if(row && row.id) entry._aiId = row.id; }).catch(function(e){ console.error('Backend asset update failed:', e); }); } } catch(e){}
     astUploadDocs(entry);
     toast(name+' updated','success');
   } else {
@@ -24717,10 +24721,12 @@ function astDeleteDo(idx){
 function deleteAsset(idx) {
   if(idx<0||idx>=ST_ASSETS.assets.length) return;
   var name = ST_ASSETS.assets[idx].name;
-  var _aid = ST_ASSETS.assets[idx]._aiId;
+  var _aid = ST_ASSETS.assets[idx]._aiId, _alid = ST_ASSETS.assets[idx].id;
   try { var _adocs=ST_ASSETS.assets[idx].docs||[]; var _paths=_adocs.map(function(d){return d.url;}).filter(Boolean); if(_paths.length && window.AI && AI.storage) AI.storage.remove(_paths).catch(function(e){ console.error('Asset doc storage remove failed:', e); }); } catch(e){}
   ST_ASSETS.assets.splice(idx,1);
-  try { if (window.AI && AI.farm && AI.farm.active() && _aid) { AI.asset.remove(_aid).catch(function(e){ console.error('Backend asset delete failed:', e); }); } } catch(e){}
+  /* The farm's own number goes with it, so an asset whose registration is still
+     waiting to be sent is deleted on the server too when that registration lands (-330). */
+  try { if (window.AI && AI.farm && AI.farm.active() && (_aid || _alid != null)) { AI.asset.remove(_aid || null, _alid).catch(function(e){ console.error('Backend asset delete failed:', e); }); } } catch(e){}
   renderAssets();
   toast(name+' removed','info');
 }
@@ -43506,7 +43512,10 @@ async function txdDelete(){
       _assets.forEach(function(a){
         var k = ST_ASSETS.assets.indexOf(a);
         if(k>=0) ST_ASSETS.assets.splice(k,1);
-        try{ if(window.AI && AI.farm && AI.farm.active() && AI.asset && AI.asset.remove) AI.asset.remove(a.id).catch(function(){}); }catch(e){}
+        /* a.id is this device's number, not the server's id - passing it as the server
+           id meant this delete never removed anything and the asset came back on the
+           next load. Both are sent now (-330). */
+        try{ if(window.AI && AI.farm && AI.farm.active() && AI.asset && AI.asset.remove) AI.asset.remove(a._aiId || null, a.id).catch(function(){}); }catch(e){}
       });
       try{ toast('Asset removed with the transaction','success'); }catch(e){}
     } else {
@@ -51720,7 +51729,8 @@ function capSplitFromAsset(id){
     }
     /* Take the building out before the split writes its lines in. */
     var k=assets.indexOf(a); if(k>=0) assets.splice(k,1);
-    try{ if(window.AI&&AI.farm&&AI.farm.active()&&AI.asset&&AI.asset.remove) AI.asset.remove(a.id).catch(function(){}); }catch(e){}
+    /* Both ids, for the reason above (-330). */
+    try{ if(window.AI&&AI.farm&&AI.farm.active()&&AI.asset&&AI.asset.remove) AI.asset.remove(a._aiId || null, a.id).catch(function(){}); }catch(e){}
     try{ txSetAssetLinks(t, txLinkedAssets(t).filter(function(x){ return x!==a; })); }catch(e){}
     var gross=Math.abs(Number(t.amt)||0), money=capNet(gross);
     CAP_Q={ res:{ regime:'sba', reason:'', note:'', ask:'building', rule:'building',
@@ -52053,13 +52063,18 @@ function txLinkedAsset(t){
   var arr = ((typeof ST_ASSETS!=='undefined' && ST_ASSETS.assets) || []), i;
   /* The FIRST asset, so every existing caller keeps the behaviour it had. Code that
      needs all of them — a split — calls txLinkedAssets. */
-  var _ids = txAssetIds(t), _k;
-  for (_k=0; _k<_ids.length; _k++){
-    for (i=0; i<arr.length; i++) if (String(arr[i].id) === String(_ids[_k])) return arr[i];
-  }
-  var _us = txAssetUuids(t);
+  /* The permanent id first. The number used to be tried first, and the numbers were
+     dealt out again on every load - so a payment tied to the tractor found whatever
+     machine now held that number and never reached the id it was holding all along.
+     Reproduced against the shipped lookup on 16 Sep 2026. The number stays as the
+     fallback, for a link made before this id existed. */
+  var _us = txAssetUuids(t), _k;
   for (_k=0; _k<_us.length; _k++){
     for (i=0; i<arr.length; i++) if (arr[i]._aiId && arr[i]._aiId === _us[_k]) return arr[i];
+  }
+  var _ids = txAssetIds(t);
+  for (_k=0; _k<_ids.length; _k++){
+    for (i=0; i<arr.length; i++) if (String(arr[i].id) === String(_ids[_k])) return arr[i];
   }
   return null;
 }
@@ -52084,9 +52099,10 @@ function txAssetIndex(){
   var idx={byLocal:byLocal, byUuid:byUuid,
           get:function(t){
             if(!t) return null;
+            /* Same order as txLinkedAsset: permanent id first, number as the fallback. */
             var ids=txAssetIds(t), us=txAssetUuids(t), z;
-            for(z=0;z<ids.length;z++) if(byLocal[String(ids[z])]) return byLocal[String(ids[z])];
             for(z=0;z<us.length;z++) if(byUuid[us[z]]) return byUuid[us[z]];
+            for(z=0;z<ids.length;z++) if(byLocal[String(ids[z])]) return byLocal[String(ids[z])];
             return null;
           }};
   txAssetIndex._c=idx;
@@ -52311,11 +52327,14 @@ function txHoldsAsset(t, asset){
 /* Every asset a payment paid for, in link order. */
 function txLinkedAssets(t){
   var arr=((typeof ST_ASSETS!=='undefined' && ST_ASSETS.assets) || []), out=[];
-  txAssetIds(t).forEach(function(id){
-    for(var i=0;i<arr.length;i++) if(String(arr[i].id)===String(id) && out.indexOf(arr[i])<0){ out.push(arr[i]); return; }
-  });
+  /* Permanent ids first, for the reason in txLinkedAsset. The two lists describe the
+     same set, so this changes the order only where one link has an id and another has
+     only a number - and the one with the id is the one we can be sure of. */
   txAssetUuids(t).forEach(function(u){
     for(var i=0;i<arr.length;i++) if(arr[i]._aiId===u && out.indexOf(arr[i])<0){ out.push(arr[i]); return; }
+  });
+  txAssetIds(t).forEach(function(id){
+    for(var i=0;i<arr.length;i++) if(String(arr[i].id)===String(id) && out.indexOf(arr[i])<0){ out.push(arr[i]); return; }
   });
   return out;
 }
@@ -59607,7 +59626,7 @@ function syncTimeAgo(ts){
    as something is refused or keeps failing, with a short list on tap. It used to say
    "Synced · up to date" whenever the farmer did anything - including while three saves of
    the business type were being refused (15 Sep 2026). */
-var SYNC_AREAS = { settings:['Settings','Instellings'], loans:['Loans','Lenings'], livestock:['Herds and animals','Kuddes en diere'], crops:['Crops','Gewasse'], orchard:['Orchards','Boorde'], plan:['Plan','Beplanning'], workers:['Workers','Werkers'], fuel:['Fuel log','Brandstofregister'], rain:['Rainfall','Reënval'], documents:['Documents','Dokumente'], rules:['Filing rules','Liasseerreëls'], transactions:['Transactions','Transaksies'], attachments:['Attachments','Aanhegsels'] };
+var SYNC_AREAS = { assets:['Assets','Bates'], budget:['Budget','Begroting'], recurring:['Recurring items','Herhalende items'], coop:['Co-op deliveries','Ko-op aflewerings'], imports:['Imports','Invoere'], settings:['Settings','Instellings'], loans:['Loans','Lenings'], livestock:['Herds and animals','Kuddes en diere'], crops:['Crops','Gewasse'], orchard:['Orchards','Boorde'], plan:['Plan','Beplanning'], workers:['Workers','Werkers'], fuel:['Fuel log','Brandstofregister'], rain:['Rainfall','Reënval'], documents:['Documents','Dokumente'], rules:['Filing rules','Liasseerreëls'], transactions:['Transactions','Transaksies'], attachments:['Attachments','Aanhegsels'] };
 var SYNC_FIELDS = { entity_type:['Business type','Besigheidstipe'], partners:['Partners','Vennote'], vat_category:['VAT category','BTW-kategorie'], vat_number:['VAT number','BTW-nommer'], vat_registered:['VAT registration','BTW-registrasie'], tax_number:['Tax number','Belastingnommer'], utr:['UTR','UTR'] };
 var _syncBusySince = 0, _syncBusyT = null, _syncToastShown = false, _syncRenderQueued = false, _syncSubscribed = false;
 function _syncAf(){ return typeof ST !== 'undefined' && ST.lang === 'af'; }
@@ -65567,6 +65586,13 @@ function coopCommitImport(){
     totKept += (r.ded||0); totPaid += paid; totBank += toBank;
   });
   if(offsetOn && acct){ acct.used = Math.max(0, (acct.used||0) - totPaid); }
+  /* Deliveries with no money rows used to be saved with no batch at all, which left
+     them where Undo could never reach them - and, now that a replay rewrites a batch,
+     where a retry could double them. Give them a batch of their own first (-330). */
+  if(!_coopAdded.length && _coopSettleAdded.length){
+    var _sbid=impRegisterBatch({source:srcName+' settlement', kind:'coop', span:impSpan(_coopSettleAdded.map(function(s){return s.date;}))}, []);
+    _coopSettleAdded.forEach(function(s){ s.batch=_sbid; });
+  }
   if(_coopAdded.length){
     var _cdates=_coopAdded.map(function(t){return t.date;});
     var _bid=impRegisterBatch({source:srcName+' settlement', kind:'coop', span:impSpan(_cdates)}, _coopAdded);
@@ -65574,7 +65600,7 @@ function coopCommitImport(){
     // too (they are not counted in the batch's delivery-row total).
     _coopPaidTx.forEach(function(t){ t.batch=_bid; });
     _coopExpTx.forEach(function(t){ t.batch=_bid; });
-    _coopSettleAdded.forEach(function(s){ s.batch=_bid; });
+    _coopSettleAdded.forEach(function(s){ if(!s.batch) s.batch=_bid; });
     // Record the account offset so impUndoBatch can restore the paid-down balance.
     if(offsetOn && acct && totPaid>0){
       var _bref=(ST.importBatches||[]).find(function(x){return x.id===_bid;});
