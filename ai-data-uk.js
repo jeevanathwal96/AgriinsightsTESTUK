@@ -2138,7 +2138,21 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
      nothing (guard_updated_at) - so every write reads back what was kept: when the server
      kept its own, this device re-reads the row, keeps only the fields the FARMER changed
      here, and sends those once more. The other device's fields are left alone. */
-  var _profAck = null;
+  /* What the server last confirmed, kept per farm ON THIS DEVICE. In memory only, it was empty
+     at the start of a session - so the first save after an app open (the catch-up) had nothing to
+     compare against and sent every field, unconditionally, which is exactly the cross-device
+     overwrite this is meant to stop (seen live, 16 Sep 2026). Persisted, it tells this device which
+     fields the FARMER changed here while it was closed. */
+  var _profAck = null, _profAckFarm = null;
+  function _profAckKey(){ var fid = farm.active(); return fid ? SYNC_KEY.replace('unsent', 'ack') + fid : null; }
+  function _profAckGet(){
+    var fid = farm.active();
+    if(_profAck && _profAckFarm === fid) return _profAck;
+    _profAckFarm = fid; _profAck = null;
+    try{ var k = _profAckKey(), raw = k ? localStorage.getItem(k) : null; if(raw) _profAck = JSON.parse(raw); }catch(e){ _profAck = null; }
+    return _profAck;
+  }
+  function _profAckClear(){ try{ var k = _profAckKey(); if(k) localStorage.removeItem(k); }catch(e){} _profAck = null; }
   function _stableJson(v){
     if(v === null || typeof v !== 'object') return JSON.stringify(v);
     if(Array.isArray(v)) return '[' + v.map(_stableJson).join(',') + ']';
@@ -2153,8 +2167,10 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
   }
   function _profNoteAck(row){
     if(!row || typeof row !== 'object') return;
-    _profAck = _profAck || {};
-    Object.keys(row).forEach(function(k){ _profAck[k] = row[k]; });
+    var ack = _profAckGet() || {};
+    Object.keys(row).forEach(function(k){ ack[k] = row[k]; });
+    _profAck = ack; _profAckFarm = farm.active();
+    try{ var k = _profAckKey(); if(k) localStorage.setItem(k, JSON.stringify(ack)); }catch(e){}
   }
   /* db column -> the name the app keeps it under, for the fields the settings save writes.
      Used after the server keeps its own row: this device adopts the server's values for
@@ -2170,12 +2186,13 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     season_start_month: 'seasonStartMonth', budget_expense_target: 'budgetExpenseTarget'
   };
   function _profAdopt(st, mine){
-    if(!st || !_profAck) return;
-    Object.keys(_profAck).forEach(function(col){
+    var ack = _profAckGet();
+    if(!st || !ack) return;
+    Object.keys(ack).forEach(function(col){
       if(mine && (col in mine)) return;                 // the farmer changed this here: keep it
       var key = _PROF_COL_TO_KEY[col];
       if(!key) return;                                  // rain, crop prices and the like live elsewhere
-      var v = _profAck[col];
+      var v = ack[col];
       if(v === undefined) return;
       if(col === 'partners'){ try{ v = (typeof v === 'string') ? JSON.parse(v) : v; }catch(e){ return; } }
       st[key] = v;
@@ -2184,7 +2201,8 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
   function _profChanged(payload){
     var out = {};
     Object.keys(payload).forEach(function(k){
-      if(!_profAck || !(k in _profAck) || !_profSameValue(_profAck[k], payload[k])) out[k] = payload[k];
+      var ack = _profAckGet();
+      if(!ack || !(k in ack) || !_profSameValue(ack[k], payload[k])) out[k] = payload[k];
     });
     return out;
   }
@@ -2199,7 +2217,8 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
        trigger that stamps updated_at BEFORE any guard would run, so a guard could never see the
        version the client sent (probed live, 16 Sep 2026). Proved on the live row: a stale
        version updates 0 rows, the current version updates 1 and stamps a new one. */
-    if(_profAck && _profAck.updated_at) q = q.eq('updated_at', _profAck.updated_at);
+    var ack = _profAckGet();
+    if(ack && ack.updated_at) q = q.eq('updated_at', ack.updated_at);
     var r = await q.select(keys.concat(['updated_at']).join(','));
     if(r.error) return { error: r.error };
     var rows = r.data || [];
@@ -2675,7 +2694,7 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
       return Promise.all(jobs).then(function(){ _syncCatching = false; _syncEmit(); });
     },
     /* The device holds another account's or another farm's records: never send them. */
-    discardUnsent(){ try{ var k = _unsentKey(); if(k) localStorage.removeItem(k); }catch(e){} },
+    discardUnsent(){ try{ var k = _unsentKey(); if(k) localStorage.removeItem(k); }catch(e){} try{ _profAckClear(); }catch(e){} },
     retryAll(){
       var jobs = [];
       Object.keys(_lanes).forEach(function(a){ if(_lanes[a].err && !_lanes[a].external) jobs.push(_syncRetry(a)); });
