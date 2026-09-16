@@ -34,7 +34,7 @@
 <!-- AgriInsights backend: Supabase client + data service (load order matters) -->
 <script src="vendor/supabase.js"></script>
 <script src="ai-data-uk.js?v=uk100"></script>
-<script src="ai-auth-uk.js?v=uk95"></script>
+<script src="ai-auth-uk.js?v=uk96"></script>
 <link rel="stylesheet" href="fonts.css"/>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -15000,6 +15000,9 @@ function renderProfit(){
 function bootAgriInsights() {
   try{ var _m=document.getElementById('stmt-preview-bg'); if(_m && _m.parentNode!==document.body) document.body.appendChild(_m); }catch(e){}
   var loaded = loadState();
+  /* Before anything is saved: number past the ids this device already holds, and renumber any
+     that arrived twice (see "facility ids"). */
+  try{ if(typeof ST_LOANS!=='undefined') lnRepairFacilityIds(ST_LOANS); if(typeof ST_ASSETS!=='undefined') astRepairIds(ST_ASSETS); }catch(e){}
   try{ if(ST_WORK&&ST_WORK.workers){ var _ws=ST_WORK.workers,_add=[]; for(var _i=0;_i<_ws.length;_i++){ var _w=_ws[_i]; if(_w.basis==='day'&&_w.count&&_w.count>1){ var _c=_w.count,_base=_w.name||'Worker'; delete _w.count; _w.name=_base+' 1'; for(var _k=2;_k<=_c;_k++){ var _cp=JSON.parse(JSON.stringify(_w)); _cp.id=_w.id+'-'+_k; _cp.name=_base+' '+_k; _add.push(_cp); } } else if(_w.count){ delete _w.count; } } if(_add.length) ST_WORK.workers=_ws.concat(_add); } }catch(e){}
   try{ wkSyncLabourBudget(); }catch(e){}
   if (!loaded) {
@@ -21544,9 +21547,8 @@ function lnSaveOverdraft(){
     toast('Overdraft updated','success');
   } else {
     ST_LOANS.overdrafts=ST_LOANS.overdrafts||[];
-    var nid=(typeof ST_LOANS.nextOdId==='number')?ST_LOANS.nextOdId:(ST_LOANS.overdrafts.length+1);
-    ST_LOANS.nextOdId=nid+1;
-    ST_LOANS.overdrafts.push({id:'od'+nid, icon:'\uD83C\uDFE6', name:name, lender:lender, limit:limit, used:used, rateMode:mode, prime:prime, margin:margin, flatRate:flatRate, fundsFor:(LN_FORM_FF&&LN_FORM_FF.items&&LN_FORM_FF.items.length)?LN_FORM_FF:null});
+    var odNewId=lnNextFacilityId(ST_LOANS,'od','nextOdId');
+    ST_LOANS.overdrafts.push({id:odNewId, icon:'\uD83C\uDFE6', name:name, lender:lender, limit:limit, used:used, rateMode:mode, prime:prime, margin:margin, flatRate:flatRate, fundsFor:(LN_FORM_FF&&LN_FORM_FF.items&&LN_FORM_FF.items.length)?LN_FORM_FF:null});
     toast('Overdraft added','success');
   }
   LN_OD_EDIT_ID=null; LN_FORM_FF=null; saveState(); ST_LOANS.activeTab='myloans'; renderLoans();
@@ -21676,9 +21678,8 @@ function lnSaveCoopAcct(){
   if(o){ o.name=name; o.coop=coop; o.lender=coop; o.limit=limit; o.used=used; if(o.rateMode!=='flat'){ o.prime=prime; o.margin=margin; } o.flatRate=(o.rateMode==='flat')?(o.flatRate||prime+margin):(prime+margin); toast('Merchant account updated','success'); }
   else {
     ST_LOANS.coopAccounts=ST_LOANS.coopAccounts||[];
-    var nid=(typeof ST_LOANS.nextCoId==='number')?ST_LOANS.nextCoId:(ST_LOANS.coopAccounts.length+1);
-    ST_LOANS.nextCoId=nid+1;
-    ST_LOANS.coopAccounts.push({id:'oc'+nid, icon:'\uD83C\uDF3E', name:name, coop:coop, lender:coop, limit:limit, used:used, rateMode:'prime', prime:prime, margin:margin, flatRate:prime+margin, fundsFor:(LN_FORM_FF&&LN_FORM_FF.items&&LN_FORM_FF.items.length)?LN_FORM_FF:null});
+    var ocNewId=lnNextFacilityId(ST_LOANS,'oc','nextCoId');
+    ST_LOANS.coopAccounts.push({id:ocNewId, icon:'\uD83C\uDF3E', name:name, coop:coop, lender:coop, limit:limit, used:used, rateMode:'prime', prime:prime, margin:margin, flatRate:prime+margin, fundsFor:(LN_FORM_FF&&LN_FORM_FF.items&&LN_FORM_FF.items.length)?LN_FORM_FF:null});
     toast('Merchant account added','success');
   }
   LN_CO_EDIT_ID=null; LN_ADD_KIND='loan'; LN_FORM_FF=null; saveState(); ST_LOANS.activeTab='myloans'; renderLoans();
@@ -21753,6 +21754,75 @@ function _lnAssetOptions(sel){
 function lnNum(id){ var e=$(id); if(!e) return 0; return parseFloat((e.value||'').replace(/[^0-9.]/g,''))||0; }
 var LN_LOAN_EDIT_ID=null;
 function lnEditLoan(id){ LN_LOAN_EDIT_ID=id; LN_ADD_KIND='loan'; LN_OD_EDIT_ID=null; LN_CO_EDIT_ID=null; LN_FORM_FF=null; ST_LOANS.activeTab='add'; renderLoans(); }
+/* ===== facility ids ===== (the harness reads this block from the shipped file)
+   Loans, overdrafts and co-op accounts are numbered per farm, but the counter lived only on
+   this device while the facilities themselves come back from the server - so a second device,
+   or a fresh start, began again at 1 and minted an id another facility already had. The server
+   keeps one row per (farm, local id) and refuses a save that names one twice (Postgres 21000),
+   so ONE duplicate stopped every loans save - silently, until the save status shipped in -401
+   showed it on a live account (16 Sep 2026). Number past the highest id in use instead, and
+   repair a farm that already holds a duplicate: the LATER copy moves, so the copy the server
+   already knows keeps its row. */
+function lnAllFacilities(S){
+  if(!S) return [];
+  return (S.loans||[]).concat(S.overdrafts||[], S.coopAccounts||[], S.archived||[]);
+}
+function lnPrefixOf(id){ var m=/^([a-z]+)\d+$/.exec(String(id||'')); return m?m[1]:null; }
+function lnCounterFor(prefix){ return prefix==='od'?'nextOdId':(prefix==='oc'?'nextCoId':'nextId'); }
+function lnHighestId(S, prefix){
+  var re=new RegExp('^'+prefix+'(\\d+)$'), max=0;
+  lnAllFacilities(S).forEach(function(x){ var m=x?re.exec(String(x.id)):null; if(m) max=Math.max(max, parseInt(m[1],10)); });
+  return max;
+}
+function lnNextFacilityId(S, prefix, counterKey){
+  var n=Math.max(Number(S[counterKey])||1, lnHighestId(S,prefix)+1);
+  S[counterKey]=n+1;
+  return prefix+n;
+}
+/* Runs when this device loads its own data and again once the server's facilities are applied,
+   before anything is sent. Quiet on a healthy farm, and safe to run twice. */
+function lnRepairFacilityIds(S){
+  if(!S) return 0;
+  var seen={}, moved=0;
+  ['loans','overdrafts','coopAccounts','archived'].forEach(function(key){
+    (S[key]||[]).forEach(function(item){
+      if(!item || item.id==null) return;
+      var id=String(item.id);
+      if(!seen[id]){ seen[id]=1; return; }
+      var prefix=lnPrefixOf(id)||'ln';
+      var fresh=lnNextFacilityId(S, prefix, lnCounterFor(prefix));
+      /* the paid-off mark is kept per loan id, so it moves with the loan */
+      if(key==='loans' && S.confirmed && S.confirmed.paid && S.confirmed.paid[id]!=null){
+        S.confirmed.paid[fresh]=S.confirmed.paid[id]; delete S.confirmed.paid[id];
+      }
+      item.id=fresh; seen[fresh]=1; moved++;
+    });
+  });
+  ['ln','od','oc'].forEach(function(p){
+    var k=lnCounterFor(p), want=lnHighestId(S,p)+1;
+    if(!(Number(S[k])>want)) S[k]=want;
+  });
+  if(moved) { try{ console.info('Renumbered '+moved+' facility id(s) that were used twice on this device.'); }catch(e){} }
+  return moved;
+}
+/* Assets are numbered the same way. Their ids are referenced by the loan that financed them and
+   by the capital-allowance records, so an id already in use is never moved - only the counter is
+   lifted past the highest id, which is what stops a duplicate being minted. */
+function astNextId(A){
+  if(!A) return 1;
+  var max=0; (A.assets||[]).forEach(function(a){ var n=Number(a&&a.id); if(n>max) max=n; });
+  var n=Math.max(Number(A.nextId)||1, max+1);
+  A.nextId=n+1;
+  return n;
+}
+function astRepairIds(A){
+  if(!A) return;
+  var max=0, seen={}, dup=0;
+  (A.assets||[]).forEach(function(a){ var n=Number(a&&a.id); if(n>max) max=n; if(seen[n]) dup++; seen[n]=1; });
+  if(!(Number(A.nextId)>max)) A.nextId=max+1;
+  if(dup) { try{ console.warn(dup+' asset id(s) are used twice on this device; their links may be wrong.'); }catch(e){} }
+}
+/* ===== end facility ids ===== */
 function lnSaveLoan(){
   /* A blank name means nothing was typed. Saving that used to write a "New loan"
      at zero onto the page - which is how a deleted facility came back as a ghost. */
@@ -21763,7 +21833,7 @@ function lnSaveLoan(){
   var name=($('ln-f-name')&&$('ln-f-name').value||'').trim()||'New loan';
   var editing = (typeof LN_LOAN_EDIT_ID!=='undefined' && LN_LOAN_EDIT_ID) ? lnLoan(LN_LOAN_EDIT_ID) : null;
   var assetIdRaw=($('ln-f-asset')&&$('ln-f-asset').value)||'';
-  var loan={ id: editing?editing.id:('ln'+(ST_LOANS.nextId++)), icon: editing?editing.icon:'\uD83C\uDFE6', name:name,
+  var loan={ id: editing?editing.id:lnNextFacilityId(ST_LOANS,'ln','nextId'), icon: editing?editing.icon:'\uD83C\uDFE6', name:name,
     lender:($('ln-f-lender')&&$('ln-f-lender').value)||'Other',
     type:($('ln-f-type')&&$('ln-f-type').value)||'Loan', assetId: assetIdRaw?parseInt(assetIdRaw,10):null,
     borrowed:lnNum('ln-f-borrowed'), balance:lnNum('ln-f-balance'), rate:lnNum('ln-f-rate'), payment:lnNum('ln-f-pay'),
@@ -24488,7 +24558,7 @@ function saveAsset() {
   if(!price) { toast('Please enter the purchase price','error'); return; }
 
   var subtype = ($('ast-subtype')&&$('ast-subtype').value)||'';
-  var entry = {id:ST_ASSETS.nextId++, name:name, cat:cat, date:date, price:price, deprType:dtype, life:life, notes:notes, subtype:subtype};
+  var entry = {id:astNextId(ST_ASSETS), name:name, cat:cat, date:date, price:price, deprType:dtype, life:life, notes:notes, subtype:subtype};
   /* E9 - only meaningful on a structure, and only when it differs from the spend date. */
   var _iu = ($('ast-inuse') && $('ast-inuse').value) || '';
   if(dtype==='sba' && _iu) entry.inUse=_iu;
@@ -51749,11 +51819,11 @@ function capSplitSave(){
   try{
     ST_ASSETS=(typeof ST_ASSETS!=='undefined'&&ST_ASSETS)?ST_ASSETS:{assets:[],nextId:1};
     ST_ASSETS.assets=ST_ASSETS.assets||[];
-    if(!ST_ASSETS.nextId) ST_ASSETS.nextId=ST_ASSETS.assets.length+1;
+    astRepairIds(ST_ASSETS);
     var iso=_capIso(t.date);
     CAP_SPLIT_LINES.forEach(function(L,i){
       var net=tot.rel[i].net; if(!(net>0)) return;
-      var e={ id:ST_ASSETS.nextId++, name:(t.desc||'Asset')+' — '+L.label, cat:L.cat, date:iso,
+      var e={ id:astNextId(ST_ASSETS), name:(t.desc||'Asset')+' — '+L.label, cat:L.cat, date:iso,
               price:net, deprType:L.regime, life:(L.regime==='sba'?33:10), notes:'', subtype:L.subtype,
               txnRef:'tx:'+(t.date||'')+':'+(t.amt||0)+':'+(t.cat||'') };
       ST_ASSETS.assets.push(e); made.push(e);
@@ -51789,7 +51859,7 @@ function capAccept(){
   try{
     ST_ASSETS = (typeof ST_ASSETS!=='undefined' && ST_ASSETS) ? ST_ASSETS : {assets:[], nextId:1};
     ST_ASSETS.assets = ST_ASSETS.assets||[];
-    if(!ST_ASSETS.nextId) ST_ASSETS.nextId = ST_ASSETS.assets.length+1;
+    astRepairIds(ST_ASSETS);
     var iso = (function(){ try{ var d=parseDate(t.date); return d? (d.y+'-'+String(d.m+1).padStart(2,'0')+'-'+String(d.d).padStart(2,'0')) : ''; }catch(e){ return ''; } })();
     /* E9 - another bill for a build already open. Nothing new is created: the money
        joins that project's cost and the payment joins its bills, through astAddTxnLink
@@ -51812,7 +51882,7 @@ function capAccept(){
        something went in part exchange the two are different by the trade-in, and the
        claim follows the cost. */
     var _pxNet=capPxNet(), _pxOld=_capPxAsset();
-    var entry = { id:ST_ASSETS.nextId++, name:(t.desc||'Asset'), cat:r.cat, date:iso, price:r.net+_pxNet,
+    var entry = { id:astNextId(ST_ASSETS), name:(t.desc||'Asset'), cat:r.cat, date:iso, price:r.net+_pxNet,
                   deprType:r.regime, life:(r.regime==='sba'?33:10), notes:'', subtype:r.subtype,
                   txnRef:'tx:'+(t.date||'')+':'+(t.amt||0)+':'+(t.cat||'') };
     if(_pxNet>0 && _pxOld) entry.replacedId = String(_pxOld.id);
