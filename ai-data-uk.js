@@ -2235,7 +2235,7 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     return p; }
   load.profile = async function(farmId){
     farmId=farmId||farm.active();
-    const r=await client().from('farms').select('name,owner_name,region,farm_ha,farm_type,fy_start_month,lang,vat_registered,utr,vat_number,entity_type,partners,herd_mark,herd_mark_type,farm_address,paye_ref').eq('id',farmId).single();
+    const r=await client().from('farms').select('name,owner_name,region,farm_ha,farm_type,fy_start_month,lang,vat_registered,utr,vat_number,entity_type,partners,herd_mark,herd_mark_type,farm_address,paye_ref,updated_at').eq('id',farmId).single();
     if(r.error) throw r.error;
     var p=profileFromDb(r.data);
     /* Payments on account the farmer copied from their HMRC account live in farms.prefs.
