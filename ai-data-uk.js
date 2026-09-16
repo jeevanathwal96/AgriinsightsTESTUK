@@ -65,6 +65,10 @@
      columns present. Sign-in is live from here. */
   const UK_BACKEND_READY  = true;       // schema applied 19 Aug 2026: 60 tables, 66 policies, RLS on all
   const SUPABASE_URL      = 'https://rjhwwikxikhivxhdyfwj.supabase.co';
+  /* Both apps are served from one host, so they share one localStorage - and each keeps
+     its own Supabase session under sb-<project>-auth-token. Anything hunting for "the"
+     token has to say WHICH project, or it reads the other app's account (-331). */
+  const PROJECT_REF       = 'rjhwwikxikhivxhdyfwj';
   const SUPABASE_ANON_KEY = 'sb_publishable_am9yz3INlCOdEFAdGnYg_A_qvczlNUt';  // publishable (anon) key
   /* Blocked unless the UK project is both configured AND declared ready. This is a
      stronger tripwire than the old one, which only checked for the SA address: an
@@ -2816,7 +2820,7 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
   try{ global.addEventListener('online', function(){ sync.retryAll(); }); }catch(e){}
 
   // ---- EXPORT --------------------------------------------------------------
-  global.AI = { init: client, auth, farm, sync: sync, load, txn, account, budget, recurring, asset, loans,
+  global.AI = { init: client, projectRef: PROJECT_REF, auth, farm, sync: sync, load, txn, account, budget, recurring, asset, loans,
                 coopSettlement: coopSettlement, livestock: livestock, crop: crop, orchard: orchard, plan: plan, workers: workersSave, profile: profile,
                 documents: documents, fuel: fuel,
                 rules: rules,
