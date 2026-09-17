@@ -33,8 +33,8 @@
 <script defer src="vendor/chart.umd.js"></script>
 <!-- AgriInsights backend: Supabase client + data service (load order matters) -->
 <script src="vendor/supabase.js"></script>
-<script src="ai-data-uk.js?v=uk109"></script>
-<script src="ai-auth-uk.js?v=uk99"></script>
+<script src="ai-data-uk.js?v=uk110"></script>
+<script src="ai-auth-uk.js?v=uk100"></script>
 <link rel="stylesheet" href="fonts.css"/>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -24722,13 +24722,16 @@ function deleteAsset(idx) {
   if(idx<0||idx>=ST_ASSETS.assets.length) return;
   var name = ST_ASSETS.assets[idx].name;
   var _aid = ST_ASSETS.assets[idx]._aiId, _alid = ST_ASSETS.assets[idx].id;
+  /* Untie its payments while it is still in the register to be matched against (-332). */
+  var _tied = 0; try { _tied = astUnlinkPayments(ST_ASSETS.assets[idx]); } catch(e){}
   try { var _adocs=ST_ASSETS.assets[idx].docs||[]; var _paths=_adocs.map(function(d){return d.url;}).filter(Boolean); if(_paths.length && window.AI && AI.storage) AI.storage.remove(_paths).catch(function(e){ console.error('Asset doc storage remove failed:', e); }); } catch(e){}
   ST_ASSETS.assets.splice(idx,1);
   /* The farm's own number goes with it, so an asset whose registration is still
      waiting to be sent is deleted on the server too when that registration lands (-330). */
   try { if (window.AI && AI.farm && AI.farm.active() && (_aid || _alid != null)) { AI.asset.remove(_aid || null, _alid).catch(function(e){ console.error('Backend asset delete failed:', e); }); } } catch(e){}
   renderAssets();
-  toast(name+' removed','info');
+  if (_tied) toast(name+' removed \u00b7 '+_tied+' payment'+(_tied===1?' is':'s are')+' no longer tied to it','info');
+  else toast(name+' removed','info');
 }
 
 // ── Full render ───────────────────────────────────────────────
@@ -43510,6 +43513,8 @@ async function txdDelete(){
       '\n\nOK removes '+(_assets.length===1?'the asset':'them')+' as well. Cancel deletes only the money entry and leaves '+(_assets.length===1?'the asset':'them')+' in place.');
     if(_dropAsset && _assets.length){
       _assets.forEach(function(a){
+        /* its OTHER payments lose the tie too; this one is being deleted anyway (-332) */
+        try{ astUnlinkPayments(a, t); }catch(e){}
         var k = ST_ASSETS.assets.indexOf(a);
         if(k>=0) ST_ASSETS.assets.splice(k,1);
         /* a.id is this device's number, not the server's id - passing it as the server
@@ -51727,6 +51732,9 @@ function capSplitFromAsset(id){
       toast('Link this asset to the payment that bought it first, then split it','info');
       return;
     }
+    /* Any other payment tied to the building lets go of it; the one being split is
+       re-tied to the parts just below (-332). */
+    try{ astUnlinkPayments(a, t); }catch(e){}
     /* Take the building out before the split writes its lines in. */
     var k=assets.indexOf(a); if(k>=0) assets.splice(k,1);
     /* Both ids, for the reason above (-330). */
@@ -52362,6 +52370,61 @@ function astAddTxnLink(asset, txnIdx){
   try{ if(typeof dataChanged==='function') dataChanged('transaction'); }catch(e){}
 }
 
+/* ── A machine's ties on the payments (-332) ─────────────────────────────────────
+   When a machine leaves the register the server clears its own copy of every tie
+   (asset_id is ON DELETE SET NULL), but this device kept them. Every later edit of such
+   a payment was then refused with 23503 - permanently - and a new machine that took the
+   old number inherited the payment. Reproduced on the live UK account 16 Sep 2026. */
+/* Take this machine off the payments on this device, before it leaves the register,
+   and send those payments up. A payment can hold several machines here, so only this
+   one is removed from its set; the others stay exactly as they were.
+   Returns how many payments were untied. */
+function astUnlinkPayments(asset, except){
+  if(!asset) return 0;
+  var tied = (typeof assetLinkedTxns==='function') ? assetLinkedTxns(asset) : [], n = 0;
+  tied.forEach(function(t){
+    if(!t || t===except) return;
+    /* Held only through an old number: the payment names its machines by permanent id and
+       this one is not among them, so it was never tied here - leave it, and don't count it. */
+    if(asset._aiId){ var _us = txAssetUuids(t); if(_us.length && _us.indexOf(asset._aiId)<0) return; }
+    try{ txSetAssetLinks(t, txLinkedAssets(t).filter(function(x){ return x!==asset; })); }catch(e){ return; }
+    n++;
+    try{ if(typeof txnUpdateThrough==='function') txnUpdateThrough(t); }catch(e){}
+  });
+  return n;
+}
+/* Ties already left behind by a machine removed before this fix: cleared quietly once
+   the register has loaded. Local only - the server cleared its copy when the machine
+   went. A machine named by permanent id and missing from the register is dropped, and
+   its old number is NOT allowed to stand in for it; a number-only tie survives only if
+   that number is still held. Returns how many payments were changed. */
+function astSweepDeadPaymentLinks(){
+  if(typeof ST==='undefined' || !ST.txns || typeof ST_ASSETS==='undefined' || !ST_ASSETS.assets) return 0;
+  var byUuid = {}, byNum = {}, n = 0;
+  ST_ASSETS.assets.forEach(function(a){ if(!a) return; byNum[String(a.id)] = a; if(a._aiId) byUuid[a._aiId] = a; });
+  ST.txns.forEach(function(t){
+    if(!t) return;
+    var ids = txAssetIds(t), us = txAssetUuids(t);
+    if(!ids.length && !us.length) return;
+    var dead = us.some(function(u){ return !byUuid[u]; }) ||
+               (!us.length && ids.some(function(id){ return !byNum[String(id)]; }));
+    if(!dead) return;
+    var keep = [];
+    us.forEach(function(u){ var a = byUuid[u]; if(a && keep.indexOf(a)<0) keep.push(a); });
+    ids.forEach(function(id){
+      var a = byNum[String(id)];
+      if(!a || keep.indexOf(a)>=0) return;
+      /* a number keeps its place only if it cannot be an old number now held by another
+         machine: either the payment named no machines by id at all, or this one is not
+         yet on the server */
+      if(!us.length || !a._aiId) keep.push(a);
+    });
+    txSetAssetLinks(t, keep);
+    n++;
+  });
+  if(n){ try{ if(typeof saveState==='function') saveState(); }catch(e){} }
+  return n;
+}
 function assetLinkedTxns(asset){
   var out = [];
   if (!asset) return out;
