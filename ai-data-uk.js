@@ -1685,7 +1685,13 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
       var gRows=[], rRows=[];
       gs.forEach(function(x){ var row=rainGaugeToDb(x,fid), j=JSON.stringify(row); if(_rainGSent[x.id]!==j) gRows.push([x.id,j,row]); });
       own.forEach(function(x){ var row=rainReadToDb(x,fid), j=JSON.stringify(row); if(_rainSent[x.id]!==j) rRows.push([x.id,j,row]); });
-      if(!gRows.length && !rRows.length) return true;
+      /* Removals ride in the book itself (state.gone), so one that could not reach the
+         server is sent again by the next save or the catch-up, never forgotten; an id
+         that is back in the book (re-logged) is not deleted. They go AFTER the upserts. */
+      var have=Object.create(null); own.forEach(function(x){ have[String(x.id)]=1; });
+      var gone=(state.gone||[]).map(String).filter(function(id){ return !have[id]; });
+      var gGone=(state.goneGauges||[]).map(String).filter(function(id){ return !gs.some(function(g){ return String(g.id)===id; }); });
+      if(!gRows.length && !rRows.length && !gone.length && !gGone.length){ if(state.gone&&state.gone.length) state.gone=[]; return true; }
       const warn='Rainfall not saved online yet — run tools/uk-rainfall-schema.sql in Supabase.';
       if(gRows.length){
         const e=(await client().from('rainfall_gauges').upsert(gRows.map(function(t){ return t[2]; }),{onConflict:'farm_id,local_id'})).error;
@@ -1697,6 +1703,18 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
         const e2=(await client().from('rainfall_readings').upsert(chunk.map(function(t){ return t[2]; }),{onConflict:'farm_id,local_id'})).error;
         if(e2){ if(_rainMissing(e2)){ console.warn(warn+' ('+(e2.message||e2)+')'); return false; } throw e2; }
         chunk.forEach(function(t){ _rainSent[t[0]]=t[1]; });
+      }
+      for(var j=0;j<gone.length;j+=200){
+        var part=gone.slice(j,j+200);
+        const e3=(await client().from('rainfall_readings').delete().eq('farm_id',fid).in('local_id',part)).error;
+        if(e3){ if(_rainMissing(e3)) return false; throw e3; }
+        var done=Object.create(null); part.forEach(function(id){ done[id]=1; delete _rainSent[id]; });
+        state.gone=(state.gone||[]).filter(function(id){ return !done[String(id)] && !have[String(id)]; });
+      }
+      if(state.gone&&state.gone.length) state.gone=state.gone.filter(function(id){ return !have[String(id)]; });
+      for(var k=0;k<gGone.length;k++){
+        if(!(await _rainRemoveGauge(gGone[k]))) return false;   /* raw: the lane is already held by this save */
+        var gid=gGone[k]; state.goneGauges=(state.goneGauges||[]).filter(function(x){ return String(x)!==gid; });
       }
       return true;
     },
@@ -1713,7 +1731,9 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
       return true;
     },
     /* A removed gauge takes its readings with it, on the server too. */
-    async removeGauge(gid){
+    async removeGauge(gid){ return _rainRemoveGauge(gid); }
+  };
+  async function _rainRemoveGauge(gid){
       const fid=farm.active(); if(!fid||!gid) return;
       const e=(await client().from('rainfall_readings').delete().eq('farm_id',fid).eq('gauge_local_id',String(gid))).error;
       if(e){ if(_rainMissing(e)) return false; throw e; }
@@ -1722,8 +1742,7 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
       Object.keys(_rainSent).forEach(function(id){ if(/-/.test(id) && id.slice(id.indexOf('-')+1)===String(gid)) delete _rainSent[id]; });
       delete _rainGSent[String(gid)];
       return true;
-    }
-  };
+  }
   /* ══ RAINFALL-UK-SYNC-END ══ */
 
   /* ---- STATUTORY DOCUMENTS -------------------------------------------------

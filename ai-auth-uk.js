@@ -655,9 +655,12 @@
           if (window.ST_RAIN && rn && !_unsent('rain')) {
             var _byId = {}, _gById = {}, _add = 0;
             (ST_RAIN.log = ST_RAIN.log || []).forEach(function (x) { if (x && x.id) _byId[x.id] = x; });
-            (rn.log || []).forEach(function (x) { if (!x || !x.id) return; if (_byId[x.id]) { for (var k in x) _byId[x.id][k] = x[k]; } else { ST_RAIN.log.push(x); _add++; } });
+            /* A reading removed here and not yet removed there is never taken back. */
+            var _gone = {}; (ST_RAIN.gone || []).forEach(function (id) { _gone[String(id)] = 1; });
+            (rn.log || []).forEach(function (x) { if (!x || !x.id || _gone[String(x.id)]) return; if (_byId[x.id]) { for (var k in x) _byId[x.id][k] = x[k]; } else { ST_RAIN.log.push(x); _add++; } });
             (ST_RAIN.gauges = ST_RAIN.gauges || []).forEach(function (g) { if (g && g.id) _gById[g.id] = g; });
-            (rn.gauges || []).forEach(function (g) { if (g && g.id && !_gById[g.id]) ST_RAIN.gauges.push(g); });
+            var _gGone = {}; (ST_RAIN.goneGauges || []).forEach(function (id) { _gGone[String(id)] = 1; });
+            (rn.gauges || []).forEach(function (g) { if (g && g.id && !_gById[g.id] && !_gGone[String(g.id)]) ST_RAIN.gauges.push(g); });
             try { if (typeof rnRepairGaugeIds === 'function') rnRepairGaugeIds(); } catch (e2) {}
             if (typeof rnSync === 'function') { try { rnSync(); } catch (e3) {} }
             if (typeof renderRainfall === 'function' && document.getElementById('pg-rainfall')) { try { renderRainfall(); } catch (e4) {} }

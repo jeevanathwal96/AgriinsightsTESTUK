@@ -33,8 +33,8 @@
 <script defer src="vendor/chart.umd.js"></script>
 <!-- AgriInsights backend: Supabase client + data service (load order matters) -->
 <script src="vendor/supabase.js"></script>
-<script src="ai-data-uk.js?v=uk112"></script>
-<script src="ai-auth-uk.js?v=uk101"></script>
+<script src="ai-data-uk.js?v=uk113"></script>
+<script src="ai-auth-uk.js?v=uk102"></script>
 <link rel="stylesheet" href="fonts.css"/>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -5899,7 +5899,7 @@ table.rn-t td.dim{color:var(--t4)}
 .rn-x{background:none;border:0;font-size:21px;color:var(--t4);cursor:pointer;line-height:1;padding:0 3px}
 .rn-f{display:flex;flex-direction:column;gap:5px;margin-bottom:13px}
 .rn-f label{font-size:11.5px;font-weight:700;color:var(--t2)}
-.rn-f .hint{font-size:11px;color:var(--t3)}
+.rn-f .hint,#rn-set-body .hint{font-size:11px;color:var(--t3);line-height:1.45}
 .rn-f input,.rn-f select{height:36px;border:1px solid var(--br);border-radius:8px;background:#fff;padding:0 11px;font-size:13px;font-family:inherit;color:var(--t1);width:100%}
 .rn-f input:focus,.rn-f select:focus{outline:none;border-color:var(--rn);box-shadow:0 0 0 3px var(--rnp)}
 .rn-mmrow{display:grid;grid-template-columns:1fr 152px;gap:11px;align-items:center;padding:9px 0;border-top:1px solid var(--br2)}
@@ -6004,6 +6004,8 @@ table.rn-t td.dim{color:var(--t4)}
 .rn-sp .d{font-size:11px;color:var(--t3);margin-top:2px}
 .rn-sheet.wide{max-width:600px}
 @media (max-width:700px){ .rn-2f,.rn-spread{grid-template-columns:1fr} }
+/* At 1024 the settings column is ~270 px: two fields side by side cut "1 October \2014 the water year" short. */
+@media (max-width:1180px){ #rn-set-body .rn-2f{grid-template-columns:1fr} }
 /* Dashboard: four stats fit the This Month card at 1280 px and wider; below it the
    rain stat keeps only "normal N" and the gaps close up, so the row never grows. */
 @media (max-width:1279px){ .combo-stats:has(#rn-dash-stat) .combo-ps-item{padding:0 12px} #rn-dash-stat .rn-long{display:none} }
@@ -19167,7 +19169,7 @@ var FRESH_SHAPE = {
   /* The rain book is the farm's own record, and where the farm is goes with it.
      A new farm keeps how it tracks rain, its rain year, its rule and its switches. */
   ST_RAIN:    { loc:null, normal:null, gauges:[], log:[], sat:null, fc:null, ea:null, nvzMap:null, temp:null,
-                notKept:[], spreadHide:'', soils:null, nvz:null, fillSet:false, prefsSet:false },
+                notKept:[], gone:[], goneGauges:[], spreadHide:'', soils:null, nvz:null, fillSet:false, prefsSet:false },
   ST_LOANAPP: { req:{}, income:{}, estimates:{}, track:{}, landWater:{}, savedAt:'' }
 };
 var FRESH_CONFIG = {
@@ -70668,6 +70670,8 @@ var ST_RAIN = (typeof ST_RAIN !== 'undefined') ? ST_RAIN : {
   nvzMap: null,            /* Defra map suggestion {checked, hit, name, type} */
   temp: null,              /* {min:{iso:C}} last few nights, for the frozen-ground hint */
   notKept: [],             /* [{from,to|null}] stretches the book was not kept */
+  gone: [],                /* ids of readings removed here and not yet removed on the server */
+  goneGauges: [],          /* ids of gauges removed here and not yet removed on the server */
   spreadHide: '',          /* the closed period the strip was dismissed for */
   fillFromSat: true,
   fillSet: false,
@@ -70756,6 +70760,11 @@ function rnNormalMonthly(){
     if (sum > 0){ var k = n.override / sum; base = base.map(function(v){ return v*k; }); }
   }
   return base;
+}
+/* The year's normal as worked out for the farm, before any figure of the farmer's own. */
+function rnNormalDerived(){
+  var n = ST_RAIN.normal;
+  return (n && n.monthly && n.monthly.length === 12) ? n.monthly.reduce(function(a,b){ return a+b; }, 0) : null;
 }
 function rnNormalAnnual(){
   var m = rnNormalMonthly();
@@ -71096,14 +71105,25 @@ function rnMonthSeries(gaugeId){
 }
 /* Winter of this water year (Oct-Mar): so far if we are in it, else the
    whole winter just gone.  Only meaningful on the water year. */
+/* The latest winter, 1 October to 31 March, whatever month the rain year starts:
+   it is the winter UK farmers talk about, and it decides the spring on the land. */
 function rnWinter(){
-  if (rnYearStart() !== 10) return null;
-  var t = rnToday(), st = rnYearStartOf(t);
-  var from = rnISO(st), end = new Date(st.getFullYear()+1, 2, 31);
-  var to = (end > t) ? rnISO(t) : rnISO(end);
-  var inIt = end > t;
-  var norm = inIt ? rnNormalToDate(t) : rnNormalMonths([9,10,11,0,1,2]);
-  return { mm: rnTotal(from, to), normal: norm, soFar: inIt, from: from, to: to, own: rnGaugeOwnTotal(from, to) };
+  var t = rnToday(), y = t.getMonth() >= 9 ? t.getFullYear() : t.getFullYear() - 1;
+  var st = new Date(y, 9, 1), end = new Date(y + 1, 2, 31);
+  var from = rnISO(st), to = (end > t) ? rnISO(t) : rnISO(end), inIt = end > t;
+  return { mm: rnTotal(from, to), normal: rnNormalSpan(from, to), soFar: inIt, from: from, to: to, own: rnGaugeOwnTotal(from, to) };
+}
+/* The long-term average for any stretch of days, each month's normal shared out by its days. */
+function rnNormalSpan(fromISO, toISO){
+  var m = rnNormalMonthly(); if (!m) return null;
+  var tot = 0, d = rnParse(fromISO), e = rnParse(toISO);
+  while (d <= e){
+    var y = d.getFullYear(), mo = d.getMonth(), dim = new Date(y, mo + 1, 0).getDate();
+    var last = new Date(y, mo, dim), stop = last < e ? last : e;
+    tot += m[mo] * ((stop.getDate() - d.getDate() + 1) / dim);
+    d = new Date(y, mo + 1, 1);
+  }
+  return tot;
 }
 
 /* ── demo farm ──────────────────────────────────────────────────────────────
@@ -71176,6 +71196,8 @@ function rnBoot(){
     if (!ST_RAIN.log) ST_RAIN.log = [];
     if (!ST_RAIN.gauges) ST_RAIN.gauges = [];
     if (!Array.isArray(ST_RAIN.notKept)) ST_RAIN.notKept = [];
+    if (!Array.isArray(ST_RAIN.gone)) ST_RAIN.gone = [];
+    if (!Array.isArray(ST_RAIN.goneGauges)) ST_RAIN.goneGauges = [];
     if (ST_RAIN.conv09 == null) ST_RAIN.conv09 = true;
     if (RN_BOOTED) return;
     RN_BOOTED = true;
@@ -71462,7 +71484,10 @@ function rnPostcodeLookup(q){
   if (rnPcIsFull(n)){
     return rnFetchJson('https://api.postcodes.io/postcodes/' + encodeURIComponent(n), 12000).then(function(j){
       var r = j && j.result; if (!r || r.latitude == null) throw new Error('not found');
-      return { postcode: r.postcode || rnPcPretty(n), town: rnCleanPlace(r.parish) || rnCleanPlace(r.admin_ward) || rnCleanPlace(r.admin_district),
+      /* The parish (a village or town in England, a community in Wales) names the place;
+         Scotland and Northern Ireland have none, and their ward names ("Nith") are
+         council wards, not places, so the council area is used instead. */
+      return { postcode: r.postcode || rnPcPretty(n), town: rnCleanPlace(r.parish) || rnCleanPlace(r.admin_district),
                county: rnCleanPlace(r.admin_county) || rnCleanPlace(r.admin_district), nation: r.country || '',
                lat: +r.latitude, lon: +r.longitude, src: 'postcode' };
     });
@@ -71974,7 +71999,10 @@ function rnRenderTiles(){
     var wn = w.normal;
     h += '<div class="rn-tile"><div class="top"><div class="l">' + (w.soFar ? 'Winter so far' : 'Winter &middot; Oct &ndash; Mar') + satTag + '</div>' +
          '<div class="v">' + (w.mm == null ? '&mdash;' : rnMmR(w.mm) + ' mm') + '</div>' +
-         '<div class="c rn">' + (wn && w.mm != null ? rnPct(w.mm, wn) + '% of normal' : (rnHas() ? 'Looking up the long-term average&hellip;' : 'Set where the farm is')) + (sat || w.mm == null ? '' : partTag(w.from, w.to)) + '</div></div>' +
+         '<div class="c rn">' + (wn && w.mm != null ? rnPct(w.mm, wn) + '% of normal'
+            : !rnHas() ? 'Set where the farm is'
+            : (w.mm == null && dfTxt) ? 'Your record starts ' + dfTxt
+            : 'Looking up the long-term average&hellip;') + (sat || w.mm == null ? '' : partTag(w.from, w.to)) + '</div></div>' +
          '<div class="foot">' + rnTileBar(w.mm, wn ? Math.max(wn, w.mm) : null, (wn && w.mm >= wn) ? 'over' : '') +
          '<div class="tick"><span>0</span><span>' + (wn ? rnMmR(wn) + ' mm normal' : '') + '</span></div></div></div>';
   } else {
@@ -72115,7 +72143,7 @@ function rnRenderBook(){
   });
   h += '</div>';
   var tail = (ST_RAIN.conv09 !== false ? 'A reading made in the morning is credited to the day before (the Met Office convention). ' : '');
-  if (allN > show.length || RN_BOOK_ALL) tail += '<b onclick="rnBookToggleAll()">' + (RN_BOOK_ALL ? 'Show the wet days only' : 'Show dry days too (' + allN + ' days)') + '</b>';
+  if (allN > show.length || RN_BOOK_ALL) tail += '<b style="white-space:nowrap" onclick="rnBookToggleAll()">' + (RN_BOOK_ALL ? 'Show the wet days only' : 'Show dry days too (' + allN + ' days)') + '</b>';
   h += '<div class="rn-foot">' + tail + '</div>';
   host.innerHTML = h;
 }
@@ -72343,7 +72371,7 @@ function rnLogBody(){
   var h = '<div class="rn-f"><label>When did you read the gauge?</label>' +
           '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
           '<button type="button" class="btn-sec" style="' + (isMorning ? 'border-color:var(--rn);color:var(--rnd);background:var(--rnp);font-weight:800' : '') + '" onclick="rnLogSetDate(' + rnQ(dflt) + ')">This morning &middot; ' + rnDow(today) + ' ' + rnFmtShort(today) + '</button>' +
-          '<input type="date" class="rn-date" max="' + (ST_RAIN.conv09 === false ? today : rnISO(rnAddDays(rnToday(), -1))) + '" value="' + readOn + '" onchange="rnLogSetRead(this.value)" style="width:auto;flex:1;min-width:150px" aria-label="Or pick the day you read the gauge">' +
+          '<input type="date" class="rn-date" max="' + today + '" value="' + readOn + '" onchange="rnLogSetRead(this.value)" style="width:auto;flex:1;min-width:150px" aria-label="Or pick the day you read the gauge">' +
           '</div><div class="hint">Counts as rain on <b>' + rnDow(RN_LOG_DATE) + ' ' + rnFmtShort(RN_LOG_DATE) + '</b>' +
           (ST_RAIN.conv09 === false ? '.' : ' &mdash; your 09:00 reading is the day before&rsquo;s rain.') + '</div></div>';
   if (ST_RAIN.mode !== 'gauge'){
@@ -72359,8 +72387,12 @@ function rnLogBody(){
            '<div class="inwrap"><input class="rn-mm" data-g="' + esc(g.id) + '" type="number" inputmode="decimal" step="0.1" min="0" placeholder="not read" value="' + (ex ? ex.mm : '') + '"><span class="u">mm</span></div></div>';
     });
   }
+  /* A day already in the book opens with its figures AND its note, so a correction never wipes the note. */
+  var already = rnLog().filter(function(r){ return r.date === RN_LOG_DATE && r.src !== 'sat'; });
+  var oldNote = ''; already.forEach(function(r){ if (!oldNote && r.note && r.note !== 'brought in') oldNote = r.note; });
+  if (already.length) h += '<div class="rn-f" style="margin:8px 0 0"><div class="hint">Already in your book. Change the figure, or clear it and save to remove the reading.</div></div>';
   h += '<div class="rn-f" style="margin-top:14px"><label>Note <span style="font-weight:500;color:var(--t3)">optional</span></label>' +
-       '<input id="rn-log-note-in" type="text" maxlength="80" placeholder="e.g. Brook Field standing water &middot; hail on Twelve Acre"></div>' +
+       '<input id="rn-log-note-in" type="text" maxlength="80" value="' + esc(oldNote) + '" placeholder="e.g. Brook Field standing water &middot; hail on Twelve Acre"></div>' +
        '<div style="display:flex;justify-content:flex-start"><button type="button" class="btn-sec" onclick="rnLogNoRain()">&#9728;&#65039; It didn&rsquo;t rain</button></div>';
   host.innerHTML = h;
 }
@@ -72368,6 +72400,8 @@ function rnLogSetDate(d){ if (!d) return; RN_LOG_DATE = String(d).slice(0,10); r
 /* The date box is the day the gauge was READ; the reading counts as the day before. */
 function rnLogSetRead(d){
   if (!d) return;
+  /* A typed date gets past the picker's max, so the day is checked here too. */
+  if (String(d).slice(0,10) > rnISO(rnToday())){ try { toast('That day hasn\u2019t come yet. Pick the morning you read the gauge.', 'error'); } catch(e){} rnLogBody(); return; }
   RN_LOG_DATE = ST_RAIN.conv09 === false ? String(d).slice(0,10) : rnISO(rnAddDays(rnParse(String(d).slice(0,10)), -1));
   rnLogBody();
 }
@@ -72376,19 +72410,34 @@ function rnLogSave(){
   var ins = document.querySelectorAll('#rn-log-body input.rn-mm');
   var note = String((rnEl('rn-log-note-in') || {}).value || '').trim();
   var by = ''; try { by = (ST && (ST.ownerName || '')) || ''; } catch(e){}
-  var n = 0, total = 0;
+  var n = 0, total = 0, removed = 0;
+  /* A typo like 125 for 12.5 is caught before anything is changed, and the sheet stays open. */
+  var tooBig = null;
+  ins.forEach(function(el){ var v = parseFloat(String(el.value || '').replace(',', '.')); if (!isNaN(v) && v > 500) tooBig = v; });
+  if (tooBig != null){ try { toast(rnMm(tooBig) + ' mm is more than a day\u2019s rain \u2014 check the figure.', 'error'); } catch(e){} return; }
   ins.forEach(function(el){
     var raw = String(el.value == null ? '' : el.value).trim();
-    if (raw === '') return;
+    var gid0 = el.getAttribute('data-g');
+    /* A figure that was there and has been cleared: the reading is removed. */
+    if (raw === ''){
+      var had = rnLog().filter(function(r){ return r.date === RN_LOG_DATE && r.gaugeId === gid0 && r.src !== 'sat'; });
+      if (had.length){
+        ST_RAIN.log = rnLog().filter(function(r){ return had.indexOf(r) < 0; });
+        ST_RAIN.gone = (ST_RAIN.gone || []).concat(had.map(function(r){ return r.id; }));
+        removed++;
+      }
+      return;
+    }
     var mm = parseFloat(raw.replace(',', '.'));
-    if (isNaN(mm) || mm < 0 || mm > 500) return;
+    if (isNaN(mm) || mm < 0) return;
     var gid = el.getAttribute('data-g'), id = rnRid(RN_LOG_DATE, gid);
     ST_RAIN.log = rnLog().filter(function(r){ return !(r.date === RN_LOG_DATE && r.gaugeId === gid && r.src !== 'sat'); });
     ST_RAIN.log.push({ id: id, date: RN_LOG_DATE, gaugeId: gid, mm: Math.round(mm*10)/10, src: 'gauge', by: by, note: note });
+    ST_RAIN.gone = (ST_RAIN.gone || []).filter(function(g){ return g !== id; });
     n++; total += mm;
   });
-  if (!n){ try { toast('Type what the gauge shows, then Save.', 'error'); } catch(e){} return; }
-  try { rnNotKeptCloseAt(RN_LOG_DATE); } catch(e){}
+  if (!n && !removed){ try { toast('Type what the gauge shows, then Save.', 'error'); } catch(e){} return; }
+  if (n) { try { rnNotKeptCloseAt(RN_LOG_DATE); } catch(e){} }
   try { saveState(); } catch(e){}
   try { rnPush(); } catch(e){}
   rnLogClose();
@@ -72396,6 +72445,7 @@ function rnLogSave(){
   try { rnDashSync(); } catch(e){}
   /* Two gauges reading 12 mm each is 12 mm of rain, not 24: gauges are never added. */
   var day = rnDow(RN_LOG_DATE) + ' ' + rnFmtShort(RN_LOG_DATE);
+  if (!n){ try { toast('Reading removed for ' + day, 'success'); } catch(e){} return; }
   try { toast(total <= 0 ? 'A dry day recorded for ' + day
             : (n > 1 ? 'Rain saved for ' + n + ' gauges · ' + day : 'Rain saved · ' + rnMm(total) + ' mm for ' + day), 'success'); } catch(e){}
 }
@@ -72464,14 +72514,15 @@ function rnSettingsRender(){
 
   h += '<div class="rn-f" style="margin-top:16px"><label>Where is the farm? <span class="rn-q">so we can look up its long-term rainfall</span></label>';
   var l = ST_RAIN.loc;
-  if (l){
+  if (l && !RN_LOC_EDIT){
     h += '<div class="rn-loc"><span><b>' + esc((l.postcode ? l.postcode + ' · ' : '') + (l.town || 'Set')) + '</b>' +
          (l.county && l.county !== l.town ? '<span style="color:var(--t3)">, ' + esc(l.county) + '</span>' : '') +
          (l.nation ? '<span style="color:var(--t4);font-size:11px;display:block">' + esc(l.nation) + ' &middot; ' + Math.abs(l.lat).toFixed(2) + '&deg; ' + (l.lat < 0 ? 'S' : 'N') + ' ' + Math.abs(l.lon).toFixed(2) + '&deg; ' + (l.lon < 0 ? 'W' : 'E') + '</span>' : '') +
-         '</span><button class="btn-sec" onclick="rnLocClear()">Change</button></div>';
+         '</span><button class="btn-sec" onclick="rnLocEdit()">Change</button></div>';
   } else {
     h += '<div style="display:flex;gap:8px"><input id="rn-loc-q" type="text" autocomplete="postal-code" placeholder="Postcode, e.g. HR6 8SG or just HR6" onkeydown="if(event.key===\'Enter\'){event.preventDefault();rnLocSearch();}">' +
-         '<button class="rn-btn" onclick="rnLocSearch()">Find</button></div>';
+         '<button class="rn-btn" onclick="rnLocSearch()">Find</button>' +
+         (l ? '<button class="btn-sec" style="white-space:nowrap" onclick="rnLocCancel()">Keep ' + esc(l.town || l.postcode || 'the old one') + '</button>' : '') + '</div>';
   }
   h += '<div class="hint">A postcode, or just the first half. Used to look up rainfall for your farm, nothing else. Never printed in full.</div><div id="rn-loc-results"></div></div>';
 
@@ -72481,8 +72532,10 @@ function rnSettingsRender(){
          return '<option value="' + o[0] + '"' + (rnYearStart() === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') +
        '</select><div class="hint">The water year keeps a wet winter and the crop it grows in one year.</div></div>';
   h += '<div class="rn-f"><label>Long-term average</label>' +
-       '<div style="display:flex;gap:8px;align-items:center"><input id="rn-set-normal" type="number" min="0" step="1" placeholder="' + (na ? Math.round(na) : '—') + '" value="' + (ST_RAIN.normal && ST_RAIN.normal.override ? ST_RAIN.normal.override : '') + '" onchange="rnSetNormalOverride(this.value)"><span class="rn-u">mm a year</span></div>' +
-       '<div class="hint">' + (na ? 'We worked out <b>' + rnMmR(ST_RAIN.normal && ST_RAIN.normal.override ? rnNormalAnnual() : na) + ' mm</b> for your farm from ' + ((ST_RAIN.normal && ST_RAIN.normal.years) || 30) + ' years. Type your own figure if you have one you trust.'
+       '<div style="display:flex;gap:8px;align-items:center"><input id="rn-set-normal" type="number" min="0" step="1" placeholder="' + (rnNormalDerived() ? Math.round(rnNormalDerived()) : '—') + '" value="' + (ST_RAIN.normal && ST_RAIN.normal.override ? ST_RAIN.normal.override : '') + '" onchange="rnSetNormalOverride(this.value)"><span class="rn-u">mm a year</span></div>' +
+       '<div class="hint">' + (ST_RAIN.normal && ST_RAIN.normal.override
+            ? 'Your own figure is used everywhere.' + (rnNormalDerived() ? ' Clear it to go back to the <b>' + rnMmR(rnNormalDerived()) + ' mm</b> we worked out.' : '')
+            : na ? 'We worked out <b>' + rnMmR(na) + ' mm</b> for your farm from ' + ((ST_RAIN.normal && ST_RAIN.normal.years) || 30) + ' years. Type your own figure if you have one you trust.'
                             : 'Set where the farm is and we will work this out.') + '</div></div>';
   h += '</div>';
 
@@ -72506,7 +72559,7 @@ function rnSettingsRender(){
           '<table class="rn-t"><thead><tr><th>Name</th><th>Where</th><th style="width:66px">Default</th><th style="width:34px"></th></tr></thead><tbody>';
     (ST_RAIN.gauges || []).forEach(function(g, i){
       gh += '<tr><td><input class="rn-gi" value="' + esc(g.name || '') + '" onchange="rnGaugeSet(' + i + ',\'name\',this.value)"></td>' +
-            '<td><input class="rn-gi" value="' + esc(g.where || '') + '" placeholder="e.g. by the dairy" onchange="rnGaugeSet(' + i + ',\'where\',this.value)"></td>' +
+            '<td><input class="rn-gi" value="' + esc(g.where || '') + '" placeholder="e.g. dairy" onchange="rnGaugeSet(' + i + ',\'where\',this.value)"></td>' +
             '<td style="text-align:center"><input class="rn-set-radio" type="radio" name="rn-def" ' + (g.isDefault ? 'checked' : '') + ' onchange="rnGaugeDefault(' + i + ')" aria-label="Default gauge"></td>' +
             '<td><button class="rn-x" title="Remove" aria-label="Remove gauge" onclick="rnGaugeRemove(' + i + ')">&times;</button></td></tr>';
     });
@@ -72527,7 +72580,7 @@ function rnSettingsRender(){
          rnOptCard('rnSetNvz', 'yes', 'Yes', 'The closed periods apply.', ans === true) +
          rnOptCard('rnSetNvz', 'no', 'No', 'Only the Farming Rules for Water apply.', ans === false) + '</div>' +
          '<div class="hint" style="margin-top:6px">' + (m && m.checked
-            ? (m.hit ? 'Defra&rsquo;s map puts your farm in the <b>' + esc(String(m.name || 'an').replace(/\s*NVZ$/i,'')) + '</b> zone' + (m.type ? ' (' + esc(String(m.type).toLowerCase()) + ')' : '') + '. '
+            ? (m.hit ? 'Defra&rsquo;s map puts your farm in the <b>' + esc(rnNvzName(m.name)) + '</b> zone' + (m.type ? ' (' + esc(String(m.type).toLowerCase()) + ')' : '') + '. '
                      : 'Defra&rsquo;s map does not put your farm in a zone. ')
               + 'The map shows the 2017 designation, so check your own land before you rely on it.'
             : 'Defra&rsquo;s map is checked once the farm&rsquo;s location is set.') + '</div>';
@@ -72537,14 +72590,23 @@ function rnSettingsRender(){
     cp += '<div class="hint" style="margin-top:6px">Scotland&rsquo;s closed periods depend on your zone, so they are not shown yet.</div>';
   }
 
+  /* The sheet is otherwise reached only when a period is about to close; the dates are wanted all year. */
+  if (rnHas()) cp += '<div class="rn-foot" style="margin-top:8px"><b onclick="nav(\'rainfall\');setTimeout(function(){rnSpreadOpen();},260)">See your spreading dates &rarr;</b></div>';
   gh += '<div class="rn-cp"><div class="rn-gh"><span class="rn-lbl" style="margin:0">Closed periods</span></div>' + cp + '</div>';
   gh += '<div class="rn-foot">Kept a rain book or a weather station? <b onclick="rnImportOpen()">Bring in your old rain book</b> &mdash; a date and the millimetres is enough. Davis and Sencrop exports are recognised.</div>';
   host.innerHTML = '<div class="rn-2col"><div>' + h + '</div><div>' + gh + '</div></div>';
 }
 var RN_ADV_OPEN = false;
 function rnOptCard(fn, val, title, sub, on){
-  return '<button type="button" class="rn-opt' + (on ? ' on' : '') + '" onclick="' + fn + '(' + rnQ(val) + ')">' +
+  return '<button type="button" class="rn-opt' + (on ? ' on' : '') + '" aria-pressed="' + (on ? 'true' : 'false') + '" onclick="' + fn + '(' + rnQ(val) + ')">' +
          '<span class="dot"></span><span><b>' + title + '</b>' + (sub ? '<small>' + sub + '</small>' : '') + '</span></button>';
+}
+/* Defra names zones after the water body, in the Agency's shorthand:
+   "Pinsley Bk - source to conf R Lugg" reads as "Pinsley Brook – source to confluence with River Lugg". */
+function rnNvzName(s){
+  return String(s || 'an').replace(/\s*NVZ$/i, '')
+    .replace(/\bBk\b/g, 'Brook').replace(/\bStr\b/g, 'Stream').replace(/\bTrib\b/gi, 'tributary')
+    .replace(/\bconf\b\.?/gi, 'confluence with').replace(/\bR (?=[A-Z])/g, 'River ').replace(/ - /g, ' \u2013 ');
 }
 function rnSetMode(m){
   if (ST_RAIN.mode === m) return;
@@ -72559,12 +72621,12 @@ function rnSetMode(m){
     var d = (ST_RAIN.gauges || []).filter(function(g){ return g.isDefault; })[0] || (ST_RAIN.gauges || [])[0];
     if (d) rnLog().forEach(function(r){ if (r.gaugeId === d.id){ r.gaugeId = RN_FARM_GAUGE; r.id = rnRid(r.date, RN_FARM_GAUGE); } });
   }
-  rnPersist(); rnSettingsRender();
-  /* The readings moved gauge, and their ids with them: the new rows are queued
-     above, and the rows under the old ids go after them (insert first, then
-     remove, in the same lane - a failure part-way never loses a reading). */
+  /* The readings moved gauge, and their ids with them. The rows under the old ids
+     go on the book's removal list, which the save sends AFTER the new rows (a
+     failure part-way never loses a reading) and keeps until the server confirms. */
   var gone = Object.keys(before).filter(function(id){ return !rnLog().some(function(r){ return r.id === id; }); });
-  try { if (gone.length && typeof AI !== 'undefined' && AI.rain && AI.rain.remove && AI.farm && AI.farm.active()) AI.rain.remove(gone).catch(function(){}); } catch(e){}
+  if (gone.length) ST_RAIN.gone = (ST_RAIN.gone || []).concat(gone);
+  rnPersist(); rnSettingsRender();
   try { toast(m === 'gauge' ? 'Tracking rain by gauge. Nothing you logged was lost.' : 'Tracking rain for the whole farm.', 'success'); } catch(e){}
 }
 function rnSetYearStart(v){
@@ -72646,6 +72708,7 @@ function rnTownFind(q){
 var RN_TOWN_HITS = [];
 function rnLocPickTown(i){ var r = RN_TOWN_HITS[i]; if (r) rnLocPick(r); }
 function rnLocPick(r){
+  RN_LOC_EDIT = false;
   ST_RAIN.loc = { postcode: r.postcode || '', town: r.town || '', county: r.county || '', nation: r.nation || '', lat: +r.lat, lon: +r.lon, src: r.src || 'postcode' };
   ST_RAIN.normal = ST_RAIN.normal && ST_RAIN.normal.override ? { monthly: null, override: ST_RAIN.normal.override } : null;
   ST_RAIN.sat = null; ST_RAIN.ea = null; ST_RAIN.nvzMap = null; ST_RAIN.fc = null; ST_RAIN.spreadHide = '';
@@ -72654,6 +72717,12 @@ function rnLocPick(r){
   try { toast('Looking up the long-term rainfall for ' + (r.town || r.postcode) + '…', 'success'); } catch(e){}
   try { rnSync(true).then(function(){ rnSettingsRender(); }); } catch(e){}
 }
+/* Change opens the search and keeps the farm where it is until a new place is
+   picked: leaving the page half-way must not wipe the location, its long-term
+   average and the zone answer, and send that blank to the account. */
+var RN_LOC_EDIT = false;
+function rnLocEdit(){ RN_LOC_EDIT = true; rnSettingsRender(); setTimeout(function(){ var q = rnEl('rn-loc-q'); if (q) q.focus(); }, 30); }
+function rnLocCancel(){ RN_LOC_EDIT = false; rnSettingsRender(); }
 function rnLocClear(){
   ST_RAIN.loc = null; ST_RAIN.sat = null; ST_RAIN.ea = null; ST_RAIN.nvzMap = null; ST_RAIN.fc = null;
   if (ST_RAIN.normal) ST_RAIN.normal = ST_RAIN.normal.override ? { monthly: null, override: ST_RAIN.normal.override } : null;
@@ -72683,11 +72752,14 @@ function rnGaugeRemove(i){
   var g = (ST_RAIN.gauges || [])[i]; if (!g) return;
   var n = rnLog().filter(function(r){ return r.gaugeId === g.id; }).length;
   if (n && !confirm('Remove ' + g.name + '? Its ' + n + ' ' + rnPl(n,'reading','readings') + ' will be removed with it.')) return;
+  /* On the server too (the SA build left a removed gauge's rows behind, so they came back on the
+     next device), and durably: the gauge and its readings stay on the removal lists until a save
+     confirms them gone, so a removal made offline is sent later rather than forgotten. */
+  ST_RAIN.gone = (ST_RAIN.gone || []).concat(rnLog().filter(function(r){ return r.gaugeId === g.id && r.src !== 'sat'; }).map(function(r){ return r.id; }));
+  ST_RAIN.goneGauges = (ST_RAIN.goneGauges || []).concat([g.id]);
   ST_RAIN.log = rnLog().filter(function(r){ return r.gaugeId !== g.id; });
   ST_RAIN.gauges.splice(i, 1);
   if (ST_RAIN.gauges.length && !ST_RAIN.gauges.some(function(x){ return x.isDefault; })) ST_RAIN.gauges[0].isDefault = true;
-  /* On the server too: the SA build left a removed gauge's rows behind, so they came back on the next device. */
-  try { if (typeof AI !== 'undefined' && AI.rain && AI.rain.removeGauge && AI.farm && AI.farm.active()) AI.rain.removeGauge(g.id).catch(function(){}); } catch(e){}
   rnPersist(); rnSettingsRender();
 }
 
@@ -72861,7 +72933,7 @@ var RN_DOC_CSS = 'body{font-family:system-ui,-apple-system,"Segoe UI",sans-serif
   'th{text-align:left;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#6B7280;padding:5px 7px;border-bottom:1px solid #111827;white-space:nowrap}' +
   'td{padding:5px 7px;border-bottom:1px solid #F3F4F6}' +
   '.r{text-align:right;font-variant-numeric:tabular-nums}.sat{color:#6B7280}' +
-  'tr.tot td{border-top:1px solid #111827;font-weight:800}' +
+  'tr.tot td{border-top:1px solid #111827;font-weight:800}tr.tot td:first-child{white-space:nowrap}' +
   '.notes{font-size:11px;color:#374151;line-height:1.55}.notes p{margin:5px 0}.notes.src{margin-top:10px;color:#6B7280}' +
   '.sig{display:grid;grid-template-columns:1fr 1fr;gap:26px;margin-top:22px;font-size:11px;color:#6B7280}' +
   '.sig div{border-top:1px solid #111827;padding-top:5px}' +
@@ -72946,7 +73018,10 @@ function rnLenderSection(){
       (nd != null ? '<tr><td>Long-term average to the same date</td><td class="amt">' + rnMmR(nd) + ' mm</td></tr>' : '') +
       '<tr><td>Last 12 months</td><td class="amt">' + (l12 == null ? '&mdash;' : rnMmR(l12) + ' mm') + '</td></tr>' +
       (na ? '<tr><td>Long-term average, full year</td><td class="amt">' + rnMmR(na) + ' mm</td></tr>' : '') + '</table>' +
-      '<p style="font-size:12px;color:#666;margin-top:8px">Measured on this farm' + ((ST_RAIN.loc && ST_RAIN.loc.town) ? ' at ' + esc(ST_RAIN.loc.town) : '') + '. ' +
+      '<p style="font-size:12px;color:#666;margin-top:8px">Measured on this farm' + ((ST_RAIN.loc && ST_RAIN.loc.town) ? ' at ' + esc(ST_RAIN.loc.town) : '') +
+        /* A lender reads this as the farm's own record, so satellite fill is named here too. */
+        (function(){ var f = (typeof rnSatUntil === 'function') ? rnSatUntil(rnISO(rnAddDays(rnToday(), -365))) : null;
+                     return f ? ' from ' + rnFmtDate(f) + '; before that, satellite estimates for the farm&rsquo;s location' : ''; })() + '. ' +
       (ST_RAIN.conv09 !== false ? 'Readings are taken at 09:00 and credited to the previous day. ' : '') +
       'A full dated rainfall record, by month and by gauge, prints from Reports.</p>';
   } catch(e){ return ''; }
@@ -73278,9 +73353,14 @@ function rnAttnItems(){
     soon.slice(0, 2).forEach(function(p){
       out.push({
         tier: 'legal', sev: 70,
-        nm: RN_KIND_WORDS[p.kind] + ': the ' + RN_LAND_WORDS[p.land] + ' closed period starts ' + (p.startsIn === 0 ? 'today' : (p.startsIn === 1 ? 'tomorrow' : rnFmtShort(rnISO(p.from)))),
-        lead: 'Closed ' + rnFmtShort(rnISO(p.from)) + ' – ' + rnFmtShort(rnISO(p.to)),
-        sub: (function(){ var h = rnHeavy48(); return h ? (h.heavy ? 'Heavy rain forecast ' + (rnDaysBetween(rnISO(rnToday()), h.day) === 0 ? 'today' : RN_DOW_LONG[rnParse(h.day).getDay()]) : 'No heavy rain forecast for 48 hours') + ' (' + rnFcSourceName() + ')' : 'Record every application in Crops › Compliance'; })(),
+        /* Short enough for the collapsed card (the date must never be the part cut off),
+           and the same words as the strip on the Rainfall page. */
+        /* The countdown sits in the card's right-hand column, so the title only says what and where
+           ("Arable land: slurry closes", at most 35 characters: fits the card at 1024 px). */
+        nm: ({ grass: 'Grassland', arable: 'Arable land' })[p.land] + ': ' + ({ slurry: 'slurry', bagN: 'bagged nitrogen' })[p.kind] + ' closes',
+        lead: RN_KIND_WORDS[p.kind] + ' on your ' + RN_LAND_WORDS[p.land] + ' closes ' + (p.startsIn === 0 ? 'today' : (p.startsIn === 1 ? 'tomorrow' : 'on ' + rnFmtShort(rnISO(p.from)))),
+        sub: 'Closed ' + rnFmtShort(rnISO(p.from)) + ' – ' + rnFmtShort(rnISO(p.to)) + ' · ' +
+             (function(){ var h = rnHeavy48(); return h ? (h.heavy ? 'heavy rain forecast ' + (rnDaysBetween(rnISO(rnToday()), h.day) === 0 ? 'today' : RN_DOW_LONG[rnParse(h.day).getDay()]) : 'no heavy rain forecast for 48 hours') + ' (' + rnFcSourceName() + ')' : 'record every application in Crops › Compliance'; })(),
         st: p.startsIn === 0 ? 'today' : (p.startsIn === 1 ? 'tomorrow' : p.startsIn + ' days'),
         when: p.startsIn, cta: 'Spreading dates',
         action: function(){ try { nav('rainfall'); setTimeout(function(){ rnSpreadOpen(); }, 260); } catch(e){} }
@@ -73310,6 +73390,14 @@ function rnAttnItems(){
   })();
   return out;
 }
+/* Escape closes the rain sheets, as it does every other sheet in the app. */
+document.addEventListener('keydown', function(e){
+  if (e.key !== 'Escape') return;
+  var open = ['rn-log-modal', 'rn-imp-modal', 'rn-spread-modal'].filter(function(id){ var m = document.getElementById(id); return m && m.classList.contains('on'); });
+  if (!open.length) return;
+  e.preventDefault();
+  open.forEach(function(id){ try { ({ 'rn-log-modal': rnLogClose, 'rn-imp-modal': rnImportClose, 'rn-spread-modal': rnSpreadClose })[id](); } catch(_){} });
+});
 /* ══ RAINFALL-UK-END ══ */
 
 </script>
