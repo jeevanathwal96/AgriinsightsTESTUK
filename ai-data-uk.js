@@ -367,6 +367,7 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
    first_used: they arrive together in the migration that makes projects work. */
   let CAN_FARM_CONSENT = false;
   let CAN_FARM_PARTNERS= false;
+  let CAN_FARM_RAIN = false;   // farms.rain_* (tools/uk-rainfall-schema.sql)
   let CAN_TXN_RECEIPT  = false;
   let CAN_ORCH_DOCFILE = false;
   let CAN_TXN_PARTY    = false;
@@ -392,6 +393,7 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
   CAN_ASSET_FINANCE = await has('assets',     'finance_kind');
     CAN_FARM_CONSENT= await has('farms',        'consent_version');
     CAN_FARM_PARTNERS= await has('farms',        'partners');
+    CAN_FARM_RAIN    = await has('farms',        'rain_prefs');
     CAN_TXN_RECEIPT = await has('transactions', 'receipt_path');
     CAN_ORCH_DOCFILE= await has('orchard_block_docs','path');
     CAN_TXN_PARTY   = await has('transactions','counterparty');
@@ -1644,6 +1646,86 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     }
   };
 
+  /* ══ RAINFALL-UK-SYNC-BEGIN ══════════════════════════════════════════════
+     The rain book: gauges and readings, on the save lanes like every other
+     writer (-320 onwards).  Readings are append-mostly and each one's id IS its
+     gauge and day, so a correction overwrites its own row and nothing is ever
+     deleted to be re-inserted.  Only rows that changed since this device last
+     sent them go out.  Satellite and official-gauge figures are never stored
+     on the server: only what a person read. */
+  function rainGaugeToDb(g,fid){ return { farm_id:fid, local_id:String(g.id), name:g.name||null, where_at:g.where||null,
+      is_default:!!g.isDefault, link_type:(g.link&&g.link.type)||null, link_local_id:(g.link&&g.link.id!=null)?String(g.link.id):null }; }
+  function rainGaugeFromDb(r){ var g={ id:r.local_id, name:r.name||'', where:r.where_at||'', isDefault:!!r.is_default, link:{} };
+    if(r.link_type){ g.link={ type:r.link_type }; if(r.link_local_id) g.link.id=r.link_local_id; } return g; }
+  function rainReadToDb(x,fid){ return { farm_id:fid, local_id:String(x.id), read_date:String(x.date).slice(0,10),
+      gauge_local_id:x.gaugeId?String(x.gaugeId):'farm', mm:Math.round((Number(x.mm)||0)*10)/10, source:'gauge',
+      read_by:x.by||null, note:x.note||null }; }
+  function rainReadFromDb(r){ return { id:r.local_id, date:String(r.read_date||'').slice(0,10), gaugeId:r.gauge_local_id||'farm',
+      mm:Number(r.mm)||0, src:'gauge', by:r.read_by||'', note:r.note||'' }; }
+  /* The tables not being there yet (migration not run) is not a failure to retry for ever. */
+  function _rainMissing(e){ var c=e&&e.code; return c==='42P01'||c==='PGRST205'||/does not exist|schema cache/i.test(String((e&&e.message)||'')); }
+  var _rainSent=Object.create(null), _rainGSent=Object.create(null);
+  load.rainfall = async function(farmId){
+    farmId=farmId||farm.active();
+    const g=await selectAll(() => client().from('rainfall_gauges').select('*').eq('farm_id',farmId));
+    if(g.error){ if(_rainMissing(g.error)) return null; throw g.error; }
+    const r=await selectAll(() => client().from('rainfall_readings').select('*').eq('farm_id',farmId).order('read_date',{ascending:false}));
+    if(r.error){ if(_rainMissing(r.error)) return null; throw r.error; }
+    var gauges=(g.data||[]).map(rainGaugeFromDb), log=(r.data||[]).map(rainReadFromDb);
+    /* What the server holds is what this device need not send again. */
+    gauges.forEach(function(x){ _rainGSent[x.id]=JSON.stringify(rainGaugeToDb(x,farmId)); });
+    log.forEach(function(x){ _rainSent[x.id]=JSON.stringify(rainReadToDb(x,farmId)); });
+    return { gauges:gauges, log:log };
+  };
+  const rain = {
+    async saveAll(state){
+      state=state||global.ST_RAIN; if(!state) return; const fid=farm.active(); if(!fid) return;
+      var gs=(state.mode==='gauge')?(state.gauges||[]):[];
+      var own=(state.log||[]).filter(function(x){ return x && x.src!=='sat' && x.id && x.date; });
+      var gRows=[], rRows=[];
+      gs.forEach(function(x){ var row=rainGaugeToDb(x,fid), j=JSON.stringify(row); if(_rainGSent[x.id]!==j) gRows.push([x.id,j,row]); });
+      own.forEach(function(x){ var row=rainReadToDb(x,fid), j=JSON.stringify(row); if(_rainSent[x.id]!==j) rRows.push([x.id,j,row]); });
+      if(!gRows.length && !rRows.length) return true;
+      const warn='Rainfall not saved online yet — run tools/uk-rainfall-schema.sql in Supabase.';
+      if(gRows.length){
+        const e=(await client().from('rainfall_gauges').upsert(gRows.map(function(t){ return t[2]; }),{onConflict:'farm_id,local_id'})).error;
+        if(e){ if(_rainMissing(e)){ console.warn(warn+' ('+(e.message||e)+')'); return false; } throw e; }
+        gRows.forEach(function(t){ _rainGSent[t[0]]=t[1]; });
+      }
+      for(var i=0;i<rRows.length;i+=500){
+        var chunk=rRows.slice(i,i+500);
+        const e2=(await client().from('rainfall_readings').upsert(chunk.map(function(t){ return t[2]; }),{onConflict:'farm_id,local_id'})).error;
+        if(e2){ if(_rainMissing(e2)){ console.warn(warn+' ('+(e2.message||e2)+')'); return false; } throw e2; }
+        chunk.forEach(function(t){ _rainSent[t[0]]=t[1]; });
+      }
+      return true;
+    },
+    /* Readings whose ids moved (a change of tracking mode). Queued after the save
+       that wrote their replacements, in the same lane. */
+    async remove(ids){
+      const fid=farm.active(); if(!fid) return; ids=(ids||[]).map(String); if(!ids.length) return true;
+      for(var i=0;i<ids.length;i+=200){
+        var part=ids.slice(i,i+200);
+        const e=(await client().from('rainfall_readings').delete().eq('farm_id',fid).in('local_id',part)).error;
+        if(e){ if(_rainMissing(e)) return false; throw e; }
+        part.forEach(function(id){ delete _rainSent[id]; });
+      }
+      return true;
+    },
+    /* A removed gauge takes its readings with it, on the server too. */
+    async removeGauge(gid){
+      const fid=farm.active(); if(!fid||!gid) return;
+      const e=(await client().from('rainfall_readings').delete().eq('farm_id',fid).eq('gauge_local_id',String(gid))).error;
+      if(e){ if(_rainMissing(e)) return false; throw e; }
+      const e2=(await client().from('rainfall_gauges').delete().eq('farm_id',fid).eq('local_id',String(gid))).error;
+      if(e2){ if(_rainMissing(e2)) return false; throw e2; }
+      Object.keys(_rainSent).forEach(function(id){ if(/-/.test(id) && id.slice(id.indexOf('-')+1)===String(gid)) delete _rainSent[id]; });
+      delete _rainGSent[String(gid)];
+      return true;
+    }
+  };
+  /* ══ RAINFALL-UK-SYNC-END ══ */
+
   /* ---- STATUTORY DOCUMENTS -------------------------------------------------
      Removal certificates now; spray records and payslips later, hence a domain
      of its own rather than hanging off livestock. Append-only and immutable:
@@ -2438,6 +2520,21 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     const r=await client().from('farms').select('name,owner_name,region,farm_ha,farm_type,fy_start_month,lang,vat_registered,utr,vat_number,entity_type,partners,herd_mark,herd_mark_type,farm_address,paye_ref,updated_at').eq('id',farmId).single();
     if(r.error) throw r.error;
     var p=profileFromDb(r.data);
+    /* Rainfall: where the farm is and how it keeps its rain book (tools/uk-rainfall-schema.sql).
+       Its OWN request, so a database without the columns still loads the profile. */
+    try{
+      const rr=await client().from('farms').select('rain_lat,rain_lon,rain_town,rain_postcode,rain_nation,rain_prefs').eq('id',farmId).single();
+      if(!rr.error && rr.data && p){
+        _profNoteAck(rr.data);
+        var R=rr.data, pr=R.rain_prefs; if(typeof pr==='string'){ try{ pr=JSON.parse(pr); }catch(e){ pr=null; } }
+        var rnp={};
+        if(R.rain_lat!=null && R.rain_lon!=null) rnp.loc={ lat:Number(R.rain_lat), lon:Number(R.rain_lon), town:R.rain_town||'', postcode:R.rain_postcode||'',
+                                                          nation:R.rain_nation||'', county:(pr&&pr.county)||'', src:(pr&&pr.locSrc)||'postcode' };
+        if(pr && typeof pr==='object') rnp.prefs=pr;
+        if(rnp.loc || rnp.prefs) p._rain=rnp;
+      }
+    }catch(e){}
+
     /* Payments on account the farmer copied from their HMRC account live in farms.prefs.
        Read in their OWN request, so a database without the column still loads the
        profile - the same rule the save side follows for every optional column. */
@@ -2495,13 +2592,34 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
       /* Payments on account from HMRC, merged into farms.prefs so any other key there
          survives. Its own statement: a database without the column still saves the rest. */
       var pref=(st.poaHmrc && typeof st.poaHmrc==='object') ? Object.assign({}, _farmPrefs||{}, {poa:st.poaHmrc}) : null;
-      var snap=JSON.stringify({c:core,e:extra,k:cons,p:pref}); if(snap===_profSnap) return;
+      /* Rainfall: where the farm is and how it keeps its rain book, in their own
+         statement so a database without the columns still saves the rest. Sent
+         only once a rain setting was chosen on, or brought to, this device, so a
+         device still on the defaults never writes over another's choice. */
+      var rainc={};
+      if(CAN_FARM_RAIN){
+        try{
+          var _r=global.ST_RAIN;
+          if(_r && _r.prefsSet){
+            var _L=_r.loc;
+            rainc.rain_lat=_L?Number(_L.lat):null; rainc.rain_lon=_L?Number(_L.lon):null;
+            rainc.rain_town=_L?(_L.town||null):null; rainc.rain_postcode=_L?(_L.postcode||null):null; rainc.rain_nation=_L?(_L.nation||null):null;
+            rainc.rain_prefs={ mode:_r.mode||'farm', yearStart:_r.yearStart||null, normalOverride:(_r.normal&&_r.normal.override)||null,
+              notKept:Array.isArray(_r.notKept)?_r.notKept:[], fillFromSat:_r.fillFromSat!==false, fillSet:!!_r.fillSet, conv09:_r.conv09!==false,
+              soils:_r.soils||null, nvz:(_r.nvz===true||_r.nvz===false)?_r.nvz:null,
+              fitMm:(_r.rule&&_r.rule.fitMm)||20, fitDays:(_r.rule&&_r.rule.fitDays)||7,
+              county:(_L&&_L.county)||'', locSrc:(_L&&_L.src)||'' };
+          }
+        }catch(e){}
+      }
+      var snap=JSON.stringify({c:core,e:extra,k:cons,p:pref,r:rainc}); if(snap===_profSnap) return;
       /* Only what differs from the row the server last confirmed. */
       var groups = [
         { all: core,  fatal: true },
         { all: extra, warn: 'Profile: optional fields (VAT/tax/business-type) not saved \u2014 run the profile-schema migrations in Supabase.' },
         { all: cons,  warn: 'Profile: privacy consent not recorded \u2014 run the consent migration in Supabase.' },
-        { all: (pref ? { prefs: pref } : {}), warn: 'Profile: payments on account not saved', done: function(){ _farmPrefs = pref; } }
+        { all: (pref ? { prefs: pref } : {}), warn: 'Profile: payments on account not saved', done: function(){ _farmPrefs = pref; } },
+        { all: rainc, warn: 'Profile: rainfall location and settings not saved \u2014 run tools/uk-rainfall-schema.sql in Supabase.' }
       ];
       var extraOk = true, firstErr = null, stale = [];
       for(var gi = 0; gi < groups.length; gi++){
@@ -2739,6 +2857,7 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     plan:      function(){ return global.ST_PLAN ? _syncRawCall('plan.saveAll', plan, [global.ST_PLAN]) : true; },
     workers:   function(){ return global.ST_WORK ? _syncRawCall('workers.saveAll', workersSave, [global.ST_WORK]) : true; },
     fuel:      function(){ return (global.ST_FUEL && global.ST_FUEL.issues) ? _syncRawCall('fuel.saveAll', fuel, [global.ST_FUEL.issues]) : true; },
+    rain:      function(){ return global.ST_RAIN ? _syncRawCall('rain.saveAll', rain, [global.ST_RAIN]) : true; },
     documents: function(){ return (global.ST && global.ST.docs) ? _syncRawCall('documents.saveAll', documents, [global.ST.docs]) : true; },
     budget:    function(){ return (global.ST && global.ST.budgets) ? _syncRawCall('budget.save', budget, [global.ST.budgets]) : true; },
     rules:     function(){ var list = (typeof global.catRules === 'function') ? global.catRules() : (global.ST && global.ST.catRules); return list ? _syncRawCall('rules.saveAll', rules, [list]) : true; }
@@ -2753,6 +2872,7 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     plan:      function(){ return !!global.ST_PLAN; },
     workers:   function(){ return !!global.ST_WORK; },
     fuel:      function(){ return !!(global.ST_FUEL && global.ST_FUEL.issues); },
+    rain:      function(){ return !!global.ST_RAIN; },
     documents: function(){ return !!(global.ST && global.ST.docs); },
     budget:    function(){ return !!(global.ST && global.ST.budgets); },
     rules:     function(){ return !!(typeof global.catRules === 'function' || (global.ST && global.ST.catRules)); }
@@ -2814,6 +2934,9 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
   _syncWrap('workers',   'workers',   workersSave, 'removeWorker', true);
   _syncWrap('workers',   'workers',   workersSave, 'removePayRun', true);
   _syncWrap('fuel',      'fuel',      fuel,        'saveAll');
+  _syncWrap('rain',      'rain',      rain,        'saveAll');
+  _syncWrap('rain',      'rain',      rain,        'remove', true);
+  _syncWrap('rain',      'rain',      rain,        'removeGauge', true);
   _syncWrap('documents', 'documents', documents,   'saveAll');
   _syncWrap('rules',     'rules',     rules,       'saveAll');
   /* -411: the six writers that saved outside the queues. A failure used to print one
@@ -2914,7 +3037,7 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
   try{ global.addEventListener('online', function(){ sync.retryAll(); }); }catch(e){}
 
   // ---- EXPORT --------------------------------------------------------------
-  global.AI = { init: client, projectRef: PROJECT_REF, auth, farm, sync: sync, load, txn, account, budget, recurring, asset, loans,
+  global.AI = { rain: rain, init: client, projectRef: PROJECT_REF, auth, farm, sync: sync, load, txn, account, budget, recurring, asset, loans,
                 coopSettlement: coopSettlement, livestock: livestock, crop: crop, orchard: orchard, plan: plan, workers: workersSave, profile: profile,
                 documents: documents, fuel: fuel,
                 rules: rules,

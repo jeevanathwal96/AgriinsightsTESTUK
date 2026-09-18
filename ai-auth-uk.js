@@ -613,9 +613,11 @@
         AI.load.coopSettlements(fid).catch(function (e) { console.error('coop load', e); return null; }),
         /* Filing rules. Never fatal: an older project has no category_rules table,
            and load.rules answers null rather than throwing. */
-        AI.load.rules(fid).catch(function (e) { console.error('rules load', e); return null; })
+        AI.load.rules(fid).catch(function (e) { console.error('rules load', e); return null; }),
+        /* The rain book. Never fatal: an older project has no rainfall tables. */
+        (AI.load.rainfall ? AI.load.rainfall(fid).catch(function () { return null; }) : Promise.resolve(null))
       ]).then(function (r) {
-        var ls = r[0], cr = r[1], orc = r[2], pl = r[3], wk = r[4], pf = r[5], coop = r[6], rl = r[7];
+        var ls = r[0], cr = r[1], orc = r[2], pl = r[3], wk = r[4], pf = r[5], coop = r[6], rl = r[7], rn = r[8];
         /* Never load over an area that still has something unsent on this device. */
         var _unsent = function (a) { try { return !!(AI.sync && AI.sync.isUnsent(a)); } catch (e) { return false; } };
         try { if (window.ST_LS && ls && !_unsent('livestock')) { var _lsHas = ((ls.herds&&ls.herds.length)||(ls.fields&&ls.fields.length)||(ls.animals&&ls.animals.length)); var _lsLoc = ((ST_LS.herd&&ST_LS.herd.length)||(ST_LS.fields&&ST_LS.fields.length)); if (_lsHas || !_lsLoc) { ST_LS.fields = ls.fields || []; ST_LS.herd = ls.herds || []; if (ls.benchmarks) ST_LS.benchmarks = ls.benchmarks; ST_LS.moves = ls.moves || []; ST_LS.treatments = ls.treatments || []; ST_LS.animals = ls.animals || []; ST_LS.health = ls.health || []; ST_LS.breedings = ls.breedings || []; } } } catch (e) { console.error('livestock apply', e); }
@@ -623,7 +625,45 @@
         try { if (window.ST_FRUIT && orc && !_unsent('orchard')) { var _orcHas = (orc.blocks && orc.blocks.length); var _locHas = (ST_FRUIT.blocks && ST_FRUIT.blocks.length); if (_orcHas || !_locHas) { ST_FRUIT.blocks = orc.blocks || []; ST_FRUIT.pricing = orc.pricing || {}; ST_FRUIT.sprayDiary = orc.sprayDiary || {}; ST_FRUIT.harvest = orc.harvest || []; if (orc.comply) ST_FRUIT.comply = orc.comply; try{ if(window.orComplyEnsure) orComplyEnsure(); }catch(_){} if (orc.market) ST_FRUIT.market = orc.market; if (typeof window.orRebuildPhi === 'function') { try { window.orRebuildPhi(); } catch (_) {} } } } } catch (e) { console.error('orchard apply', e); }
         try { if (window.ST_PLAN && !_unsent('plan')) { var _plHas = (pl && ((pl.crops&&pl.crops.length)||(pl.events&&pl.events.length))); var _plLoc = ((ST_PLAN.crops&&ST_PLAN.crops.length)||(ST_PLAN.events&&ST_PLAN.events.length)); if (pl && (_plHas || !_plLoc)) { ST_PLAN.crops = pl.crops || []; ST_PLAN.events = pl.events || []; ST_PLAN.fromBackend = true; if (typeof window.planSyncToCurrentYear === 'function') { try { window.planSyncToCurrentYear(); } catch (_) {} } } else if (!pl && typeof window.cropInitialPlanSync === 'function') { try { window.cropInitialPlanSync(true); } catch (_) {} } } } catch (e) { console.error('plan apply', e); }
         try { if (window.ST_WORK && wk && !_unsent('workers')) { var _wkHas = (wk.workers && wk.workers.length); var _wkLoc = (ST_WORK.workers && ST_WORK.workers.length); if (_wkHas || !_wkLoc) { ST_WORK.workers = wk.workers || []; if (wk.settingsRow && AI.workers && AI.workers.apply) { AI.workers.apply(ST_WORK, wk.settingsRow); } if (wk.payroll) { ST_WORK.paye = wk.payroll.paye || {}; ST_WORK.bonus = wk.payroll.bonus || {}; ST_WORK.extra = wk.payroll.extra || {}; ST_WORK.seasonal = wk.payroll.seasonal || {}; } ST_WORK.payRuns = wk.payRuns || []; } } } catch (e) { console.error('workers apply', e); }
-        try { if (window.ST && pf && !_unsent('settings')) { Object.keys(pf).forEach(function (k) { if (pf[k] != null) ST[k] = pf[k]; }); } } catch (e) { console.error('profile apply', e); }
+        try { if (window.ST && pf && !_unsent('settings')) { Object.keys(pf).forEach(function (k) { if (k.charAt(0) !== '_' && pf[k] != null) ST[k] = pf[k]; }); } } catch (e) { console.error('profile apply', e); }
+        /* Rainfall. Where the farm is and how it keeps its book ride on the farm row;
+           the server's copy wins unless this device has settings still to send. */
+        try {
+          if (window.ST_RAIN && pf && pf._rain && !_unsent('settings')) {
+            var _rp = pf._rain.prefs || null, _rl = pf._rain.loc || null;
+            var _moved = _rl && (!ST_RAIN.loc || ST_RAIN.loc.lat !== _rl.lat || ST_RAIN.loc.lon !== _rl.lon);
+            if (_rl) ST_RAIN.loc = _rl;
+            if (_moved) { ST_RAIN.normal = ST_RAIN.normal && ST_RAIN.normal.override ? { monthly: null, override: ST_RAIN.normal.override } : null; ST_RAIN.sat = null; ST_RAIN.ea = null; ST_RAIN.nvzMap = null; ST_RAIN.fc = null; }
+            if (_rp) {
+              if (_rp.mode) ST_RAIN.mode = _rp.mode;
+              if (_rp.yearStart) ST_RAIN.yearStart = _rp.yearStart;
+              if (_rp.normalOverride) { ST_RAIN.normal = ST_RAIN.normal || { monthly: null }; ST_RAIN.normal.override = _rp.normalOverride; }
+              if (Array.isArray(_rp.notKept)) ST_RAIN.notKept = _rp.notKept;
+              if (_rp.fillSet) { ST_RAIN.fillFromSat = _rp.fillFromSat !== false; ST_RAIN.fillSet = true; }
+              if (typeof _rp.conv09 === 'boolean') ST_RAIN.conv09 = _rp.conv09;
+              if (_rp.soils) ST_RAIN.soils = _rp.soils;
+              if (_rp.nvz === true || _rp.nvz === false) ST_RAIN.nvz = _rp.nvz;
+              if (_rp.fitMm || _rp.fitDays) ST_RAIN.rule = { fitMm: _rp.fitMm || 20, fitDays: _rp.fitDays || 7, set: true };
+            }
+            ST_RAIN.prefsSet = true;   /* now this device holds the farm's answer, and may send it back */
+          }
+        } catch (e) { console.error('rainfall settings hydrate', e); }
+        /* The book: merged by id, so a second computer gets the first one's readings
+           and keeps its own. A reading's id is its gauge and day, so the same morning
+           can never arrive twice. Nothing is taken while this device has rain unsent. */
+        try {
+          if (window.ST_RAIN && rn && !_unsent('rain')) {
+            var _byId = {}, _gById = {}, _add = 0;
+            (ST_RAIN.log = ST_RAIN.log || []).forEach(function (x) { if (x && x.id) _byId[x.id] = x; });
+            (rn.log || []).forEach(function (x) { if (!x || !x.id) return; if (_byId[x.id]) { for (var k in x) _byId[x.id][k] = x[k]; } else { ST_RAIN.log.push(x); _add++; } });
+            (ST_RAIN.gauges = ST_RAIN.gauges || []).forEach(function (g) { if (g && g.id) _gById[g.id] = g; });
+            (rn.gauges || []).forEach(function (g) { if (g && g.id && !_gById[g.id]) ST_RAIN.gauges.push(g); });
+            try { if (typeof rnRepairGaugeIds === 'function') rnRepairGaugeIds(); } catch (e2) {}
+            if (typeof rnSync === 'function') { try { rnSync(); } catch (e3) {} }
+            if (typeof renderRainfall === 'function' && document.getElementById('pg-rainfall')) { try { renderRainfall(); } catch (e4) {} }
+            if (typeof rnDashSync === 'function') { try { rnDashSync(); } catch (e5) {} }
+          }
+        } catch (e) { console.error('rainfall hydrate', e); }
         /* Mirror the identity onto FARM, which is what the reports, statements and tax
            screens actually read. This line used to carry FARM.name alone, so a farmer
            signing in on a second device got their farm's NAME back and nothing else:
