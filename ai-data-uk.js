@@ -1665,6 +1665,33 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
   /* The tables not being there yet (migration not run) is not a failure to retry for ever. */
   function _rainMissing(e){ var c=e&&e.code; return c==='42P01'||c==='PGRST205'||/does not exist|schema cache/i.test(String((e&&e.message)||'')); }
   var _rainSent=Object.create(null), _rainGSent=Object.create(null);
+  /* ── The housing log (Rainfall Tier 1, D21): when stock were turned out, housed or
+     buffer fed.  Same pattern as the readings: an id is its day, herd and event, so
+     a correction overwrites its own row; removals ride in state.goneHousing and go
+     after the upserts; only rows that changed since this device last sent them go. */
+  function houseToDb(x,fid){ return { farm_id:fid, local_id:String(x.id), herd_local_id:x.herd?String(x.herd):'all',
+      event:x.ev, event_date:String(x.date).slice(0,10), note:x.note||null }; }
+  function houseFromDb(r){ return { id:r.local_id, herd:r.herd_local_id||'all', ev:r.event, date:String(r.event_date||'').slice(0,10), note:r.note||'' }; }
+  var _houseSent=Object.create(null), _houseWarned=false;
+  async function _houseSave(state,fid){
+    var own=(state.housing||[]).filter(function(x){ return x && x.id && x.date && x.ev; });
+    var rows=[]; own.forEach(function(x){ var row=houseToDb(x,fid), j=JSON.stringify(row); if(_houseSent[x.id]!==j) rows.push([x.id,j,row]); });
+    var have=Object.create(null); own.forEach(function(x){ have[String(x.id)]=1; });
+    var gone=(state.goneHousing||[]).map(String).filter(function(id){ return !have[id]; });
+    if(!rows.length && !gone.length) return true;
+    if(rows.length){
+      const e=(await client().from('livestock_housing').upsert(rows.map(function(t){ return t[2]; }),{onConflict:'farm_id,local_id'})).error;
+      if(e){ if(_rainMissing(e)){ if(!_houseWarned){ _houseWarned=true; console.warn('Housing log not saved online yet — run tools/uk-rainfall-t1-schema.sql in Supabase.'); } return false; } throw e; }
+      rows.forEach(function(t){ _houseSent[t[0]]=t[1]; });
+    }
+    if(gone.length){
+      const e2=(await client().from('livestock_housing').delete().eq('farm_id',fid).in('local_id',gone)).error;
+      if(e2){ if(_rainMissing(e2)) return false; throw e2; }
+      var done=Object.create(null); gone.forEach(function(id){ done[id]=1; delete _houseSent[id]; });
+      state.goneHousing=(state.goneHousing||[]).filter(function(id){ return !done[String(id)] && !have[String(id)]; });
+    }
+    return true;
+  }
   load.rainfall = async function(farmId){
     farmId=farmId||farm.active();
     const g=await selectAll(() => client().from('rainfall_gauges').select('*').eq('farm_id',farmId));
@@ -1675,11 +1702,16 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     /* What the server holds is what this device need not send again. */
     gauges.forEach(function(x){ _rainGSent[x.id]=JSON.stringify(rainGaugeToDb(x,farmId)); });
     log.forEach(function(x){ _rainSent[x.id]=JSON.stringify(rainReadToDb(x,farmId)); });
-    return { gauges:gauges, log:log };
+    var housing=null;
+    try{ const hh=await selectAll(() => client().from('livestock_housing').select('*').eq('farm_id',farmId));
+      if(!hh.error){ housing=(hh.data||[]).map(houseFromDb); housing.forEach(function(x){ _houseSent[x.id]=JSON.stringify(houseToDb(x,farmId)); }); } }catch(e){}
+    return { gauges:gauges, log:log, housing:housing };
   };
   const rain = {
     async saveAll(state){
       state=state||global.ST_RAIN; if(!state) return; const fid=farm.active(); if(!fid) return;
+      /* The housing log rides the rain lane; a project without its table keeps the rain book saving. */
+      try{ await _houseSave(state,fid); }catch(eH){ console.warn('Housing log not saved', eH); }
       var gs=(state.mode==='gauge')?(state.gauges||[]):[];
       var own=(state.log||[]).filter(function(x){ return x && x.src!=='sat' && x.id && x.date; });
       var gRows=[], rRows=[];
@@ -2627,7 +2659,9 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
               notKept:Array.isArray(_r.notKept)?_r.notKept:[], fillFromSat:_r.fillFromSat!==false, fillSet:!!_r.fillSet, conv09:_r.conv09!==false,
               soils:_r.soils||null, nvz:(_r.nvz===true||_r.nvz===false)?_r.nvz:null,
               fitMm:(_r.rule&&_r.rule.fitMm)||20, fitDays:(_r.rule&&_r.rule.fitDays)||7,
-              county:(_L&&_L.county)||'', locSrc:(_L&&_L.src)||'' };
+              county:(_L&&_L.county)||'', locSrc:(_L&&_L.src)||'',
+              drillDays:_r.drillDays||null, drillContractor:!!_r.drillContractor, land:_r.land||null,
+              fieldLimits:(_r.fieldLimits&&typeof _r.fieldLimits==='object')?_r.fieldLimits:{}, wetSeen:_r.wetSeen||'' };
           }
         }catch(e){}
       }

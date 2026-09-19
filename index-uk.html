@@ -33,8 +33,8 @@
 <script defer src="vendor/chart.umd.js"></script>
 <!-- AgriInsights backend: Supabase client + data service (load order matters) -->
 <script src="vendor/supabase.js"></script>
-<script src="ai-data-uk.js?v=uk113"></script>
-<script src="ai-auth-uk.js?v=uk102"></script>
+<script src="ai-data-uk.js?v=uk114"></script>
+<script src="ai-auth-uk.js?v=uk103"></script>
 <link rel="stylesheet" href="fonts.css"/>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -6011,6 +6011,62 @@ table.rn-t td.dim{color:var(--t4)}
 @media (max-width:1279px){ .combo-stats:has(#rn-dash-stat) .combo-ps-item{padding:0 12px} #rn-dash-stat .rn-long{display:none} }
 /* ══ RAINFALL-UK-CSS-END ══ */
 #rn-stmt-card{grid-column:1/-1}
+/* ══ RAINFALL-UK-T1-CSS ══ Tier 1: wet year, grass and housing, ground per field. */
+.scn-seg button.on.rnw{background:var(--rn);color:#fff}
+.rn-btn.sm{padding:6px 12px;font-size:12px}
+.rn-wet-strip{align-items:center;margin:10px 0}
+.rn-wet-act{display:flex;align-items:center;gap:8px;flex:0 0 auto;flex-wrap:wrap}
+.rn-wet-act .lnk,.rn-strip .lnk{margin-left:0}
+.rn-wet-in{width:76px;height:30px;border:1px solid var(--rnb);border-radius:7px;padding:0 8px;font-family:inherit;font-size:12.5px}
+.scn-panel.rn-wet{background:var(--rnp);border-color:var(--rnb)}
+.scn-panel.rn-wet .scn-k label{color:var(--rnd)}
+.scn-panel.rn-wet .scn-k input{border-color:var(--rnb)}
+.scn-panel.rn-wet .scn-k input.sug{border-color:var(--rnl);box-shadow:0 0 0 2px #fff,0 0 0 4px var(--rnb)}
+.scn-panel.rn-wet .scn-k select{height:30px;border:1px solid var(--rnb);border-radius:6px;font-family:inherit;font-size:12px;font-weight:700;padding:0 6px;background:#fff;max-width:170px}
+.scn-panel.rn-wet .scn-foot a{color:var(--rnd);font-weight:700;cursor:pointer;text-decoration:underline}
+.rn-wet-how{background:#fff;border:1px solid var(--rnb);border-radius:11px;padding:10px 14px;margin:0 0 10px;font-size:12px;max-width:520px}
+.rn-wet-how .li{display:flex;justify-content:space-between;gap:12px;padding:5px 0;border-top:1px solid var(--br2,#F3F4F6)}
+.rn-wet-how .li:first-child{border-top:0}
+.rn-wet-pick{margin-top:8px;font-size:12px;color:var(--t2)}
+.rn-wet-pick select{height:28px;border:1px solid var(--br);border-radius:6px;font-family:inherit;font-size:12px;margin-left:6px}
+.pln-item .pln-row[disabled]{cursor:default;opacity:.92}
+.pln-item .pln-row[disabled] .pln-caret{visibility:hidden}
+.rn-cf-wet{margin-top:6px;padding-top:6px;border-top:1px dashed var(--rnb);color:var(--rnd);font-size:12.5px}
+.rn-grass{display:grid;grid-template-columns:1fr 1.15fr;gap:12px;align-items:start;margin-top:14px}
+@media (max-width:900px){ .rn-grass{grid-template-columns:1fr} }
+.rn1-t{width:100%;border-collapse:collapse;font-size:12px}
+.rn1-t th{text-align:left;font-size:9.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);padding:6px 8px;border-bottom:1px solid var(--br)}
+.rn1-t td{padding:6px 8px;border-bottom:1px solid var(--br2,#F3F4F6)}
+.rn1-t .r{text-align:right;font-variant-numeric:tabular-nums}
+.rn1-t tr.tot td{border-top:1px solid var(--br);font-weight:700}
+.rn1-t tr:last-child td{border-bottom:0}
+.rn-dim{color:var(--t3)}
+.rn-facts>div{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-top:1px solid var(--br2,#F3F4F6);font-size:12.5px}
+.rn-facts>div:first-child{border-top:0}
+.rn-facts span{color:var(--t2)}
+.rn-det{margin-top:8px}
+.rn-det summary{font-size:12px;font-weight:700;color:var(--rnd);cursor:pointer}
+.rn-hlog{margin-top:10px;border-top:1px solid var(--br);padding-top:6px}
+.rn-hlog .li{display:flex;align-items:center;gap:10px;font-size:12px;padding:4px 0}
+.rn-hlog .li>span:first-child{min-width:92px;color:var(--t2);font-variant-numeric:tabular-nums}
+.rn-hlog .grow{flex:1;min-width:0}
+.rn-seg2{display:flex;flex-wrap:wrap;gap:6px}
+.rn-seg2 button{font-family:inherit;font-size:12px;font-weight:700;padding:7px 11px;border-radius:8px;border:1px solid var(--br);background:#fff;color:var(--t2);cursor:pointer}
+.rn-seg2 button.on{border-color:var(--rn);background:var(--rnp);color:var(--rnd)}
+.rn-inl{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--t2);white-space:nowrap}
+.rn-inl input{width:auto!important;height:auto!important;flex:0 0 auto}
+.rn-gtd{white-space:nowrap}
+button.rn-gchip{border:0;font-family:inherit;cursor:pointer}
+.rn-gchip{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;padding:3px 8px;border-radius:99px;white-space:nowrap;line-height:1.3}
+.rn-gchip i{width:7px;height:7px;border-radius:50%;display:inline-block}
+.rn-gchip.no{background:var(--op,#FFF3E8);color:#8A4412}.rn-gchip.no i{background:var(--or,#E07B2A)}
+.rn-gchip.ok{background:var(--gb,#F0FAF4);color:var(--gd)}.rn-gchip.ok i{background:var(--gl)}
+.rn-glim{background:none;border:0;font-family:inherit;font-size:10.5px;color:var(--t3);cursor:pointer;margin-left:6px;padding:0;text-decoration:underline}
+.rn-gline{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:8px;font-size:11.5px;color:var(--t3);cursor:pointer}
+/* The price-card rule (.pc) boxed the scenario units in every weather mode. */
+.scn-k .pc{background:none;border:0;padding:0;box-shadow:none;border-radius:0;width:auto}
+.scn-panel.rn-wet .scn-k .pc,.scn-panel.rn-wet .scn-foot,.scn-panel.rn-wet .scn-res i{color:var(--rnd)}
+.rn-used{font-size:12px;font-weight:800;color:var(--rnd);white-space:nowrap}
 </style>
 <style id="loans-css">
 #pg-loans .ln-tabs{display:flex;gap:3px;background:var(--br2);border:1px solid var(--br);border-radius:12px;padding:4px;margin:0 0 18px;overflow-x:auto;scrollbar-width:none}
@@ -10560,7 +10616,7 @@ table.rn-t td.dim{color:var(--t4)}
   <div class="cfl-wif open" id="cfl-wi-card" style="display:none">
     <div class="cfl-wif-head" onclick="cfWifToggle()">
       <span class="cfl-wif-t">🎚️ What if…</span>
-      <span class="cfl-presets" onclick="event.stopPropagation()"><span class="cfl-preset on" id="cfl-pre-base" onclick="cfScenPreset('base')">Base</span><span class="cfl-preset" id="cfl-pre-bad" onclick="cfScenPreset('bad')">Bad year</span><span class="cfl-preset" id="cfl-pre-good" onclick="cfScenPreset('good')">Good year</span></span>
+      <span class="cfl-presets" onclick="event.stopPropagation()"><span class="cfl-preset on" id="cfl-pre-base" onclick="cfScenPreset('base')">Base</span><span class="cfl-preset" id="cfl-pre-bad" onclick="cfScenPreset('bad')">Bad year</span><span class="cfl-preset" id="cfl-pre-good" onclick="cfScenPreset('good')">Good year</span><span class="cfl-preset" id="cfl-pre-wet" onclick="rnCfWetPreset()">Wet year</span></span>
       <span class="cfl-wif-res" id="cfl-wi-res"></span>
       <span class="cfl-wif-x" id="cfl-wi-x">▾</span>
     </div>
@@ -12657,7 +12713,7 @@ function _cropLandCard(l){
   } else {
     body='<div class="cr-sub2" style="margin-top:10px"><span>Resting · last crop '+esc(l.prevCrop||'—')+'</span></div>';
   }
-  return '<div class="crop-land'+(isOpen?' open':'')+'" id="cropland-'+l.id+'" data-crop="'+esc(l.crop||'')+'" onclick="cropCardTog('+l.id+')">'+top+body+
+  return '<div class="crop-land'+(isOpen?' open':'')+'" id="cropland-'+l.id+'" data-crop="'+esc(l.crop||'')+'" onclick="cropCardTog('+l.id+')">'+top+body+((typeof rnOn==='function'&&rnOn()&&typeof rnLandGroundLine==='function')?rnLandGroundLine(l):'')+
     '<div class="cr-tapmore" style="text-align:center;font-size:11px;color:var(--t4);margin-top:8px">Tap for details ▾</div>'+
     _cropLandCardBody(l)+'</div>';
 }
@@ -12678,6 +12734,7 @@ function cropRenderOverview(){
     _cropHeroHTML(att,T)+
     _lsAttnHTML(att)+
     _cropRollupHTML(T)+
+    ((typeof rnCropsStrip==='function')?rnCropsStrip():'')+
     '<div class="cr-sech"><span class="t">What\u2019s growing where</span><span class="r" style="display:flex;align-items:center;gap:8px">'+T.landCount+' land'+(T.landCount===1?'':'s')+' \u00b7 '+T.plantedArea+' ha'+_seg+'</span></div>'+
     _grow+
     '<div class="crop-sec-h">Reports</div>'+
@@ -12719,11 +12776,12 @@ function _cropLandTable(sorted){
       '<td class="r">'+(l.area||0)+' ha</td>'+
       '<td>'+(l.crop?esc(l.crop)+(l.cultivar?' \u00B7 '+esc(l.cultivar):'')+'':'\u2014')+'</td>'+
       '<td><span class="crop-stage '+chipCls+'">'+chip+'</span></td>'+
+      ((typeof rnOn==='function'&&rnOn()&&typeof rnLandGroundCell==='function')?rnLandGroundCell(l):'')+
       '<td class="r">'+yld+'</td>'+
       '<td class="r"'+(gmNeg?' style="color:var(--rd)"':'')+'>'+gm+'</td>'+
       '<td class="r">'+val+'</td></tr>';
   }).join('');
-  return '<div style="overflow-x:auto;border:1px solid var(--br);border-radius:13px;background:#fff"><table class="crop-tbl" style="min-width:660px"><thead><tr><th>Land</th><th class="r">Area</th><th>Crop / cultivar</th><th>Status</th><th class="r">Yield</th><th class="r">Margin/ha</th><th class="r">Expected value</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+  return '<div style="overflow-x:auto;border:1px solid var(--br);border-radius:13px;background:#fff"><table class="crop-tbl" style="min-width:'+((typeof rnOn==='function'&&rnOn())?920:660)+'px"><thead><tr><th>Land</th><th class="r">Area</th><th>Crop / cultivar</th><th>Status</th>'+((typeof rnOn==='function'&&rnOn())?'<th>Ground</th>':'')+'<th class="r">Yield</th><th class="r">Margin/ha</th><th class="r">Expected value</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
 }
 function cropKpi(l,v,acc,id){ return '<div class="crop-kpi'+(acc?' acc':'')+(id?' kpi-tap':'')+'"'+(id?' onclick="kpiOpen(\''+id+'\')" style="position:relative"':'')+'>'+(id?'<span class="kpi-i">\u24D8</span>':'')+'<div class="l">'+l+'</div><div class="v">'+v+'</div></div>'; }
 function cropCta(cls,ic,t,s,onclick){ return '<button class="crop-rpt-cta '+cls+'" onclick="'+onclick+'"><span class="ic">'+ic+'</span><span class="tx"><span class="t">'+t+'</span><span class="s">'+s+'</span></span><span class="ar">\u203a</span></button>'; }
@@ -19169,7 +19227,7 @@ var FRESH_SHAPE = {
   /* The rain book is the farm's own record, and where the farm is goes with it.
      A new farm keeps how it tracks rain, its rain year, its rule and its switches. */
   ST_RAIN:    { loc:null, normal:null, gauges:[], log:[], sat:null, fc:null, ea:null, nvzMap:null, temp:null,
-                notKept:[], gone:[], goneGauges:[], spreadHide:'', soils:null, nvz:null, fillSet:false, prefsSet:false },
+                notKept:[], gone:[], goneGauges:[], housing:[], goneHousing:[], wetSeen:'', cropsStripHide:'', spreadHide:'', soils:null, nvz:null, fillSet:false, prefsSet:false },
   ST_LOANAPP: { req:{}, income:{}, estimates:{}, track:{}, landWater:{}, savedAt:'' }
 };
 var FRESH_CONFIG = {
@@ -19189,7 +19247,7 @@ var FRESH_CONFIG = {
   ST_FRUIT:   ['activeTab','market','comply'],
   ST_CROP:    ['activeTab','filter','complyView','cropTypes','prices'],
   ST_PLAN:    ['activeTab','view','months','editingIdx','editingEventIdx'],
-  ST_RAIN:    ['mode','yearStart','rule','conv09','fillFromSat'],
+  ST_RAIN:    ['mode','yearStart','rule','conv09','fillFromSat','drillDays','drillContractor','land','fieldLimits'],
   ST_LOANAPP: []
 };
 function _freshCopy(v){
@@ -35141,7 +35199,13 @@ function planLabelFY(label){
 function cropFY(c){ return planLabelFY(c&&c.plant); }
 function planSeriesKey(c){ return c.linkId || ((c.crop||'')+'|'+(c.field||'')); }
 function planEscAttr(s){ return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+/* Wet year (Rainfall Tier 1) moves hectares from autumn wheat to the plan's own spring
+   line; every reader of the plan sees the same list, so Money Flow and Budgets move too. */
 function planActiveCrops(){
+  var _l=_planActiveCropsRaw();
+  return (typeof FARM_SCEN!=='undefined' && FARM_SCEN.mode==='wet' && typeof rnWetCrops==='function') ? rnWetCrops(_l) : _l;
+}
+function _planActiveCropsRaw(){
   var fy=planYear, list=(ST_PLAN.crops||[]);
   var real=list.filter(function(c){ return cropFY(c)===fy; });
   var hasReal={}; real.forEach(function(c){ hasReal[planSeriesKey(c)]=true; });
@@ -35806,8 +35870,16 @@ function recomputePlan() {
       if(act) addActivity(r, act);
     }
 
-    // ── Planting month: 50% input costs + 20% other costs ──
-    _put(pAbs, 0, Math.round(totalInputs * 0.50 + totalOther * 0.20), cropLabel, 'Plant ' + cropLabel);
+    /* Every crop books exactly its inputs and its other costs, once: inputs 50 / 40 / 10
+       (planting, growing, harvest), other 20 / 50 / 10 / 10 / 10 (planting, growing,
+       pre-harvest, harvest, the month after). Until -339 harvest took 20% of other,
+       so other costs totalled 110%; a crop with no growing month lost 40% of its
+       inputs and half its other costs; a same-month crop lost the pre-harvest 10%.
+       A share whose month does not exist folds into its neighbour. */
+    var hasGrow = hAbs - pAbs - 1 > 0, hasPre = hAbs - 1 > pAbs;
+
+    // ── Planting month: 50% inputs + 20% other (and the growing share when there is no growing month) ──
+    _put(pAbs, 0, Math.round(totalInputs * (hasGrow ? 0.50 : 0.90) + totalOther * (hasGrow ? 0.20 : 0.70)), cropLabel, 'Plant ' + cropLabel);
 
     // ── Growing months: spread 40% inputs + 50% other (labour/fuel) evenly ──
     for(var a = pAbs + 1; a < hAbs; a++){
@@ -35816,10 +35888,10 @@ function recomputePlan() {
     }
 
     // ── Pre-harvest month: 10% other (prep/transport) ──
-    if(hAbs - 1 > pAbs) _put(hAbs - 1, 0, Math.round(totalOther * 0.10), null, 'Pre-harvest (' + cropLabel + ')');
+    if(hasPre) _put(hAbs - 1, 0, Math.round(totalOther * 0.10), null, 'Pre-harvest (' + cropLabel + ')');
 
     /* ── Harvest month: costs land here whatever the payment terms are ── */
-    _put(hAbs, 0, Math.round(totalInputs * 0.10 + totalOther * 0.20),
+    _put(hAbs, 0, Math.round(totalInputs * 0.10 + totalOther * (hasPre ? 0.10 : 0.20)),
          cropLabel, 'Harvest ' + cropLabel);
     _put(hAbs + 1, 0, Math.round(totalOther * 0.10), cropLabel, null);
 
@@ -37061,7 +37133,9 @@ function renderCalGrid() {
           return '<span'+(i===now?' class="now"':'')+'>'+m+'</span>'; }).join('')+'</div>'+
         '<span class="colh r">Margin/ha</span><span class="colh r">Margin</span><span></span></div>'+
       active.map(function(c){
-        return plnRowHTML(c, c.projected ? -1 : ST_PLAN.crops.indexOf(c));
+        /* A wet-year copy edits its own line; a wet-year spring line is read-only. */
+        if(c._wetSyn) return plnRowHTML(c, -1).replace('<button class="pln-row', '<button disabled class="pln-row');
+        return plnRowHTML(c, c._wetOf!=null ? c._wetOf : (c.projected ? -1 : ST_PLAN.crops.indexOf(c)));
       }).join('')+
       '<div class="pln-tot" id="pln-totals"></div>'+
       '<div class="pln-foot">'+
@@ -41930,7 +42004,11 @@ function lvpMonthLabel(abs){
    app — so it lives for the session and dies with it. */
 var FARM_SCEN = {mode:'normal', min:false,
   dry:     {yieldDn:0, price:0, input:0, wean:0, early:0, feed:0},
-  drought: {yieldDn:0, price:0, input:0, wean:0, early:0, feed:0}};
+  drought: {yieldDn:0, price:0, input:0, wean:0, early:0, feed:0},
+  /* Wet year (Rainfall Tier 1): wheat drilled %, where the rest goes, late-drilled
+     yield, price, extra cultivations £/ha, and which autumn it is compared with. The
+     dry-year keys stay 0: the livestock plan reads them from whichever mode is on. */
+  wet:     {drilled:null, to:'', late:0, price:0, extra:0, year:'', yieldDn:0, input:0, wean:0, early:0, feed:0}};
 var LVP_SCEN = FARM_SCEN;                 /* old name, same object */
 function scenNow(){ return (FARM_SCEN.mode==='normal') ? null : FARM_SCEN[FARM_SCEN.mode]; }
 function scenOn(){ return FARM_SCEN.mode!=='normal'; }
@@ -43041,6 +43119,7 @@ function scenRerender(){
   try{ if(typeof updatePlanCombinedBanner==='function') updatePlanCombinedBanner(); }catch(e){}
   try{ if(typeof updatePlanTabCounts==='function') updatePlanTabCounts(); }catch(e){}
   try{ scenRibbon(); }catch(e){}
+  try{ var _cfp=document.getElementById('pg-cashflow'); if(_cfp && _cfp.classList.contains('on') && typeof renderCfLineView==='function') renderCfLineView(CF_FWD_N); }catch(e){}
   if(sig){
     var all=document.querySelectorAll('.scn-panel [onchange]');
     for(var i=0;i<all.length;i++){
@@ -43082,9 +43161,9 @@ function scenCropFirstFail(rows){
 function scenStrip(which, ctx){
   /* "Dry" alone would rewrite "Dryland" and "Season" appears 173 times in this
      file — both are the bare-word trap. "Weather" appears nowhere else. */
-  var modes=[['normal','Normal year'],['dry','Dry year'],['drought','Drought']];
+  var modes=[['normal','Normal year'],['wet','Wet year'],['dry','Dry year'],['drought','Drought']];
   var seg='<span class="scn-seg">'+modes.map(function(m){
-    return '<button type="button" class="'+(FARM_SCEN.mode===m[0]?('on'+(m[0]==='normal'?'':' w')):'')+
+    return '<button type="button" class="'+(FARM_SCEN.mode===m[0]?('on'+(m[0]==='normal'?'':(m[0]==='wet'?' rnw':' w'))):'')+
       '" onclick="scenSetMode(\''+m[0]+'\')">'+m[1]+'</button>';}).join('')+'</span>';
 
   /* Resting: one line, no panel, no tile. */
@@ -43092,6 +43171,7 @@ function scenStrip(which, ctx){
      "nothing is saved" reassurance now lives on the ribbon, where it is only
      shown at the moment it actually matters — while a scenario is running. */
   if(!scenOn()) return '<div class="scn"><span class="scn-lbl">Weather</span>'+seg+'</div>';
+  if(FARM_SCEN.mode==='wet' && typeof rnWetPanel==='function') return rnWetPanel(which, seg);
 
   var sc=scenNow();
   var money=(which==='crops')
@@ -43198,15 +43278,19 @@ function scenRibbon(){
     document.body.appendChild(bar);
   }
   var sc=scenNow()||{};
+  bar.style.background=(FARM_SCEN.mode==='wet')?'#1E4E7C':'#C2410C';
   var bits=[];
   if(sc.yieldDn) bits.push('yield '+sc.yieldDn+'% down');
   if(sc.price)   bits.push('price '+(sc.price>0?'+':'')+sc.price+'%');
   if(sc.input)   bits.push('inputs '+(sc.input>0?'+':'')+sc.input+'%');
   if(sc.wean)    bits.push('weaning '+sc.wean+'% down');
   if(sc.feed)    bits.push('feed +'+sc.feed+'%');
+  if(FARM_SCEN.mode==='wet' && sc.drilled!=null) bits.push('wheat '+sc.drilled+'% drilled');
+  if(FARM_SCEN.mode==='wet' && sc.late) bits.push('late-drilled yield '+sc.late+'% down');
+  if(FARM_SCEN.mode==='wet' && sc.extra) bits.push('extra cultivations £'+sc.extra+'/ha');
   bar.innerHTML='<span style="font-weight:800;letter-spacing:.04em">'+
-      (FARM_SCEN.mode==='dry'?'DRY YEAR':'DROUGHT')+'</span>'+
-    '<span style="opacity:.92">Every figure in the app is showing this bad season'+
+      (FARM_SCEN.mode==='wet'?'WET YEAR':(FARM_SCEN.mode==='dry'?'DRY YEAR':'DROUGHT'))+'</span>'+
+    '<span style="opacity:.92">Every figure in the app is showing this '+(FARM_SCEN.mode==='wet'?'wet':'bad')+' season'+
       (bits.length?' — '+esc(bits.join(', ')):'')+'. Nothing is saved.</span>'+
     '<button style="margin-left:auto;padding:5px 14px;border-radius:8px;border:1px solid rgba(255,255,255,.45);'+
       'background:transparent;color:#fff;font-size:11.5px;font-weight:700;cursor:pointer;font-family:inherit" '+
@@ -43258,10 +43342,11 @@ function renderLiveCalGrid(){
     '<div class="lvp-tot" id="lvp-totals"></div>'+
     '<div class="lvp-acts" style="margin-top:14px">'+
       '<button class="lvp-btn" type="button" onclick="openAddEvent()">+ Add a different animal</button>'+
-    '</div></div>';
+    '</div><div id="rn-grass"></div></div>';
 
   el.innerHTML=h;
   lvpTotals(herds);
+  try{ if(typeof rnGrassRender==='function') rnGrassRender(herds); }catch(e){}
 }
 
 /* Delegated so they survive every re-render. */
@@ -44351,6 +44436,8 @@ function onSetFarmEnterprise(value) {
 }
 
 async function pushPlanToBudgets() {
+  /* A stress test is never a budget: Wet year, Dry year and Drought are session only. */
+  if (typeof scenOn==='function' && scenOn()) { toast('Go back to a normal season first: Budgets take your plan, not a stress test.','error'); return; }
   // Detect existing manual budgets so we can warn before overwriting
   var fyMonths = getFYMonths(getCurrentFY());
   var hasIncomeTargets  = fyMonths.some(function(m){ return (ST.budgets.monthlyIncome[m]   || 0) > 0; });
@@ -46953,7 +47040,7 @@ function _cfSetLegend(mode){
     ? 'One line: the cash you should have in the bank each month. <span style="color:#c9791f;font-weight:800">Orange</span> means you are into your overdraft. <span style="color:#c0392b;font-weight:800">Red</span> means you are past the '+_curSym()+_grpInt(fac.limit)+' your bank agreed. Tap a month to see why.'
     : 'One line: your <b>estimated cash</b> as income and costs land through the year. <span style="color:#c9791f;font-weight:800">Amber</span> is below your safety buffer; <span style="color:#c0392b;font-weight:800">red</span> is short. Tap a month for the breakdown.';
 }
-function cfLineRedraw(){ var months=_cfScenMonths(); if(!months.length) return; if(CF_CHART_MODE==='bars') drawCfBars(months, CF_FWD_N); else drawCfLine(months, CF_FWD_N); }
+function cfLineRedraw(){ var months=_cfScenMonths(); if(!months.length) return; try{ if(typeof rnCfAlt==='function') rnCfAlt(months.length); var _wet=FARM_SCEN.mode==='wet', _wb=document.getElementById('cfl-pre-wet'), _bb=document.getElementById('cfl-pre-base'); if(_wb) _wb.classList.toggle('on', _wet); if(_bb && _wet) _bb.classList.remove('on'); else if(_bb && !document.querySelector('.cfl-preset.on')) _bb.classList.add('on'); }catch(e){} if(CF_CHART_MODE==='bars') drawCfBars(months, CF_FWD_N); else drawCfLine(months, CF_FWD_N); }
 
 function drawCfBars(months, n){
   var W=960,H=270,padL=82,padR=22,padT=28,padB=46;
@@ -47024,7 +47111,9 @@ function drawCfLine(months, n){
   var exps=months.map(function(m){return m.expenses||0;});
   // Safety buffer = one month of running costs (avg monthly expense). Amber below it, red below R0.
   var buffer=0,se=0,ne=0; exps.forEach(function(e){ if(e>0){se+=e;ne++;} }); buffer=ne?se/ne:0;
-  var lo=Math.min.apply(null,bals), hi=Math.max.apply(null,bals);
+  var _alt=(typeof RN_CF_ALT!=='undefined' && RN_CF_ALT && RN_CF_ALT.length===bals.length)?RN_CF_ALT:null;
+  var _all=_alt?bals.concat(_alt):bals;
+  var lo=Math.min.apply(null,_all), hi=Math.max.apply(null,_all);
   var rng=Math.max(hi-lo,1), yMax=hi+rng*0.20, yMin=lo-rng*0.22;
   if(lo>=0 && yMin<0) yMin=Math.min(yMin,0);
   if(buffer>0 && buffer<yMax && yMin>0) yMin=0;          // show the R0 baseline when the buffer band matters
@@ -47105,6 +47194,9 @@ function drawCfLine(months, n){
     var lc=(i===0)?'#1b4332':(i===minIdx?(bals[minIdx]<0?'#c0392b':'#c9791f'):(on?'#1b4332':'#8a978f'));
     out+='<text x="'+cx+'" y="'+(plotBot+18)+'" text-anchor="middle" font-size="11" fill="'+lc+'" font-weight="'+((i===0||i===minIdx||on)?'800':'700')+'" style="pointer-events:none">'+months[i].name+'</text>';
   }
+  /* Wet year: the same farm in a normal year, faint and dashed (Rainfall Tier 1). */
+  if(_alt){ var _AP=[]; for(var qa=0;qa<_alt.length;qa++) _AP.push({x:X(qa), y:Y(_alt[qa])});
+    out+='<path d="'+_cfSmoothD(_AP)+'" fill="none" stroke="#8a978f" stroke-width="2" stroke-dasharray="6 5" style="pointer-events:none"/>'; }
   // gradient area + gradient line (line draws in once per session)
   out+='<path d="'+lineD+'L'+X(months.length-1)+' '+plotBot+'L'+X(0)+' '+plotBot+'Z" fill="url(#cflAG)" style="pointer-events:none"/>';
   var animCls=CF_ANIMATED?'':' class="cfl-draw"'; CF_ANIMATED=true;
@@ -47127,7 +47219,9 @@ function drawCfLine(months, n){
   var host=$('cfl-line'); if(host) host.innerHTML='<svg viewBox="0 0 '+W+' '+H+'" class="cfl-svg" xmlns="http://www.w3.org/2000/svg">'+out+'</svg>';
   setEl('cfl-line-title','Cash on hand — next '+n+(n===1?' month':' months'));
   _cfSetLegend('line');
+  if(_alt){ try{ var _lg=$('cfl-legend'); if(_lg) _lg.innerHTML+=' <span style="color:#6b7a72;font-weight:800">Dashed grey</span> is the same farm in a normal year.'; }catch(e){} }
   cfLineHeadline(months, minIdx);
+  try{ if(typeof rnCfWetNote==='function') rnCfWetNote(months, minIdx); }catch(e){}
   cfBdRender(months, minIdx);
 }
 
@@ -47277,7 +47371,7 @@ function cfLineHeadline(months, minIdx){
     } else if(fac && known && m.balance<0){
       if(card) card.className='cf-answer ok';
       if(icon) icon.innerHTML=okIcon;
-      setEl('cf-fwd-answer-h','You stay inside your overdraft all year');
+      setEl('cf-fwd-answer-h','You stay inside your overdraft for the next '+(months.length===1?'month':months.length+' months'));
       _cfSetSub(_cfMonthFull(m.name)+' is your tightest month. You would still have <b>'
         +_cfMoneyFull(m.balance-fac.floor)+'</b> of your '+_cfMoneyFull(fac.limit)+' overdraft left.');
       cfAnswerActs('');
@@ -47370,6 +47464,7 @@ function cfScenLsCost(v){ CF_SCEN.lsCost=+v; var lbl=$('cfl-v-lscost'); if(lbl) 
 function cfScenCropCost(v){ CF_SCEN.cropCost=+v; var lbl=$('cfl-v-cropcost'); if(lbl) lbl.textContent=(+v===0?'as planned':(+v>0?'+':'')+v+'%'); _cfClearPreset(); cfLineRedraw(); }
 function cfScenRate(v){ CF_SCEN.rate=+v; var lbl=$('cfl-v-rate'); if(lbl) lbl.textContent=(+v===0?'as now':(+v>0?'+':'')+v+' pts'); _cfClearPreset(); cfLineRedraw(); }
 function cfScenPreset(p){
+  if(typeof FARM_SCEN!=='undefined' && FARM_SCEN.mode==='wet'){ FARM_SCEN.mode='normal'; try{ recomputePlan(); scenRibbon(); CF_BASE=buildCfForecast(CF_FWD_N); }catch(e){} }
   var drivers=_cfDrivers(); CF_SCEN={adj:{},prod:0,lsCost:0,cropCost:0,rate:0};
   if(p==='bad'){ drivers.forEach(function(d){ CF_SCEN.adj[d.key]=-15; }); CF_SCEN.prod=-18; CF_SCEN.lsCost=15; CF_SCEN.cropCost=12; CF_SCEN.rate=2; }
   else if(p==='good'){ drivers.forEach(function(d){ CF_SCEN.adj[d.key]=12; }); CF_SCEN.prod=12; CF_SCEN.lsCost=-8; CF_SCEN.cropCost=-5; CF_SCEN.rate=-1; }
@@ -71216,6 +71311,7 @@ function rnBoot(){
   try {
     setTimeout(function(){
       try { if (rnSeedDemo()) { saveState(); if (rnEl('pg-rainfall')) renderRainfall(); rnDashSync(); } } catch(e){}
+      try { if (typeof rnT1SeedDemo === 'function' && rnT1SeedDemo()) { saveState(); } } catch(e){}
       try { if (typeof rnSync === 'function') rnSync(); } catch(e){}
     }, 1200);
   } catch(e){}
@@ -71264,7 +71360,7 @@ var RN_MO_FN         = 'metoffice-forecast';
 var RN_MO_ON         = false;
 var RN_KEEP_DAYS     = 800;
 var RN_NORM_FROM = 1991, RN_NORM_TO = 2020;
-var RN_NORM_VERSION  = 1;
+var RN_NORM_VERSION  = 2;   /* 2: autumns kept for dry days (Tier 1) */
 var RN_HEAVY_MM      = 10;            /* a day of 10 mm or more counts as heavy rain for the 48-hour check */
 
 function rnFetchJson(url, ms, opts){
@@ -71297,6 +71393,7 @@ function rnFetchHistory(){
     var days = j && j.daily && j.daily.time, vals = j && j.daily && j.daily.precipitation_sum;
     if (!days || !vals || !days.length) throw new Error('no rainfall returned');
     rnDeriveNormals(days, vals);
+    try { rnKeepAutumns(days, vals); } catch(e){}
     rnKeepRecent(days, vals);
     try { rnKeepTemps(days, (j.daily && j.daily.temperature_2m_min) || null); } catch(e){}
     ST_RAIN.sat.histFetched = rnISO(t);
@@ -71666,17 +71763,17 @@ function rnEaVsNeighbours(){
    Defra's designation map, point query.  The layer served is the 2017
    designation, since revised, so this is a suggestion the farmer confirms,
    never a fact the app acts on by itself. */
-var RN_NVZ_URL = 'https://services1.arcgis.com/JZM7qJpmv7vJ0Hzx/arcgis/rest/services/NitrateVulnerableZones_NVZ_2017_Final_Designations/FeatureServer/0/query';
+var RN_NVZ_URL = 'https://environment.data.gov.uk/arcgis/rest/services/EA/NitrateVulnerableZones2021Designations/FeatureServer/0/query';
 function rnFetchNvz(){
   if (!rnHas() || rnNation() !== 'England') return Promise.resolve(false);
   var loc = ST_RAIN.loc, m = ST_RAIN.nvzMap;
-  if (m && m.lat === loc.lat && m.lon === loc.lon) return Promise.resolve(false);
-  var u = RN_NVZ_URL + '?geometry=' + loc.lon + ',' + loc.lat + '&geometryType=esriGeometryPoint&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=NVZ_Name,NVZ_TYPE&returnGeometry=false&f=json';
+  if (m && m.lat === loc.lat && m.lon === loc.lon && m.layer === '2021') return Promise.resolve(false);
+  var u = RN_NVZ_URL + '?geometry=' + loc.lon + ',' + loc.lat + '&geometryType=esriGeometryPoint&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=nvz_name,nvz_type,nvz_2021&returnGeometry=false&f=json';
   return rnFetchJson(u, 15000).then(function(j){
-    var f = (j && j.features) || [];
+    var f = ((j && j.features) || []).filter(function(x){ var d = (x.attributes || {}).nvz_2021; return d && !/^(none|not|de-?designated)/i.test(String(d)); });
     var a = f.length ? (f[0].attributes || {}) : {};
-    ST_RAIN.nvzMap = { lat: loc.lat, lon: loc.lon, checked: rnISO(rnToday()), hit: f.length > 0,
-                       name: String(a.NVZ_Name || a.NVZ_NAME || '').replace(/, England$/,'').replace(/\s*NVZ$/i,''), type: a.NVZ_TYPE || '' };
+    ST_RAIN.nvzMap = { lat: loc.lat, lon: loc.lon, checked: rnISO(rnToday()), hit: f.length > 0, layer: '2021',
+                       name: String(a.nvz_name || '').replace(/, England$/,'').replace(/\s*NVZ$/i,''), type: a.nvz_type || '' };
     return true;
   }).catch(function(){ return false; });
 }
@@ -71702,7 +71799,7 @@ function rnSync(force){
   var ea = ST_RAIN.ea || {};
   var needEa = rnNation() === 'England' && !(ea.err && ea.fetched === today && !force) && (force || !ea.fetched || rnDaysBetween(ea.fetched, today) >= 7 ||
                !(ea.at && ea.at.lat === ST_RAIN.loc.lat && ea.at.lon === ST_RAIN.loc.lon));
-  var needNvz = rnNation() === 'England' && !(ST_RAIN.nvzMap && ST_RAIN.nvzMap.lat === ST_RAIN.loc.lat && ST_RAIN.nvzMap.lon === ST_RAIN.loc.lon);
+  var needNvz = (rnNation() === 'England' || rnNation() === 'Scotland') && !(ST_RAIN.nvzMap && ST_RAIN.nvzMap.lat === ST_RAIN.loc.lat && ST_RAIN.nvzMap.lon === ST_RAIN.loc.lon && (rnNation() !== 'England' || ST_RAIN.nvzMap.layer === '2021'));
   if (!needHist && !needRecent && !needFc && !needEa && !needNvz) return Promise.resolve(false);
   RN_SYNCING = true;
   function step(p){ return p.catch(function(e){ return { err: e }; }); }
@@ -71712,7 +71809,7 @@ function rnSync(force){
   if (needHist)   chain = chain.then(function(){ return step(rnFetchHistory()); }).then(function(r){ if (r && r.err) errs.push(r.err); });
   if (needRecent) chain = chain.then(function(){ return step(rnFetchRecent()); }).then(function(r){ if (r && r.err) errs.push(r.err); });
   if (needFc)     chain = chain.then(function(){ return step(rnFetchForecast()); });
-  if (needNvz)    chain = chain.then(function(){ return step(rnFetchNvz()); });
+  if (needNvz)    chain = chain.then(function(){ return step(rnNation() === 'Scotland' ? rnFetchScotNvz() : rnFetchNvz()); });
   if (needEa)     chain = chain.then(function(){ return step(rnFetchEa()); });
   return chain.then(function(){
     RN_SYNCING = false;
@@ -71799,7 +71896,7 @@ function rnPeriodAround(pair, d){
    null = none apply (outside an NVZ in England, Scotland, nation unknown). */
 function rnClosedPeriods(){
   var nat = rnNation(); if (!nat) return null;
-  var tbl = RN_CLOSED[nat]; if (!tbl) return null;
+  var tbl = (nat === 'Scotland') ? rnScotTable() : RN_CLOSED[nat]; if (!tbl) return null;
   if (tbl.scope === 'nvz' && rnNvzAnswer() !== true) return null;
   var soil = ST_RAIN.soils === 'sandy' ? 'sandy' : 'other';
   var lt = rnLandTypes(), t = rnParse(rnToday()), out = [];
@@ -72484,13 +72581,13 @@ function rnSpreadOpen(){ rnSpreadBody(); var m = rnEl('rn-spread-modal'); if (m)
 function rnSpreadClose(){ var m = rnEl('rn-spread-modal'); if (m) m.classList.remove('on'); }
 function rnSpreadBody(){
   var host = rnEl('rn-spread-body'); if (!host) return;
-  var nat = rnNation(), tbl = nat ? RN_CLOSED[nat] : null, P = rnClosedPeriods(), h = '';
+  var nat = rnNation(), tbl = nat ? (nat === 'Scotland' ? rnScotTable() : RN_CLOSED[nat]) : null, P = rnClosedPeriods(), h = '';
   var sub = rnEl('rn-spread-sub');
   if (sub) sub.textContent = (nat || 'Your farm') + (ST_RAIN.soils === 'sandy' ? ' · sandy or shallow soils' : ' · soils not sandy or shallow');
   if (!nat){
     h += '<div class="rn-empty"><b>Set where the farm is first</b>The dates depend on the nation and the soils. <b style="color:var(--gd);cursor:pointer" onclick="rnSpreadClose();nav(\'settings\')">Open Settings</b></div>';
-  } else if (nat === 'Scotland'){
-    h += '<div class="rn-strip info"><span class="ic">&#8505;</span><span class="gr">Scotland&rsquo;s closed periods depend on which Nitrate Vulnerable Zone the farm is in, so they are not shown yet. Check the dates for your zone with Farming and Water Scotland.</span></div>';
+  } else if (nat === 'Scotland' && !tbl){
+    h += '<div class="rn-strip info"><span class="ic">&#8505;</span><span class="gr">' + (rnNvzAnswer() === false ? '<b>Outside a Nitrate Vulnerable Zone there are no closed periods in Scotland.</b> The general binding rules still apply.' : '<b>Is the farm in a Nitrate Vulnerable Zone?</b> Confirm it in Settings and your dates appear here.') + '</span><button class="lnk" onclick="rnSpreadClose();nav(\'settings\')">Settings</button></span></div>';
   } else if (tbl && tbl.scope === 'nvz' && rnNvzAnswer() !== true){
     var m = ST_RAIN.nvzMap;
     h += '<div class="rn-strip info"><span class="ic">&#8505;</span><span class="gr">' + (rnNvzAnswer() === false
@@ -72570,6 +72667,7 @@ function rnSettingsRender(){
        '<span><b>Fill in the season before my first reading</b><small>Satellite rainfall for your farm, so this page is worth opening on day one. It stops the day your own record starts, except for times you tell us you were not keeping the book, and is always marked &ldquo;sat&rdquo;.</small></span></label>';
   h += rnNotKeptSettingsHtml();
 
+  h += rnT1SettingsHtml();
   var r = rnFitRule();
   h += '<details class="rn-adv"' + (RN_ADV_OPEN ? ' open' : '') + ' ontoggle="RN_ADV_OPEN=this.open"><summary>Advanced</summary><div class="rn-advb">' +
        '<div class="rn-f"><label>When the ground is too wet to get on</label><div style="display:flex;gap:8px;align-items:center">' +
@@ -72609,12 +72707,12 @@ function rnSettingsRender(){
          '<div class="hint" style="margin-top:6px">' + (m && m.checked
             ? (m.hit ? 'Defra&rsquo;s map puts your farm in the <b>' + esc(rnNvzName(m.name)) + '</b> zone' + (m.type ? ' (' + esc(String(m.type).toLowerCase()) + ')' : '') + '. '
                      : 'Defra&rsquo;s map does not put your farm in a zone. ')
-              + 'The map shows the 2017 designation, so check your own land before you rely on it.'
+              + 'The map shows the 2021 designation, so check your own land before you rely on it.'
             : 'Defra&rsquo;s map is checked once the farm&rsquo;s location is set.') + '</div>';
   } else if (nat === 'Wales' || nat === 'Northern Ireland'){
     cp += '<div class="hint" style="margin-top:6px">In ' + nat + ' the closed periods apply to every farm.</div>';
   } else if (nat === 'Scotland'){
-    cp += '<div class="hint" style="margin-top:6px">Scotland&rsquo;s closed periods depend on your zone, so they are not shown yet.</div>';
+    cp += rnScotSettingsHtml();
   }
 
   /* The sheet is otherwise reached only when a period is about to close; the dates are wanted all year. */
@@ -73420,6 +73518,7 @@ function rnAttnItems(){
       });
     } catch(e){}
   })();
+  try { out = out.concat(rnT1AttnItems()); } catch(e){}
   return out;
 }
 /* Escape closes the rain sheets, as it does every other sheet in the app. */
@@ -73431,6 +73530,730 @@ document.addEventListener('keydown', function(e){
   open.forEach(function(id){ try { ({ 'rn-log-modal': rnLogClose, 'rn-imp-modal': rnImportClose, 'rn-spread-modal': rnSpreadClose })[id](); } catch(_){} });
 });
 /* ══ RAINFALL-UK-END ══ */
+
+
+/* ══ RAINFALL-UK-T1 ═══════════════════════════════════════════════════════════
+   Tier 1 (signed 19 Sep 2026, decisions D16–D28): the rain record read into
+   days and pounds on the screens the farmer already uses.
+     · dry days in every autumn since 1991 (D16, D17)
+     · Wet year in Planning (D18, D19)       · grass and housing (D20, D21)
+     · a normal-year line in Money Flow (D22) · ground per field in Crops (D24)
+     · Scotland's zones, England's 2021 map (D25, D26) · four attention rules (D27)
+   Days first; pounds only from the farm's own plan. Nothing here is a forecast. */
+
+/* ── dry days: the farm's own autumns ─────────────────────────────────────────
+   A dry day is under 1 mm, after a week under the farmer's limit (20 mm, the
+   "Get on the land?" tile's).  Counted 15 Sep – 15 Nov.  It is a rain-only count,
+   not the soil-based "machinery work days" advisers use, and every screen that
+   shows it says "dry days" for that reason. Each autumn's days are kept (from
+   29 days before 15 Sep, the longest window the rule allows) so a new limit
+   recounts without another call. Stored as tenths of a millimetre. */
+var RN_AUT_LEAD = 29;
+function rnPctS(p){ return (p == null || !isFinite(p)) ? '—' : Math.round(p) + '%'; }
+function rnAutStart(y){ return new Date(y, 8, 15 - RN_AUT_LEAD); }
+function rnKeepAutumns(days, vals){
+  if (!ST_RAIN.normal) return;
+  var idx = {}; for (var i=0;i<days.length;i++) idx[days[i]] = i;
+  var out = {};
+  for (var y = RN_NORM_FROM; y <= rnToday().getFullYear(); y++){
+    var s = rnISO(rnAutStart(y)), e = y + '-11-15';
+    if (idx[s] == null || idx[e] == null) continue;
+    var a = [], ok = true;
+    for (var k = idx[s]; k <= idx[e]; k++){ var v = vals[k]; if (v == null){ ok = false; break; } a.push(Math.round(v*10)); }
+    if (ok) out[y] = a;
+  }
+  ST_RAIN.normal.autumns = out;
+}
+function rnAutumnDry(a, mm, wd){
+  var n = 0, lim = mm * 10;
+  for (var i = RN_AUT_LEAD; i < a.length; i++){
+    if (a[i] >= 10) continue;
+    var s = 0; for (var j = 0; j < wd; j++) s += a[i-j];
+    if (s < lim) n++;
+  }
+  return n;
+}
+function rnAutumns(){
+  var A = ST_RAIN.normal && ST_RAIN.normal.autumns; if (!A) return null;
+  var r = rnFitRule();
+  var list = Object.keys(A).map(function(y){ return { y: +y, n: rnAutumnDry(A[y], r.mm, r.days) }; })
+                            .sort(function(a,b){ return a.y - b.y; });
+  if (list.length < 10) return { list: list, few: true };
+  var ns = list.map(function(x){ return x.n; }).sort(function(a,b){ return a-b; });
+  var mid = ns.length % 2 ? ns[(ns.length-1)/2] : (ns[ns.length/2-1] + ns[ns.length/2]) / 2;
+  function pick(arr){ return arr.reduce(function(b,x){ return (!b || x.n < b.n || (x.n === b.n && x.y > b.y)) ? x : b; }, null); }
+  var last = list[list.length-1].y;
+  return { list: list, median: Math.round(mid), p20: ns[Math.round(0.2*(ns.length-1))],
+           recent: pick(list.filter(function(x){ return x.y > last - 10; })), worst: pick(list), rule: r };
+}
+/* This autumn so far, from the book (and satellite fill where the book is not kept). */
+function rnAutumnNow(){
+  var t = rnToday(), y = t.getFullYear(), from = new Date(y, 8, 15), to = rnAddDays(t, -1), end = new Date(y, 10, 15);
+  if (to > end) to = end;
+  if (to < from) return null;
+  var r = rnFitRule(), n = 0, sat = false;
+  for (var d = new Date(from); d <= to; d = rnAddDays(d, 1)){
+    var v = rnDayMm(rnISO(d)); if (v && v.src === 'sat') sat = true;
+    if ((v ? v.mm : 0) >= 1) continue;
+    var s = 0; for (var j = 0; j < r.days; j++){ var w = rnDayMm(rnISO(rnAddDays(d, -j))); s += w ? w.mm : 0; }
+    if (s < r.mm) n++;
+  }
+  return { n: n, sat: sat };
+}
+
+/* ── Wet year in Planning (M4) ────────────────────────────────────────────────
+   Undrilled wheat = the wet autumn's dry days ÷ the working days the farmer says
+   the wheat takes (D18).  It comes off every autumn wheat line pro rata and takes
+   the plan's own spring line.  "Use it" fills only those two knobs; late-drilled
+   yield, price and extra cultivations stay at 0 until the farmer types them (D19).
+   Session only, like Dry year and Drought. */
+var RN_WET_HOW = false;
+function rnWetIsWheat(c){
+  if (!c || !/winter wheat/i.test(String(c.crop || ''))) return false;
+  var m = String(c.plant || '').split(' ')[0];
+  return m === 'Sep' || m === 'Oct' || m === 'Nov';
+}
+function rnWetSpringLines(list){
+  return (list || []).filter(function(c){
+    if (!c || c._wetSyn || rnWetIsWheat(c)) return false;
+    var m = String(c.plant || '').split(' ')[0];
+    return m === 'Feb' || m === 'Mar' || m === 'Apr';
+  });
+}
+/* The line the undrilled wheat becomes: the plan's own spring crop (first match),
+   or typical spring barley figures when the plan has none, or nothing (fallow). */
+function rnWetTarget(list){
+  var w = FARM_SCEN.wet || {}, sp = rnWetSpringLines(list);
+  if (w.to === 'fallow') return { fallow: true, name: 'fallow' };
+  var hit = null;
+  sp.forEach(function(c){ if (!hit && (!w.to || w.to === c.crop)) hit = c; });
+  if (hit) return { line: hit, name: String(hit.crop).toLowerCase() };
+  var d = (typeof CROP_DEFAULTS !== 'undefined' && CROP_DEFAULTS['Spring barley (malting)']) || null;
+  return { line: { crop: 'Spring barley', yield: d ? d.yield : 5.5, price: d ? d.price : 175,
+                   inputCost: d ? d.inputCost : 470, otherCost: d ? d.otherCost : 220, plant: 'Mar', harvest: 'Aug' },
+           name: 'spring barley', typical: true };
+}
+function rnWetCrops(list){
+  var w = FARM_SCEN.wet || {}, pct = parseFloat(w.drilled);
+  var late = parseFloat(w.late) || 0, extra = parseFloat(w.extra) || 0;
+  if (isNaN(pct) && !late && !extra) return list;
+  if (isNaN(pct)) pct = 100;
+  pct = Math.max(0, Math.min(100, pct));
+  var tg = rnWetTarget(list), out = [];
+  list.forEach(function(c){
+    if (!rnWetIsWheat(c)){ out.push(c); return; }
+    var q = {}; for (var k in c) q[k] = c[k];
+    q._wetOf = c.projected ? -1 : ST_PLAN.crops.indexOf(c);
+    q._wetFull = c.ha || 0;
+    q.ha = Math.round((c.ha || 0) * pct / 10) / 10;
+    if (late) q.yield = (c.yield || 0) * (1 - late/100);
+    if (extra) q.otherCost = (c.otherCost || 0) + extra;
+    delete q.c2;
+    out.push(q);
+    var rest = Math.round(((c.ha || 0) - q.ha) * 10) / 10;
+    if (rest > 0 && !tg.fallow){
+      var s = {}, src = tg.line; for (var k2 in src) s[k2] = src[k2];
+      var yr = (parseInt(String(c.plant || '').split(' ')[1], 10) || rnToday().getFullYear()) + 1;
+      var pm = String(src.plant || 'Mar').split(' ')[0], hm = String(src.harvest || 'Aug').split(' ')[0];
+      s.plant = pm + ' ' + yr; s.harvest = hm + ' ' + yr;
+      s.field = c.field; s.ha = rest; s._wetSyn = true; s.projected = false; s.inForecast = true; s.repeat = 'none';
+      delete s.linkId; delete s.c2;
+      out.push(s);
+    }
+  });
+  return out;
+}
+function rnWetWheatHa(){
+  var raw = (typeof _planActiveCropsRaw === 'function') ? _planActiveCropsRaw() : [];
+  return raw.filter(rnWetIsWheat).reduce(function(s,c){ return s + (c.ha || 0); }, 0);
+}
+/* What the strip suggests: {days, normal, year, pct, ha} or a reason it cannot. */
+function rnWetSuggest(){
+  var ha = rnWetWheatHa();
+  if (!ha) return { why: 'nowheat' };
+  if (!rnHas()) return { why: 'noloc' };
+  var A = rnAutumns();
+  if (!A) return { why: 'nohist' };
+  if (A.few) return { why: 'few', n: A.list.length };
+  var an = rnWetAnalog(A);
+  var out = { days: an.n, year: an.y, label: an.label, normal: A.median, ha: ha, A: A };
+  if (ST_RAIN.drillContractor) { out.why = 'contractor'; return out; }
+  var need = parseFloat(ST_RAIN.drillDays);
+  if (!(need > 0)) { out.why = 'ask'; return out; }
+  out.need = need;
+  out.pct = Math.min(100, Math.round(an.n / need * 100));
+  out.undrilled = Math.round(ha * (100 - out.pct) / 10) / 10;
+  return out;
+}
+/* The analogue autumn: the wettest of the last ten (D17), or the one the farmer picked. */
+function rnWetAnalog(A){
+  var w = FARM_SCEN.wet || {};
+  if (w.year === 'p20') return { n: A.p20, y: null, label: 'one autumn in five' };
+  if (w.year){ var hit = A.list.filter(function(x){ return x.y === +w.year; })[0]; if (hit) return { n: hit.n, y: hit.y, label: String(hit.y) }; }
+  return { n: A.recent.n, y: A.recent.y, label: String(A.recent.y) };
+}
+function rnWetUse(){
+  var s = rnWetSuggest(); if (s.pct == null) return;
+  var w = FARM_SCEN.wet; w.drilled = s.pct; if (!w.to) w.to = '';
+  rnWetSeen();
+  scenRerender();
+}
+function rnWetSet(k, v){
+  var w = FARM_SCEN.wet;
+  if (k === 'to' || k === 'year') w[k] = String(v || '');
+  else { var n = parseFloat(String(v).replace(/[^0-9.\-]/g, '')); w[k] = isNaN(n) ? (k === 'drilled' ? null : 0) : n; }
+  scenRerender();
+}
+function rnWetSaveDays(v, contractor){
+  if (contractor){ ST_RAIN.drillContractor = true; ST_RAIN.drillDays = null; }
+  else {
+    var n = parseFloat(v);
+    if (!(n > 0 && n <= 120)){ try { toast('Type the working days, e.g. 12', 'error'); } catch(e){} return; }
+    ST_RAIN.drillDays = Math.round(n); ST_RAIN.drillContractor = false;
+  }
+  ST_RAIN.prefsSet = true;
+  rnPersist();
+  try { scenRerender(); } catch(e){}
+  try { if (rnEl('rn-set-body')) rnSettingsRender(); } catch(e){}
+}
+/* The farmer looked at a wet autumn this season (D27: the scenario is never saved,
+   so the attention rule needs this one fact). */
+function rnWetSeen(){
+  var t = rnToday(), key = String(t.getMonth() >= 6 ? t.getFullYear() : t.getFullYear() - 1);
+  if (ST_RAIN.wetSeen === key) return;
+  ST_RAIN.wetSeen = key; ST_RAIN.prefsSet = true;
+  try { saveState(); } catch(e){}
+  rnPushSettings();
+}
+function rnWetPanel(which, seg){
+  if (which !== 'crops'){
+    return '<div class="scn"><span class="scn-lbl">Weather</span>' + seg +
+      '<span class="scn-mini">Wet year changes your wheat. <button type="button" class="scn-edit" onclick="setPlanTab(\'crops\')">Crop Planning</button></span></div>';
+  }
+  rnWetSeen();
+  var w = FARM_SCEN.wet, s = rnWetSuggest(), h = '';
+  var money = function(v){ return (typeof planFmtR === 'function') ? planFmtR(v) : ('£' + Math.round(v)); };
+  /* the strip: one sentence, one action */
+  var lead = s.days != null ? '<b>Like ' + esc(s.label) + ': ' + s.days + ' dry days for drilling, not ' + s.normal + '.</b> ' : '';
+  var body = '', act = '';
+  if (s.why === 'nowheat') body = 'There is no autumn-sown wheat in this season&rsquo;s plan.';
+  else if (s.why === 'noloc') body = 'Set where the farm is in Settings &rsaquo; Rainfall to see your wet autumns.';
+  else if (s.why === 'nohist') body = 'Your wet autumns appear once the rainfall history has loaded.';
+  else if (s.why === 'few') body = 'Fewer than ten autumns of rainfall history, so no wet year to compare.';
+  else if (s.why === 'contractor') body = 'A contractor drills your wheat, so how much goes in is up to them.';
+  else if (s.why === 'ask'){
+    body = 'In a good autumn, how many working days does it take to get your wheat in?';
+    act = '<input id="rn-wet-days" type="number" min="1" step="1" placeholder="days" class="rn-wet-in" onkeydown="if(event.key===\'Enter\'){rnWetSaveDays(this.value);}">' +
+          '<button type="button" class="rn-btn sm" onclick="rnWetSaveDays((rnEl(\'rn-wet-days\')||{}).value)">Save</button>' +
+          '<button type="button" class="lnk" onclick="rnWetSaveDays(null,true)">A contractor does it</button>';
+  } else if (s.pct >= 100) body = 'Enough for your ' + s.need + ' working days: the wheat would still go in.';
+  else {
+    body = 'About ' + rnNum(s.undrilled) + ' ha of your wheat would go to ' + esc(rnWetTarget(_planActiveCropsRaw()).name) + '.';
+    act = (w.drilled != null && +w.drilled === s.pct) ? '<span class="rn-used">&#10003; In use</span>' : '<button type="button" class="rn-btn sm" onclick="rnWetUse()">Use it</button>';
+  }
+  if (s.days != null) act += '<button type="button" class="lnk" onclick="RN_WET_HOW=!RN_WET_HOW;scenRerender()">' + (RN_WET_HOW ? 'Hide the working' : 'How we got this') + '</button>';
+  h += '<div class="rn-strip info rn-wet-strip"><span class="ic">&#128167;</span><span class="gr">' + lead + body + '</span><span class="rn-wet-act">' + act + '</span></div>';
+  if (RN_WET_HOW && s.A) h += rnWetHowHtml(s);
+  /* the knobs */
+  var sp = rnWetSpringLines(_planActiveCropsRaw()), tgt = rnWetTarget(_planActiveCropsRaw());
+  var sug = function(k){ return (k === 'drilled' && w.drilled != null && s.pct != null && +w.drilled === s.pct) ? ' sug' : ''; };
+  var opts = sp.map(function(c){ return c.crop; }).filter(function(v,i,a){ return a.indexOf(v) === i; });
+  if (!opts.length) opts = ['Spring barley'];
+  var sel = '<select onchange="rnWetSet(\'to\',this.value)">' + opts.map(function(o){
+      return '<option value="' + planEscAttr(o) + '"' + ((w.to || opts[0]) === o && w.to !== 'fallow' ? ' selected' : '') + '>' + esc(o) + (tgt.typical && o === 'Spring barley' ? ' (typical figures)' : '') + '</option>'; }).join('') +
+      '<option value="fallow"' + (w.to === 'fallow' ? ' selected' : '') + '>Leave it fallow</option></select>';
+  function K(k, label, val, unit){
+    return '<div class="scn-k"><label>' + label + '</label><input type="number" class="' + sug(k).trim() + '" value="' + (val == null ? '' : val) + '" placeholder="100" onchange="rnWetSet(\'' + k + '\',this.value)"><span class="pc">' + unit + '</span></div>';
+  }
+  var now = planCropTotals().profit, base = scenBaseline(function(){ return planCropTotals().profit; });
+  h += '<div class="scn-panel rn-wet"><div class="scn-row">' +
+       K('drilled', 'Wheat drilled', w.drilled, '%') +
+       '<div class="scn-k"><label>The rest goes to</label>' + sel + '</div>' +
+       K('late', 'Late-drilled yield down', w.late || 0, '%') +
+       K('price', 'Grain price', w.price || 0, '%') +
+       K('extra', 'Extra cultivations', w.extra || 0, '£/ha') +
+       '<span class="scn-res"><span><i>Margin</i><b' + (now < base ? ' class="bad"' : '') + '>' + money(now) + '</b><i style="opacity:.6">was ' + money(base) + '</i></span></span>' +
+       '</div><div class="scn-foot">' +
+       (ST_RAIN.drillContractor ? 'A contractor drills your wheat' : (ST_RAIN.drillDays ? 'Wheat takes <b>' + ST_RAIN.drillDays + ' working days</b> to get in' : 'Working days not set')) +
+       ' &middot; <a onclick="nav(\'settings\')">change</a> &middot; Blue boxes come from your records. Type over any.</div></div>';
+  return '<div class="scn"><span class="scn-lbl">Weather</span>' + seg + '</div>' + h;
+}
+function rnWetHowHtml(s){
+  var A = s.A, rows = [];
+  rows.push(['Normal autumn, 15 Sep – 15 Nov', A.median + ' dry days']);
+  rows.push(['Wettest of the last ten, ' + A.recent.y, A.recent.n]);
+  rows.push(['Wettest since ' + A.list[0].y + ', ' + A.worst.y, A.worst.n]);
+  rows.push(['One autumn in five', A.p20 + ' or fewer']);
+  if (s.pct != null) rows.push([s.days + ' dry days ÷ your ' + s.need + ' working days', s.pct + '% drilled']);
+  var yrs = '<select onchange="rnWetSet(\'year\',this.value)"><option value="">Wettest of the last ten</option><option value="p20"' + (FARM_SCEN.wet.year === 'p20' ? ' selected' : '') + '>One autumn in five</option>' +
+            A.list.slice().reverse().map(function(x){ return '<option value="' + x.y + '"' + (String(FARM_SCEN.wet.year) === String(x.y) ? ' selected' : '') + '>' + x.y + ' · ' + x.n + ' dry days</option>'; }).join('') + '</select>';
+  return '<div class="rn-wet-how">' + rows.map(function(r){ return '<div class="li"><span>' + esc(r[0]) + '</span><b>' + r[1] + '</b></div>'; }).join('') +
+    '<div class="rn-wet-pick">Compare with ' + yrs + '</div>' +
+    '<div class="rn-foot">Dry day: under 1 mm, after a week under your ' + rnNum(A.rule.mm) + ' mm. ' + A.list.length + ' autumns of satellite rain at your farm. Rain only' +
+      (ST_RAIN.land === 'heavy' ? ': on heavy clay fewer days are workable than this.' : (ST_RAIN.land === 'light' ? ': light land is often workable on more days.' : '.')) + '</div></div>';
+}
+
+/* ── Money Flow: the normal-year line (M6, D22) ───────────────────────────────
+   In Wet year every figure in the app is the wet season (the ribbon says so), so
+   the main line is the wet year and a second, fainter line is the same farm in a
+   normal year.  One sentence is added to the card.  Nothing else is modelled. */
+var RN_CF_ALT = null;
+function rnCfAlt(n){
+  RN_CF_ALT = null;
+  try {
+    if (typeof FARM_SCEN === 'undefined' || FARM_SCEN.mode !== 'wet') return null;
+    var keep = CF_BASE, alt;
+    scenBaseline(function(){ recomputePlan(); CF_BASE = buildCfForecast(n); alt = _cfScenMonths(); });
+    CF_BASE = keep; recomputePlan();
+    RN_CF_ALT = (alt || []).map(function(m){ return m.balance; });
+  } catch(e){ RN_CF_ALT = null; }
+  return RN_CF_ALT;
+}
+function rnCfWetNote(months, minIdx){
+  try {
+    if (!RN_CF_ALT || !RN_CF_ALT.length) return;
+    var el = document.getElementById('cf-fwd-answer-s'); if (!el) return;
+    var fac = (typeof cfFacility === 'function') ? cfFacility() : null, ai = 0;
+    for (var i=1;i<RN_CF_ALT.length;i++) if (RN_CF_ALT[i] < RN_CF_ALT[ai]) ai = i;
+    var lost = scenBaseline(function(){ return planCropTotals().profit; }) - planCropTotals().profit;
+    var s = 'Normal year: ' + (fac ? _cfMoneyFull(RN_CF_ALT[ai] - fac.floor) + ' left in ' + _cfMonthFull(months[ai].name)
+                                   : 'lowest ' + _cfMoneyFull(RN_CF_ALT[ai]) + ' in ' + _cfMonthFull(months[ai].name)) + '.';
+    if (lost > 0){
+      var h = rnWetHarvestLabel(), last = months[months.length-1];
+      var after = h && last && (h.y * 12 + h.m) > (last.year * 12 + ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'].indexOf(last.name));
+      s += ' The ' + _cfMoneyFull(lost) + ' margin loss comes from ' + (h ? h.label : 'harvest') + (after ? ', after this forecast.' : '.');
+    }
+    el.innerHTML += '<div class="rn-cf-wet">' + s + '</div>';
+  } catch(e){}
+}
+function rnWetHarvestLabel(){
+  var MO = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'], best = null;
+  (_planActiveCropsRaw() || []).filter(rnWetIsWheat).forEach(function(c){
+    var p = String(c.harvest || '').split(' '), m = MO.indexOf(p[0]), y = parseInt(p[1], 10);
+    if (m < 0 || !y) return;
+    if (!best || y*12+m < best.y*12+best.m) best = { m: m, y: y };
+  });
+  if (!best) return null;
+  best.label = ['January','February','March','April','May','June','July','August','September','October','November','December'][best.m] + ' ' + best.y;
+  return best;
+}
+function rnCfWetPreset(){
+  var s = rnWetSuggest();
+  if (FARM_SCEN.wet.drilled == null && s.pct != null) FARM_SCEN.wet.drilled = s.pct;
+  scenSetMode('wet');
+  try { renderCfLineView(CF_FWD_N); } catch(e){}
+  if (FARM_SCEN.wet.drilled == null){ try { toast('Set Wet year up in Planning first: it needs your working days for drilling.', 'error'); } catch(e){} }
+}
+
+/* ── grass and housing on the livestock plan (M5, D20, D21) ──────────────────
+   No computed grazing days: no UK source turns rain into grass.  Rain against
+   normal by month, the dates the stock came in and went out, and what an early
+   week costs in feed at the plan's own lean-month weighting (a lean month feeds
+   LVP_LEAN_MULT times a grazing month).  Feed only: vet costs do not change. */
+var RN_H_EV = { out: 'Turned out', 'in': 'Housed', bufOn: 'Buffer feeding started', bufOff: 'Buffer feeding stopped' };
+function rnHerdWeekEarly(h){
+  var lean = (typeof lvpLeanMonths === 'function') ? lvpLeanMonths(h) : [];
+  var ms = (ST_PLAN.months || []).map(function(m){ return String(m.label || '').split(' ')[0]; });
+  var n = ms.filter(function(m){ return lean.indexOf(m) >= 0; }).length;
+  if (!n || n === 12 || !ms.length) return 0;
+  var mult = (typeof LVP_LEAN_MULT !== 'undefined') ? LVP_LEAN_MULT : 4;
+  var unit = 12 / ((12 - n) + n * mult);
+  return (h.qty || 0) * (h.feed || 0) * (mult - 1) * unit * 7 / (365.25 / 12);
+}
+function rnGrassSeason(){
+  var t = rnToday(), y = t.getMonth() >= 3 ? t.getFullYear() : t.getFullYear() - 1;
+  var norm = rnNormalMonthly(); if (!norm) return null;
+  var rows = [], tot = 0, ntot = 0;
+  for (var m = 3; m <= 7; m++){
+    var f = new Date(y, m, 1), e = new Date(y, m + 1, 0), last = rnAddDays(t, -1);
+    if (f > last) break;
+    var partial = e > last, to = partial ? last : e;
+    var mm = rnTotal(rnISO(f), rnISO(to)); if (mm == null) continue;
+    var dim = e.getDate(), nm = norm[m] * (partial ? to.getDate() / dim : 1);
+    rows.push({ m: m, mm: mm, nm: nm, partial: partial, to: to }); tot += mm; ntot += nm;
+  }
+  if (!rows.length) return null;
+  var extra = null;
+  if (t.getMonth() >= 8 && t.getMonth() <= 9 && y === t.getFullYear()){
+    var f2 = new Date(y, t.getMonth(), 1), l2 = rnAddDays(t, -1);
+    if (l2 >= f2){ var mm2 = rnTotal(rnISO(f2), rnISO(l2)); if (mm2 != null) extra = { m: t.getMonth(), mm: mm2, nm: norm[t.getMonth()] * l2.getDate() / new Date(y, t.getMonth()+1, 0).getDate(), to: l2 }; }
+  }
+  return { y: y, rows: rows, mm: tot, nm: ntot, pct: ntot > 0 ? tot / ntot * 100 : null, extra: extra, full: rows.length === 5 && !rows[4].partial };
+}
+function rnGrassRender(herds){
+  var host = document.getElementById('rn-grass'); if (!host) return;
+  if (!rnOn() || !rnHas()){ host.innerHTML = ''; return; }
+  herds = (herds || []).filter(function(h){ return h && !h.removed; });
+  var G = rnGrassSeason(), MO = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  var wk = herds.reduce(function(s,h){ return s + rnHerdWeekEarly(h); }, 0);
+  var h = '';
+  if (G && G.pct != null){
+    var span = 'April to ' + ['','','','April','May','June','July','August'][G.rows[G.rows.length-1].m] + (G.rows[G.rows.length-1].partial ? ' so far' : '');
+    h += '<div class="rn-strip info"><span class="ic">&#127793;</span><span class="gr"><b>' + span + ': ' + rnPctS(G.pct) + ' of normal rain.</b>' +
+         (wk > 0 ? ' Each week housed early costs about ' + _cfMoneyFull(wk) + ' in feed.' : '') + '</span>' +
+         '<span class="rn-wet-act"><button type="button" class="rn-btn sm" onclick="rnHousingOpen()">Log housing</button></span></div>';
+  }
+  h += '<div class="rn-grass">';
+  if (G){
+    h += '<div class="rn-card"><div class="hd"><div><h3>Grass and rain by month</h3><div class="sub">Grazing season ' + G.y + ' &middot; rain against your normal</div></div></div>' +
+         '<table class="rn1-t"><thead><tr><th>Month</th><th class="r">Rain</th><th class="r">Normal</th><th class="r">%</th></tr></thead><tbody>' +
+         G.rows.map(function(r){ return '<tr><td>' + MO[r.m] + (r.partial ? ', to ' + r.to.getDate() + rnOrd(r.to.getDate()) : '') + '</td><td class="r"><b>' + rnMmR(r.mm) + '</b></td><td class="r rn-dim">' + rnMmR(r.nm) + '</td><td class="r">' + (r.nm > 0 ? rnPctS(r.mm / r.nm * 100) : '—') + '</td></tr>'; }).join('') +
+         '<tr class="tot"><td>Apr &ndash; ' + MO[G.rows[G.rows.length-1].m] + '</td><td class="r"><b>' + rnMmR(G.mm) + '</b></td><td class="r rn-dim">' + rnMmR(G.nm) + '</td><td class="r"><b>' + (G.pct != null ? rnPctS(G.pct) : '—') + '</b></td></tr>' +
+         (G.extra ? '<tr class="rn-dim"><td>' + MO[G.extra.m] + ', to ' + G.extra.to.getDate() + rnOrd(G.extra.to.getDate()) + '</td><td class="r">' + rnMmR(G.extra.mm) + '</td><td class="r">' + rnMmR(G.extra.nm) + '</td><td class="r">' + (G.extra.nm > 0 ? rnPctS(G.extra.mm / G.extra.nm * 100) : '—') + '</td></tr>' : '') +
+         '</tbody></table><div class="rn-foot">Rain only. It does not measure grass.</div></div>';
+  }
+  /* housing */
+  var lean = herds.map(function(x){ return (lvpLeanMonths(x) || []).join(','); }).filter(function(v,i,a){ return v && a.indexOf(v) === i; });
+  var leanTxt = lean.length === 1 ? rnMonthSpan(lean[0].split(',')) : (lean.length ? 'Varies by herd' : '—');
+  var last = rnHousingLast();
+  h += '<div class="rn-card"><div class="hd"><div><h3>Housing</h3><div class="sub">When stock come in</div></div><button type="button" class="btn-sec" onclick="rnHousingOpen()">+ Log turnout or housing</button></div>' +
+       '<div class="rn-facts">' +
+         '<div><span>In your plan</span><b>Fed, not grazed ' + esc(leanTxt) + '</b></div>' +
+         '<div><span>Last logged</span><b>' + (last ? esc(last) : 'Nothing yet') + '</b></div>' +
+         (wk > 0 ? '<div><span>A week in early</span><b>' + _cfMoneyFull(wk) + ' of feed</b></div>' : '') +
+       '</div>';
+  if (wk > 0){
+    h += '<details class="rn-det"><summary>Per herd</summary><table class="rn1-t"><thead><tr><th>Herd</th><th class="r">Head</th><th class="r">Feed £/head/mo</th><th class="r">A week early</th></tr></thead><tbody>' +
+         herds.filter(function(x){ return rnHerdWeekEarly(x) > 0; }).map(function(x){ return '<tr><td>' + esc(x.name || x.type || '') + '</td><td class="r">' + (x.qty || 0) + '</td><td class="r">' + _cfMoneyFull(x.feed || 0) + '</td><td class="r">' + _cfMoneyFull(rnHerdWeekEarly(x)) + '</td></tr>'; }).join('') +
+         '</tbody></table><div class="rn-foot">Your plan feeds ' + ((typeof LVP_LEAN_MULT !== 'undefined') ? LVP_LEAN_MULT : 4) + '&times; as much in a lean month as in a grazing month.</div></details>';
+  }
+  var logs = (ST_RAIN.housing || []).slice().sort(function(a,b){ return a.date < b.date ? 1 : -1; }).slice(0, 6);
+  if (logs.length){
+    h += '<div class="rn-hlog">' + logs.map(function(x){
+      return '<div class="li"><span>' + rnFmtShort(x.date) + ' ' + String(x.date).slice(0,4) + '</span><span class="grow">' + esc(RN_H_EV[x.ev] || x.ev) + ' &middot; ' + esc(rnHerdName(x.herd)) + (x.note ? ' <span class="rn-dim">&middot; ' + esc(x.note) + '</span>' : '') + '</span>' +
+             '<button class="rn-x" title="Remove" aria-label="Remove" onclick="rnHousingRemove(' + rnQ(x.id) + ')">&times;</button></div>'; }).join('') + '</div>';
+  }
+  h += '</div></div>';
+  host.innerHTML = h;
+}
+function rnMonthSpan(ms){
+  var MO = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  var idx = ms.map(function(m){ return MO.indexOf(m); }).filter(function(i){ return i >= 0; });
+  if (!idx.length) return '—';
+  var set = {}; idx.forEach(function(i){ set[i] = 1; });
+  var start = idx.filter(function(i){ return !set[(i + 11) % 12]; })[0];
+  if (start == null) return 'all year';
+  var end = start; while (set[(end + 1) % 12] && (end + 1) % 12 !== start) end = (end + 1) % 12;
+  return MO[start] + ' – ' + MO[end];
+}
+function rnHerdName(id){
+  if (!id || id === 'all') return 'All herds';
+  var h = ((typeof ST_LS !== 'undefined' && ST_LS.herd) || []).filter(function(x){ return String(x.id) === String(id); })[0];
+  return h ? (h.name || h.type || 'Herd') : 'A herd no longer on the farm';
+}
+function rnHousingLast(){
+  var L = (ST_RAIN.housing || []).slice().sort(function(a,b){ return a.date < b.date ? -1 : 1; });
+  var inn = null, out = null;
+  L.forEach(function(x){ if (x.ev === 'in') { inn = x; out = null; } else if (x.ev === 'out' && inn) out = x; });
+  if (!inn) return null;
+  return 'In ' + rnFmtShort(inn.date) + ' ' + inn.date.slice(0,4) + (out ? ' · out ' + rnFmtShort(out.date) + ' ' + out.date.slice(0,4) : '');
+}
+var RN_H_EDIT = { ev: 'in' };
+function rnHousingOpen(){
+  var m = document.getElementById('rn-housing-modal');
+  if (!m){
+    m = document.createElement('div'); m.className = 'rn-modal'; m.id = 'rn-housing-modal';
+    m.setAttribute('onclick', 'if(event.target===this)rnHousingClose()');
+    document.body.appendChild(m);
+  }
+  var herds = ((typeof ST_LS !== 'undefined' && ST_LS.herd) || []).filter(function(h){ return h && !h.removed; });
+  RN_H_EDIT = { ev: RN_H_EDIT.ev || 'in' };
+  m.innerHTML = '<div class="rn-sheet" role="dialog" aria-modal="true" aria-labelledby="rn-h-h"><div class="sh"><div><h3 id="rn-h-h">Log turnout or housing</h3><div class="sub">Next year&rsquo;s plan starts from your own dates</div></div>' +
+    '<button class="rn-x" onclick="rnHousingClose()" aria-label="Close">&times;</button></div><div class="sb">' +
+    '<div class="rn-f"><label for="rn-h-herd">Which stock</label><select id="rn-h-herd"><option value="all">All herds</option>' +
+      herds.map(function(h){ return '<option value="' + planEscAttr(String(h.id)) + '">' + esc(h.name || h.type || '') + '</option>'; }).join('') + '</select></div>' +
+    '<div class="rn-f"><label>What happened</label><div class="rn-seg2" id="rn-h-ev">' + Object.keys(RN_H_EV).map(function(k){
+      return '<button type="button" class="' + (RN_H_EDIT.ev === k ? 'on' : '') + '" onclick="rnHousingEv(' + rnQ(k) + ')">' + RN_H_EV[k] + '</button>'; }).join('') + '</div></div>' +
+    '<div class="rn-f"><label for="rn-h-date">Date</label><input id="rn-h-date" type="date" value="' + rnISO(rnToday()) + '" max="' + rnISO(rnToday()) + '"></div>' +
+    '<div class="rn-f"><label for="rn-h-note">Note</label><input id="rn-h-note" type="text" maxlength="200" placeholder="e.g. Church Meadow poaching"></div>' +
+    '</div><div class="sf"><span></span><span style="display:flex;gap:8px"><button class="btn-sec" onclick="rnHousingClose()">Cancel</button><button class="rn-btn" onclick="rnHousingSave()">Save</button></span></div></div>';
+  m.classList.add('on');
+}
+function rnHousingEv(k){ RN_H_EDIT.ev = k; var g = document.getElementById('rn-h-ev'); if (g) Array.prototype.forEach.call(g.children, function(b){ b.classList.toggle('on', b.getAttribute('onclick').indexOf("'" + k + "'") > 0); }); }
+function rnHousingClose(){ var m = document.getElementById('rn-housing-modal'); if (m) m.classList.remove('on'); }
+function rnHousingSave(){
+  var d = (document.getElementById('rn-h-date') || {}).value;
+  if (!/^\d{4}-\d\d-\d\d$/.test(String(d || ''))){ try { toast('Pick the date', 'error'); } catch(e){} return; }
+  if (d > rnISO(rnToday())){ try { toast('That date has not happened yet', 'error'); } catch(e){} return; }
+  var herd = (document.getElementById('rn-h-herd') || {}).value || 'all';
+  var note = String((document.getElementById('rn-h-note') || {}).value || '').slice(0, 200);
+  ST_RAIN.housing = ST_RAIN.housing || [];
+  var id = 'h' + d.replace(/-/g,'') + '-' + String(herd).replace(/[^A-Za-z0-9]/g,'') + '-' + RN_H_EDIT.ev;
+  var have = ST_RAIN.housing.filter(function(x){ return x.id === id; })[0];
+  if (have){ have.note = note; } else ST_RAIN.housing.push({ id: id, herd: herd, ev: RN_H_EDIT.ev, date: d, note: note });
+  ST_RAIN.goneHousing = (ST_RAIN.goneHousing || []).filter(function(x){ return x !== id; });
+  try { saveState(); } catch(e){}
+  rnPush();
+  rnHousingClose();
+  try { renderLiveCalGrid(); } catch(e){}
+  try { toast(RN_H_EV[RN_H_EDIT.ev] + ' · ' + rnFmtShort(d) + ' saved', 'success'); } catch(e){}
+}
+function rnHousingRemove(id){
+  ST_RAIN.housing = (ST_RAIN.housing || []).filter(function(x){ return x.id !== id; });
+  ST_RAIN.goneHousing = (ST_RAIN.goneHousing || []).concat([id]);
+  try { saveState(); } catch(e){}
+  rnPush();
+  try { renderLiveCalGrid(); } catch(e){}
+  try { toast('Removed', 'success'); } catch(e){}
+}
+
+/* ── ground per field in Crops (M7, D24) ──────────────────────────────────────
+   The Rainfall tile's own rule, per field: shown only where drilling or harvest
+   is due within 21 days.  A field's own limit overrides the farm's; a gauge
+   linked to the field is read before the farm's. */
+function rnGroundFor(mm, gaugeId){
+  var rule = rnFitRule(); if (mm > 0) rule = { mm: mm, days: rule.days };
+  var t = rnToday(), got = rnRecent(rule.days, gaugeId);
+  if (got == null) return null;
+  var h48 = rnHeavy48();
+  var out = { mm: got, rule: rule, wet: got >= rule.mm, heavy: !!(h48 && h48.heavy), heavyDay: h48 && h48.day, when: null };
+  if (out.wet){
+    for (var k = 1; k <= 5; k++){
+      var sum = 0, end = rnAddDays(t, k);
+      for (var j = 0; j < rule.days; j++){
+        var iso = rnISO(rnAddDays(end, -j));
+        if (iso <= rnISO(t)){ var v = rnDayMm(iso, gaugeId); sum += v ? v.mm : 0; }
+        else { var f = rnFcMm(iso); sum += (f == null ? 0 : f); }
+      }
+      if (sum < rule.mm){ out.when = rnISO(end); break; }
+    }
+  }
+  return out;
+}
+function rnLandJob(l){
+  var MO = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'], t = rnToday(), best = null;
+  var lines = (_planActiveCropsRaw() || []).filter(function(c){ return c && l.planId && c.linkId === l.planId; });
+  lines.forEach(function(c){
+    [['plant','drill'],['harvest','harvest']].forEach(function(p){
+      var s = String(c[p[0]] || '').split(' '), m = MO.indexOf(s[0]), y = parseInt(s[1], 10);
+      if (m < 0 || !y) return;
+      var from = new Date(y, m, 1), to = new Date(y, m + 1, 0), inN = rnDaysBetween(rnISO(t), rnISO(from));
+      if (to < t || inN > 21) return;
+      if (!best || inN < best.inN) best = { kind: p[1], from: from, inN: inN, month: s[0] };
+    });
+  });
+  return best;
+}
+function rnLandLimit(l){ var f = ST_RAIN.fieldLimits || {}; var v = parseFloat(f[String(l.id)]); return v > 0 ? v : null; }
+function rnLandGauge(l){
+  if (ST_RAIN.mode !== 'gauge') return undefined;
+  var g = (ST_RAIN.gauges || []).filter(function(x){ return x.link && x.link.type === 'land' && String(x.link.id) === String(l.id); })[0];
+  return g ? g.id : undefined;
+}
+function rnLandGroundInfo(l){
+  var job = rnLandJob(l); if (!job) return null;
+  var g = rnGroundFor(rnLandLimit(l), rnLandGauge(l)); if (!g) return null;
+  var w = rnGroundWords(g);
+  return { job: job, g: g, w: w, cls: g.wet ? 'no' : (g.heavy ? 'no' : 'ok') };
+}
+function rnLandGroundCell(l){
+  var I = rnLandGroundInfo(l);
+  if (!I) return '<td class="rn-dim">&mdash;</td>';
+  /* One element, one line: the chip opens this field's limit (the rule is in its tooltip). */
+  return '<td class="rn-gtd"><button type="button" class="rn-gchip ' + I.cls + '" onclick="event.stopPropagation();rnLimitOpen(' + l.id + ')" title="' + planEscAttr(I.w.c + ' · limit ' + rnNum(I.g.rule.mm) + ' mm · tap to set this field’s own') + '"><i></i>' +
+         esc(I.w.v) + (I.g.when && I.g.wet ? ' &middot; ' + esc(rnGroundDay(I.g.when)) : '') + '</button></td>';
+}
+function rnLandGroundLine(l){
+  var I = rnLandGroundInfo(l); if (!I) return '';
+  return '<div class="rn-gline" onclick="event.stopPropagation();rnLimitOpen(' + l.id + ')"><span class="rn-gchip ' + I.cls + '"><i></i>' + esc(I.w.v) + '</span> <span>' + esc(I.w.c) + '</span></div>';
+}
+function rnGroundDay(iso){
+  var n = rnDaysBetween(rnISO(rnToday()), iso);
+  return n === 0 ? 'today' : (n === 1 ? 'likely tomorrow' : 'likely ' + RN_DOW_LONG[rnParse(iso).getDay()]);
+}
+function rnLimitOpen(id){
+  var l = (typeof cropLandById === 'function') ? cropLandById(id) : null; if (!l) return;
+  var m = document.getElementById('rn-limit-modal');
+  if (!m){ m = document.createElement('div'); m.className = 'rn-modal'; m.id = 'rn-limit-modal'; m.setAttribute('onclick','if(event.target===this)rnLimitClose()'); document.body.appendChild(m); }
+  var own = rnLandLimit(l), farm = rnFitRule().mm;
+  m.innerHTML = '<div class="rn-sheet" role="dialog" aria-modal="true" aria-labelledby="rn-lim-h"><div class="sh"><div><h3 id="rn-lim-h">' + esc(l.name) + ' &middot; ground limit</h3><div class="sub">Only this field changes</div></div>' +
+    '<button class="rn-x" onclick="rnLimitClose()" aria-label="Close">&times;</button></div><div class="sb">' +
+    '<div class="rn-f"><label for="rn-lim-v">Too wet above</label><div style="display:flex;gap:8px;align-items:center"><input id="rn-lim-v" type="number" min="1" step="1" value="' + (own || farm) + '" style="max-width:90px"><span class="rn-u">mm in ' + rnFitRule().days + ' days &middot; the farm&rsquo;s limit is ' + rnNum(farm) + '</span></div></div>' +
+    '</div><div class="sf"><button class="btn-sec" onclick="rnLimitSave(' + id + ',null)">Use the farm&rsquo;s</button><button class="rn-btn" onclick="rnLimitSave(' + id + ',(rnEl(\'rn-lim-v\')||{}).value)">Save</button></div></div>';
+  m.classList.add('on');
+}
+function rnLimitClose(){ var m = document.getElementById('rn-limit-modal'); if (m) m.classList.remove('on'); }
+function rnLimitSave(id, v){
+  ST_RAIN.fieldLimits = ST_RAIN.fieldLimits || {};
+  var n = parseFloat(v);
+  if (v == null || n === rnFitRule().mm) delete ST_RAIN.fieldLimits[String(id)];
+  else if (n > 0 && n <= 200) ST_RAIN.fieldLimits[String(id)] = Math.round(n);
+  else { try { toast('Type the millimetres, e.g. 15', 'error'); } catch(e){} return; }
+  ST_RAIN.prefsSet = true;
+  rnPersist();
+  rnLimitClose();
+  try { cropRenderOverview(); } catch(e){}
+}
+/* One sentence above the fields while drilling is due. */
+function rnCropsStrip(){
+  try {
+    if (!rnOn() || !rnHas()) return '';
+    var MO = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'], t = rnToday(), first = null;
+    (_planActiveCropsRaw() || []).filter(rnWetIsWheat).forEach(function(c){
+      var s = String(c.plant || '').split(' '), d = new Date(parseInt(s[1],10), MO.indexOf(s[0]), 1);
+      if (!isNaN(d) && (!first || d < first)) first = d;
+    });
+    if (!first) return '';
+    var inN = rnDaysBetween(rnISO(t), rnISO(first)), yr = String(first.getFullYear());
+    if (inN > 21 || t > new Date(first.getFullYear(), 10, 15)) return '';
+    if (ST_RAIN.cropsStripHide === yr) return '';
+    var A = rnAutumns(), now = rnAutumnNow();
+    var s2 = '<b>Wheat drilling from ' + (inN > 0 ? rnFmtShort(rnISO(first)) : 'now') + '.</b> ';
+    if (now) s2 += rnNum(now.n) + ' dry ' + rnPl(now.n, 'day', 'days') + ' so far' + (now.sat ? ' (part satellite)' : '');
+    if (A && !A.few) s2 += (now ? '; ' : '') + 'a normal autumn gives ' + A.median + '.'; else if (now) s2 += '.';
+    return '<div class="rn-strip info"><span class="ic">&#127806;</span><span class="gr">' + s2 + '</span><button class="lnk" onclick="nav(\'rainfall\')">Rainfall &rarr;</button>' +
+           '<button class="rn-x" style="margin-left:6px" aria-label="Hide until next autumn" title="Hide until next autumn" onclick="ST_RAIN.cropsStripHide=' + rnQ(yr) + ';try{saveState();}catch(e){}cropRenderOverview()">&times;</button></div>';
+  } catch(e){ return ''; }
+}
+
+/* ── Scotland's zones (D25) and England's 2021 map (D26) ──────────────────────
+   Scotland: the Action Programme for NVZs (Scotland) Regulations 2008, SSI
+   2008/298, regs 19–20, read 19 Sep 2026 (the March 2026 review changed nothing).
+   Five zones; bagged nitrogen closes to 20 Feb in Aberdeenshire, Banff, Buchan
+   and Moray and to 15 Feb in the other four. */
+var RN_SCOT_URL = 'https://maps.gov.scot/server/rest/services/ScotGov/AgricultureEnvironment/MapServer/5/query';
+var RN_NVZ21_URL = 'https://environment.data.gov.uk/arcgis/rest/services/EA/NitrateVulnerableZones2021Designations/FeatureServer/0/query';
+function rnScotTable(){
+  if (rnNvzAnswer() !== true) return null;
+  var z = String((ST_RAIN.nvzMap && ST_RAIN.nvzMap.name) || ST_RAIN.scotZone || '');
+  var north = /aberdeen|banff|buchan|moray/i.test(z);
+  return { scope: 'nvz',
+    src: 'https://www.legislation.gov.uk/ssi/2008/298/contents',
+    srcName: 'The Action Programme for Nitrate Vulnerable Zones (Scotland) Regulations 2008',
+    ground: 'Outside the closed periods, do not spread on waterlogged, flooded, frozen or snow-covered ground, or when heavy rain is forecast.',
+    slurry: { grass: { sandy: ['09-01','12-31'], other: ['10-15','01-31'] }, arable: { sandy: ['08-01','12-31'], other: ['10-01','01-31'] } },
+    bagN:   north ? { grass: ['09-15','02-20'], arable: ['09-01','02-20'] } : { grass: ['09-15','02-15'], arable: ['09-01','02-15'] } };
+}
+function rnFetchScotNvz(){
+  if (!rnHas() || rnNation() !== 'Scotland') return Promise.resolve(false);
+  var loc = ST_RAIN.loc, m = ST_RAIN.nvzMap;
+  if (m && m.lat === loc.lat && m.lon === loc.lon) return Promise.resolve(false);
+  var u = RN_SCOT_URL + '?geometry=' + loc.lon + ',' + loc.lat + '&geometryType=esriGeometryPoint&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=nvzname&returnGeometry=false&f=json';
+  return rnFetchJson(u, 15000).then(function(j){
+    var f = (j && j.features) || [];
+    ST_RAIN.nvzMap = { lat: loc.lat, lon: loc.lon, checked: rnISO(rnToday()), hit: f.length > 0, scot: true,
+                       name: f.length ? String((f[0].attributes || {}).nvzname || '') : '', type: '' };
+    return true;
+  }).catch(function(){ return false; });
+}
+
+/* ── Settings rows (M10b) ───────────────────────────────────────────────────── */
+function rnT1SettingsHtml(){
+  var h = '<div class="rn-f" style="margin-top:14px"><label for="rn-set-drill">In a good autumn, how many working days to get your wheat in?</label>' +
+    '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><input id="rn-set-drill" type="number" min="1" step="1" style="max-width:90px" value="' + (ST_RAIN.drillDays || '') + '" placeholder="—"' + (ST_RAIN.drillContractor ? ' disabled' : '') + ' onchange="rnWetSaveDays(this.value)">' +
+    '<span class="rn-u">days, cultivations included</span>' +
+    '<label class="rn-inl"><input type="checkbox"' + (ST_RAIN.drillContractor ? ' checked' : '') + ' onchange="if(this.checked){rnWetSaveDays(null,true);}else{ST_RAIN.drillContractor=false;ST_RAIN.prefsSet=true;rnPersist();rnSettingsRender();}"> A contractor does it</label></div>' +
+    '<div class="hint">Not sure? Hectares &divide; what you drill in a day. Used for Wet year in Planning.</div></div>';
+  h += '<div class="rn-lbl" style="margin-top:4px">Your land</div><div class="rn-seg2">' +
+    [['heavy','Heavy clay'],['medium','Medium'],['light','Light']].map(function(o){
+      return '<button type="button" class="' + ((ST_RAIN.land || 'medium') === o[0] ? 'on' : '') + '" onclick="rnSetLand(' + rnQ(o[0]) + ')">' + o[1] + '</button>'; }).join('') +
+    '</div><div class="hint" style="margin-bottom:12px">Dry-day counts are rain only; heavy clay has fewer workable days.</div>';
+  return h;
+}
+function rnSetLand(v){ ST_RAIN.land = (v === 'heavy' || v === 'light') ? v : 'medium'; ST_RAIN.prefsSet = true; rnPersist(); rnSettingsRender(); }
+function rnScotSettingsHtml(){
+  var ans = rnNvzAnswer(), m = ST_RAIN.nvzMap;
+  var zone = (m && m.hit && m.name) ? m.name : '';
+  return '<div class="rn-lbl" style="margin-top:14px">Is the farm in a Nitrate Vulnerable Zone?</div><div class="rn-opts">' +
+    rnOptCard('rnSetNvz', 'yes', zone ? 'Yes: ' + esc(zone) : 'Yes', 'The closed periods apply.', ans === true) +
+    rnOptCard('rnSetNvz', 'no', 'No', 'The general binding rules apply.', ans === false) + '</div>' +
+    '<div class="hint" style="margin-top:6px">' + (m && m.checked
+      ? (m.hit ? 'The Scottish Government&rsquo;s map puts your farm in <b>' + esc(zone) + '</b>. ' : 'The Scottish Government&rsquo;s map does not put your farm in a zone. ') +
+        'Check your own land before you rely on it. Map: Copyright Scottish Government, contains Ordnance Survey data &copy; Crown copyright and database right ' + rnToday().getFullYear() + '.'
+      : 'The Scottish Government&rsquo;s map is checked once the farm&rsquo;s location is set.') + '</div>';
+}
+
+/* ── attention rules (D27) ─────────────────────────────────────────────────── */
+function rnT1AttnItems(){
+  var out = [];
+  if (!rnOn() || !rnHas()) return out;
+  var t = rnToday();
+  /* 1 · rain far from normal: the rain year is 4+ months old */
+  try {
+    var st = rnYearStartOf(t), age = (t.getFullYear() - st.getFullYear()) * 12 + t.getMonth() - st.getMonth();
+    var ytd = rnYearToDate(), ntd = rnNormalToDate();
+    if (age >= 4 && ytd != null && ntd > 0){
+      var p = ytd / ntd * 100;
+      if (p < 75 || p > 140) out.push({ tier: 'money', sev: 55, nm: 'Rain far from normal',
+        lead: 'Rain since ' + ['January','February','March','April','May','June','July','August','September','October','November','December'][st.getMonth()] + ' is ' + rnPctS(p) + ' of normal',
+        sub: p > 140 ? 'Plan a wet year' : 'Plan a dry year', st: rnPctS(p), when: 9999, cta: 'Planning',
+        action: function(){ try { nav('planning'); setTimeout(function(){ scenSetMode(p > 140 ? 'wet' : 'dry'); }, 200); } catch(e){} } });
+    }
+  } catch(e){}
+  /* 2 · drilling opens and no wet-year look this season */
+  try {
+    var MO = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'], first = null;
+    (_planActiveCropsRaw() || []).filter(rnWetIsWheat).forEach(function(c){
+      var s = String(c.plant || '').split(' '), d = new Date(parseInt(s[1],10), MO.indexOf(s[0]), 1);
+      if (!isNaN(d) && (!first || d < first)) first = d;
+    });
+    var key = String(t.getMonth() >= 6 ? t.getFullYear() : t.getFullYear() - 1);
+    if (first && ST_RAIN.wetSeen !== key){
+      var inN = rnDaysBetween(rnISO(t), rnISO(first));
+      if (inN >= 0 && inN <= 21){
+        var sg = rnWetSuggest();
+        out.push({ tier: 'house', sev: 45, nm: 'Wet autumn not planned',
+          lead: 'Wheat drilling starts in ' + inN + ' ' + rnPl(inN, 'day', 'days'),
+          sub: sg.undrilled ? 'Like ' + sg.label + ', ' + rnNum(sg.undrilled) + ' ha would go to ' + rnWetTarget(_planActiveCropsRaw()).name : 'Plan a wet autumn',
+          st: inN + ' days', when: inN, cta: 'Wet year',
+          action: function(){ try { nav('planning'); setTimeout(function(){ scenSetMode('wet'); }, 200); } catch(e){} } });
+      }
+    }
+  } catch(e){}
+  /* 3 · a field with work due within 14 days likely fit tomorrow */
+  try {
+    var names = [];
+    ((typeof ST_CROP !== 'undefined' && ST_CROP.lands) || []).forEach(function(l){
+      var j = rnLandJob(l); if (!j || j.inN > 14) return;
+      var g = rnGroundFor(rnLandLimit(l), rnLandGauge(l));
+      if (g && g.wet && g.when && rnDaysBetween(rnISO(t), g.when) === 1) names.push(l.name);
+    });
+    if (names.length){
+      var nm = names.length <= 3 ? names.join(', ').replace(/, ([^,]*)$/, ' and $1') : names.length + ' fields';
+      out.push({ tier: 'house', sev: 40, nm: 'Fields fit again tomorrow', lead: nm + ' likely fit from tomorrow',
+        sub: 'Work due within 14 days', st: 'tomorrow', when: 1, cta: 'Crops',
+        action: function(){ try { nav('crop'); } catch(e){} } });
+    }
+  } catch(e){}
+  /* 4 · farmers' averaging: the last two completed tax years, both with records,
+     not on the cash basis and not a company (HS224). */
+  try {
+    if (typeof ukAveragingCheck === 'function' && !ST.cashBasis && ST.entityType !== 'company' && typeof getCurrentFY === 'function' && typeof _taxFYProfit === 'function'){
+      var fy = getCurrentFY();
+      var has = function(y){ return (ST.txns || []).some(function(x){ return x && typeof fyOf === 'function' && fyOf(x.date) === y; }); };
+      if (has(fy - 1) && has(fy - 2)){
+        var a = Math.round(_taxFYProfit(-2).profit), b = Math.round(_taxFYProfit(-1).profit);
+        var av = ukAveragingCheck([a, b], ST.entityType || 'sole');
+        if (av && av.worthIt && av.saving >= 500){
+          out.push({ tier: 'money', sev: 50, nm: 'Farmers’ averaging',
+            lead: 'Farmers’ averaging could save about ' + _cfMoneyFull(av.saving),
+            sub: 'Last two tax years swing by ' + av.gapPct + '%', st: _cfMoneyFull(av.saving), when: 9999, cta: 'Tax & HMRC',
+            action: function(){ try { nav('tax'); } catch(e){} } });
+        }
+      }
+    }
+  } catch(e){}
+  return out;
+}
+
+/* ── demo (D23) ──────────────────────────────────────────────────────────────
+   The sample farm gains a bank balance (so Money Flow can say how much room is
+   left), 20 working days for drilling, and last season's housing dates at the
+   plan's own lean months (in 1 Nov, out 1 Apr). */
+function rnT1SeedDemo(){
+  if (!window.__AI_GUEST) return false;
+  var did = false;
+  if (ST.bankBalance == null){ ST.bankBalance = 64000; did = true; }
+  if (ST_RAIN.drillDays == null && !ST_RAIN.drillContractor){ ST_RAIN.drillDays = 20; did = true; }
+  if (!ST_RAIN.housing || !ST_RAIN.housing.length){
+    var y = rnToday().getMonth() >= 4 ? rnToday().getFullYear() - 1 : rnToday().getFullYear() - 2;
+    ST_RAIN.housing = [
+      { id: 'h' + y + '1101-all-in',  herd: 'all', ev: 'in',  date: y + '-11-01', note: '' },
+      { id: 'h' + (y+1) + '0401-all-out', herd: 'all', ev: 'out', date: (y+1) + '-04-01', note: '' } ];
+    did = true;
+  }
+  return did;
+}
 
 </script>
 

@@ -644,6 +644,10 @@
               if (_rp.soils) ST_RAIN.soils = _rp.soils;
               if (_rp.nvz === true || _rp.nvz === false) ST_RAIN.nvz = _rp.nvz;
               if (_rp.fitMm || _rp.fitDays) ST_RAIN.rule = { fitMm: _rp.fitMm || 20, fitDays: _rp.fitDays || 7, set: true };
+              if (_rp.drillDays != null || _rp.drillContractor) { ST_RAIN.drillDays = _rp.drillDays || null; ST_RAIN.drillContractor = !!_rp.drillContractor; }
+              if (_rp.land) ST_RAIN.land = _rp.land;
+              if (_rp.fieldLimits && typeof _rp.fieldLimits === 'object') ST_RAIN.fieldLimits = _rp.fieldLimits;
+              if (_rp.wetSeen) ST_RAIN.wetSeen = _rp.wetSeen;
             }
             ST_RAIN.prefsSet = true;   /* now this device holds the farm's answer, and may send it back */
           }
@@ -661,6 +665,13 @@
             (ST_RAIN.gauges = ST_RAIN.gauges || []).forEach(function (g) { if (g && g.id) _gById[g.id] = g; });
             var _gGone = {}; (ST_RAIN.goneGauges || []).forEach(function (id) { _gGone[String(id)] = 1; });
             (rn.gauges || []).forEach(function (g) { if (g && g.id && !_gById[g.id] && !_gGone[String(g.id)]) ST_RAIN.gauges.push(g); });
+            /* The housing log, merged the same way; one removed here is never taken back. */
+            if (Array.isArray(rn.housing)) {
+              var _hById = {}, _hGone = {};
+              (ST_RAIN.housing = ST_RAIN.housing || []).forEach(function (x) { if (x && x.id) _hById[x.id] = x; });
+              (ST_RAIN.goneHousing || []).forEach(function (id) { _hGone[String(id)] = 1; });
+              rn.housing.forEach(function (x) { if (!x || !x.id || _hGone[String(x.id)]) return; if (_hById[x.id]) { for (var k in x) _hById[x.id][k] = x[k]; } else ST_RAIN.housing.push(x); });
+            }
             try { if (typeof rnRepairGaugeIds === 'function') rnRepairGaugeIds(); } catch (e2) {}
             if (typeof rnSync === 'function') { try { rnSync(); } catch (e3) {} }
             if (typeof renderRainfall === 'function' && document.getElementById('pg-rainfall')) { try { renderRainfall(); } catch (e4) {} }
