@@ -71997,7 +71997,9 @@ function rnRenderTiles(){
     var f = rnSatUntil(fromISO); if (!f) return '';
     return (toISO && f > toISO) ? ' &middot; satellite' : ' &middot; part satellite';
   };
-  var lookup = rnHas() ? 'Looking up the long-term average for your farm&hellip;' : 'Set where the farm is to see the long-term average';
+  /* After a failed lookup the strip says why; the tile must not keep saying "Looking up". */
+  var lookup = !rnHas() ? 'Set where the farm is to see the long-term average'
+             : (ST_RAIN.sat && ST_RAIN.sat.err ? 'Long-term average not reached yet &middot; trying again soon' : 'Looking up the long-term average for your farm&hellip;');
 
   /* 1 — the hero: this rain year once it is four months old, else the year behind */
   if (useYear){
@@ -72027,7 +72029,7 @@ function rnRenderTiles(){
          '<div class="c rn">' + (wn && w.mm != null ? rnPct(w.mm, wn) + '% of normal'
             : !rnHas() ? 'Set where the farm is'
             : (w.mm == null && dfTxt) ? 'Your record starts ' + dfTxt
-            : 'Looking up the long-term average&hellip;') + (w.mm == null ? '' : (sat ? satTag : partTag(w.from, w.to))) + '</div></div>' +
+            : (ST_RAIN.sat && ST_RAIN.sat.err ? 'Not reached yet &middot; trying again soon' : 'Looking up the long-term average&hellip;')) + (w.mm == null ? '' : (sat ? satTag : partTag(w.from, w.to))) + '</div></div>' +
          '<div class="foot">' + rnTileBar(w.mm, wn ? Math.max(wn, w.mm) : null, (wn && w.mm >= wn) ? 'over' : '') +
          '<div class="tick"><span>0</span><span>' + (wn ? rnMmR(wn) + ' mm normal' : '') + '</span></div></div></div>';
   } else {
@@ -72841,6 +72843,7 @@ function rnReportHTML(){
   var hasEa = !!(ea && ea.station && ea.daily), outcode = String(loc.postcode || '').split(' ')[0];
   var yTot = rnGaugeOwnTotal(stISO, tISO), days1 = rnGaugeRainDays(stISO, tISO, 1);
   function n(v){ return v == null ? '&mdash;' : rnMmR(v); }
+  function nm(v){ return v == null ? '&mdash;' : rnMmR(v) + ' mm'; }   /* "— mm" read as a figure */
   function pc(a, b){ return (a != null && b) ? rnPct(a, b) + '%' : '&mdash;'; }
   function dn(v){ return v == null ? '&mdash;' : v; }
 
@@ -72850,17 +72853,17 @@ function rnReportHTML(){
   var fOwn = rnFirstGaugeDate(), bookFrom = (fOwn && fOwn > stISO) ? fOwn : stISO;
   var ndBook = (bookFrom === stISO) ? nd : (nd != null ? Math.max(0, nd - rnNormalToDate(rnAddDays(rnParse(bookFrom), -1))) : null);
   var sum = '<tr><td>' + (bookFrom === stISO ? 'Rain year to ' + rnFmtShort(tISO) : 'Your readings, ' + rnFmtShort(bookFrom) + ' to ' + rnFmtShort(tISO)) +
-            (gs.length > 1 ? ' (' + esc(rnDefaultGauge().name) + ')' : '') + '</td><td class="r"><b>' + n(yTot) + ' mm</b></td>' +
-            '<td class="r">' + n(ndBook) + ' mm</td><td class="r"><b>' + pc(yTot, ndBook) + '</b></td><td class="r">' + days1 + '</td></tr>';
+            (gs.length > 1 ? ' (' + esc(rnDefaultGauge().name) + ')' : '') + '</td><td class="r"><b>' + nm(yTot) + '</b></td>' +
+            '<td class="r">' + nm(ndBook) + '</td><td class="r"><b>' + pc(yTot, ndBook) + '</b></td><td class="r">' + days1 + '</td></tr>';
   if (rnYearStart() === 10 && bookFrom === stISO){
     var wEnd = new Date(st.getFullYear()+1, 2, 31), wTo = rnISO(wEnd > t ? t : wEnd);
     var wOwn = rnGaugeOwnTotal(stISO, wTo), wN = wEnd > t ? nd : rnNormalMonths([9,10,11,0,1,2]);
-    sum += '<tr><td>Winter &middot; 1 Oct &ndash; 31 Mar' + (wEnd > t ? ' (so far)' : '') + '</td><td class="r">' + n(wOwn) + ' mm</td><td class="r">' + n(wN) + ' mm</td><td class="r">' + pc(wOwn, wN) + '</td><td class="r">' + rnGaugeRainDays(stISO, wTo, 1) + '</td></tr>';
+    sum += '<tr><td>Winter &middot; 1 Oct &ndash; 31 Mar' + (wEnd > t ? ' (so far)' : '') + '</td><td class="r">' + nm(wOwn) + '</td><td class="r">' + nm(wN) + '</td><td class="r">' + pc(wOwn, wN) + '</td><td class="r">' + rnGaugeRainDays(stISO, wTo, 1) + '</td></tr>';
     var gFrom = rnISO(new Date(st.getFullYear()+1, 3, 1)), gEnd = new Date(st.getFullYear()+1, 7, 31);
     if (rnParse(gFrom) <= t){ /* (both rows only when the book covers the whole period) */
       var gTo = rnISO(gEnd > t ? t : gEnd), gOwn = rnGaugeOwnTotal(gFrom, gTo);
       var gN = gEnd > t ? (rnNormalToDate(t) - rnNormalToDate(new Date(st.getFullYear()+1, 2, 31))) : rnNormalMonths([3,4,5,6,7]);
-      sum += '<tr><td>Growing season &middot; 1 Apr &ndash; 31 Aug' + (gEnd > t ? ' (so far)' : '') + '</td><td class="r">' + n(gOwn) + ' mm</td><td class="r">' + n(gN) + ' mm</td><td class="r">' + pc(gOwn, gN) + '</td><td class="r">' + rnGaugeRainDays(gFrom, gTo, 1) + '</td></tr>';
+      sum += '<tr><td>Growing season &middot; 1 Apr &ndash; 31 Aug' + (gEnd > t ? ' (so far)' : '') + '</td><td class="r">' + nm(gOwn) + '</td><td class="r">' + nm(gN) + '</td><td class="r">' + pc(gOwn, gN) + '</td><td class="r">' + rnGaugeRainDays(gFrom, gTo, 1) + '</td></tr>';
     }
   }
   var ex = rnReportExtremes(stISO, tISO);
