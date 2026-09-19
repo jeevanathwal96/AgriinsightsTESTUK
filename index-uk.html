@@ -71804,7 +71804,7 @@ function rnSync(force){
   var ea = ST_RAIN.ea || {};
   var needEa = rnNation() === 'England' && !(ea.err && ea.fetched === today && !force) && (force || !ea.fetched || rnDaysBetween(ea.fetched, today) >= 7 ||
                !(ea.at && ea.at.lat === ST_RAIN.loc.lat && ea.at.lon === ST_RAIN.loc.lon));
-  var needNvz = (rnNation() === 'England' || rnNation() === 'Scotland') && !(ST_RAIN.nvzMap && ST_RAIN.nvzMap.lat === ST_RAIN.loc.lat && ST_RAIN.nvzMap.lon === ST_RAIN.loc.lon && (rnNation() !== 'England' || ST_RAIN.nvzMap.layer === '2021'));
+  var needNvz = (rnNation() === 'England' || rnNation() === 'Scotland') && !(ST_RAIN.nvzMap && ST_RAIN.nvzMap.lat === ST_RAIN.loc.lat && ST_RAIN.nvzMap.lon === ST_RAIN.loc.lon && (rnNation() !== 'England' || ST_RAIN.nvzMap.layer === '2025' || (ST_RAIN.nvzMap.layer === '2021' && ST_RAIN.nvzMap.checked === today)));
   if (!needHist && !needRecent && !needFc && !needEa && !needNvz) return Promise.resolve(false);
   RN_SYNCING = true;
   function step(p){ return p.catch(function(e){ return { err: e }; }); }
@@ -71814,7 +71814,7 @@ function rnSync(force){
   if (needHist)   chain = chain.then(function(){ return step(rnFetchHistory()); }).then(function(r){ if (r && r.err) errs.push(r.err); });
   if (needRecent) chain = chain.then(function(){ return step(rnFetchRecent()); }).then(function(r){ if (r && r.err) errs.push(r.err); });
   if (needFc)     chain = chain.then(function(){ return step(rnFetchForecast()); });
-  if (needNvz)    chain = chain.then(function(){ return step(rnNation() === 'Scotland' ? rnFetchScotNvz() : rnFetchNvz()); });
+  if (needNvz)    chain = chain.then(function(){ return step(rnNation() === 'Scotland' ? rnFetchScotNvz() : rnFetchNvzEngland()); });
   if (needEa)     chain = chain.then(function(){ return step(rnFetchEa()); });
   return chain.then(function(){
     RN_SYNCING = false;
@@ -72373,6 +72373,7 @@ function rnSourcesText(){
   if (fc === 'metoffice') s.push('Powered by Met Office data');
   else if (fc === 'om-ukmo') s.push('forecast: UK Met Office model via Open-Meteo (CC BY-SA 4.0)');
   if (ST_RAIN.ea && ST_RAIN.ea.station) s.push('Uses Environment Agency data');
+  try { var _nc = rnNvzCredit(); if (_nc) s.push(_nc); } catch(e){}
   if (ST_RAIN.loc && (ST_RAIN.loc.src === 'postcode' || ST_RAIN.loc.src === 'outcode'))
     s.push('postcode location: contains OS data &copy; Crown copyright and database right; contains Royal Mail data &copy; Royal Mail copyright and database right; source: Office for National Statistics, Open Government Licence v3.0');
   return s.join(' &middot; ');
@@ -72711,7 +72712,7 @@ function rnSettingsRender(){
          '<div class="hint" style="margin-top:6px">' + (m && m.checked
             ? (m.hit ? 'Defra&rsquo;s map puts your farm in the <b>' + esc(rnNvzName(m.name)) + '</b> zone' + (m.type ? ' (' + esc(String(m.type).toLowerCase()) + ')' : '') + '. '
                      : 'Defra&rsquo;s map does not put your farm in a zone. ')
-              + 'The map shows the 2021 designation, so check your own land before you rely on it.'
+              + 'The map shows the ' + (m.layer === '2025' ? '2025–2028' : '2021') + ' designation, so check your own land before you rely on it.'
             : 'Defra&rsquo;s map is checked once the farm&rsquo;s location is set.') + '</div>';
   } else if (nat === 'Wales' || nat === 'Northern Ireland'){
     cp += '<div class="hint" style="margin-top:6px">In ' + nat + ' the closed periods apply to every farm.</div>';
@@ -74145,6 +74146,35 @@ function rnFetchScotNvz(){
                        name: f.length ? String((f[0].attributes || {}).nvzname || '') : '', type: '' };
     return true;
   }).catch(function(){ return false; });
+}
+
+/* England: Defra's 2025–2028 designation (WFS on the Defra Data Services
+   Platform, Open Government Licence v3.0 by the platform's terms; point query,
+   longitude first).  Every feature in the layer is a current zone.  If the
+   service fails, the 2021 layer answers instead and is asked again tomorrow. */
+var RN_NVZ25_URL = 'https://environment.data.gov.uk/data-services/defra/ows';
+function rnFetchNvzEngland(){
+  if (!rnHas() || rnNation() !== 'England') return Promise.resolve(false);
+  var loc = ST_RAIN.loc, m = ST_RAIN.nvzMap, today = rnISO(rnToday());
+  if (m && m.lat === loc.lat && m.lon === loc.lon && (m.layer === '2025' || (m.layer === '2021' && m.checked === today))) return Promise.resolve(false);
+  var u = RN_NVZ25_URL + '?service=WFS&version=1.0.0&request=GetFeature&typeName=defra:Nitrate&outputFormat=application/json' +
+          '&propertyName=nvz_name,nvz_type,nvz_2025&CQL_FILTER=' + encodeURIComponent('INTERSECTS(the_geom,SRID=4326;POINT(' + loc.lon + ' ' + loc.lat + '))');
+  return rnFetchJson(u, 15000).then(function(j){
+    if (!j || !Array.isArray(j.features)) throw new Error('NVZ 2025 layer: no features');
+    var f = j.features.filter(function(x){ var d = (x.properties || {}).nvz_2025; return d && !/^(none|not|de-?designated)/i.test(String(d)); });
+    var a = f.length ? (f[0].properties || {}) : {};
+    ST_RAIN.nvzMap = { lat: loc.lat, lon: loc.lon, checked: today, hit: f.length > 0, layer: '2025',
+                       name: String(a.nvz_name || '').replace(/, England$/, '').replace(/\s*NVZ$/i, ''), type: a.nvz_type || '' };
+    return true;
+  }).catch(function(){ return rnFetchNvz(); });
+}
+/* The credits the zone maps' licences ask for, on the Sources line (tab and record). */
+function rnNvzCredit(){
+  var m = ST_RAIN.nvzMap, nat = rnNation();
+  if (!m || !m.checked) return '';
+  if (nat === 'Scotland') return 'nitrate zones: Copyright Scottish Government, contains Ordnance Survey data &copy; Crown copyright and database right ' + rnToday().getFullYear();
+  if (nat === 'England') return 'nitrate zones (' + (m.layer === '2025' ? '2025–2028' : '2021') + ' designation): &copy; Environment Agency copyright and/or database right; contains Ordnance Survey data &copy; Crown copyright and database rights; Open Government Licence v3.0';
+  return '';
 }
 
 /* ── Settings rows (M10b) ───────────────────────────────────────────────────── */
