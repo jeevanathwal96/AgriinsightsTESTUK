@@ -6067,6 +6067,11 @@ button.rn-gchip{border:0;font-family:inherit;cursor:pointer}
 .scn-k .pc{background:none;border:0;padding:0;box-shadow:none;border-radius:0;width:auto}
 .scn-panel.rn-wet .scn-k .pc,.scn-panel.rn-wet .scn-foot,.scn-panel.rn-wet .scn-res i{color:var(--rnd)}
 .rn-used{font-size:12px;font-weight:800;color:var(--rnd);white-space:nowrap}
+/* 19 Sep review: chart buttons on one line; the soil options stacked in their column. */
+#pg-rainfall .pill{white-space:nowrap}
+#pg-rainfall .pills{flex:0 0 auto}
+.rn-opts.rn-opts3{grid-template-columns:1fr;gap:7px}
+.rn-opts.rn-opts3 .rn-opt{padding:9px 12px}
 </style>
 <style id="loans-css">
 #pg-loans .ln-tabs{display:flex;gap:3px;background:var(--br2);border:1px solid var(--br);border-radius:12px;padding:4px;margin:0 0 18px;overflow-x:auto;scrollbar-width:none}
@@ -62487,26 +62492,26 @@ function computeNotifications(){
     if(ST.bankBalance != null && typeof buildCfForecast==='function'){
       var _burn = (txSummaryPeriod(3).expenses/3) || 500000;
       var _fc = buildCfForecast(parseInt(ST.cfFwdPeriod||'6',10)) || [];
-      var _risk=null;
+      var _risk=null, _fac=(typeof cfFacility==='function')?cfFacility():null, _floor=_fac?_fac.floor:0;
       for(var _i=0; _i<_fc.length && !_risk; _i++){
-        if(_fc[_i].balance < 0)             _risk={m:_fc[_i], danger:true};
-        else if(_fc[_i].balance < _burn*1.5) _risk={m:_fc[_i], danger:false};
+        if(_fc[_i].balance < _floor)                      _risk={m:_fc[_i], danger:true};
+        else if(_fc[_i].balance < (_fac?0:_burn*1.5))    _risk={m:_fc[_i], danger:false};
       }
       if(_risk && _risk.danger){
         n.push({ color:'var(--rd)', score:92,
-          title:'Projected shortfall in '+_risk.m.name,
-          body:'Your runway dips to '+(_risk.m.balance<0?'−':'')+_curSym()+_grpInt(Math.abs(_risk.m.balance))+' — costs land before the income does.',
+          title:(_fac?'Past your overdraft in ':'Projected shortfall in ')+_risk.m.name,
+          body:'Your runway dips to '+(_risk.m.balance<0?'−':'')+_curSym()+_grpInt(Math.abs(_risk.m.balance))+(_fac?', beyond your '+_curSym()+_grpInt(_fac.limit)+' overdraft.':' — costs land before the income does.'),
           time:'Cash flow', action:function(){ nav('cashflow'); } });
       } else if(_risk){
         n.push({ color:'var(--am)', score:72,
-          title:'Cash gets tight in '+_risk.m.name,
-          body:'Projected balance '+_curSym()+_grpInt(Math.max(0,_risk.m.balance))+' — under a comfortable buffer for your burn rate.',
+          title:(_fac?'Into your overdraft in ':'Cash gets tight in ')+_risk.m.name,
+          body:_fac?('Down to −'+_curSym()+_grpInt(Math.abs(_risk.m.balance))+', inside your '+_curSym()+_grpInt(_fac.limit)+' overdraft.'):('Projected balance '+_curSym()+_grpInt(Math.max(0,_risk.m.balance))+' — under a comfortable buffer for your burn rate.'),
           time:'Cash flow', action:function(){ nav('cashflow'); } });
       }
-      if(ST.bankBalance < _burn){
+      if(ST.bankBalance + (_fac?_fac.limit:0) < _burn){
         n.push({ color:'var(--rd)', score:90,
           title:'Low bank balance',
-          body:_curSym()+_grpInt(Math.max(0,ST.bankBalance))+' on hand — under one month of typical costs.',
+          body:_curSym()+_grpInt(Math.max(0,ST.bankBalance))+' on hand'+(_fac?' and a '+_curSym()+_grpInt(_fac.limit)+' overdraft':'')+' — under one month of typical costs.',
           time:'Cash flow', action:function(){ nav('cashflow'); } });
       }
     }
@@ -71245,13 +71250,13 @@ function rnSeedDemo(){
                {back:20,mm:2,note:''}, {back:24,mm:5,note:''}, {back:27,mm:1.5,note:''} ];
   days.forEach(function(d){
     var iso = rnISO(rnAddDays(t, -d.back));
-    seed.push({ id: rnRid(iso, RN_FARM_GAUGE), date: iso, gaugeId: RN_FARM_GAUGE, mm: d.mm, src: 'gauge', by: 'James', note: d.note });
+    seed.push({ id: rnRid(iso, RN_FARM_GAUGE), date: iso, gaugeId: RN_FARM_GAUGE, mm: d.mm, src: 'gauge', by: 'James Whitaker', note: d.note });
   });
   /* The farmer's dry days are in the book too, so the month reads as a kept book. */
   for (var b = 1; b <= 29; b++){
     var iso2 = rnISO(rnAddDays(t, -b));
     if (seed.some(function(x){ return x.date === iso2; })) continue;
-    seed.push({ id: rnRid(iso2, RN_FARM_GAUGE), date: iso2, gaugeId: RN_FARM_GAUGE, mm: 0, src: 'gauge', by: 'James', note: '' });
+    seed.push({ id: rnRid(iso2, RN_FARM_GAUGE), date: iso2, gaugeId: RN_FARM_GAUGE, mm: 0, src: 'gauge', by: 'James Whitaker', note: '' });
   }
   ST_RAIN.log = seed;
   return true;
@@ -72189,7 +72194,8 @@ function rnRenderMonth(){
   var h = '<table class="rn-t"><thead><tr><th>Month</th><th class="r">mm</th><th class="r">Normal</th><th class="r">Days</th></tr></thead><tbody>';
   rows.forEach(function(r){
     if (r.mm != null){ tot += r.mm; any = true; }
-    if (r.normal != null) totN += r.normal;
+    var nShow = (r.normal != null && r.partial) ? r.normal * t.getDate() / new Date(r.y, r.mi + 1, 0).getDate() : r.normal;
+    if (nShow != null && !r.future) totN += nShow;
     if (r.days != null && r.mm != null) totD += r.days;
     h += '<tr' + (r.future ? ' class="dimrow"' : '') + '><td' + (r.future ? ' class="dim"' : '') + '>' + r.label +
          (r.partial ? ' <span class="rn-so">to ' + t.getDate() + rnOrd(t.getDate()) + '</span>' : '') + '</td>' +
@@ -72198,10 +72204,10 @@ function rnRenderMonth(){
            if (satM) anySat = true;
            return '<td class="r' + (r.future ? ' dim' : '') + (satM ? ' sat' : '') + '">' + (r.mm == null ? '&mdash;' : (satM ? rnMmR(r.mm) : '<b>' + rnMmR(r.mm) + '</b>')) + '</td>';
          })() +
-         '<td class="r dim">' + (r.normal == null ? '&mdash;' : rnMmR(r.normal)) + '</td>' +
+         '<td class="r dim">' + (nShow == null ? '&mdash;' : rnMmR(nShow)) + '</td>' +
          '<td class="r' + (r.future ? ' dim' : '') + '">' + (r.days == null || r.mm == null ? '' : r.days) + '</td></tr>';
   });
-  h += '<tr class="tot"><td>Year</td><td class="r">' + (any ? rnMmR(tot) : '&mdash;') + '</td><td class="r">' + (norm ? rnMmR(totN) : '&mdash;') + '</td><td class="r">' + (any ? totD : '') + '</td></tr></tbody></table>';
+  h += '<tr class="tot"><td>' + (rows.some(function(x){ return x.partial || x.future; }) ? 'To date' : 'Year') + '</td><td class="r">' + (any ? rnMmR(tot) : '&mdash;') + '</td><td class="r">' + (norm ? rnMmR(totN) : '&mdash;') + '</td><td class="r">' + (any ? totD : '') + '</td></tr></tbody></table>';
   var satDays = rnRainDays(rnISO(rnYearStartOf(t)), rnISO(t), 1) - rnGaugeRainDays(rnISO(rnYearStartOf(t)), rnISO(t), 1);
   h += '<div class="rn-foot">' + (anySat ? 'Months in italics are satellite, from before your first reading on ' + rnFmtShort(satUntil) + '. ' : '') + (satDays > 0
         ? 'A wet day is 1 mm or more. Before your first reading these are counted from the satellite; after it, from your own readings.'
@@ -72696,9 +72702,7 @@ function rnSettingsRender(){
   }
   /* The closed-period facts, beside the gauges so the two columns balance:
      soils everywhere, the zone question in England only. */
-  var cp = '<div class="rn-lbl">Soils <span class="rn-q">sets your closed-period dates</span></div><div class="rn-opts">' +
-       rnOptCard('rnSetSoils', 'other', 'Mostly clays, loams, silts', '', ST_RAIN.soils !== 'sandy') +
-       rnOptCard('rnSetSoils', 'sandy', 'Sandy or shallow', 'The earlier dates apply.', ST_RAIN.soils === 'sandy') + '</div>';
+  var cp = rnSoilHtml();
   if (nat === 'England'){
     var ans = rnNvzAnswer(), m = ST_RAIN.nvzMap;
     cp += '<div class="rn-lbl" style="margin-top:14px">Is the farm in a Nitrate Vulnerable Zone?</div><div class="rn-opts">' +
@@ -72910,11 +72914,11 @@ function rnReportRows(){
     /* A month before the book began has no wet-day count, not a count of nought. */
     var kept = !!(fOwn && fOwn <= m.o);
     return {
-      label: rnMon(m.mi) + ((i === 0 || m.mi === 0) ? ' ' + m.y : ''),
+      label: rnMon(m.mi) + ((i === 0 || m.mi === 0) ? ' ' + m.y : '') + (function(){ var d = rnParse(m.o), dim = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate(); return d.getDate() < dim ? ' (to ' + d.getDate() + rnOrd(d.getDate()) + ')' : ''; })(),
       per: gs.map(function(g){ return rnGaugeOwnTotal(m.f, m.o, g.id); }),
       ea: rnEaTotal(m.f, m.o),
       sat: rnSatTotal(m.f, m.o),
-      normal: norm ? norm[m.mi] : null,
+      normal: norm ? norm[m.mi] * (function(){ var d = rnParse(m.o); return d.getDate() / new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate(); })() : null,
       d02: kept ? rnGaugeRainDays(m.f, m.o, 0.2) : null, d1: kept ? rnGaugeRainDays(m.f, m.o, 1) : null, d10: kept ? rnGaugeRainDays(m.f, m.o, 10) : null
     };
   });
@@ -74144,11 +74148,22 @@ function rnT1SettingsHtml(){
     '<span class="rn-u">days, cultivations included</span>' +
     '<label class="rn-inl"><input type="checkbox"' + (ST_RAIN.drillContractor ? ' checked' : '') + ' onchange="if(this.checked){rnWetSaveDays(null,true);}else{ST_RAIN.drillContractor=false;ST_RAIN.prefsSet=true;rnPersist();rnSettingsRender();}"> A contractor does it</label></div>' +
     '<div class="hint">Not sure? Hectares &divide; what you drill in a day. Used for Wet year in Planning.</div></div>';
-  h += '<div class="rn-lbl" style="margin-top:4px">Your land</div><div class="rn-seg2">' +
-    [['heavy','Heavy clay'],['medium','Medium'],['light','Light']].map(function(o){
-      return '<button type="button" class="' + ((ST_RAIN.land || 'medium') === o[0] ? 'on' : '') + '" onclick="rnSetLand(' + rnQ(o[0]) + ')">' + o[1] + '</button>'; }).join('') +
-    '</div><div class="hint" style="margin-bottom:12px">Dry-day counts are rain only; heavy clay has fewer workable days.</div>';
   return h;
+}
+/* One soil question (19 Sep review): it sets the closed-period dates (sandy or
+   shallow) and says which way the rain-only dry-day count leans (heavy clay). */
+function rnSoilKey(){ return ST_RAIN.soils === 'sandy' ? 'sandy' : (ST_RAIN.land === 'heavy' ? 'heavy' : 'medium'); }
+function rnSoilHtml(){
+  var k = rnSoilKey();
+  return '<div class="rn-lbl">Your soil <span class="rn-q">sets your closed-period dates</span></div><div class="rn-opts rn-opts3">' +
+    rnOptCard('rnSetSoil3', 'heavy', 'Heavy clay', 'Fewer workable days than the dry-day count', k === 'heavy') +
+    rnOptCard('rnSetSoil3', 'medium', 'Medium', 'Clays, loams, silts', k === 'medium') +
+    rnOptCard('rnSetSoil3', 'sandy', 'Sandy or shallow', 'The earlier dates apply', k === 'sandy') + '</div>';
+}
+function rnSetSoil3(v){
+  ST_RAIN.soils = (v === 'sandy') ? 'sandy' : 'other';
+  ST_RAIN.land = (v === 'heavy') ? 'heavy' : (v === 'sandy' ? 'light' : 'medium');
+  ST_RAIN.spreadHide = ''; ST_RAIN.prefsSet = true; rnPersist(); rnSettingsRender();
 }
 function rnSetLand(v){ ST_RAIN.land = (v === 'heavy' || v === 'light') ? v : 'medium'; ST_RAIN.prefsSet = true; rnPersist(); rnSettingsRender(); }
 function rnScotSettingsHtml(){
