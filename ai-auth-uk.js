@@ -644,7 +644,8 @@
               if (_rp.soils) ST_RAIN.soils = _rp.soils;
               if (_rp.nvz === true || _rp.nvz === false) ST_RAIN.nvz = _rp.nvz;
               if (_rp.fitMm || _rp.fitDays) ST_RAIN.rule = { fitMm: _rp.fitMm || 20, fitDays: _rp.fitDays || 7, set: true };
-              if (_rp.drillDays != null || _rp.drillContractor) { ST_RAIN.drillDays = _rp.drillDays || null; ST_RAIN.drillContractor = !!_rp.drillContractor; }
+              /* A cleared figure travels too: the key is always sent, null included. */
+              if ('drillDays' in _rp || 'drillContractor' in _rp) { ST_RAIN.drillDays = _rp.drillDays || null; ST_RAIN.drillContractor = !!_rp.drillContractor; }
               if (_rp.land) ST_RAIN.land = _rp.land;
               if (_rp.fieldLimits && typeof _rp.fieldLimits === 'object') ST_RAIN.fieldLimits = _rp.fieldLimits;
               if (_rp.wetSeen) ST_RAIN.wetSeen = _rp.wetSeen;

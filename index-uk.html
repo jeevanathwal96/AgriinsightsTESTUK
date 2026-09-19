@@ -34,7 +34,7 @@
 <!-- AgriInsights backend: Supabase client + data service (load order matters) -->
 <script src="vendor/supabase.js"></script>
 <script src="ai-data-uk.js?v=uk114"></script>
-<script src="ai-auth-uk.js?v=uk103"></script>
+<script src="ai-auth-uk.js?v=uk104"></script>
 <link rel="stylesheet" href="fonts.css"/>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -73711,9 +73711,13 @@ function rnWetSet(k, v){
 function rnWetSaveDays(v, contractor){
   if (contractor){ ST_RAIN.drillContractor = true; ST_RAIN.drillDays = null; }
   else {
-    var n = parseFloat(v);
-    if (!(n > 0 && n <= 120)){ try { toast('Type the working days, e.g. 12', 'error'); } catch(e){} return; }
-    ST_RAIN.drillDays = Math.round(n); ST_RAIN.drillContractor = false;
+    var raw = String(v == null ? '' : v).trim();
+    if (raw === ''){ ST_RAIN.drillDays = null; ST_RAIN.drillContractor = false; }   /* an empty box clears it */
+    else {
+      var n = parseFloat(raw);
+      if (!(n > 0 && n <= 120)){ try { toast('Type the working days, e.g. 12', 'error'); } catch(e){} return; }
+      ST_RAIN.drillDays = Math.round(n); ST_RAIN.drillContractor = false;
+    }
   }
   ST_RAIN.prefsSet = true;
   rnPersist();
