@@ -70716,10 +70716,14 @@ function rnDow(s){ return RN_DOW[rnParse(s).getDay()]; }
 function rnMm(n){
   if (n == null || isNaN(n)) return '—';
   var v = Math.round(n*10)/10;
-  return (Math.abs(v - Math.round(v)) < 0.05 ? rnMmR(v) : v.toFixed(1));
+  if (Math.abs(v - Math.round(v)) < 0.05) return rnMmR(v);
+  var f = Math.abs(v).toFixed(1), i = f.slice(0, -2);   /* 20010.5 reads 20,010.5 */
+  return (v < 0 ? '-' : '') + rnMmR(+i).replace('-', '') + f.slice(-2);
 }
 /* Totals, normals and months read as whole millimetres; a single day keeps its decimal. */
 /* Thousands take a comma, as the money does (£1,072): 1,072 mm, never 1072 or the SA 1 072. */
+/* A count of days or readings, UK style: 3,639. */
+function rnNum(n){ return rnMmR(n); }
 function rnMmR(n){ return (n == null || isNaN(n)) ? '—' : String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
 function rnPct(a, b){ return (a == null || !b) ? null : Math.round((a / b) * 100); }
 
@@ -71374,6 +71378,25 @@ function rnKeepTemps(days, mins){
 /* ── the last three weeks ────────────────────────────────────────────────────
    Every day that has happened comes from the archive; the fill model only
    covers the few days ERA5 has not reached, and never overwrites the archive. */
+/* A new place: this rain year and last from the same archive model, a small
+   request, so the tab draws in a second or two; the 35-year call behind it
+   (15 s or more on the free service) then adds the long-term average and band. */
+function rnFetchSeason(){
+  if (!rnHas()) return Promise.resolve(false);
+  var t = rnToday(), st = rnYearStartOf(t), from = new Date(st.getFullYear() - 1, st.getMonth(), 1);
+  var url = rnOmUrl('archive-api','/v1/archive') + '?' + rnLocQuery() + '&models=' + RN_ARCHIVE_MODEL +
+            '&start_date=' + rnISO(from) + '&end_date=' + rnISO(t) + rnOmKey();
+  return rnFetchJson(url, 15000).then(function(j){
+    var days = j && j.daily && j.daily.time, vals = j && j.daily && j.daily.precipitation_sum;
+    if (!days || !vals || !days.length) throw new Error('no rainfall returned');
+    rnKeepRecent(days, vals);
+    return true;
+  });
+}
+function rnDrawNow(){
+  try { if (rnEl('pg-rainfall') && rnEl('pg-rainfall').classList.contains('on')) renderRainfall(); } catch(e){}
+  try { rnDashSync(); } catch(e){}
+}
 function rnFetchRecent(){
   if (!rnHas()) return Promise.resolve(false);
   var t = rnToday(), today = rnISO(t);
@@ -71684,6 +71707,8 @@ function rnSync(force){
   RN_SYNCING = true;
   function step(p){ return p.catch(function(e){ return { err: e }; }); }
   var chain = Promise.resolve(), errs = [];
+  var firstLook = needHist && !(ST_RAIN.sat && ST_RAIN.sat.daily && ST_RAIN.sat.daily[rnISO(rnYearStartOf(rnToday()))] != null);
+  if (firstLook)  chain = chain.then(function(){ return step(rnFetchSeason()); }).then(function(r){ if (!(r && r.err)) rnDrawNow(); });
   if (needHist)   chain = chain.then(function(){ return step(rnFetchHistory()); }).then(function(r){ if (r && r.err) errs.push(r.err); });
   if (needRecent) chain = chain.then(function(){ return step(rnFetchRecent()); }).then(function(r){ if (r && r.err) errs.push(r.err); });
   if (needFc)     chain = chain.then(function(){ return step(rnFetchForecast()); });
@@ -71997,12 +72022,12 @@ function rnRenderTiles(){
   if (useYear){
     w = w || { mm: null, normal: null, soFar: false, from: yStartISO, to: yStartISO };
     var wn = w.normal;
-    h += '<div class="rn-tile"><div class="top"><div class="l">' + (w.soFar ? 'Winter so far' : 'Winter &middot; Oct &ndash; Mar') + satTag + '</div>' +
+    h += '<div class="rn-tile"><div class="top"><div class="l">' + (w.soFar ? 'Winter so far' : 'Winter &middot; Oct &ndash; Mar') + '</div>' +   /* the mark goes on the line below: the label is cut at 1280 px */
          '<div class="v">' + (w.mm == null ? '&mdash;' : rnMmR(w.mm) + ' mm') + '</div>' +
          '<div class="c rn">' + (wn && w.mm != null ? rnPct(w.mm, wn) + '% of normal'
             : !rnHas() ? 'Set where the farm is'
             : (w.mm == null && dfTxt) ? 'Your record starts ' + dfTxt
-            : 'Looking up the long-term average&hellip;') + (sat || w.mm == null ? '' : partTag(w.from, w.to)) + '</div></div>' +
+            : 'Looking up the long-term average&hellip;') + (w.mm == null ? '' : (sat ? satTag : partTag(w.from, w.to))) + '</div></div>' +
          '<div class="foot">' + rnTileBar(w.mm, wn ? Math.max(wn, w.mm) : null, (wn && w.mm >= wn) ? 'over' : '') +
          '<div class="tick"><span>0</span><span>' + (wn ? rnMmR(wn) + ' mm normal' : '') + '</span></div></div></div>';
   } else {
@@ -72112,7 +72137,7 @@ function rnBookRows(withDry){
 function rnRenderBook(){
   var host = rnEl('rn-book'); if (!host) return;
   var rows = rnBookRows(RN_BOOK_ALL), allN = RN_BOOK_ALL ? rows.length : rnBookRows(true).length, mine = rnYourReadings(), sub = rnEl('rn-book-sub'), inYear = rnReadingsInYear();
-  if (sub) sub.textContent = mine ? (inYear + ' ' + rnPl(inYear,'reading','readings') + ' this year, in your own hand') : 'Nothing logged yet';
+  if (sub) sub.textContent = mine ? (rnNum(inYear) + ' ' + rnPl(inYear,'reading','readings') + ' this year, in your own hand') : 'Nothing logged yet';
   var filt = rnEl('rn-book-filter');
   if (filt){
     if (ST_RAIN.mode === 'gauge' && rnGauges().length > 1){
@@ -72143,7 +72168,7 @@ function rnRenderBook(){
   });
   h += '</div>';
   var tail = (ST_RAIN.conv09 !== false ? 'A reading made in the morning is credited to the day before (the Met Office convention). ' : '');
-  if (allN > show.length || RN_BOOK_ALL) tail += '<b style="white-space:nowrap" onclick="rnBookToggleAll()">' + (RN_BOOK_ALL ? 'Show the wet days only' : 'Show dry days too (' + allN + ' days)') + '</b>';
+  if (allN > show.length || RN_BOOK_ALL) tail += '<b style="white-space:nowrap" onclick="rnBookToggleAll()">' + (RN_BOOK_ALL ? 'Show the wet days only' : 'Show dry days too (' + rnNum(allN) + ' days)') + '</b>';
   h += '<div class="rn-foot">' + tail + '</div>';
   host.innerHTML = h;
 }
@@ -72266,7 +72291,7 @@ function rnChartTip(context){
   var html = '<div class="m">' + esc(title) + '</div>';
   rows.forEach(function(r, i){
     if (i && r.own) html += '<div class="hr"></div>';
-    html += '<div class="r"><span class="k">' + esc(r.label) + '</span><span class="v"' + (r.own ? ' style="color:#9CC0E4"' : '') + '>' + rnMm(r.val) + ' mm</span></div>';
+    html += '<div class="r"><span class="k">' + esc(r.label) + '</span><span class="v"' + (r.own ? ' style="color:#9CC0E4"' : '') + '>' + rnMmR(r.val) + ' mm</span></div>';   /* month and running totals: whole mm, as the tiles */
   });
   el.innerHTML = html;
   var b = context.chart.canvas.getBoundingClientRect();
@@ -72751,7 +72776,7 @@ function rnGaugeDefault(i){ (ST_RAIN.gauges || []).forEach(function(g, j){ g.isD
 function rnGaugeRemove(i){
   var g = (ST_RAIN.gauges || [])[i]; if (!g) return;
   var n = rnLog().filter(function(r){ return r.gaugeId === g.id; }).length;
-  if (n && !confirm('Remove ' + g.name + '? Its ' + n + ' ' + rnPl(n,'reading','readings') + ' will be removed with it.')) return;
+  if (n && !confirm('Remove ' + g.name + '? Its ' + rnNum(n) + ' ' + rnPl(n,'reading','readings') + ' will be removed with it.')) return;
   /* On the server too (the SA build left a removed gauge's rows behind, so they came back on the
      next device), and durably: the gauge and its readings stay on the removal lists until a save
      confirms them gone, so a removal made offline is sent later rather than forgotten. */
@@ -72882,7 +72907,7 @@ function rnReportHTML(){
                })() +
                (ea.normal ? ' Its own 1991&ndash;2020 average is ' + rnMmR(ea.normal.annual) + ' mm a year.' : '') + '</p>' : '') +
       '<p><b>Satellite.</b> Gridded rainfall (ERA5) at the farm&rsquo;s coordinates, for comparison only. ' +
-        (satFilled ? satFilled + ' ' + rnPl(satFilled,'day','days') + ' before the first gauge reading, or in a stretch the book was not kept, are satellite estimates and are named in the daily pages.'
+        (satFilled ? rnNum(satFilled) + ' ' + rnPl(satFilled,'day','days') + ' before the first gauge reading, or in a stretch the book was not kept, are satellite estimates and are named in the daily pages.'
                    : 'Every day in this record is a gauge reading; no day was filled from another source.') +
         ' Rain-day counts are from gauge readings alone.</p>' +
       '<p><b>Normal.</b> ' + (ST_RAIN.normal && ST_RAIN.normal.override ? 'The farm&rsquo;s own long-term figure of ' + rnMm(ST_RAIN.normal.override) + ' mm a year.'
@@ -72919,7 +72944,7 @@ function rnReportAppendix(){
   }).join('');
   return '<div class="pb"></div><div class="k" style="margin-bottom:6px">Daily readings &middot; ' + rnYearLabel(t) + '</div>' +
     '<table class="mth"><thead>' + head + '</thead><tbody>' + body + '</tbody></table>' +
-    '<div class="notes"><p>' + dates.length + ' ' + rnPl(dates.length,'day carries','days carry') + ' a figure. ' +
+    '<div class="notes"><p>' + rnNum(dates.length) + ' ' + rnPl(dates.length,'day carries','days carry') + ' a figure. ' +
     (satN ? 'Of these, <b>' + satN + '</b> ' + (satN === 1 ? 'is a satellite estimate' : 'are satellite estimates') + ' and ' + (satN === 1 ? 'is' : 'are') + ' marked <i>sat</i>; the rest were read off a gauge.' : 'Every one was read off a gauge.') +
     ' Days not listed had no rain recorded.</p></div>';
 }
@@ -73170,7 +73195,10 @@ function rnImportParse(text){
     function whole(day){ var st = rnDaysBetween('2000-01-01', day) * 1440 + off; return fromM <= st && toM >= st + 1440; }
     var byDay = {}, order = [];
     rows.forEach(function(x){
-      var day = (nine && x.at != null && x.at <= 540) ? rnISO(rnAddDays(rnParse(x.date), -1)) : x.date;
+      /* Stamped at the END of its interval: a 09:00 row is the last of the previous 09:00
+         day, and a 00:00 row the last hour of the previous calendar day. */
+      var prev = x.at != null && (nine ? x.at <= 540 : x.at === 0);
+      var day = prev ? rnISO(rnAddDays(rnParse(x.date), -1)) : x.date;
       var k = day + '|' + (x.gauge || '');
       if (!byDay[k]){ byDay[k] = { date: day, mm: 0, gauge: x.gauge }; order.push(k); }
       byDay[k].mm += x.mm;
@@ -73247,11 +73275,11 @@ function rnImportFinish(rows, bad, notes, pick){
   });
   var tot = rows.filter(function(x){ return !x.skip; }).reduce(function(a, x){ return a + x.mm; }, 0);
   RN_IMPORT_GAPS = fresh ? rnImportGapsFor(rows) : [];
-  var h = (pick || '') + '<div class="rn-strip info" style="margin:0"><span class="ic">&#128203;</span><span class="gr"><b>' + fresh + ' ' + rnPl(fresh, 'reading', 'readings') + ' ready to bring in</b>' +
+  var h = (pick || '') + '<div class="rn-strip info" style="margin:0"><span class="ic">&#128203;</span><span class="gr"><b>' + rnNum(fresh) + ' ' + rnPl(fresh, 'reading', 'readings') + ' ready to bring in</b>' +
     (fresh ? ', ' + rnMm(tot) + ' mm in total, from ' + rnFmtDate(first) + ' to ' + rnFmtDate(last) : '') + '.' +
-    (dup ? ' ' + dup + ' already in your book and will be left alone.' : '') +
-    (rep ? ' ' + rep + ' ' + rnPl(rep, 'row repeats a day', 'rows repeat a day') + ' already in the file, so only the first of each is brought in.' : '') +
-    (bad ? ' ' + bad + ' ' + rnPl(bad, 'row', 'rows') + ' could not be read and will be skipped.' : '') + '</span></div>' +
+    (dup ? ' ' + rnNum(dup) + ' already in your book and will be left alone.' : '') +
+    (rep ? ' ' + rnNum(rep) + ' ' + rnPl(rep, 'row repeats a day', 'rows repeat a day') + ' already in the file, so only the first of each is brought in.' : '') +
+    (bad ? ' ' + rnNum(bad) + ' ' + rnPl(bad, 'row', 'rows') + ' could not be read and will be skipped.' : '') + '</span></div>' +
     (notes ? '<div style="margin-top:8px">' + rnImpWarn(notes) + '</div>' : '');
   if (RN_IMPORT_GAPS.length){
     h += '<div class="rn-strip warn" style="margin:10px 0 0"><span class="ic">&#10067;</span><span class="gr"><b>Your book has nothing from ' + rnImpGapText(RN_IMPORT_GAPS) + '.</b> Were you keeping the book then?' +
@@ -73280,7 +73308,7 @@ function rnImportCommit(){
   if (RN_IMPORT_GAP_ANS === 'notkept'){ rnNotKeptAdd(RN_IMPORT_GAPS); ST_RAIN.prefsSet = true; }
   rnImportClose();
   rnPersist();
-  try { toast(n + ' ' + rnPl(n, 'reading', 'readings') + ' brought into your rain book.', 'success'); } catch(e){}
+  try { toast(rnNum(n) + ' ' + rnPl(n, 'reading', 'readings') + ' brought into your rain book.', 'success'); } catch(e){}
 }
 
 /* ══ Rainfall — where it shows up in the rest of the app ═══════════════════ */
@@ -73349,7 +73377,8 @@ function rnDashSync(){
 function rnAttnItems(){
   var out = [];
   try {
-    var soon = rnClosingSoon();
+    /* A farm that has not set rainfall up keeps exactly today's dashboard (T0.6). */
+    var soon = rnOn() ? rnClosingSoon() : [];
     soon.slice(0, 2).forEach(function(p){
       out.push({
         tier: 'legal', sev: 70,
