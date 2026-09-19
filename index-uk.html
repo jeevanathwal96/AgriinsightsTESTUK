@@ -73451,14 +73451,16 @@ function rnDashSync(){
        and grew the whole row by 20 px (measured at 1024, 18 Sep; SA had the same
        fault). A tag or sub-line must never change the row's height. */
     var sub = [];
-    if (norm) sub.push('normal ' + rnMmR(norm[t.getMonth()]));
-    if (ytd != null) sub.push((sub.length ? '<span class="rn-long"> &middot; ' : '<span>') + rnMmR(ytd) + ' since ' + rnMon(rnYearStartOf(t).getMonth()) + '</span>');
+    var nTo = norm ? norm[t.getMonth()] * t.getDate() / new Date(t.getFullYear(), t.getMonth() + 1, 0).getDate() : null;
+    if (norm) sub.push('normal ' + rnMmR(nTo));
+    if (ytd != null) sub.push((sub.length ? '<span class="rn-long"> so far &middot; ' : '<span>') + rnMmR(ytd) + ' since ' + rnMon(rnYearStartOf(t).getMonth()) + '</span>');
     /* Once the farmer's record is going, a month with nothing in it is a dry
        month: their book says no rain, so the tile says none. */
     var shown = (month == null && mine && rnFirstGaugeDate() && rnFirstGaugeDate() <= rnISO(mStart)) ? 0 : month;
     el.innerHTML = '<div class="combo-ps-lbl" style="color:#9CC0E4">Rainfall</div>' +
                    '<div class="combo-ps-val">' + (shown == null ? '&mdash;' : rnMmR(shown) + ' mm') + '</div>' +
                    '<div class="combo-ps-chg" style="color:#BFD7EE">' + (sub.length ? sub.join('') : (mine ? 'this month' : 'satellite')) + '</div>';
+    el.setAttribute('title', nTo != null ? 'Normal for 1–' + t.getDate() + ' ' + rnMon(t.getMonth()) + ' is ' + rnMmR(nTo) + ' mm · open the rain book' : 'Open the rain book');
   } catch(e){ try{ console.warn('Rainfall dashboard stat:', e); }catch(_){} }
 }
 (function(){
