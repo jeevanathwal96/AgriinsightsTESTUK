@@ -2542,6 +2542,27 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     if(kept){ _profNoteAck(row); return { ok: true, row: row }; }
     return { stale: true, row: row };
   }
+  /* -348 farms.prefs carries more than one thing, and each key belongs to a different
+     screen. Both directions go through a named function so a harness can drive them:
+     the failure they guard against - one key quietly dropping the other - only appears
+     on a farm that has both, which is the farm nobody tests on.
+
+     Year-end stock counts live here rather than in a column of their own because the
+     shape belongs to the stock sheet, nothing queries it relationally, and prefs already
+     exists on every live database - so it reaches a real farm with no migration. */
+  function _profPrefsApply(prefs, p){
+    if(!p || !prefs || typeof prefs!=='object') return p;
+    if(prefs.poa   && typeof prefs.poa==='object')   p.poaHmrc     = prefs.poa;
+    if(prefs.stock && typeof prefs.stock==='object') p.stockCounts = prefs.stock;
+    return p;
+  }
+  function _profPrefsNext(prev, st){
+    var has=false, next=Object.assign({}, (prev && typeof prev==='object') ? prev : {});
+    if(st && st.poaHmrc     && typeof st.poaHmrc==='object'){     next.poa   = st.poaHmrc;     has=true; }
+    if(st && st.stockCounts && typeof st.stockCounts==='object'){ next.stock = st.stockCounts; has=true; }
+    return has ? next : null;
+  }
+
   function profileFromDb(r){ if(!r) return null; var p={};
     _profNoteAck(r);   /* what the server has, field by field */
     if(r.name!=null) p.farmName=r.name;
@@ -2594,11 +2615,7 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
       if(!rp.error && rp.data){
         var pr=rp.data.prefs; if(typeof pr==='string'){ try{ pr=JSON.parse(pr); }catch(e){ pr=null; } }
         _farmPrefs=(pr && typeof pr==='object') ? pr : {};
-        if(p && _farmPrefs.poa && typeof _farmPrefs.poa==='object') p.poaHmrc=_farmPrefs.poa;
-        /* -347 Year-end stock counts, keyed by tax year. In prefs rather than a column of
-           their own because the shape belongs to the stock sheet and nothing queries it
-           relationally - and because it needs no migration to reach a live database. */
-        if(p && _farmPrefs.stock && typeof _farmPrefs.stock==='object') p.stockCounts=_farmPrefs.stock;
+        _profPrefsApply(_farmPrefs, p);
       }
     }catch(e){}
     return p;
@@ -2646,12 +2663,9 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
       }
       /* Payments on account from HMRC, merged into farms.prefs so any other key there
          survives. Its own statement: a database without the column still saves the rest. */
-      /* -347 Both keys merge onto whatever prefs already holds: saving a stock count must
-         not drop the payments on account, and the other way round. */
-      var _pfHas=false, _pfNext=Object.assign({}, _farmPrefs||{});
-      if(st.poaHmrc      && typeof st.poaHmrc==='object'){      _pfNext.poa   = st.poaHmrc;      _pfHas=true; }
-      if(st.stockCounts  && typeof st.stockCounts==='object'){  _pfNext.stock = st.stockCounts;  _pfHas=true; }
-      var pref = _pfHas ? _pfNext : null;
+      /* Merged onto whatever prefs already holds, never replacing it: saving a stock
+         count must not drop the payments on account, nor the other way round. */
+      var pref=_profPrefsNext(_farmPrefs, st);
       /* Rainfall: where the farm is and how it keeps its rain book, in their own
          statement so a database without the columns still saves the rest. Sent
          only once a rain setting was chosen on, or brought to, this device, so a
