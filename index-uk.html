@@ -13262,11 +13262,18 @@ function cropHarvestModal(){
          standing in the shed from grain that left on a price not yet agreed - both look
          identical, and the year-end stock count was reading the second as the first. */
       '<div style="margin-top:12px"><label style="'+lblCss+'">Where did it go?</label>'+
+      /* -352 Three, not two. "Sold or delivered" ran two different things together, and
+         the difference is the whole question: HS232 keeps stock held through a
+         co-operative in the valuation - "if identifiable, or proportionally if pooled" -
+         and takes it out only when it has been SOLD to a co-operative that is not acting
+         as the farmer's agent. Central stores and marketing pools are ordinary here, and
+         a farmer using one had two answers available and both were untrue. */
       '<select id="ch-dest" style="'+inpCss+'">'+
-        '<option value="gone"'+(estMoney>0?' selected':'')+'>Sold or delivered</option>'+
-        '<option value="store"'+(estMoney>0?'':' selected')+'>Into store, still here</option>'+
+        '<option value="gone"'+(estMoney>0?' selected':'')+'>Sold</option>'+
+        '<option value="pool"'+(estMoney>0?'':' selected')+'>Central store or pool \u2014 still mine</option>'+
+        '<option value="store">In my own store</option>'+
       '</select>'+
-      '<div style="font-size:11px;color:var(--t3);margin-top:4px">Grain in store counts towards your year-end stock. Choose this even if it has not been priced yet.</div></div>'+
+      '<div style="font-size:11px;color:var(--t3);margin-top:4px">Grain in a central store or committed to a pool is still yours until it is sold, and counts towards your year-end stock.</div></div>'+
       '<div style="background:#eef4ec;border:1px solid #cfe3d4;border-radius:9px;padding:9px 11px;font-size:11px;color:#3a5a45;line-height:1.5;margin-top:12px">'+esc(sel.name)+' will show as <b>Harvested</b> with its realized margin, and this season is kept in the land’s history before it goes to rest.</div>';
   }
   var footer = sel
@@ -13307,12 +13314,19 @@ function cropHarvestCommit(l, y, moneyNum, dest){
   var pIdx=cropFindPlanLine(l);
   if(pIdx>=0){ ST_PLAN.crops[pIdx].yield=y; delete ST_PLAN.crops[pIdx].linkId; }
   l.planId=null;
+  /* Only a SALE disposes of the crop. A central store or a pool is delivered and still
+     the farmer's, so it writes no delivered event and stays in the year-end count - the
+     same shape as a South African silo certificate, for the reason HS232 gives. */
   var _gone = (dest === 'gone') || (dest == null && moneyNum > 0);
-  ST_CROP.events.unshift({id:cropNextId(ST_CROP.events,'ce'), land:l.id, kind:'harvested', date:todayISO, note:prev+' '+y+' t/ha', tons:tons, yield:y, dest:(_gone?'gone':'store')});
+  /* The record keeps the destination the farmer actually chose. Collapsing 'pool' into
+     'store' would lose the one thing that distinguishes grain sitting in somebody else's
+     shed from grain sitting in your own, which is what an accountant asks about. */
+  ST_CROP.events.unshift({id:cropNextId(ST_CROP.events,'ce'), land:l.id, kind:'harvested', date:todayISO, note:prev+' '+y+' t/ha', tons:tons, yield:y,
+                          dest:(dest || (moneyNum > 0 ? 'gone' : 'store'))});
   /* The delivered event now follows where it went, not whether it was priced. */
   if(_gone){
     ST_CROP.events.unshift({id:cropNextId(ST_CROP.events,'ce'), land:l.id, kind:'delivered', date:todayISO,
-      note:(moneyNum > 0 ? ('Sold \u2014 '+cropFmtR(moneyNum)) : 'Delivered \u2014 price not agreed yet'), tons:tons});
+      note:(moneyNum > 0 ? ('Sold \u2014 '+cropFmtR(moneyNum)) : 'Sold \u2014 price not agreed yet'), tons:tons});
   }
   if(moneyNum>0){
     ST.txns=ST.txns||[];
