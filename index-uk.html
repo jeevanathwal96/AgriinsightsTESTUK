@@ -13258,6 +13258,15 @@ function cropHarvestModal(){
       '<div style="margin-top:12px"><label style="'+lblCss+'">Money in from this crop? <span style="color:var(--t4);font-weight:600;text-transform:none;letter-spacing:0">leave blank if not paid yet</span></label>'+
       '<input id="ch-money" type="number" inputmode="decimal" value="'+(estMoney>0?estMoney:'')+'" style="'+inpCss+'">'+
       '<div style="font-size:11px;color:var(--t3);margin-top:4px">Creates a Crop Sales income entry tagged to '+esc(sel.name)+'.</div></div>'+
+      /* -349 Where it went, asked once, here. Without it the records cannot tell grain
+         standing in the shed from grain that left on a price not yet agreed - both look
+         identical, and the year-end stock count was reading the second as the first. */
+      '<div style="margin-top:12px"><label style="'+lblCss+'">Where did it go?</label>'+
+      '<select id="ch-dest" style="'+inpCss+'">'+
+        '<option value="gone"'+(estMoney>0?' selected':'')+'>Sold or delivered</option>'+
+        '<option value="store"'+(estMoney>0?'':' selected')+'>Into store, still here</option>'+
+      '</select>'+
+      '<div style="font-size:11px;color:var(--t3);margin-top:4px">Grain in store counts towards your year-end stock. Choose this even if it has not been priced yet.</div></div>'+
       '<div style="background:#eef4ec;border:1px solid #cfe3d4;border-radius:9px;padding:9px 11px;font-size:11px;color:#3a5a45;line-height:1.5;margin-top:12px">'+esc(sel.name)+' will show as <b>Harvested</b> with its realized margin, and this season is kept in the land’s history before it goes to rest.</div>';
   }
   var footer = sel
@@ -13279,11 +13288,17 @@ function cropHarvestSave(){
   var y=parseFloat(($('ch-yield')||{}).value); if(isNaN(y)||y<0){ toast('Enter a valid yield','error'); return; }
   var mr=($('ch-money')||{}).value;
   var money=(mr==null||String(mr).trim()==='')?0:(parseFloat(String(mr).replace(/[^0-9.]/g,''))||0);
-  cropHarvestCommit(l, y, money);
+  var dest=(($('ch-dest')||{}).value)||(money>0?'gone':'store');
+  cropHarvestCommit(l, y, money, dest);
   cropCloseModal();
 }
 /* Write logic only (no prompts): yield + Harvested state + optional income (Crop Sales txn). */
-function cropHarvestCommit(l, y, moneyNum){
+/* -349 `dest` says where the crop went: 'gone' (sold or delivered) or 'store'. It used
+   to be inferred from whether money was entered, which is not the same question - grain
+   delivered on a price not yet agreed wrote no delivered event, so the year-end count
+   read it as still standing in the shed. Callers that pass nothing keep the old
+   behaviour, so nothing that already works changes. */
+function cropHarvestCommit(l, y, moneyNum, dest){
   if(!l) return;
   var prev=l.crop;
   var tons=Math.round(y*(l.area||0)*10)/10;
@@ -13292,9 +13307,14 @@ function cropHarvestCommit(l, y, moneyNum){
   var pIdx=cropFindPlanLine(l);
   if(pIdx>=0){ ST_PLAN.crops[pIdx].yield=y; delete ST_PLAN.crops[pIdx].linkId; }
   l.planId=null;
-  ST_CROP.events.unshift({id:cropNextId(ST_CROP.events,'ce'), land:l.id, kind:'harvested', date:todayISO, note:prev+' '+y+' t/ha', tons:tons, yield:y});
+  var _gone = (dest === 'gone') || (dest == null && moneyNum > 0);
+  ST_CROP.events.unshift({id:cropNextId(ST_CROP.events,'ce'), land:l.id, kind:'harvested', date:todayISO, note:prev+' '+y+' t/ha', tons:tons, yield:y, dest:(_gone?'gone':'store')});
+  /* The delivered event now follows where it went, not whether it was priced. */
+  if(_gone){
+    ST_CROP.events.unshift({id:cropNextId(ST_CROP.events,'ce'), land:l.id, kind:'delivered', date:todayISO,
+      note:(moneyNum > 0 ? ('Sold \u2014 '+cropFmtR(moneyNum)) : 'Delivered \u2014 price not agreed yet'), tons:tons});
+  }
   if(moneyNum>0){
-    ST_CROP.events.unshift({id:cropNextId(ST_CROP.events,'ce'), land:l.id, kind:'delivered', date:todayISO, note:'Sold — '+cropFmtR(moneyNum), tons:tons});
     ST.txns=ST.txns||[];
     var _desc=(prev||'Crop')+' — '+l.name, _entTag='crop:'+(prev||'');
     var _tx={date:lsFmtDate(LS_TODAY), desc:_desc, cat:'Crop Sales', type:'income', amt:moneyNum, method:'Bank Deposit', source:'Crop harvest', ent:_entTag, qty:tons||undefined, unit:tons?'tonnes':undefined};
@@ -23831,12 +23851,19 @@ function ukStockDerived(fy){
         if(!(t.qty > 0) || (typeof _aiIsLitre === 'function' && !_aiIsLitre(t.unit))) return;
         lit += Number(t.qty) || 0; cost += Math.abs(Number(t.amt) || 0);
       });
+      /* -349 Transaction amounts in this app are VAT-INCLUSIVE (see _ukVatFrac), so a
+         price worked out from them is gross. A VAT-registered farm reclaims that VAT and
+         must value stock at what it actually cost - net - or every litre is carried a
+         fifth too high, on the same card that tells the farmer to exclude VAT. */
       var ppl = (lit > 0 && cost > 0) ? (cost / lit) : 0;
-      if(!(ppl > 0.2 && ppl < 3)) ppl = 0.7;          /* a litre of red diesel, roughly */
+      var _vatReg = !!(window.ST && (ST.vatRegistered === true || ST.vatRegistered === 'yes'));
+      var _net = false;
+      if(ppl > 0 && _vatReg && typeof _ukVatFrac === 'function'){ ppl = ppl * (1 - _ukVatFrac()); _net = true; }
+      if(!(ppl > 0.2 && ppl < 3)){ ppl = 0.7; _net = false; }   /* a litre of red diesel, roughly */
       var keptLog = (D.logged + D.nonQual) > 0;
       out.qty.diesel = Math.round(D.unlogged) + ' \u2113';
       out.why.diesel = keptLog
-        ? ('Logbook: ' + Math.round(D.bought) + ' \u2113 bought, ' + Math.round(D.logged + D.nonQual) + ' \u2113 issued, at \u00a3' + ppl.toFixed(2) + ' a litre')
+        ? ('Logbook: ' + Math.round(D.bought) + ' \u2113 bought, ' + Math.round(D.logged + D.nonQual) + ' \u2113 issued, at \u00a3' + ppl.toFixed(2) + ' a litre' + (_net ? ' excluding VAT' : ''))
         : ('' + Math.round(D.bought) + ' \u2113 bought and none recorded as issued \u2014 we cannot tell what is left, so this one is yours');
       if(keptLog) out.diesel = Math.round(D.unlogged * ppl);
     }
