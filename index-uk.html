@@ -18355,10 +18355,20 @@ var pSub = $('season-ytd-profit-sub');
       pSub.className = 'skpi-sub muted';
     }
     /* -345 Not an alert and not a badge: the same grey sub-line every tile already has,
-       carrying one word. The figure is not wrong, it is unfinished. */
+       carrying one word. The figure is not wrong, it is unfinished.
+       -346 In its OWN span. Appending to the text made it inherit .skpi-sub.dn, so on a
+       farm whose profit is down the word came out in red - the alert styling this was
+       chosen to avoid. It now matches the muted sub-lines whichever way the year is
+       going, because how the year is going is not what it is reporting. */
     try{
       var _pn = (typeof ukProvisionalNote === 'function') ? ukProvisionalNote() : '';
-      if(_pn) pSub.textContent = pSub.textContent + ' \u00b7 ' + _pn;
+      if(_pn){
+        var _ps = document.createElement('span');
+        _ps.textContent = ' \u00b7 ' + _pn;
+        _ps.style.color = 'var(--t4)';
+        _ps.style.fontWeight = '500';
+        pSub.appendChild(_ps);
+      }
     }catch(e){}
   }
 
@@ -62905,7 +62915,15 @@ function attnItems(){
         st: _sg.due ? ('due in ' + _sg.daysToDue + 'd') : (_sg.fresh ? (_sg.daysOver + 'd over') : ('in ' + _sg.days + ' days')),
         when: _sg.closed ? -_sg.daysOver : _sg.days,
         cta:'Open the pack',
-        action: function(){ try{ accPreviewYearEnd(); }catch(e){} } });
+        /* -346 accPreviewYearEnd() is the CSV export pack - six files for Sage and Xero,
+           and it never renders the missing page. The pack that actually says what is
+           outstanding is packPreview(), reached from Tax & HMRC. Clicking through found
+           this; reading the code did not. */
+        action: function(){
+          try{ if(typeof taxAccountantPack === 'function') return taxAccountantPack(); }catch(e){}
+          try{ if(typeof packPreview === 'function') return packPreview(); }catch(e){}
+          try{ accPreviewYearEnd(); }catch(e){}
+        } });
     }
   }catch(e){}
 
