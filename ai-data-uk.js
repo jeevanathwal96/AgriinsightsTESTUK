@@ -2595,6 +2595,10 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
         var pr=rp.data.prefs; if(typeof pr==='string'){ try{ pr=JSON.parse(pr); }catch(e){ pr=null; } }
         _farmPrefs=(pr && typeof pr==='object') ? pr : {};
         if(p && _farmPrefs.poa && typeof _farmPrefs.poa==='object') p.poaHmrc=_farmPrefs.poa;
+        /* -347 Year-end stock counts, keyed by tax year. In prefs rather than a column of
+           their own because the shape belongs to the stock sheet and nothing queries it
+           relationally - and because it needs no migration to reach a live database. */
+        if(p && _farmPrefs.stock && typeof _farmPrefs.stock==='object') p.stockCounts=_farmPrefs.stock;
       }
     }catch(e){}
     return p;
@@ -2642,7 +2646,12 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
       }
       /* Payments on account from HMRC, merged into farms.prefs so any other key there
          survives. Its own statement: a database without the column still saves the rest. */
-      var pref=(st.poaHmrc && typeof st.poaHmrc==='object') ? Object.assign({}, _farmPrefs||{}, {poa:st.poaHmrc}) : null;
+      /* -347 Both keys merge onto whatever prefs already holds: saving a stock count must
+         not drop the payments on account, and the other way round. */
+      var _pfHas=false, _pfNext=Object.assign({}, _farmPrefs||{});
+      if(st.poaHmrc      && typeof st.poaHmrc==='object'){      _pfNext.poa   = st.poaHmrc;      _pfHas=true; }
+      if(st.stockCounts  && typeof st.stockCounts==='object'){  _pfNext.stock = st.stockCounts;  _pfHas=true; }
+      var pref = _pfHas ? _pfNext : null;
       /* Rainfall: where the farm is and how it keeps its rain book, in their own
          statement so a database without the columns still saves the rest. Sent
          only once a rain setting was chosen on, or brought to, this device, so a
@@ -2671,7 +2680,7 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
         { all: core,  fatal: true },
         { all: extra, warn: 'Profile: optional fields (VAT/tax/business-type) not saved \u2014 run the profile-schema migrations in Supabase.' },
         { all: cons,  warn: 'Profile: privacy consent not recorded \u2014 run the consent migration in Supabase.' },
-        { all: (pref ? { prefs: pref } : {}), warn: 'Profile: payments on account not saved', done: function(){ _farmPrefs = pref; } },
+        { all: (pref ? { prefs: pref } : {}), warn: 'Profile: payments on account and year-end stock not saved', done: function(){ _farmPrefs = pref; } },
         { all: rainc, warn: 'Profile: rainfall location and settings not saved \u2014 run tools/uk-rainfall-schema.sql in Supabase.' }
       ];
       var extraOk = true, firstErr = null, stale = [];

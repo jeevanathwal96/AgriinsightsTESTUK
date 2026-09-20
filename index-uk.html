@@ -23771,6 +23771,121 @@ function ukStockGap(){
   return o;
 }
 
+/* -347 What we can work out ourselves, so the farmer is correcting a figure rather than
+   inventing one. Three lines only, and each says where it came from, because the records
+   carry these three well and carry nothing else well at all. */
+function ukStockDerived(fy){
+  var out = { livestock:0, grain:0, diesel:0, why:{}, qty:{} };
+  try{
+    /* Already valued, at deemed cost - cattle 60%, sheep and pigs 75% of market. */
+    var L = (typeof _lsHmrcCompute === 'function') ? _lsHmrcCompute() : null;
+    if(L && L.T && L.T.closeV > 0){
+      out.livestock = Math.round(L.T.closeV);
+      out.qty.livestock = (L.T.close || 0) + ' head';
+      out.why.livestock = 'Already valued at deemed cost \u2014 cattle 60%, sheep and pigs 75%';
+    }
+  }catch(e){}
+  try{
+    /* Harvested less delivered. The delivered event is only written when money was
+       entered, so grain sold on a deferred price still reads as standing here - which
+       is why this arrives as a figure to correct and not as an answer. */
+    var hv = 0, dv = 0;
+    ((window.ST_CROP && ST_CROP.events) || []).forEach(function(e){
+      if(!e || !e.date) return;
+      if(typeof fyOf === 'function' && fyOf(e.date) !== fy) return;
+      if(e.kind === 'harvested') hv += Number(e.tons) || 0;
+      else if(e.kind === 'delivered') dv += Number(e.tons) || 0;
+    });
+    var left = Math.round((hv - dv) * 10) / 10;
+    if(left > 0){
+      var pr = 0;
+      try{ pr = (typeof cropPrice === 'function') ? (cropPrice('Wheat') || 0) : 0; }catch(e){}
+      if(!(pr > 0)) pr = 180;
+      out.grain = Math.round(left * pr);
+      out.qty.grain = left + ' t';
+      out.why.grain = 'Harvested ' + Math.round(hv) + ' t, delivered ' + Math.round(dv) + ' t';
+    }
+  }catch(e){}
+  try{
+    /* Litres bought less litres issued, from the logbook that already tracks every one.
+       Two things this must not get wrong.
+
+       The price per litre comes only from the purchases that actually carry litres.
+       aiDieselStats().spend counts every diesel purchase including the ones with no
+       quantity on them, so spend / bought is not a price at all - on the demo farm it
+       made red diesel \u00a33.98 a litre and put \u00a317,125 of fuel in a tank holding
+       \u00a33,000 of it.
+
+       And "unlogged" means bought but never recorded as issued, which is only the same
+       thing as "still in the tank" on a farm that actually keeps the issue log. Where
+       nothing has ever been issued we have no evidence of a tank level, so the line is
+       offered empty with its workings rather than pre-filled with the whole year's
+       purchases. */
+    var D = (typeof aiDieselStats === 'function') ? aiDieselStats(fy) : null;
+    if(D && D.unlogged > 0){
+      var lit = 0, cost = 0;
+      ((window.ST && ST.txns) || []).forEach(function(t){
+        if(!t || t.type !== 'expense' || String(t.cat || '') !== 'Fuel & Oil') return;
+        if(typeof fyOf === 'function' && fyOf(t.date) !== fy) return;
+        if(!/diesel/i.test(String(t.desc || ''))) return;
+        if(!(t.qty > 0) || (typeof _aiIsLitre === 'function' && !_aiIsLitre(t.unit))) return;
+        lit += Number(t.qty) || 0; cost += Math.abs(Number(t.amt) || 0);
+      });
+      var ppl = (lit > 0 && cost > 0) ? (cost / lit) : 0;
+      if(!(ppl > 0.2 && ppl < 3)) ppl = 0.7;          /* a litre of red diesel, roughly */
+      var keptLog = (D.logged + D.nonQual) > 0;
+      out.qty.diesel = Math.round(D.unlogged) + ' \u2113';
+      out.why.diesel = keptLog
+        ? ('Logbook: ' + Math.round(D.bought) + ' \u2113 bought, ' + Math.round(D.logged + D.nonQual) + ' \u2113 issued, at \u00a3' + ppl.toFixed(2) + ' a litre')
+        : ('' + Math.round(D.bought) + ' \u2113 bought and none recorded as issued \u2014 we cannot tell what is left, so this one is yours');
+      if(keptLog) out.diesel = Math.round(D.unlogged * ppl);
+    }
+  }catch(e){}
+  return out;
+}
+
+/* What was spent on each asked line this year, so the box has something beside it to
+   reckon against - which is what an accountant asks on the phone anyway. */
+function ukStockSpend(fy, cats){
+  var t = 0;
+  try{
+    ((window.ST && ST.txns) || []).forEach(function(x){
+      if(!x || x.type !== 'expense' || !x.date) return;
+      if(typeof fyOf === 'function' && fyOf(x.date) !== fy) return;
+      var c = String(x.cat || '');
+      for(var i = 0; i < cats.length; i++){ if(cats[i].test(c)){ t += Number(x.amt) || 0; return; } }
+    });
+  }catch(e){}
+  return Math.round(t);
+}
+
+var UK_STOCK_ASKED = [
+  { k:'fert',  nm:'Fertiliser still in the shed', cats:[/fertilis/i, /lime/i] },
+  { k:'feed',  nm:'Feed and forage',              cats:[/feed/i, /forage/i, /straw/i] },
+  { k:'seed',  nm:'Seed and sprays',              cats:[/seed/i, /spray/i, /chemical/i, /agrochem/i] },
+  { k:'other', nm:'Anything else in store',       cats:[] }
+];
+
+/* The stored count for a year, and the adjustment it makes to that year's profit.
+   Closing stock increases profit; last year's closing is this year's opening and comes
+   straight back out again, so only the MOVEMENT is ever added. */
+function ukStockClosing(fy){
+  try{
+    var sc = (window.ST && ST.stockCounts) || null;
+    var r = sc && sc[String(fy)];
+    return (r && isFinite(r.total)) ? Math.round(r.total) : null;
+  }catch(e){ return null; }
+}
+function ukStockAdj(fy){
+  try{
+    if(window.ST && ST.cashBasis) return 0;      /* no stock adjustment on the cash basis */
+    var close = ukStockClosing(fy);
+    if(close == null) return 0;
+    var open = ukStockClosing(fy - 1);
+    return close - (open == null ? 0 : open);
+  }catch(e){ return 0; }
+}
+
 /* The permanent half of the same thing: one quiet word under a figure that is not
    wrong, only unfinished. It asks for nothing, so it can sit there all year. */
 function ukProvisionalNote(){
@@ -51978,8 +52093,135 @@ function _taxFYProfit(offset){
   var now={m:MN[_p[0]]!==undefined?MN[_p[0]]:4,y:parseInt(_p[1],10)||2024}, fyStart=(ST.fyStartMonth||3)-1;
   var curFY=((typeof getCurrentFY==='function')?getCurrentFY():(now.m>=fyStart?now.y:now.y-1))+(offset||0), inc=0,exp=0,byCat={};
   (ST.txns||[]).forEach(function(t){ var d=parseDate(t.date); if(!d) return; if(_fyOfParts(d)!==curFY) return; if(t.type==='income') inc+=t.amt; else if(t.type==='expense'){ var _a=(typeof ukAllowableExpense==='function')?ukAllowableExpense(t):t.amt; exp+=_a; byCat[_catOf(t)]=(byCat[_catOf(t)]||0)+_a; } });
-  return {income:inc,expenses:exp,profit:inc-exp,byCat:byCat};
+  /* -347 Closing stock increases the year's TAXABLE profit, and last year's closing
+     comes back out as this year's opening, so only the MOVEMENT is added. Accruals only
+     - on the cash basis ukStockAdj() returns 0, because HS232's rules do not apply to it.
+     Deliberately here and not in _txFyIE: that one is the raw income and expenses a P&L
+     is built from, where closing stock belongs on its own line rather than folded into
+     income. Taxable profit is the figure this adjustment actually changes. */
+  var _sadj=0; try{ if(typeof ukStockAdj==='function') _sadj=ukStockAdj(curFY); }catch(e){}
+  return {income:inc,expenses:exp,profit:inc-exp+_sadj,stockAdj:_sadj,byCat:byCat};
 }
+/* -347 Four boxes and three worked-out lines, in the tab the pack is sent from. Not a
+   separate module and not a walk round the shed with a wizard: the farmer meets it at the
+   one moment in the year they are already gathering things for the accountant. */
+function ukStockCardHTML(fy){
+  /* A year, or nothing. Anything else is a caller's mistake and must not reach fyLabel()
+     or the transaction filter, both of which fail quietly on an object. */
+  fy = parseInt(fy, 10);
+  if(!isFinite(fy)) fy = (typeof getCurrentFY === 'function') ? getCurrentFY() : 0;
+  var lbl = (typeof fyLabel === 'function') ? fyLabel(fy) : String(fy);
+  var g   = (typeof ukStockGap === 'function') ? ukStockGap() : {cashBasis:false};
+  /* fmt() is this app's money formatter; money() does not exist here, and the fallback
+     was quietly printing \u00a3113880 without its separators. */
+  var m   = function(n){
+    if(typeof fmt === 'function') return fmt(n);
+    var sym = (typeof _curSym === 'function') ? _curSym() : '\u00a3';
+    return sym + ((typeof _grpInt === 'function') ? _grpInt(n) : Math.round(n||0));
+  };
+
+  var head = '<div class="tx-card" style="margin-bottom:12px"><div class="tx-h">Year-end stock \u00b7 ' + esc(lbl) + '</div>';
+
+  /* On the cash basis there is nothing to count. Saying so is worth more than silence. */
+  if(g.cashBasis){
+    return head + '<div class="txb-note"><b>You don\u2019t need a stock figure.</b> You work out your profit on the ' +
+      'cash basis, and HMRC\u2019s farm stock rules do not apply to it \u2014 so your profit for the year is already ' +
+      'final. Claiming farmers\u2019 averaging or electing the herd basis would rule the cash basis out.</div></div>';
+  }
+
+  var saved = (window.ST && ST.stockCounts && ST.stockCounts[String(fy)]) || null;
+  var open  = ukStockClosing(fy - 1);
+  var der   = ukStockDerived(fy);
+  var vatOn = !!(window.ST && (ST.vatRegistered === true || ST.vatRegistered === 'yes'));
+
+  if(saved){
+    var adj = ukStockAdj(fy);
+    return head +
+      '<div class="txb-note"><b>Counted \u2014 ' + m(saved.total) + ' in store at your year end.</b> ' +
+      (open == null
+        ? 'There is no opening figure for last year, so the whole amount is added to this year\u2019s profit.'
+        : 'Opening stock was ' + m(open) + ', so ' + (adj >= 0 ? 'this year\u2019s profit rises by ' : 'this year\u2019s profit falls by ') + m(Math.abs(adj)) + '.') +
+      ' <span style="color:var(--t4)">Counted ' + esc(String(saved.at || '').slice(0, 10)) + '.</span>' +
+      '<div class="txc-btns" style="margin-top:10px;max-width:360px">' +
+        '<span class="txb-b sec" onclick="ukStockForget(' + fy + ')">Count it again</span>' +
+      '</div></div></div>';
+  }
+
+  var row = function(k, nm, why, val, ro){
+    return '<div style="display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--br2)">' +
+      '<div style="flex:1;min-width:0"><div style="font-size:12.5px;font-weight:700">' + esc(nm) + '</div>' +
+      '<div style="font-size:11px;color:var(--t4)">' + why + '</div></div>' +
+      '<input id="stk-' + k + '" type="number" min="0" step="1" inputmode="decimal" value="' + (val > 0 ? String(val) : '') + '" ' +
+      'placeholder="0" style="width:120px;text-align:right;padding:7px 9px;border:1px solid ' + (ro ? 'var(--gm)' : 'var(--br)') +
+      ';border-radius:8px;background:' + (ro ? 'var(--gb)' : '#fff') + ';font:inherit;font-size:12.5px"></div>';
+  };
+
+  var known = '';
+  if(der.livestock > 0) known += row('livestock', 'Livestock', (der.qty.livestock ? der.qty.livestock + ' \u00b7 ' : '') + der.why.livestock, der.livestock, true);
+  if(der.grain > 0)     known += row('grain', 'Grain in store', (der.qty.grain ? der.qty.grain + ' \u00b7 ' : '') + der.why.grain, der.grain, true);
+  if(der.diesel > 0)    known += row('diesel', 'Red diesel', (der.qty.diesel ? der.qty.diesel + ' \u00b7 ' : '') + der.why.diesel, der.diesel, true);
+
+  var asked = UK_STOCK_ASKED.map(function(a){
+    var spent = a.cats.length ? ukStockSpend(fy, a.cats) : 0;
+    var hint  = spent > 0 ? m(spent) + ' bought this year' : 'Leave blank if none';
+    return row(a.k, a.nm, hint, 0, false);
+  }).join('');
+
+  var grp = function(t){ return '<div style="font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--t3);padding:10px 0 4px">' + t + '</div>'; };
+
+  return head +
+    '<div style="font-size:12px;color:var(--t2);margin-bottom:4px">What was in store on the last day of your year is part of this year\u2019s profit. ' +
+      'Until it is counted, every figure on this page says provisional.</div>' +
+    (known ? grp('We worked these out \u2014 check and correct') + known : '') +
+    grp('Only you know these') + asked +
+    '<div class="txb-note" style="margin-top:10px">' +
+      '<b>Value it at what it cost you</b>' + (vatOn
+        ? ' \u2014 and because you are VAT registered, <b>excluding VAT</b>, since you get that back.'
+        : ' \u2014 including VAT, since you are not registered and cannot reclaim it.') +
+      (open != null ? ' Opening stock, carried from last year, was ' + m(open) + '.' : '') +
+    '</div>' +
+    '<div class="txc-btns" style="margin-top:10px;max-width:420px">' +
+      '<span class="txb-b pri" onclick="ukStockSave(' + fy + ')">Save the count</span>' +
+      '<span class="txb-b sec" onclick="toast(\'Left provisional \u2014 your accountant can add it later\',\'success\')">My accountant will do this</span>' +
+    '</div></div>';
+}
+
+function _ukStockPersist(){
+  try{ if(typeof dataChanged==='function') dataChanged(); else if(typeof saveState==='function') saveState(); }catch(e){}
+  try{ if(!window.__AI_GUEST && window.AI && AI.farm && AI.farm.active() && AI.profile && AI.profile.save)
+         AI.profile.save(ST).catch(function(e){ console.error('Year-end stock not saved to the server', e); }); }catch(e){}
+  try{ if(typeof _txRerenderReports==='function') _txRerenderReports(); }catch(e){}
+  try{ if(typeof renderAttnCard==='function') renderAttnCard(); }catch(e){}
+  try{ if(typeof nav==='function' && typeof CURRENT_PAGE!=='undefined') nav(CURRENT_PAGE); }catch(e){}
+}
+
+function ukStockSave(fy){
+  var num=function(id){ var el=document.getElementById(id); if(!el) return 0;
+    var v=String(el.value||'').replace(/[\u00a3,\s]/g,''); return v===''?0:Number(v); };
+  var keys=['livestock','grain','diesel'].concat(UK_STOCK_ASKED.map(function(a){ return a.k; }));
+  var parts={}, total=0, bad=null;
+  keys.forEach(function(k){
+    var v=num('stk-'+k);
+    if(!isFinite(v) || v<0){ bad=bad||k; return; }
+    if(v>0){ parts[k]=Math.round(v); total+=Math.round(v); }
+  });
+  if(bad){ toast('That figure needs to be a number, or left blank','error');
+    var e=document.getElementById('stk-'+bad); if(e) e.focus(); return; }
+  if(total<=0){ toast('Enter at least one figure, or use \u201cmy accountant will do this\u201d','error'); return; }
+  ST.stockCounts=(ST.stockCounts && typeof ST.stockCounts==='object') ? ST.stockCounts : {};
+  ST.stockCounts[String(fy)]={ total:total, parts:parts, at:new Date().toISOString(), basis:'cost' };
+  _ukStockPersist();
+  toast('Counted \u2014 this year\u2019s figures are no longer provisional','success');
+}
+function ukStockForget(fy){
+  if(ST.stockCounts) delete ST.stockCounts[String(fy)];
+  _ukStockPersist();
+  toast('Removed \u2014 the figures are provisional again','success');
+}
+window.ukStockSave=ukStockSave; window.ukStockForget=ukStockForget;
+window.ukStockCardHTML=ukStockCardHTML; window.ukStockDerived=ukStockDerived;
+window.ukStockClosing=ukStockClosing; window.ukStockAdj=ukStockAdj;
+
 function _taxFYVat(){
   if(typeof FARM==='undefined'||!FARM.vat) return 0;
   var _p=(currentPeriodLabel()).split(' '), MN={Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
@@ -54350,6 +54592,20 @@ function taxGlanceHTML(){
       : (wk.erNiPayable?'Employer NI payable — report it on the FPS':'Employer NI covered by the Employment Allowance'),1]); }
   h+='<div class="tx-card" style="margin-bottom:12px"><div class="tx-h">Tax-health check</div><div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px 18px">'+chk.map(function(c){ var col=c[2]===1?'var(--gm)':c[2]===0?'#B45309':'var(--t4)'; return '<div style="display:flex;gap:8px;align-items:center;font-size:12px"><span style="color:'+col+';font-weight:800">'+c[0]+'</span><span style="color:'+(c[2]===0?'#7a4a10':'var(--t2)')+'">'+esc(c[1])+'</span></div>'; }).join('')+'</div></div>';
 
+  /* -347 NOT `fy`: in this function that name holds _taxFYProfit(0), a profit object.
+     Passing it printed "6 Apr [object Object]" and silently matched no transactions, so
+     every spend hint read "leave blank if none".
+
+     And not the CURRENT year either. Closing stock is what was in the shed on a year end,
+     so the only year that can be counted is one that has actually ended - which is the
+     same year ukStockGap() is asking about. Counting the running year stored a figure
+     under a key nothing was looking for: the count saved, profit moved, and the word
+     "provisional" stayed on screen because the year it asks about was still unanswered. */
+  try{
+    var _sg = (typeof ukStockGap==='function') ? ukStockGap() : null;
+    var _sfy = (_sg && _sg.fy != null) ? _sg.fy : ((typeof getCurrentFY==='function') ? getCurrentFY() : null);
+    h += ukStockCardHTML(_sfy);
+  }catch(e){}
   h+='<div class="tx-btn" onclick="taxAccountantPack()">📤 Share HMRC-ready pack with your accountant</div>';
   h+='<div class="tx-disc"><b>Everything here is a helper to plan with — not a filed return.</b> Figures are worked out from your records; rates are reviewed each Budget ('+esc((STATUTORY&&STATUTORY.tax&&STATUTORY.tax.yearLabel)||'2026/27')+' tables). These figures follow HMRC’s rules rather than just adding everything up. It’s still not tax advice — other money you earn, or farming on the side rather than as your main work, can change the answer. Confirm the final numbers with your accountant.'+(ukIsCompany()?' A company\u2019s losses follow the corporation tax rules (CTA 2010), not the five-year farming-loss restriction.':' And if the farm has been loss-making for several years running, ask them about the five-year farming-loss restriction (ITA 2007 s67\u201370), which can stop those losses being set against your other income.')+'</div>';
   return h;
