@@ -18354,6 +18354,12 @@ var pSub = $('season-ytd-profit-sub');
       pSub.textContent = profit >= 0 ? 'Profit so far this tax year' : 'Loss so far this tax year';
       pSub.className = 'skpi-sub muted';
     }
+    /* -345 Not an alert and not a badge: the same grey sub-line every tile already has,
+       carrying one word. The figure is not wrong, it is unfinished. */
+    try{
+      var _pn = (typeof ukProvisionalNote === 'function') ? ukProvisionalNote() : '';
+      if(_pn) pSub.textContent = pSub.textContent + ' \u00b7 ' + _pn;
+    }catch(e){}
   }
 
 var _MN = {Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
@@ -21016,7 +21022,23 @@ function laBuildReport(){ laPersist(); closeAffordabilityFlow(); laStartReport(t
 /* ════════════════ BANKABILITY REPORT + CHECK-YOUR-FIGURES (Stage 2) ════════════════ */
 var LA_REPORT_LOAN=true;
 function laRR(n){ return _moneyInt(n); }
-function laCropValue(){ try{ var t=0; ((typeof ST_CROP!=='undefined'&&ST_CROP.crops)||[]).forEach(function(c){ if(c && c.ha>0 && c.yield>0){ t+=c.ha*c.yield*_cropPriceOf(c); } }); return Math.round(t); }catch(e){ return 0; } }
+/* -345 This read ST_CROP.crops, .ha and .yield - none of which exist. The store is
+   ST_CROP.lands, with .area and actual-or-target yield, so the function returned 0 for
+   every farm since it was written and the bankability report's "crops in the field"
+   has always been typed from scratch over a dead pre-fill. */
+function laCropValue(){
+  try{
+    var t = 0;
+    ((typeof ST_CROP !== 'undefined' && ST_CROP.lands) || []).forEach(function(l){
+      if(!l || !(l.area > 0)) return;
+      if(typeof cropPlanted === 'function' && !cropPlanted(l)) return;
+      var y = (typeof cropLandYield === 'function') ? cropLandYield(l) : ((l.actualYield != null ? l.actualYield : l.targetYield) || 0);
+      var pr = (typeof cropLandPrice === 'function') ? cropLandPrice(l) : _cropPriceOf({crop:l.crop, price:l.price});
+      if(y > 0 && pr > 0) t += l.area * y * pr;
+    });
+    return Math.round(t);
+  }catch(e){ return 0; }
+}
 function laRM(n){ var v=Math.round((n||0)/100000)/10; return _curSym()+v.toFixed(1).replace(/\.0$/,'')+'m'; }
 
 // affordability compute straight from saved ST_LOANAPP (no DOM) — for the report's pro-forma
@@ -23669,6 +23691,82 @@ function _astFmtDate(d){ try{ return (typeof txDispDate==='function' && d) ? txD
    That last page is the product. The complaint in the research was not that records
    were incomplete; it was that they arrived incomplete WITHOUT A NOTE saying so.
    ────────────────────────────────────────────────────────────────────────────── */
+/* -345 One answer, for every screen that has to decide whether this farm still owes a
+   year-end stock figure - and, separately, whether this is the moment to say so.
+
+   Two findings shape it. HS232 is explicit that the farm stock rules "do not apply to
+   farmers who calculate profits using cash basis", and since 2024/25 the cash basis is
+   the DEFAULT for sole traders and partnerships: most farms should never be asked at
+   all, and their profit is already final. And the count is a snapshot at one date, so
+   asking about it in July helps nobody - the ask is time-bound to the farm's OWN year
+   end, taken from settings, never a hardcoded 5 April. */
+function ukStockGap(){
+  var o = { cashBasis:false, hasRecords:false, hasFigure:false, needed:false, show:false,
+            closed:false, days:0, daysOver:0, label:'', fy:null };
+  try{
+    o.cashBasis = !!(window.ST && ST.cashBasis);
+
+    var today = (window.APP_TODAY ? new Date(APP_TODAY) : new Date());
+    today = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+
+    var sm = (typeof fyStartMonth === 'function') ? (fyStartMonth()|0) : (((window.ST&&ST.fyStartMonth)|0) || 4);
+    var sd = (typeof fyStartDay   === 'function') ? (fyStartDay()|0)   : (((window.ST&&ST.fyStartDay)|0)   || 6);
+    if(sm < 1 || sm > 12) sm = 4;
+    if(sd < 1 || sd > 31) sd = 6;
+
+    /* The year END is the day before the year START, so both fall out of one setting. */
+    var startThis = new Date(today.getFullYear(), sm - 1, sd);
+    if(today < startThis) startThis = new Date(today.getFullYear() - 1, sm - 1, sd);
+    var endThis = new Date(startThis.getFullYear() + 1, sm - 1, sd); endThis.setDate(endThis.getDate() - 1);
+    var endPrev = new Date(startThis); endPrev.setDate(endPrev.getDate() - 1);
+
+    var DAY = 86400000;
+    o.days     = Math.round((endThis - today) / DAY);
+    o.daysOver = Math.round((today - endPrev) / DAY);
+
+    var MN = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    o.label = endThis.getDate() + ' ' + MN[endThis.getMonth()];
+
+    /* A farm with nothing on the books has nothing in the shed to count either, and a
+       first-day farmer should not meet a stock deadline before their first sale. */
+    var nLand = ((window.ST_CROP && ST_CROP.lands) || []).length;
+    var nHerd = ((window.ST_LS   && ST_LS.herd)    || []).length;
+    var nTxn  = ((window.ST      && ST.txns)       || []).length;
+    o.hasRecords = !!(nLand || nHerd || nTxn >= 5);
+
+    /* The store -346 writes into. Reading it now costs nothing and keeps the two builds
+       honest about which year a figure belongs to. */
+    var sc = (window.ST && ST.stockCounts) || null;
+    o.fy = (typeof fyOf === 'function') ? fyOf(endPrev.toISOString().slice(0,10)) : (startThis.getFullYear() - 1);
+    o.hasFigure = !!(sc && sc[String(o.fy)]);
+
+    o.needed = !o.cashBasis && o.hasRecords && !o.hasFigure;
+
+    /* Closed and unanswered, from the year end until the return for it is due - after
+       which the year is filed, or late for bigger reasons than this. */
+    var dl = new Date(endPrev.getFullYear() + (endPrev.getMonth() >= 3 ? 1 : 0), 0, 31);
+    o.daysToDue = Math.round((dl - today) / DAY);
+    o.closed = o.needed && (today > endPrev) && (today <= dl);
+
+    /* But "until answered" is not the same as "every day until answered". A farm that
+       never answers would carry this for ten months of twelve, which is the wallpaper
+       the whole design is trying to avoid. So it PULSES on the two dates where
+       something actually changed: just after the year end, while the shed is still
+       fresh in mind, and again as the return falls due. In between it is silent - the
+       farmer has been told, and nothing new has happened. */
+    o.fresh = o.closed && o.daysOver <= 60;
+    o.due   = o.closed && o.daysToDue <= 42;
+    o.show  = o.needed && (o.fresh || o.due || (o.days >= 0 && o.days <= 42));
+  }catch(e){}
+  return o;
+}
+
+/* The permanent half of the same thing: one quiet word under a figure that is not
+   wrong, only unfinished. It asks for nothing, so it can sit there all year. */
+function ukProvisionalNote(){
+  try{ var g = ukStockGap(); return g.needed ? 'provisional' : ''; }catch(e){ return ''; }
+}
+
 function packGaps(fy){
   var g=[];
   /* Bank: not a reconciliation, just how stale the last agreed figure is. */
@@ -23704,11 +23802,16 @@ function packGaps(fy){
       why:esc(noDoc.slice(0,3).join(', '))+(noDoc.length>3?' and '+(noDoc.length-3)+' more':''), where:'Fixed asset register'});
   }catch(e){}
   /* Year-end stock, which the app cannot answer at all. Only asked of farms on the
-     accruals basis - under the cash basis, stock is not brought into the profit. */
-  if(!(window.ST && ST.cashBasis)){
-    g.push({what:'Year-end stock not counted',
-      why:'Feed, fertiliser, fuel and grain in store are not valued, so the profit is provisional', where:'Livestock and crops'});
-  }
+     accruals basis - under the cash basis, stock is not brought into the profit.
+     -345 routes the decision through ukStockGap() so every screen agrees, including
+     the farm that has nothing on the books yet. */
+  try{
+    var _sg = ukStockGap();
+    if(_sg.needed){
+      g.push({what:'Year-end stock not counted',
+        why:'Feed, fertiliser, fuel and grain in store are not valued, so the profit is provisional', where:'Livestock and crops'});
+    }
+  }catch(e){}
   return g;
 }
 /* The pieces, in the order an accountant works through them. Each is a builder that
@@ -24010,6 +24113,16 @@ function packMissingHTML(fy){
       gaps.map(function(g){ return '<tr><td class="pk-miss">!</td><td>'+g.what+'</td><td>'+g.why+'</td><td>'+esc(g.where)+'</td></tr>'; }).join('')+
       '</table>';
   }
+  /* -345 A farm on the cash basis is not missing a stock figure - it does not need one.
+     Saying so is worth more than silence: it is a job their neighbour's accountant
+     still charges for. */
+  try{
+    if(ukStockGap().cashBasis){
+      h+='<div class="pk-note"><b>Stock is not needed for this pack.</b> You work out your profit on the cash '+
+         'basis, and HMRC\u2019s farm stock rules do not apply to it, so the figures here are final rather than '+
+         'provisional. Claiming farmers\u2019 averaging or electing the herd basis would rule the cash basis out.</div>';
+    }
+  }catch(e){}
   h+='<div class="pk-note">This page is generated, not written. Anything the records could not confirm is listed '+
      'as missing rather than assumed.</div>';
   return h;
@@ -62770,6 +62883,31 @@ function _attnDate(d){
 }
 function attnItems(){
   var out = [], t = _attnToday();
+
+  /* -345 Year-end stock. Six weeks out it is a heads-up, ranked low, because the point
+     is lead time to walk the shed - a farmer who first hears about this the day after
+     the year end is reconstructing last week from memory. Once the year has closed it
+     rises, because the figure is then the only thing standing between them and a return
+     that is right. Never on the cash basis, and never on a farm with no records for
+     stock to have come from. */
+  try{
+    var _sg = (typeof ukStockGap === 'function') ? ukStockGap() : null;
+    if(_sg && _sg.show){
+      out.push({ tier:'money', sev: _sg.due ? 80 : (_sg.fresh ? 74 : 46), nm:'Year-end stock',
+        lead: _sg.due
+          ? 'Your return is due and last year\u2019s stock is still not counted'
+          : (_sg.fresh
+            ? 'Last year cannot be finished until this is answered'
+            : 'Your year ends ' + _sg.label + ' \u2014 you will be asked what is in store'),
+        sub: _sg.closed
+          ? 'Feed, fertiliser, fuel and grain in store are part of last year\u2019s profit'
+          : 'Time to walk the shed while it is still there to look at',
+        st: _sg.due ? ('due in ' + _sg.daysToDue + 'd') : (_sg.fresh ? (_sg.daysOver + 'd over') : ('in ' + _sg.days + ' days')),
+        when: _sg.closed ? -_sg.daysOver : _sg.days,
+        cta:'Open the pack',
+        action: function(){ try{ accPreviewYearEnd(); }catch(e){} } });
+    }
+  }catch(e){}
 
   /* UK modules that had engines and no way in. The attention card is the right door
      for all three: each is time-bound, and a farmer should meet them because the date
