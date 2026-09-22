@@ -375,43 +375,108 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
   let CAN_UPDATED_AT   = false;   /* tools/uk-relational-sync.sql */
   let CAN_CAT_RULES    = false;   /* the category_rules table */
   let CAN_RULE_HITS    = false;   /* tools/uk-category-rules-hits.sql */
+  /* ---- what this database actually has, asked once ------------------------
+     Ported from SA -438, same reasoning. Every late-added column is gated on a
+     CAN_* flag, and each flag cost its own round trip in series on every
+     finance-core load. Worse, `catch(e){ return false; }` read a dropped
+     connection as "the column is not there" - and CAN_UPDATED_AT switching off
+     disables the row memory, the write guard and the read-back across every
+     table at once.
+
+     Definitive answers are now cached for the session and never re-asked, so a
+     column known to exist can never be un-learned by a bad moment on the line; a
+     probe that could not reach the server is not an answer and is not stored.
+     app_columns() settles the whole set in one request where it has been created,
+     and the probes still work where it has not. See tools/uk-app-columns.sql. */
+  var _colCache = Object.create(null);
+  var _colRpcDead = false;
+
+  async function _probeCol(table, col){
+    try{
+      const r = await client().from(table).select(col).limit(1);
+      if(!r.error) return true;
+      const code = String((r.error && r.error.code) || '');
+      const msg  = String((r.error && r.error.message) || '');
+      if(code === '42703' || code === 'PGRST204') return false;
+      if(/does not exist|Could not find the/i.test(msg) && /column/i.test(msg)) return false;
+      return null;                       // could not ask - not an answer
+    }catch(e){ return null; }
+  }
+
+  async function _learnCols(pairs){
+    const want = pairs.filter(function(p){ return !((p[0] + '.' + p[1]) in _colCache); });
+    if(!want.length) return;
+    if(!_colRpcDead){
+      const tables = [];
+      want.forEach(function(p){ if(tables.indexOf(p[0]) < 0) tables.push(p[0]); });
+      let rows = null;
+      try{
+        const r = await client().rpc('app_columns', { p_tables: tables });
+        if(!r.error && Array.isArray(r.data)) rows = r.data;
+        else if(r.error) _colRpcDead = true;
+      }catch(e){ _colRpcDead = true; }
+      if(rows){
+        const seen = Object.create(null);
+        rows.forEach(function(row){ seen[String(row.t) + '.' + String(row.c)] = true; });
+        want.forEach(function(p){ _colCache[p[0] + '.' + p[1]] = !!seen[p[0] + '.' + p[1]]; });
+        return;
+      }
+    }
+    const answers = await Promise.all(want.map(function(p){ return _probeCol(p[0], p[1]); }));
+    want.forEach(function(p, i){
+      if(answers[i] !== null) _colCache[p[0] + '.' + p[1]] = answers[i];
+    });
+  }
+
+  var CAP_COLS = [
+    ['transactions','cat_confirmed'], ['transactions','asset_id'], ['transactions','ded_confirmed'],
+    ['transactions','receipt_path'], ['transactions','counterparty'], ['transactions','updated_at'],
+    ['assets','no_payment'], ['assets','disposed_on'], ['assets','first_used'], ['assets','finance_kind'],
+    ['farms','consent_version'], ['farms','partners'], ['farms','rain_prefs'], ['farms','budget_cat_targets'],
+    ['orchard_block_docs','path'], ['transaction_assets','asset_id'], ['livestock_moves','txn_ref'],
+    ['category_rules','match_text'], ['category_rules','hits']
+  ];
+
   async function probeCaps(farmId){
     if (!farmId) return;
-    /* Probe with a real column name. NOT select=count — PostgREST treats count as an
-       aggregate and returns 200 whether or not the column exists, so it would report
-       every column as present. */
-    const has = async (table, col) => {
-      try{ const r = await client().from(table).select(col).limit(1); return !r.error; }
-      catch(e){ return false; }
+    await _learnCols(CAP_COLS);
+    /* Only a cached TRUE turns a flag on, and an unanswered probe leaves the flag
+       exactly as it was. */
+    const keep = function(cur, t, c){
+      const k = t + '.' + c;
+      return (k in _colCache) ? _colCache[k] === true : cur;
     };
-    CAN_CAT_CONFIRM = await has('transactions', 'cat_confirmed');
-    CAN_TXN_ASSET   = await has('transactions', 'asset_id');
-    CAN_TXN_DEDOK   = await has('transactions', 'ded_confirmed');
-    CAN_ASSET_NOPAY = await has('assets',       'no_payment');
-    CAN_ASSET_GONE  = await has('assets',       'disposed_on');
-  CAN_ASSET_INUSE = await has('assets',       'first_used');
-  CAN_ASSET_FINANCE = await has('assets',     'finance_kind');
-    CAN_FARM_CONSENT= await has('farms',        'consent_version');
-    CAN_FARM_PARTNERS= await has('farms',        'partners');
-    CAN_FARM_RAIN    = await has('farms',        'rain_prefs');
-    CAN_TXN_RECEIPT = await has('transactions', 'receipt_path');
-    CAN_ORCH_DOCFILE= await has('orchard_block_docs','path');
-    CAN_TXN_PARTY   = await has('transactions','counterparty');
-    CAN_BUDGET_CATTGT= await has('farms',       'budget_cat_targets');
-  /* A table probe, not a column probe: selecting a column off a table that does not
-     exist errors the same way a missing column does, which is all we need to know. */
-  CAN_TXN_ASSETS  = await has('transaction_assets','asset_id');
-  CAN_MOVE_TXNREF = await has('livestock_moves','txn_ref');
-  /* The whole row-memory scheme rides on this one column. A project that has not
-     run agriinsights-13-relational-sync.sql keeps today's behaviour rather than
-     having every write rejected for an unknown column. */
-  CAN_UPDATED_AT  = await has('transactions','updated_at');
-  CAN_CAT_RULES   = await has('category_rules','match_text');
-  /* Usage counts are their own probe: the table was copied from SA, which does
-     not track them, so a UK project that has not run the hits migration must
-     still sync rules rather than have every rule write rejected. */
-  CAN_RULE_HITS   = await has('category_rules','hits');
+    CAN_CAT_CONFIRM   = keep(CAN_CAT_CONFIRM,   'transactions','cat_confirmed');
+    CAN_TXN_ASSET     = keep(CAN_TXN_ASSET,     'transactions','asset_id');
+    CAN_TXN_DEDOK     = keep(CAN_TXN_DEDOK,     'transactions','ded_confirmed');
+    CAN_ASSET_NOPAY   = keep(CAN_ASSET_NOPAY,   'assets','no_payment');
+    CAN_ASSET_GONE    = keep(CAN_ASSET_GONE,    'assets','disposed_on');
+    CAN_ASSET_INUSE   = keep(CAN_ASSET_INUSE,   'assets','first_used');
+    CAN_ASSET_FINANCE = keep(CAN_ASSET_FINANCE, 'assets','finance_kind');
+    CAN_FARM_CONSENT  = keep(CAN_FARM_CONSENT,  'farms','consent_version');
+    CAN_FARM_PARTNERS = keep(CAN_FARM_PARTNERS, 'farms','partners');
+    CAN_FARM_RAIN     = keep(CAN_FARM_RAIN,     'farms','rain_prefs');
+    CAN_TXN_RECEIPT   = keep(CAN_TXN_RECEIPT,   'transactions','receipt_path');
+    CAN_ORCH_DOCFILE  = keep(CAN_ORCH_DOCFILE,  'orchard_block_docs','path');
+    CAN_TXN_PARTY     = keep(CAN_TXN_PARTY,     'transactions','counterparty');
+    CAN_BUDGET_CATTGT = keep(CAN_BUDGET_CATTGT, 'farms','budget_cat_targets');
+    /* A table probe, not a column probe: selecting a column off a table that does not
+       exist errors the same way a missing column does, which is all we need to know. */
+    CAN_TXN_ASSETS    = keep(CAN_TXN_ASSETS,    'transaction_assets','asset_id');
+    CAN_MOVE_TXNREF   = keep(CAN_MOVE_TXNREF,   'livestock_moves','txn_ref');
+    /* The whole row-memory scheme rides on this one column. A project that has not
+       run uk-relational-sync.sql keeps today's behaviour rather than having every
+       write rejected - and one that HAS run it cannot lose the answer to a dropped
+       packet. */
+    CAN_UPDATED_AT    = keep(CAN_UPDATED_AT,    'transactions','updated_at');
+    CAN_CAT_RULES     = keep(CAN_CAT_RULES,     'category_rules','match_text');
+    /* Usage counts are their own question: the table was copied from SA, which does
+       not track them, so a UK project without the hits migration must still sync
+       rules rather than have every rule write rejected. */
+    CAN_RULE_HITS     = keep(CAN_RULE_HITS,     'category_rules','hits');
   }
+  probeCaps.reset = function(){ _colCache = Object.create(null); _colRpcDead = false; };
+  probeCaps.seen  = function(){ return _colCache; };
 
   /* ================== ROW MEMORY - two-device safety ===========================
      Ported from the SA build (Mobile Phase 0, -373), live with it since 11 Sep.
@@ -3139,7 +3204,8 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
   try{ global.addEventListener('online', function(){ sync.retryAll(); }); }catch(e){}
 
   // ---- EXPORT --------------------------------------------------------------
-  global.AI = { rain: rain, init: client, projectRef: PROJECT_REF, auth, farm, sync: sync, load, txn, account, budget, recurring, asset, loans,
+  global.AI = { __probeCaps: probeCaps, __client: client,
+                rain: rain, init: client, projectRef: PROJECT_REF, auth, farm, sync: sync, load, txn, account, budget, recurring, asset, loans,
                 coopSettlement: coopSettlement, livestock: livestock, crop: crop, orchard: orchard, plan: plan, workers: workersSave, profile: profile,
                 documents: documents, fuel: fuel,
                 rules: rules,
