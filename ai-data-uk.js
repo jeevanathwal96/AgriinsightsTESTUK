@@ -374,7 +374,8 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
   let CAN_BUDGET_CATTGT= false;   /* farms.budget_cat_targets */
   let CAN_UPDATED_AT   = false;   /* tools/uk-relational-sync.sql */
   let CAN_CAT_RULES    = false;   /* the category_rules table */
-  let CAN_RULE_HITS    = false;   /* tools/uk-category-rules-hits.sql */
+  let CAN_RULE_HITS    = false;
+  let CAN_ORCH_ATT     = false;   /* orchard_sprays.att - the mix sheet */   /* tools/uk-category-rules-hits.sql */
   /* ---- what this database actually has, asked once ------------------------
      Ported from SA -438, same reasoning. Every late-added column is gated on a
      CAN_* flag, and each flag cost its own round trip in series on every
@@ -434,7 +435,8 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     ['assets','no_payment'], ['assets','disposed_on'], ['assets','first_used'], ['assets','finance_kind'],
     ['farms','consent_version'], ['farms','partners'], ['farms','rain_prefs'], ['farms','budget_cat_targets'],
     ['orchard_block_docs','path'], ['transaction_assets','asset_id'], ['livestock_moves','txn_ref'],
-    ['category_rules','match_text'], ['category_rules','hits']
+    ['category_rules','match_text'], ['category_rules','hits'],
+    ['orchard_sprays','att']
   ];
 
   async function probeCaps(farmId){
@@ -474,6 +476,10 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
        not track them, so a UK project without the hits migration must still sync
        rules rather than have every rule write rejected. */
     CAN_RULE_HITS     = keep(CAN_RULE_HITS,     'category_rules','hits');
+    /* The mix sheet or operator record a grower attaches to a spray. orSaveSpray has
+       always captured it and osToDb never sent it, so it lived on one device and was
+       dropped on the next load - the column has sat on the table unused. */
+    CAN_ORCH_ATT      = keep(CAN_ORCH_ATT,      'orchard_sprays','att');
   }
   probeCaps.reset = function(){ _colCache = Object.create(null); _colRpcDead = false; };
   probeCaps.seen  = function(){ return _colCache; };
@@ -2167,8 +2173,12 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
   function ociToDb(key,c,fid){ c=c||{}; return { farm_id:fid, item_key:String(key), kind:c.type||null, icon:c.ic||null, title:c.title||null, what:c.what||null, status:c.status||null, status_tag:c.statusTag||null, expiry:c.expiry||null, cropcat:c.cropcat||null, log:(c.log!=null)?String(c.log):null }; }
   function opToDb(blockId,p,fid){ p=p||{}; var lo=p.local||{}; return { farm_id:fid, block_local_id:String(blockId), price:_n(p.price), comm:_n(p.comm), pack:_n(p.pack), ship:_n(p.ship), levy:_n(p.levy), levy_name:p.levyName||null, local_price:_n(lo.price), local_comm:_n(lo.comm), local_trans:_n(lo.trans), local_other:_n(lo.other) }; }
   function opFromDb(r,others){ return { price:Number(r.price)||0, comm:Number(r.comm)||0, pack:Number(r.pack)||0, ship:Number(r.ship)||0, levy:Number(r.levy)||0, levyName:r.levy_name||'', others:(others&&others.length)?others:[{label:'Other costs',amt:0}], local:{price:Number(r.local_price)||0,comm:Number(r.local_comm)||0,trans:Number(r.local_trans)||0,other:Number(r.local_other)||0} }; }
-  function osToDb(s,cat,fid){ return { farm_id:fid, local_id:String(s.id), cropcat:cat||null, block_local_id:(s.bid!=null&&s.bid!=='')?String(s.bid):null, product:s.product||null, reg:s.reg||null, target_for:s.forx||null, applied_by:s.by||null, spray_date:s.dateISO||null, phi_eu:_n(s.phi&&s.phi.eu), phi_uk:_n(s.phi&&s.phi.uk), phi_us:_n(s.phi&&s.phi.us), phi_local:_n(s.phi&&s.phi.local), title:s.t||null, sub:s.s||null, icon:s.ic||null }; }
-  function osFromDb(r){ return { id:r.local_id, ic:r.icon||'\uD83E\uDDEA', t:r.title||'', s:r.sub||'', phi:{eu:Number(r.phi_eu)||0,uk:Number(r.phi_uk)||0,us:Number(r.phi_us)||0,local:Number(r.phi_local)||0}, bid:r.block_local_id||'', product:r.product||'', reg:r.reg||'', forx:r.target_for||'', by:r.applied_by||'', dateISO:r.spray_date||'', cropcat:r.cropcat||'' }; }
+  function osToDb(s,cat,fid){ var row = { farm_id:fid, local_id:String(s.id), cropcat:cat||null, block_local_id:(s.bid!=null&&s.bid!=='')?String(s.bid):null, product:s.product||null, reg:s.reg||null, target_for:s.forx||null, applied_by:s.by||null, spray_date:s.dateISO||null, phi_eu:_n(s.phi&&s.phi.eu), phi_uk:_n(s.phi&&s.phi.uk), phi_us:_n(s.phi&&s.phi.us), phi_local:_n(s.phi&&s.phi.local), title:s.t||null, sub:s.s||null, icon:s.ic||null };
+    /* Never sent: the farmer photographed the mix sheet, it saved locally, and the next
+       server load discarded it. The SA build has written this since -411. */
+    if(CAN_ORCH_ATT) row.att = s.att || null;
+    return row; }
+  function osFromDb(r){ return { id:r.local_id, ic:r.icon||'\uD83E\uDDEA', t:r.title||'', s:r.sub||'', phi:{eu:Number(r.phi_eu)||0,uk:Number(r.phi_uk)||0,us:Number(r.phi_us)||0,local:Number(r.phi_local)||0}, bid:r.block_local_id||'', product:r.product||'', reg:r.reg||'', forx:r.target_for||'', by:r.applied_by||'', att:r.att||undefined, dateISO:r.spray_date||'', cropcat:r.cropcat||'' }; }
   function ohToDb(h,fid){ return { farm_id:fid, local_id:String(h.id), cropcat:h.cat||null, block_local_id:(h.bid!=null&&h.bid!=='')?String(h.bid):null, bins:_n(h.bins), tons:_n(h.tons!=null?h.tons:h.tn), cartons:_n(h.cartons), top_grade_pct:_n(h.grade), sold_to:h.to||null, amount:_n(h.money), pick_date:h.dateISO||null, title:h.t||null, sub:h.s||null, revenue:h.r||null, icon:h.ic||null }; }
   function ohFromDb(r){ return { id:r.local_id, ic:r.icon||'\uD83C\uDF4A', t:r.title||'', s:r.sub||'', r:r.revenue||'\u2014', cat:r.cropcat||'', bid:r.block_local_id||'', tn:Number(r.tons)||0, tons:Number(r.tons)||0, cartons:Number(r.cartons)||0, to:r.sold_to||'', money:Number(r.amount)||0, dateISO:r.pick_date||'' }; }
 

@@ -33,7 +33,7 @@
 <script defer src="vendor/chart.umd.js"></script>
 <!-- AgriInsights backend: Supabase client + data service (load order matters) -->
 <script src="vendor/supabase.js"></script>
-<script src="ai-data-uk.js?v=uk116"></script>
+<script src="ai-data-uk.js?v=uk117"></script>
 <script src="ai-auth-uk.js?v=uk104"></script>
 <link rel="stylesheet" href="fonts.css"/>
 <style>
@@ -67146,7 +67146,11 @@ function orRebuildPhi(){
       var name=b?b.name:((s.s||'').split(' \u00b7 ')[0]||'Block');
       var cultivar=(b&&b.cultivar)?b.cultivar.split(' \u00b7 ')[0]:'';
       var dt=new Date(s.dateISO+'T00:00:00'); var ph=s.phi||{eu:0,uk:0,us:0,local:0};
-      var safe={eu:orFmtDM(orAddDays(dt,ph.eu||0)),uk:orFmtDM(orAddDays(dt,ph.uk||0)),us:orFmtDM(orAddDays(dt,ph.us||0)),local:orFmtDM(orAddDays(dt,ph.local||0))};
+      /* local falls back to uk. Every spray written before this build stored local:0, which
+         made the grid say the fruit was clear to pick on the day it was sprayed. In Britain
+         "local" and "UK" are the same market, and HSE treats the harvest interval as a
+         statutory condition of use — there is no shorter domestic one to fall back to. */
+      var safe={eu:orFmtDM(orAddDays(dt,ph.eu||0)),uk:orFmtDM(orAddDays(dt,ph.uk||0)),us:orFmtDM(orAddDays(dt,ph.us||0)),local:orFmtDM(orAddDays(dt,(ph.local||ph.uk||ph.eu||0)))};
       var last=(s.product||'Spray')+' \u00b7 '+orFmtDM(dt);
       ST_FRUIT.phi[cat]=ST_FRUIT.phi[cat]||[];
       var ex=ST_FRUIT.phi[cat].filter(function(r){return r.n.indexOf(name)===0;})[0];
@@ -68531,9 +68535,9 @@ function orSaveSpray(){
   var cost=parseFloat($('or-sp-cost').value)||0;
   var dt=new Date($('or-sp-date').value||new Date()); var cat=b.cat;
   ST_FRUIT.sprayDiary[cat]=ST_FRUIT.sprayDiary[cat]||[];
-  ST_FRUIT.sprayDiary[cat].unshift({id:'os'+Date.now().toString(36),ic:'\uD83E\uDDEA',t:prod+(forx?' — for '+forx:''),s:b.name+' · '+orFmtDM(dt)+' · '+(forx||'spray'),phi:{eu:days,uk:days,us:Math.max(0,days-7),local:0},bid:b.id,product:prod,forx:forx,dateISO:dt.toISOString().slice(0,10),att:orAttachTake('sp')});
+  ST_FRUIT.sprayDiary[cat].unshift({id:'os'+Date.now().toString(36),ic:'\uD83E\uDDEA',t:prod+(forx?' — for '+forx:''),s:b.name+' · '+orFmtDM(dt)+' · '+(forx||'spray'),phi:{eu:days,uk:days,us:Math.max(0,days-7),local:days},bid:b.id,product:prod,forx:forx,dateISO:dt.toISOString().slice(0,10),att:orAttachTake('sp')});
   ST_FRUIT.phi[cat]=ST_FRUIT.phi[cat]||[];
-  var safe={eu:orFmtDM(orAddDays(dt,days)),uk:orFmtDM(orAddDays(dt,days)),us:orFmtDM(orAddDays(dt,Math.max(0,days-7))),local:orFmtDM(dt)};
+  var safe={eu:orFmtDM(orAddDays(dt,days)),uk:orFmtDM(orAddDays(dt,days)),us:orFmtDM(orAddDays(dt,Math.max(0,days-7))),local:orFmtDM(orAddDays(dt,days))};
   var ex=ST_FRUIT.phi[cat].filter(function(r){return r.n.indexOf(b.name)===0;})[0];
   if(ex){ ex.last=prod+' · '+orFmtDM(dt); ex.d=safe; } else ST_FRUIT.phi[cat].unshift({n:b.name+' ('+b.cultivar.split(' · ')[0]+')',last:prod+' · '+orFmtDM(dt),d:safe});
   if(cost>0 && typeof queueOrSave==='function'){
@@ -68782,7 +68786,7 @@ function orExportAudit(){
   var certRows=['gap','siza','ppecb','phytclean'].filter(function(k){return C[k];}).map(function(k){var c=C[k];return orRowHtml([c.title,c.status,(c.expiry||'\u2014'),((c.docs&&c.docs.length)||0)+' file(s)']);}).join('');
   var pestRows=Object.keys(C).filter(function(k){return C[k].type==='pest';}).map(function(k){var c=C[k];return orRowHtml([c.title,c.status,(c.log||''),((c.checks&&c.checks.length)||0)+' check(s)']);}).join('');
   var sprayRows='';
-  OR_CAT_ORDER.forEach(function(cat){ (ST_FRUIT.sprayDiary[cat]||[]).forEach(function(x){ sprayRows+=orRowHtml([(OR_CATS[cat]?OR_CATS[cat].nm:cat),x.t,x.s,'EU '+x.phi.eu+'d / UK '+x.phi.uk+'d / Local '+x.phi.local+'d']); }); });
+  OR_CAT_ORDER.forEach(function(cat){ (ST_FRUIT.sprayDiary[cat]||[]).forEach(function(x){ sprayRows+=orRowHtml([(OR_CATS[cat]?OR_CATS[cat].nm:cat),x.t,x.s,'EU '+x.phi.eu+'d / UK '+x.phi.uk+'d / Local '+(x.phi.local||x.phi.uk||x.phi.eu||0)+'d']); }); });
   var otherRows=['water','operators','diesel'].filter(function(k){return C[k];}).map(function(k){var c=C[k];return orRowHtml([c.title,c.status,(c.log||c.expiry||'\u2014'),((c.docs&&c.docs.length)||0)+' file(s)']);}).join('');
   var html='<h1>Orchard Compliance &amp; Audit Pack</h1><div class="meta">'+orFarmName()+' \u00b7 generated '+(new Date().toLocaleDateString('en-GB'))+'</div>'+
     '<h2>Certificates &amp; audits</h2><table><thead><tr><th>Item</th><th>Status</th><th>Expiry</th><th>Documents</th></tr></thead><tbody>'+(certRows||orRowHtml(['\u2014','','','']))+'</tbody></table>'+
@@ -69452,16 +69456,40 @@ function aiRegRows(kind, from, to){
       });
   }
   if(kind==='spray'){
-    return ((window.ST_CROP&&ST_CROP.inputs)||[])
+    /* Field-crop applications AND orchard sprays. The register read ST_CROP.inputs alone,
+       so a farm with orchards printed a fraction of its record. Nothing in law splits
+       them: Article 67(1) says "the crop where the plant protection product was used"
+       without distinction, and Red Tractor CR.EC.8.a covers seed, in-field, pre-harvest
+       store and post-harvest alike. One record, both sources, one sort. */
+    var rows=((window.ST_CROP&&ST_CROP.inputs)||[])
       .filter(function(i){ return _regInRange(i.date, from, to); })
-      .sort(function(a,b){ return a.date<b.date?1:-1; })
       .map(function(i){
         var l=(typeof cropLandById==='function')?cropLandById(i.land):null;
-        return { date:aiRcDate(i.date), land:l?(l.name||''):'', ha:l&&l.area?String(l.area):'',
+        return { _iso:i.date, date:aiRcDate(i.date), land:l?(l.name||''):'', ha:l&&l.area?String(l.area):'',
                  product:i.product||'', reg:i.reg||'', target:i.targetFor||'', rate:i.rate||'',
                  batch:i.batch||'', by:i.by||'', cert:i.operatorCert||'',
                  phi:i.phi?(i.phi+' d'):'' };
       });
+    try{
+      var sd=(window.ST_FRUIT&&ST_FRUIT.sprayDiary)||{};
+      Object.keys(sd).forEach(function(cat){
+        (sd[cat]||[]).forEach(function(x){
+          if(!x || !_regInRange(x.dateISO, from, to)) return;
+          var b=(typeof orBlockById==='function')?orBlockById(x.bid):null;
+          /* INTERIM, until U2 collapses the four markets into one. The farmer types ONE
+             wait period; uk and eu both hold it verbatim, us is that minus seven and local
+             is hard-coded 0. For a British register the uk figure is the typed one. */
+          var ph=x.phi||{}; var d=(ph.uk||ph.eu||0);
+          rows.push({ _iso:x.dateISO, date:aiRcDate(x.dateISO),
+                      land:b?(b.name||''):((String(x.s||'').split(' \u00b7 ')[0])||''),
+                      ha:(b&&b.ha)?String(b.ha):'',
+                      product:x.product||'', reg:x.reg||'', target:x.forx||'',
+                      rate:x.rate||'', batch:x.batch||'', by:x.by||'', cert:x.cert||'',
+                      phi:d?(d+' d'):'' });
+        });
+      });
+    }catch(e){}
+    return rows.sort(function(a,b){ return (a._iso||'')<(b._iso||'')?1:-1; });
   }
   return ((window.ST_LS&&ST_LS.treatments)||[])
     .filter(function(t){ return _regInRange(t.date, from, to); })
