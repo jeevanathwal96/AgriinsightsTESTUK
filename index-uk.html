@@ -14825,12 +14825,20 @@ function wkEnterpriseLabour(name){
   var ann=0, ws=(typeof wkList==='function')?wkList():((typeof ST_WORK!=='undefined'&&ST_WORK&&ST_WORK.workers)||[]);
   ws.forEach(function(w){
     if((w.activity||'')!==name) return;
-    if(w.basis==='day'){
+    /* What the worker COSTS the farm: pay plus EMPLOYER NI and the employer's pension.
+       It added the worker's own NI (which comes out of their pay, not the farm's pocket),
+       and treated anyone not on a monthly salary as monthly - an hourly picker on £12.71
+       an hour was costed at £12.71 x 12 a year, about £152, overstating the margin by
+       the whole picking wage bill. Anyone not on a salary is costed from the days
+       actually posted in the casual pay run, through the same engine as their payslip. */
+    if(w.basis!=='month'){
       var sm=(typeof ST_WORK!=='undefined'&&ST_WORK&&ST_WORK.seasonal)||{};
-      for(var k in sm){ if(sm.hasOwnProperty(k)&&sm[k]&&sm[k][w.id]){ var days=sm[k][w.id]; var g=wkSeasGross(w,days); ann+=g+((typeof wkSeasNI==='function')?wkSeasNI(g,days,w):0); } }
+      for(var k in sm){ if(sm.hasOwnProperty(k)&&sm[k]&&sm[k][w.id]){ var days=sm[k][w.id];
+        var sp=(typeof ukSeasonalPay==='function')?ukSeasonalPay(w,days):null;
+        ann += sp ? sp.costToEmploy : wkSeasGross(w,days); } }
     } else {
-      var ni=(typeof wkNI==='function')?wkNI(w.amt||0):0;
-      ann += (w.amt||0)*12 + ni*12;
+      var pw=(typeof ukPayrollWorker==='function')?ukPayrollWorker(w):null;
+      ann += pw ? pw.costToEmploy*12 : (w.amt||0)*12;
     }
   });
   return Math.round(ann);
@@ -21725,6 +21733,27 @@ function LN_monthsElapsed(l){
   return (n>0 && n<600) ? n : null;
 }
 /* First month of the loan as 'YYYY-MM', or null if we genuinely cannot tell. */
+/* A loan's next payment. The day comes from what was typed ("1 Jun" -> the 1st), else the
+   1st. Paid this month = confirmed on the loans page, or a repayment in this month's books
+   tagged to the loan or for its exact amount. A settled loan has no next payment. */
+function LN_dueLbl(d){ return d.getDate()+' '+['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()]; }
+function LN_nextDue(l){
+  if(!l || !(l.payment>0) || !((l.balance||0)>0)) return null;
+  var today=(typeof _lnToday==='function')?_lnToday():new Date(); today=new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  var m=String(l.next||'').match(/^\s*(\d{1,2})\b/), day=m?Math.min(28,Math.max(1,+m[1])):1;
+  var thisDue=new Date(today.getFullYear(), today.getMonth(), day);
+  var paid=false;
+  try{ paid=(typeof LN_isConfirmed==='function') && LN_isConfirmed(l.id); }catch(e){}
+  if(!paid){
+    (ST.txns||[]).forEach(function(t){
+      if(paid||!t||t.type!=='expense'||t.cat!=='Loan Repayments') return;
+      var d=parseDate(t.date); if(!d||d.y!==today.getFullYear()||d.m!==today.getMonth()) return;
+      if(t.ent==='loan:'+l.id || Math.round(t.amt||0)===Math.round(l.payment)) paid=true;
+    });
+  }
+  if(paid) return {date:new Date(today.getFullYear(), today.getMonth()+1, day), overdue:false, paid:true};
+  return {date:thisDue, overdue:(thisDue<today), paid:false};
+}
 function LN_startYM(l){
   if(l && l.startYM && /^\d{4}-\d{2}$/.test(l.startYM)) return l.startYM;
   var n=LN_monthsElapsed(l); if(n==null) return null;
@@ -22230,7 +22259,13 @@ function laReportHTML(withLoan){
   var shortLiab=odUsed+coUsed;
   var currentRatio=shortLiab>0?(currentAssets/shortLiab):null;
   var annInt=0; try{ annInt=LN_annualInterest(); }catch(e){}
-  var intCover=annInt>0?(farmIncome/annInt):null;
+  /* Interest cover is profit BEFORE interest over interest. farmIncome already has the
+     interest taken off, so dividing it by interest understated the cover. */
+  /* Interest cover = profit BEFORE interest / interest: income less running costs (which
+     hold the interest, not the capital repaid), with the interest added back. It divided
+     a profit that already had the interest - and on SA the capital repaid - taken off. */
+  var _pbi=null; try{ var _pe=taxProvEstimate(); _pbi=Math.round((_pe.annualIncome||0)-(_pe.otherDed||0)+annInt); }catch(e){}
+  var intCover=annInt>0?(((_pbi!=null)?_pbi:(farmIncome+annInt))/annInt):null;
   var roa=totalAssets>0?Math.round(farmIncome/totalAssets*100):0;
 
   var H=[];
@@ -22373,12 +22408,12 @@ function laReportHTML(withLoan){
       '<tr class="tot"><td>Total debt</td><td></td><td>'+laRR(totalLiab)+'</td><td></td><td>'+laRR(mp)+'</td><td></td></tr></tbody></table></div></div>');
   }
 
-  // 3. cash flow forecast (12 months, R'000)
+  // 3. cash flow forecast (12 months, in thousands)
   if(cfMonths.length){
     var heads=cfMonths.map(function(m){ return '<th>'+esc((m.name||m.label||'').slice(0,3))+'</th>'; }).join('');
     var cells=cfMonths.map(function(m){ return '<td>'+_grpInt(Math.round((m.balance||0)/1000))+'</td>'; }).join('');
     H.push('<div class="lar-sec">'+sh('Cash flow forecast (12 months)','Projected closing cash on hand for each month of the season ahead.')+
-      '<div class="lar-wrap"><table class="lar-tbl"><thead><tr><th>Month</th>'+heads+'</tr></thead><tbody><tr><td>Closing cash (R’000)</td>'+cells+'</tr></tbody></table></div>'+
+      '<div class="lar-wrap"><table class="lar-tbl"><thead><tr><th>Month</th>'+heads+'</tr></thead><tbody><tr><td>Closing cash ('+_curSym()+'’000)</td>'+cells+'</tr></tbody></table></div>'+
       '<div class="lar-note">Opening balance '+laRR(cash)+'. Lowest projected month is '+esc(cfMinName)+' at approximately '+laRR(cfMin)+'; the forecast '+(cfPositive?'remains positive throughout the period':'shows a shortfall requiring bridging finance')+'.</div></div>');
   }
 
@@ -22477,7 +22512,7 @@ function laReportHTML(withLoan){
   var ratioRows='<tr><td>Equity ratio</td><td class="l2">Net worth ÷ total assets</td><td>'+equityPct+'%</td></tr>'+
     '<tr><td>Debt-to-asset ratio</td><td class="l2">Total liabilities ÷ total assets</td><td>'+debtAssetPct+'%</td></tr>'+
     (currentRatio!=null?'<tr><td>Current ratio</td><td class="l2">Current assets ÷ current liabilities</td><td>'+currentRatio.toFixed(1)+'</td></tr>':'')+
-    (intCover!=null?'<tr><td>Interest cover</td><td class="l2">Operating income ÷ interest</td><td>'+intCover.toFixed(1)+'×</td></tr>':'')+
+    (intCover!=null?'<tr><td>Interest cover</td><td class="l2">Profit before interest ÷ interest</td><td>'+intCover.toFixed(1)+'×</td></tr>':'')+
     '<tr><td>Return on assets</td><td class="l2">Operating income ÷ total assets</td><td>'+roa+'%</td></tr>';
   H.push('<div class="lar-sec">'+sh('Financial ratios','Standard solvency, liquidity and return measures.')+
     '<div class="lar-wrap"><table class="lar-tbl"><thead><tr><th>Ratio</th><th class="l2">Basis</th><th>Value</th></tr></thead><tbody>'+ratioRows+'</tbody></table></div></div>');
@@ -22500,8 +22535,8 @@ function laReportHTML(withLoan){
   H.push('<div class="lar-sec">'+sh('Documents to attach','Supporting documents required by the lender, to accompany this report.')+
     '<div class="lar-docgrp"><div class="lar-docgrp-h">Identity &amp; compliance</div>'+
       '<div class="lar-docrow"><span class="lar-doccb"></span>Certified ID copies (all applicants / directors)</div>'+
-      '<div class="lar-docrow"><span class="lar-doccb"></span>HMRC tax clearance certificate or TCS PIN</div>'+
-      '<div class="lar-docrow"><span class="lar-doccb"></span>ITC (credit bureau) clearance certificate</div></div>'+
+      '<div class="lar-docrow"><span class="lar-doccb"></span>SA302 tax calculations and tax year overviews (last two to three years)</div>'+
+      '<div class="lar-docrow"><span class="lar-doccb"></span>Consent to a credit check (Experian or Equifax)</div></div>'+
     '<div class="lar-docgrp"><div class="lar-docgrp-h">Land &amp; security</div>'+
       '<div class="lar-docrow"><span class="lar-doccb"></span>Land Registry title or tenancy agreement</div>'+
       '<div class="lar-docrow"><span class="lar-doccb"></span>Water use licence / rights documentation</div>'+
@@ -22643,13 +22678,22 @@ function lnGlanceHTML(){
   h+=lnConfirmBox('summary');
   /* 3. Upcoming payments */
   h+='<div class="ln-card"><p class="ln-ct">Upcoming payments</p>';
-  ST_LOANS.loans.forEach(function(l){ h+='<div class="ln-up"><span><b>'+esc(l.name)+'</b> <span class="d">\u00b7 '+esc(l.next||'this month')+'</span></span><span class="a">'+LN_R(l.payment)+'</span></div>'; });
+  /* The real next date for each loan, from its payment day: next month once this month's
+     payment is confirmed or in the books, this month otherwise. It printed whatever was
+     typed in "next" - '1 Jun' on every demo loan, in September. */
+  var _due=ST_LOANS.loans.map(function(l){ return {l:l, d:LN_nextDue(l)}; }).filter(function(x){ return x.d; });
+  _due.sort(function(a,b){ return a.d.date-b.d.date; });
+  _due.forEach(function(x){ var l=x.l, d=x.d;
+    h+='<div class="ln-up"><span><b>'+esc(l.name)+'</b> <span class="d"'+(d.overdue?' style="color:#B45309;font-weight:700"':'')+'>\u00b7 '+(d.overdue?'was due '+LN_dueLbl(d.date)+' \u2014 not marked paid':LN_dueLbl(d.date))+'</span></span><span class="a">'+LN_R(l.payment)+'</span></div>'; });
   h+='</div>';
   /* 4. Anything to watch */
   var hasSeason=ST_LOANS.loans.some(function(l){ return /season|prime/i.test(l.type+' '+l.name); });
   h+='<div class="ln-card"><p class="ln-ct">Anything to watch?</p>';
   if(hasSeason) h+='<div class="ln-issue"><span class="ln-dot2 ln-amber"></span><div>Your <b>working-capital loan</b> tracks base rate. If base rate goes up, that payment goes up too \u2014 leave a little room for it.</div></div>';
-  h+='<div class="ln-issue"><span class="ln-dot2 ln-green"></span><div>Nothing overdue \u2014 you\u2019re <b>up to date</b> on every loan.</div></div></div>';
+  /* Only says "up to date" when it is: this was fixed text. */
+  var _late=_due.filter(function(x){ return x.d.overdue; });
+  if(_late.length) h+='<div class="ln-issue"><span class="ln-dot2 ln-amber"></span><div><b>'+_late.length+' payment'+(_late.length===1?'':'s')+' not marked paid</b> this month \u2014 '+_late.map(function(x){ return esc(x.l.name)+' ('+LN_dueLbl(x.d.date)+')'; }).join(', ')+'. Confirm it above if it has gone out.</div></div></div>';
+  else h+='<div class="ln-issue"><span class="ln-dot2 ln-green"></span><div>Nothing overdue \u2014 you\u2019re <b>up to date</b> on every loan.</div></div></div>';
   /* 5. AI insights */
   h+='<div class="ln-card"><div class="ln-aihdr"><p class="ln-ct" style="margin:0">AI insights</p><span class="ln-aibadge">\u2728 from your numbers</span></div>'+
      '<p class="ln-cw" style="margin:4px 0 12px">Things worth knowing, picked out for you.</p>';
@@ -22857,7 +22901,10 @@ function lnOpenInterest(id){
 var LN_OD_UI = {};
 function lnOdUI(id){ if(!LN_OD_UI[id]) LN_OD_UI[id]={mode:null, amt:0, src:'bank'}; return LN_OD_UI[id]; }
 function LN_od(id){ return (ST_LOANS.overdrafts||[]).concat(ST_LOANS.coopAccounts||[]).filter(function(o){return o.id===id;})[0]; }
-function LN_odRate(o){ return (o&&o.rateMode==='flat') ? (o.flatRate||0) : (((o&&o.prime)||0)+((o&&o.margin)||0)); }
+/* A rate-linked facility follows the published rate on today's date plus the bank's margin.
+   It used the copy of the rate stored when the account was set up,
+   so the interest never moved when the rate did. */
+function LN_odRate(o){ return (o&&o.rateMode==='flat') ? (o.flatRate||0) : (((typeof laPrime==='function')?laPrime():((o&&o.prime)||0))+((o&&o.margin)||0)); }
 function LN_odAvail(o){ return Math.max(0,((o&&o.limit)||0)-((o&&o.used)||0)); }
 function LN_odIntM(o){ return Math.round(((o&&o.used)||0)*LN_odRate(o)/100/12); }
 function LN_odUsedTotal(){ var t=0; (ST_LOANS.overdrafts||[]).forEach(function(o){ t+=o.used||0; }); return t; }
@@ -22873,7 +22920,7 @@ function lnOdRateMode(id,m){ var o=LN_od(id); if(!o) return; o.rateMode=m; saveS
 function lnOdRateInput(id){
   var o=LN_od(id); if(!o) return;
   var pe=$('od-'+id+'-prime'), me=$('od-'+id+'-margin'), fe=$('od-'+id+'-flat');
-  if(pe) o.prime=parseFloat(pe.value)||0;
+  /* the rate field is read-only now: it shows the published rate, not a stored copy */
   if(me) o.margin=parseFloat(me.value)||0;
   if(fe) o.flatRate=parseFloat(fe.value)||0;
   saveState();
@@ -22936,7 +22983,7 @@ function lnOdRateEditor(o){
     body='<div class="od-re-row"><div class="od-re-f"><label>Rate (% per year)</label><div class="od-re-inp"><input id="od-'+id+'-flat" type="number" step="0.25" value="'+(o.flatRate||0)+'" oninput="lnOdRateInput(\''+id+'\')"><span>%</span></div><div class="od-re-hint">you set this \u2014 won\u2019t move with prime</div></div>'+
       '<div class="od-re-op">=</div><div class="od-re-effbox"><div class="od-re-effv" id="od-'+id+'-eff">'+eff+'</div><div class="od-re-effl">effective rate</div></div></div>';
   } else {
-    body='<div class="od-re-row"><div class="od-re-f"><label>Base rate</label><div class="od-re-inp"><input id="od-'+id+'-prime" type="number" step="0.25" value="'+(o.prime||0)+'" oninput="lnOdRateInput(\''+id+'\')"><span>%</span></div><div class="od-re-hint">Bank of England base rate \u00b7 '+laPrime()+'%</div></div>'+
+    body='<div class="od-re-row"><div class="od-re-f"><label>Base rate</label><div class="od-re-inp"><input id="od-'+id+'-prime" type="number" step="0.25" value="'+((typeof laPrime==='function')?laPrime():(o.prime||0))+'" readonly title="Follows the published base rate \u2014 only the bank\u2019s margin is yours to set" style="background:var(--bg2,#f4f4f1)"><span>%</span></div><div class="od-re-hint">Bank of England base rate \u00b7 '+laPrime()+'%</div></div>'+
       '<div class="od-re-op">+</div><div class="od-re-f"><label>Bank adds</label><div class="od-re-inp"><input id="od-'+id+'-margin" type="number" step="0.25" value="'+(o.margin||0)+'" oninput="lnOdRateInput(\''+id+'\')"><span>%</span></div><div class="od-re-hint">your bank\u2019s margin over base rate</div></div>'+
       '<div class="od-re-op">=</div><div class="od-re-effbox"><div class="od-re-effv" id="od-'+id+'-eff">'+eff+'</div><div class="od-re-effl">effective rate</div></div></div>';
   }
@@ -26566,7 +26613,7 @@ function renderWkOverview(){ wkSync();
   var box=$('wkp-ov'); if(!box) return;
   var ws=wkList();
   var perm = ws.filter(function(w){ return w.basis==='month'; });
-  var seas = ws.filter(function(w){ return w.basis==='day'; });
+  var seas = ws.filter(function(w){ return w.basis!=='month'; });   // hourly pickers are casual too
   var permCount = ws.filter(function(w){ return w.type==='Permanent'; }).length;
   var seasCount = ws.filter(function(w){ return w.type!=='Permanent'; }).reduce(function(a,w){ return a+(w.count||1); },0);
   var permTotal = perm.reduce(function(a,w){ return a+(w.amt||0); },0);
@@ -26621,8 +26668,10 @@ function renderWkRegister(){ wkSync();
     if(w.adv&&w.adv.owing) badges+='<span class="wk-badge money">Owes '+wkMoney(w.adv.owing)+'</span>';
     if(w.fund&&w.fund.on&&w.fund.where==='hold'&&w.fund.balance) badges+='<span class="wk-badge ok">Saving '+wkMoney(w.fund.balance)+'</span>';
     if(w.contract==='missing') badges+='<span class="wk-badge warn">No contract on file</span>';
-    var wage = (w.basis==='day') ? (_curSym()+_grpInt(w.amt||0)) : wkMoney(w.amt);
-    var wsub = (w.basis==='day') ? '/day each' : '/month';
+    /* An hourly worker was shown as "£13 /month": the hourly rate, rounded, under the
+       monthly label. */
+    var wage = (w.basis==='hour') ? wkMoney2(w.amt||0) : (w.basis==='day') ? (_curSym()+_grpInt(w.amt||0)) : wkMoney(w.amt);
+    var wsub = (w.basis==='hour') ? '/hour' : (w.basis==='day') ? '/day each' : '/month';
     rows+='<div class="wk-row" onclick="wkOpenDetail(\''+w.id+'\')">'
       +'<div class="wk-av" style="background:'+wkColor(i)+'">'+wkE(wkInitials(w.name))+'</div>'
       +'<div><div class="nm">'+wkE(w.name)+'</div><div class="ro">'+wkE(w.role)+'</div><div class="meta">'+badges+'</div></div>'
@@ -27342,7 +27391,7 @@ function wkComplianceState(){
   if(!c.empLiability) c.empLiability={};
   return c;
 }
-function wkSeasonalAnnual(){ var t=0; var sm=(typeof ST_WORK!=='undefined'&&ST_WORK&&ST_WORK.seasonal)||{}; var ids={}; (wkList()||[]).forEach(function(w){ if(w.basis==='day') ids[w.id]=w; }); for(var k in sm){ if(!sm.hasOwnProperty(k)) continue; var m=sm[k]||{}; for(var wid in m){ if(!m.hasOwnProperty(wid)) continue; var w=ids[wid]; if(!w) continue; t+=(m[wid]||0)*(w.amt||0); } } return Math.round(t); }
+function wkSeasonalAnnual(){ var t=0; var sm=(typeof ST_WORK!=='undefined'&&ST_WORK&&ST_WORK.seasonal)||{}; var ids={}; (wkList()||[]).forEach(function(w){ if(w.basis!=='month') ids[w.id]=w; }); for(var k in sm){ if(!sm.hasOwnProperty(k)) continue; var m=sm[k]||{}; for(var wid in m){ if(!m.hasOwnProperty(wid)) continue; var w=ids[wid]; if(!w) continue; t+=(m[wid]||0)*(w.amt||0); } } return Math.round(t); }
 function wkAnnualWageBill(){ var monthly=wkList().filter(function(w){return w.basis==='month';}).reduce(function(a,w){return a+(w.amt||0);},0)*12; return monthly + wkSeasonalAnnual(); }
 function wkMonthlyLabourCost(){ return Math.round(wkList().filter(function(w){return w.basis==='month';}).reduce(function(a,w){ return a+(w.amt||0)+((typeof wkNI==='function')?wkNI(w.amt||0):0); },0)); }
 function wkSyncLabourBudget(){
@@ -27446,7 +27495,7 @@ function wkLabourFile(){
   var cs=wkComplianceState(), items=computeWkCompliance();
   var rows=ws.map(function(w){
     var hr=wkHourly(w), ok=hr>=rate-0.005;
-    var pay=(w.basis==='day')?(_curSym()+_grpInt(w.amt||0)+'/day'):(wkMoney(w.amt)+'/mo');
+    var pay=(w.basis==='hour')?(wkMoney2(w.amt||0)+'/hr'):(w.basis==='day')?(_curSym()+_grpInt(w.amt||0)+'/day'):(wkMoney(w.amt)+'/mo');
     return '<tr><td>'+wkE(w.name)+(w.count?(' (\u00d7'+w.count+')'):'')+'</td><td>'+wkE(w.type)+'</td><td>'+pay+'</td><td>'+_curSym()+hr.toFixed(2)+'</td><td style="color:'+(ok?'#2D6A4F':'#C0392B')+'">'+(ok?'\u2713':'\u2717')+'</td><td>'+(wkNiReg(w)?'\u2713':'\u2014')+'</td><td style="color:'+(w.contract==='missing'?'#C0392B':'#2D6A4F')+'">'+(w.contract==='missing'?'missing':'on file')+'</td></tr>';
   }).join('');
   var checks=items.filter(function(it){return !cs.untracked[it.key];}).map(function(it){
@@ -27491,7 +27540,7 @@ function wkAttachSave(key){ var nm=(($('wk-attach-name-'+key)||{}).value||'').tr
 
 function wkCompNmw(){
   var rate=ST_WORK.nmwRate||STATUTORY.nmwRate.value;
-  var rows=wkList().map(function(w){ var hr=wkHourly(w), ok=hr>=rate-0.005; var pay=(w.basis==='day')?(_curSym()+_grpInt(w.amt||0)+'/day'):(wkMoney(w.amt)+'/mo');
+  var rows=wkList().map(function(w){ var hr=wkHourly(w), ok=hr>=rate-0.005; var pay=(w.basis==='hour')?(wkMoney2(w.amt||0)+'/hr'):(w.basis==='day')?(_curSym()+_grpInt(w.amt||0)+'/day'):(wkMoney(w.amt)+'/mo');
     return '<div class="wk-wrow"><div><div class="nm">'+wkE(w.name)+'</div><div class="s">'+pay+'</div></div><div class="right"><b>'+_curSym()+hr.toFixed(2)+'/hr</b>'+(ok?'<span class="wk-tag2 g">\u2713</span>':'<span class="wk-tag2 r">low</span><button class="wk-mini pri" onclick="wkOpenDetail(\''+w.id+'\')">Fix</button>')+'</div></div>'; }).join('');
   return '<div class="wk-card"><div style="font-size:15px;font-weight:800">Paying at least the minimum</div><div style="font-size:11px;color:var(--t4);margin-bottom:10px">National Minimum Wage Act</div>'
     +'<div class="wk-what">Every worker must earn at least <b>'+_curSym()+rate.toFixed(2)+' an hour</b>. We work out each one\u2019s hourly rate and flag anyone short.</div>'+rows
@@ -27786,7 +27835,7 @@ function cbDoc(cfg){
   var owner=(typeof ST!=='undefined'&&ST.ownerName)?ST.ownerName:'the employer';
   var rate=ST_WORK.nmwRate||STATUTORY.nmwRate.value;
   var hr=wkHourly({basis:cfg.basis,amt:cfg.amt,hoursWeek:cfg.hours});
-  var pay=(cfg.basis==='day')?(_curSym()+_grpInt(cfg.amt||0)+' per day'):(_curSym()+_grpInt(cfg.amt||0)+' per month');
+  var pay=(cfg.basis==='hour')?(wkMoney2(cfg.amt||0)+' per hour'):(cfg.basis==='day')?(_curSym()+_grpInt(cfg.amt||0)+' per day'):(_curSym()+_grpInt(cfg.amt||0)+' per month');
   var n=0; function cl(t,b){ n++; return '<h2>'+n+'. '+t+'</h2><p>'+b+'</p>'; }
   var notice = 'one week\u2019s notice in the first six months of employment, and four weeks\u2019 notice thereafter';
   var body='';
@@ -28244,8 +28293,8 @@ function wkPRStatutory(){
      the primary threshold and the upper limit and 2% above it, the employer pays 15%
      above a different, lower threshold — so the two sides are shown separately. */
   var perWorker=wkList().map(function(w){
-    var rem=(w.basis==='day')? (wkSeasGross(w,wkSeasDaysFor(t.label,w.id))) : (w.amt||0);
-    if(w.basis==='day' && rem<=0) return '';
+    var rem=(w.basis!=='month')? (wkSeasGross(w,wkSeasDaysFor(t.label,w.id))) : (w.amt||0);
+    if(w.basis!=='month' && rem<=0) return '';
     var ee=wkNI(rem), erW=wkEmployerNI(rem);
     var no=wkNiNo(w)?('NI no. '+wkE(wkNiNo(w))):'<span style="color:var(--rd)">NI number missing</span>';
     return '<div class="pr-stat-row"><div><div class="nm">'+wkE(w.name)+'</div><div class="s">'+no+'</div></div>'
@@ -28297,7 +28346,7 @@ function renderWkDetail(id){
   if(!w){ box.innerHTML=''; return; }
   w.ledger = w.ledger || [];
   var rate=ST_WORK.nmwRate||STATUTORY.nmwRate.value; var ok=wkHourly(w)>=rate-0.005;
-  var wage = (w.basis==='day') ? (_curSym()+_grpInt(w.amt||0)+'/day') : (wkMoney(w.amt)+'/mo');
+  var wage = (w.basis==='hour') ? (wkMoney2(w.amt||0)+'/hr') : (w.basis==='day') ? (_curSym()+_grpInt(w.amt||0)+'/day') : (wkMoney(w.amt)+'/mo');
 
   var boxes='';
   if(w.adv&&w.adv.owing) boxes+='<div class="wk-mbox owe"><div class="ml">Owes you</div><div class="mv">'+wkMoney(w.adv.owing)+'</div><div class="ms">'+(w.adv.perPay?(_curSym()+Math.round(w.adv.perPay)+' off each payday'):'')+(w.adv.reason?(' &middot; '+wkE(w.adv.reason)):'')+'</div></div>';
@@ -48672,7 +48721,9 @@ function drawCfLine(months, n){
        under the chart rather than inside it — there is no corner of the plot that is
        reliably empty, and a chip pinned to one of them sits on the line for exactly the
        farms this case exists to serve. */
-    CF_OD_OFFSCALE = Math.round((bals.length?bals[bals.length-1]:0)+_fac.limit);
+    /* The room at the LOWEST month, not the last - "at your tightest you still have" was
+       quoting the final month's balance, £600k more than the tightest one. */
+    CF_OD_OFFSCALE = Math.round((bals.length?Math.min.apply(null,bals):0)+_fac.limit);
   }
   // month hitboxes + labels (index 0 = this month; trough highlighted)
   for(var i=0;i<months.length;i++){ var on=(i===CF_SEL_M), cx=X(i), half=(months.length>1?((xR-xL)/(months.length-1))/2:20);
@@ -49669,6 +49720,34 @@ function cfToggleFwdRow(idx){
 // and VAT. Returns {inc, exp, lines:[{label,src,amt}]} for one forecast month (amt +in / -out). Guards against
 // double-counting: loan payments come from ST_LOANS (the "Loan Repayments" recurring category is skipped in
 // buildCfForecast), and an asset instalment is only added when it is NOT already represented by a loan record.
+/* The VAT payments and refunds due in one forecast month. A period that has ended uses what
+   was recorded; the one in progress, what is recorded so far plus last year's same dates for
+   the rest; a future one, last year's same dates - farm VAT is seasonal, so a flat average
+   puts harvest VAT in the wrong quarter. Falls back to this year's monthly average when
+   there is no last year to go on. */
+function cfVatDue(year, mIdx){
+  if(typeof FARM==='undefined'||!FARM.vat||typeof _txVatBlock!=='function') return [];
+  var today=(typeof APP_TODAY!=='undefined'&&APP_TODAY)?new Date(APP_TODAY):new Date(); today.setHours(0,0,0,0);
+  var rows=[]; (ST.txns||[]).forEach(function(t){ var d=parseDate(t.date); if(!d) return; if(t.type!=='income'&&t.type!=='expense') return;
+    var x=IE_split(t.amt,t.cat); if(!x.vat) return; rows.push({d:new Date(d.y,d.m,d.d||1).getTime(), v:(t.type==='income'?x.vat:-x.vat)}); });
+  var net=function(a,b){ var s=0; rows.forEach(function(r){ if(r.d>=a.getTime()&&r.d<=b.getTime()) s+=r.v; }); return s; };
+  var lastYr=function(d){ return new Date(d.getFullYear()-1, d.getMonth(), d.getDate()); };
+  var hasLast=rows.some(function(r){ return r.d<lastYr(today).getTime(); });
+  var ytdStart=new Date(today.getFullYear(), today.getMonth()-11, 1), avgDay=net(ytdStart,today)/Math.max(1,(today-ytdStart)/864e5);
+  var est=function(a,b){ if(b<a) return 0; return hasLast ? net(lastYr(a),lastYr(b)) : avgDay*((b-a)/864e5+1); };
+  var out=[];
+  for(var k=-3;k<=14;k++){
+    var p=_txVatBlock(k), from=new Date(p.from+'T00:00:00'), to=new Date(p.to+'T00:00:00');
+    var due=new Date(to.getFullYear(), to.getMonth()+2, 1);
+    if(due.getFullYear()!==year||due.getMonth()!==mIdx) continue;
+    var amt;
+    if(to<today) amt=net(from,to);
+    else if(from<=today){ var y=new Date(today); y.setDate(y.getDate()+1); amt=net(from,today)+est(y,to); }
+    else amt=est(from,to);
+    out.push({label:p.label, amt:Math.round(amt), from:p.from, to:p.to, ended:(to<today)});
+  }
+  return out;
+}
 function _cfFinanceFor(year, mIdx, stepIdx){
   var inc=0, exp=0, lines=[];
   function out(label, src, amt){ amt=Math.round(amt||0); if(amt>0){ exp+=amt; lines.push({label:label, src:src, amt:-amt}); } }
@@ -49699,12 +49778,14 @@ function _cfFinanceFor(year, mIdx, stepIdx){
         out(_ukPoaLabel(dt.per)+(dt.prevBal>0?' + last year’s balancing':''), 'Tax & HMRC', dt.amt);
     }); } } }catch(e){}
 
-  // 5) VAT — net payable spread over the six 2-month VAT return cycles (payment months = odd month indices).
-  try{ if(typeof FARM!=='undefined' && FARM.vat && typeof _taxFYVat==='function' && (mIdx%2===1)){
-    var perCycle=Math.round((_taxFYVat()||0)/6);
-    if(perCycle>0) out('VAT (VAT return)', 'Tax & HMRC', perCycle);
-    else if(perCycle<0) inn('VAT refund (VAT return)', 'Tax & HMRC', -perCycle);
-  } }catch(e){}
+  // 5) VAT — each of the farm's own VAT periods, on the month its payment falls due
+  //    (one month and seven days after the period ends). It was this year's VAT so far
+  //    divided by six and booked in odd months - the South African two-monthly pattern -
+  //    so a farm was shown a sixth of a year where one real return was due.
+  try{ (typeof cfVatDue==='function' ? cfVatDue(year, mIdx) : []).forEach(function(v){
+    if(v.amt>0) out('VAT (VAT return) · '+v.label, 'Tax & HMRC', v.amt);
+    else if(v.amt<0) inn('VAT refund (VAT return) · '+v.label, 'Tax & HMRC', -v.amt);
+  }); }catch(e){}
 
   return {inc:inc, exp:exp, lines:lines};
 }
@@ -50445,10 +50526,15 @@ function _rptLoanInterest(t){
     var byName = loans.filter(function(l){ return l.name && d.indexOf((''+l.name).toLowerCase())>=0; });
     if (byName.length===1) loan = byName[0];
   }
-  if (loan) return Math.min(amt, LN_intM(loan)); // that loan's monthly interest, capped at the payment
+  /* The interest in THIS payment's month, off the loan's own schedule. It was today's
+     monthly interest for every payment, so a year of repayments on a loan paying down
+     was costed at this month's (lower) balance - too little interest for tax. */
+  var _pd = parseDate(t.date), _ym = _pd ? (_pd.y+'-'+('0'+(_pd.m+1)).slice(-2)) : null;
+  var _int = function(l){ return (_ym && typeof LN_intForMonth==='function') ? LN_intForMonth(l, _ym) : LN_intM(l); };
+  if (loan) return Math.min(amt, _int(loan)); // that loan's interest for the month, capped at the payment
   // 4) fallback: blended term-loan interest share of a repayment
   var sInt=0, sPay=0;
-  loans.forEach(function(l){ sInt+=LN_intM(l); sPay+=(l.payment||0); });
+  loans.forEach(function(l){ sInt+=_int(l); sPay+=(l.payment||0); });
   if (sPay <= 0) return amt;                       // no loan data to split against -> show full repayment
   return Math.round(amt * (sInt/sPay));
 }
@@ -53404,8 +53490,11 @@ function _wkErNiFigures(){
     var fy=(typeof getCurrentFY==='function')?getCurrentFY():null;
     var p=(typeof taxPayrollAnnual==='function')?taxPayrollAnnual(fy):null;
     if(!p) return null;
-    var er=Math.round(p.employerNI||0), al=Math.round(p.allowance||0);
-    return { er:er, allowance:al, covered:(al>=er), left:Math.max(0,al-er), toPay:Math.max(0,er-al) };
+    /* p.employerNI is ALREADY after the Employment Allowance. Taking the allowance off it
+       again told a farm owing £6,852 of employer NI that it had nil to pay. */
+    var gross=Math.round(p.employerNIGross!=null?p.employerNIGross:p.employerNI||0), payable=Math.round(p.employerNI||0), al=Math.round(p.allowance||0);
+    var cap=Math.round(p.allowanceCap||10500);
+    return { er:gross, allowance:al, covered:(payable<=0), left:Math.max(0,cap-al), toPay:payable };
   }catch(e){ return null; }
 }
 // Workers snapshot — min-wage check is exact; NI/PAYE stay on the payroll screen (not re-totalled here).
@@ -55390,6 +55479,7 @@ function taxPayrollAnnual(){
   paid=Math.round(paid);
   var total=eeYr+ea.payable+payeYr;
   return { employeeNI:eeYr, employerNI:ea.payable, allowance:ea.relief,
+           employerNIGross:Math.round(erYr), allowanceCap:ea.cap,
            paye:payeYr,
            /* Only employer NI is a COST to the farm. PAYE and employee NI come out of
               gross pay - the farm withholds and remits them, it does not bear them. */
@@ -64794,11 +64884,13 @@ function attnItems(){
           var ta=da?new Date(da.y,da.m,da.d||1).getTime():0, tb=db?new Date(db.y,db.m,db.d||1).getTime():0;
           return ta-tb; });
         var last = _mrun.length ? _mrun[_mrun.length-1] : runs[runs.length - 1];
-        var lm = _attnDaysTo(last && last.paidOn) ;
+        var lm = _attnDaysTo(last && (last.paidOn || last.date)) ;
         if(lm === null && last && last.label){
-          /* Pay runs are labelled "March 2026" rather than dated. */
+          /* Pay runs are labelled "March 2026" rather than dated. The run is for the END of
+             that month: reading it as the 1st made an August run "53 days old" on
+             23 September and told the farm it had missed two months. */
           var pd = new Date(last.label + ' 1');
-          if(!isNaN(pd)) lm = Math.round((pd - t) / 86400000);
+          if(!isNaN(pd)){ pd = new Date(pd.getFullYear(), pd.getMonth()+1, 0); lm = Math.round((pd - t) / 86400000); }
         }
         if(lm !== null && lm < -45){
           var months = Math.round(Math.abs(lm) / 30);
@@ -65259,8 +65351,8 @@ function wkPRExportRegister(){
 function wkPRExportNI(){
   var labels=wkPRLabels(); var data=[];
   labels.forEach(function(L){ wkList().forEach(function(w){
-    var rem=(w.basis==='day')?(wkSeasGross(w,wkSeasDaysFor(L,w.id))):(w.amt||0);
-    if(w.basis==='day'&&rem<=0) return;
+    var rem=(w.basis!=='month')?(wkSeasGross(w,wkSeasDaysFor(L,w.id))):(w.amt||0);
+    if(w.basis!=='month'&&rem<=0) return;
     data.push([L, w.name, wkNiNo(w), rem.toFixed(2), wkNI(rem).toFixed(2), wkEmployerNI(rem).toFixed(2)]);
   }); });
   wkDownload('Employee_NI_summary_'+wkPRTag(),
@@ -65312,7 +65404,7 @@ function wkPRPrint(){
     var er=labels.map(function(L){ var paye=0,eeNI=0; rows.forEach(function(r){ paye+=wkPayeFor(L,r.w.id); eeNI+=r.ni; }); wkSeasList().forEach(function(w){ var days=wkSeasDaysFor(L,w.id); if(days>0) eeNI+=wkSeasNI(wkSeasGross(w,days),days,w); }); var erM=wkErNIMonth(L); var tot=paye+eeNI+erM.payable; return '<tr><td>'+wkE(L)+'</td><td>'+paye.toFixed(2)+'</td><td>'+eeNI.toFixed(2)+'</td><td>'+erM.payable.toFixed(2)+'</td><td>'+tot.toFixed(2)+'</td></tr>'; }).join('');
     empSec='<table><thead><tr><th>Month</th><th>PAYE</th><th>Employee NI</th><th>Employer NI</th><th>Total</th></tr></thead><tbody>'+er+'</tbody></table><p style="font-size:11px;color:#6B7280">Each month is filed as a separate Full Payment Submission.</p>';
   }
-  var niPerWorker=wkList().map(function(w){ var rem=(w.basis==='day')?(wkSeasGross(w,wkSeasDaysFor(focus,w.id))):(w.amt||0); if(w.basis==='day'&&rem<=0) return ''; return '<tr><td>'+wkE(w.name)+'</td><td>'+wkE(wkNiNo(w)||'\u2014')+'</td><td>'+rem.toFixed(2)+'</td><td>'+wkNI(rem).toFixed(2)+'</td><td>'+wkEmployerNI(rem).toFixed(2)+'</td></tr>'; }).join('');
+  var niPerWorker=wkList().map(function(w){ var rem=(w.basis!=='month')?(wkSeasGross(w,wkSeasDaysFor(focus,w.id))):(w.amt||0); if(w.basis!=='month'&&rem<=0) return ''; return '<tr><td>'+wkE(w.name)+'</td><td>'+wkE(wkNiNo(w)||'\u2014')+'</td><td>'+rem.toFixed(2)+'</td><td>'+wkNI(rem).toFixed(2)+'</td><td>'+wkEmployerNI(rem).toFixed(2)+'</td></tr>'; }).join('');
   var html='<!DOCTYPE html><html><head><meta charset="utf-8"><title>Payroll report \u2014 '+wkE(farm)+'</title>'
     +'<style>body{font-family:Arial,Helvetica,sans-serif;color:#1A1F1C;max-width:760px;margin:24px auto;padding:0 18px;line-height:1.5}h1{font-size:20px;margin:0 0 2px}.sub{color:#6B7280;font-size:13px;margin-bottom:18px}h2{font-size:14px;border-bottom:2px solid #1B4332;padding-bottom:5px;margin:22px 0 10px;color:#1B4332}table{width:100%;border-collapse:collapse;font-size:12px}th,td{text-align:right;padding:6px 7px;border-bottom:1px solid #E9ECEF}th:first-child,td:first-child{text-align:left}th{font-size:11px;text-transform:uppercase;color:#6B7280}.kv{display:flex;justify-content:space-between;font-size:13px;padding:5px 0;border-bottom:1px solid #E9ECEF}.foot{font-size:11px;color:#9CA3AF;margin-top:22px;border-top:1px solid #E9ECEF;padding-top:10px}@media print{.noprint{display:none}}</style></head><body>'
     +'<h1>'+wkE(farm)+' \u2014 Payroll report</h1><div class="sub">'+wkE(periodLbl)+'</div>'
@@ -72969,7 +73061,7 @@ function _lsRegCertsCard(){
 
   // ---------- Registry: Workers wave ----------
   function _wk(){
-    var ws=wkList()||[]; var perm=ws.filter(function(w){return w.basis==='month';}); var seas=ws.filter(function(w){return w.basis==='day';});
+    var ws=wkList()||[]; var perm=ws.filter(function(w){return w.basis==='month';}); var seas=ws.filter(function(w){return w.basis!=='month';});
     var permTotal=perm.reduce(function(a,w){return a+(w.amt||0);},0);
     var seasEst=seas.reduce(function(a,w){return a+((w.amt||0)*8);},0);
     var heads=perm.length+seas.reduce(function(a,w){return a+(w.count||1);},0);
