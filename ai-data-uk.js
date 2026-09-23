@@ -393,6 +393,10 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
   let CAN_ORCH_NI      = false;   /* orchard_sprays: the same six */
   let CAN_LAND_NI      = false;   /* crop_lands:     field_ref/eppo/eppo_crop */
   let CAN_BLOCK_NI     = false;   /* orchard_blocks: field_ref/eppo */
+  /* uk-spray-record-more.sql: where it was sprayed, finish time and weather on both spray
+     tables, and the crop saved with each field application. */
+  let CAN_INPUT_NI2    = false;   /* crop_inputs:    situation/time_end/weather/crop_at/eppo_at */
+  let CAN_ORCH_NI2     = false;   /* orchard_sprays: situation/time_end/weather */
   /* ---- what this database actually has, asked once ------------------------
      Ported from SA -438, same reasoning. Every late-added column is gated on a
      CAN_* flag, and each flag cost its own round trip in series on every
@@ -455,7 +459,8 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     ['category_rules','match_text'], ['category_rules','hits'],
     ['orchard_sprays','att'], ['crop_inputs','act'], ['orchard_sprays','act'],
     ['orchard_sprays','removed_at'], ['crop_inputs','removed_at'],
-    ['crop_inputs','bbch'], ['orchard_sprays','bbch'], ['crop_lands','field_ref'], ['orchard_blocks','field_ref']
+    ['crop_inputs','bbch'], ['orchard_sprays','bbch'], ['crop_lands','field_ref'], ['orchard_blocks','field_ref'],
+    ['crop_inputs','situation'], ['orchard_sprays','situation']
   ];
 
   async function probeCaps(farmId){
@@ -511,6 +516,8 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     CAN_ORCH_NI       = keep(CAN_ORCH_NI,       'orchard_sprays','bbch');
     CAN_LAND_NI       = keep(CAN_LAND_NI,       'crop_lands','field_ref');
     CAN_BLOCK_NI      = keep(CAN_BLOCK_NI,      'orchard_blocks','field_ref');
+    CAN_INPUT_NI2     = keep(CAN_INPUT_NI2,     'crop_inputs','situation');
+    CAN_ORCH_NI2      = keep(CAN_ORCH_NI2,      'orchard_sprays','situation');
   }
   probeCaps.reset = function(){ _colCache = Object.create(null); _colRpcDead = false; };
   probeCaps.seen  = function(){ return _colCache; };
@@ -2075,7 +2082,17 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     row.lerap=(b&&b.k==='lerap')?{stars:b.stars||0, dose:b.dose||1, ww:b.ww||'', by:b.by||''}:null;
     return row;
   }
+  function _nx2ToDb(x, row, crop){
+    row.situation=x.situation||null; row.time_end=x.timeEnd||null; row.weather=x.weather||null;
+    if(crop){ row.crop_at=x.cropAt||null; row.eppo_at=x.eppoAt||null; }
+    return row;
+  }
   function _nxFromDb(r, o){
+    if(r.situation) o.situation=r.situation;
+    if(r.time_end) o.timeEnd=r.time_end;
+    if(r.weather) o.weather=r.weather;
+    if(r.crop_at) o.cropAt=r.crop_at;
+    if(r.eppo_at) o.eppoAt=r.eppo_at;
     if(r.bbch) o.bbch=r.bbch;
     if(r.method) o.method=r.method;
     if(r.eamu) o.eamu=r.eamu;
@@ -2096,6 +2113,7 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
       row.removed_by=(i.removed&&i.removed.by)||null;
       row.changes=Array.isArray(i.changes)?i.changes:[]; }   /* NOT NULL on the server: never send null */
     if(CAN_INPUT_NI) _nxToDb(i,row);
+    if(CAN_INPUT_NI2) _nx2ToDb(i,row,true);
     return row; }
   function cinFromDb(r){ return _nxFromDb(r, { id:r.local_id, land:_numIf(r.land_local_id), date:r.input_date||'', product:r.product||'', reg:r.reg||'', kind:r.kind||'', rate:r.rate||'', batch:r.batch||'', by:r.by_who||'', operatorCert:r.operator_cert||'', targetFor:r.target_for||'', phi:Number(r.phi)||0, costPerHa:Number(r.cost_per_ha)||0, act:r.act||undefined, water:r.water_vol||undefined, wind:r.wind||undefined, time:r.applied_time||undefined, removed:r.removed_at?{at:r.removed_at, reason:r.removed_reason||'', by:r.removed_by||''}:undefined,
     changes:(Array.isArray(r.changes)&&r.changes.length)?r.changes:undefined }); }
@@ -2250,6 +2268,7 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
       row.removed_by=(s.removed&&s.removed.by)||null;
       row.changes=Array.isArray(s.changes)?s.changes:[]; }   /* NOT NULL on the server: never send null */
     if(CAN_ORCH_NI) _nxToDb(s,row);
+    if(CAN_ORCH_NI2) _nx2ToDb(s,row,false);
     return row; }
   function osFromDb(r){ return _nxFromDb(r, { id:r.local_id, ic:r.icon||'\uD83E\uDDEA', t:r.title||'', s:r.sub||'', phi:{eu:Number(r.phi_eu)||0,uk:Number(r.phi_uk)||0,us:Number(r.phi_us)||0,local:Number(r.phi_local)||0}, bid:r.block_local_id||'', product:r.product||'', reg:r.reg||'', forx:r.target_for||'', by:r.applied_by||'', att:r.att||undefined, dateISO:r.spray_date||'', cropcat:r.cropcat||'', rate:r.rate||'', batch:r.batch||'', cert:r.operator_cert||'', act:r.act||undefined, water:r.water_vol||undefined, wind:r.wind||undefined, time:r.applied_time||undefined, removed:r.removed_at?{at:r.removed_at, reason:r.removed_reason||'', by:r.removed_by||''}:undefined,
     changes:(Array.isArray(r.changes)&&r.changes.length)?r.changes:undefined }); }

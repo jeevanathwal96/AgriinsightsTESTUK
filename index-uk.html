@@ -33,7 +33,7 @@
 <script defer src="vendor/chart.umd.js"></script>
 <!-- AgriInsights backend: Supabase client + data service (load order matters) -->
 <script src="vendor/supabase.js"></script>
-<script src="ai-data-uk.js?v=uk120"></script>
+<script src="ai-data-uk.js?v=uk121"></script>
 <script src="ai-auth-uk.js?v=uk105"></script>
 <link rel="stylesheet" href="fonts.css"/>
 <style>
@@ -6863,7 +6863,7 @@ button.rn-gchip{border:0;font-family:inherit;cursor:pointer}
           </div>
           <div class="ob-type" data-arch="hort" onclick="obPickArch(this)">
             <span class="ob-arch-radio"></span>
-            <span class="ob-type-emoji">🍊</span>
+            <span class="ob-type-emoji">🍎</span>
             <div class="ob-type-name">Orchards, Fruit &amp; Veg</div>
             <div class="ob-type-desc">Top fruit, apples, berries, veg</div>
           </div>
@@ -6884,7 +6884,7 @@ button.rn-gchip{border:0;font-family:inherit;cursor:pointer}
           <div class="ob-mix-card">
             <div class="ob-mix-h">Which do you run? Tick all that apply</div>
             <div class="ob-mix-row"><span class="ob-mix-ic">🌾</span><div class="ob-mix-nm">Grain &amp; Field Crops</div><div class="ob-mix-chk on" data-sub="crops" onclick="obToggleSub('crops')">✓</div></div>
-            <div class="ob-mix-row"><span class="ob-mix-ic">🍊</span><div class="ob-mix-nm">Orchards, Fruit &amp; Veg</div><div class="ob-mix-chk on" data-sub="orchards" onclick="obToggleSub('orchards')">✓</div></div>
+            <div class="ob-mix-row"><span class="ob-mix-ic">🍎</span><div class="ob-mix-nm">Orchards, Fruit &amp; Veg</div><div class="ob-mix-chk on" data-sub="orchards" onclick="obToggleSub('orchards')">✓</div></div>
             <div class="ob-mix-row"><span class="ob-mix-ic">🐄</span><div class="ob-mix-nm">Livestock</div><div class="ob-mix-chk on" data-sub="livestock" onclick="obToggleSub('livestock')">✓</div></div>
           </div>
         </div>
@@ -9620,6 +9620,7 @@ button.rn-gchip{border:0;font-family:inherit;cursor:pointer}
       </div>
       <div class="or-add-tip" id="or-add-tip"></div>
       <div class="or-frow"><label class="or-flbl" data-t="or.add.name">Block name</label><input class="or-finp" id="or-f-name" placeholder="e.g. Long Orchard"></div>
+      <div class="or-frow"><label class="or-flbl">Field number <span class="or-fh">optional · DAERA field no. or RPA parcel</span></label><input class="or-finp" id="or-f-fref" placeholder="e.g. SP1234 5678"></div>
       <div class="or-frow"><label class="or-flbl" data-t="or.add.crop">What are you growing?</label><select class="or-finp" id="or-f-type" onchange="orAutoApply()"></select></div>
       <div class="or-auto-av" id="or-auto-av"></div>
       <div class="or-frow"><label class="or-flbl" data-t="or.add.spray">Do you spray this block?</label>
@@ -9853,7 +9854,7 @@ button.rn-gchip{border:0;font-family:inherit;cursor:pointer}
       <span class="tab-count" id="plan-tab-crops-count">0</span>
     </button>
     <button class="plan-tab orch" id="plan-tab-orch" onclick="setPlanTab('orchards')">
-      <span class="tab-ic">🍊</span>
+      <span class="tab-ic">🍎</span>
       <span>Orchards, Fruit &amp; Veg</span>
       <span class="tab-count" id="plan-tab-orch-count">0</span>
     </button>
@@ -10280,7 +10281,7 @@ button.rn-gchip{border:0;font-family:inherit;cursor:pointer}
             <div class="set-toggles" id="set-ent-toggles" style="margin-top:6px">
               <div class="set-trow"><div><div class="tl">🌾 Crops</div><div class="ts">Wheat, barley, oilseed rape, beans, grass</div></div>
                 <label class="toggle-wrap" style="flex-shrink:0"><input type="checkbox" id="set-ent-crops" onchange="onSetEnterprise('crops',this.checked)"/><div class="toggle-track"></div></label></div>
-              <div class="set-trow"><div><div class="tl">🍊 Orchards, Fruit &amp; Veg</div><div class="ts">Top fruit, apples, berries, vegetables</div></div>
+              <div class="set-trow"><div><div class="tl">🍎 Orchards, Fruit &amp; Veg</div><div class="ts">Top fruit, apples, berries, vegetables</div></div>
                 <label class="toggle-wrap" style="flex-shrink:0"><input type="checkbox" id="set-ent-orchards" onchange="onSetEnterprise('orchards',this.checked)"/><div class="toggle-track"></div></label></div>
               <div class="set-trow"><div><div class="tl">🐄 Livestock</div><div class="ts">Cattle, sheep, goats, dairy</div></div>
                 <label class="toggle-wrap" style="flex-shrink:0"><input type="checkbox" id="set-ent-livestock" onchange="onSetEnterprise('livestock',this.checked)"/><div class="toggle-track"></div></label></div>
@@ -11137,6 +11138,14 @@ function computeFyYear(today, fyStartMonth) {
 
 function migrateDemoData() {
   if (typeof ST === 'undefined') return;
+  /* The seeded ledger's last tax year shows a £548k profit, so the tax engine asked for
+     £122k payments on account against a plan making a fraction of that, and the 12-month
+     forecast went £551k overdrawn. A farmer in that position asks HMRC to reduce them
+     (SA303) - which is what this records. */
+  try{ var _pd=(typeof APP_TODAY!=='undefined'&&APP_TODAY)?APP_TODAY:new Date();
+       var _ty=_pd.getFullYear()-((_pd.getMonth()<3||(_pd.getMonth()===3&&_pd.getDate()<6))?1:0);
+       ST.poaHmrc=(ST.poaHmrc&&typeof ST.poaHmrc==='object')?ST.poaHmrc:{};
+       if(!ST.poaHmrc[String(_ty)]) ST.poaHmrc[String(_ty)]={each:40000, prevBal:27993}; }catch(e){}
   // Dynamic re-anchor (no hard-coded year): shift the whole demo so its most recent
   // *active* month lands on the current month, preserving day-of-month & seasonal alignment.
   if (ST.txns && ST.txns.length) {
@@ -11328,7 +11337,7 @@ var ST_CROP = {
     {t:'Oilseed rape', i:'\uD83C\uDF3B'}, {t:'Field beans', i:'\uD83E\uDED8'}, {t:'Winter oats', i:'\uD83C\uDF3E'},
     {t:'Combining peas', i:'\uD83E\uDED8'}, {t:'Linseed', i:'\uD83C\uDF3F'}, {t:'Rye', i:'\uD83C\uDF3E'},
     {t:'Sugar beet', i:'\uD83E\uDD6C'}, {t:'Grass / silage', i:'\uD83C\uDF3F'}, {t:'Potatoes', i:'\uD83E\uDD54'},
-    {t:'Vegetables', i:'\uD83E\uDD6C'}, {t:'Top fruit', i:'\uD83C\uDF4A'}, {t:'Deciduous fruit', i:'\uD83C\uDF4E'},
+    {t:'Vegetables', i:'\uD83E\uDD6C'}, {t:'Top fruit', i:'\uD83C\uDF4E'}, {t:'Deciduous fruit', i:'\uD83C\uDF4E'},
     {t:'Soft fruit', i:'\uD83C\uDF53'}, {t:'Forage maize', i:'\uD83C\uDF3D'}, {t:'Other', i:'\uD83C\uDF31'}
   ],
   // Lands
@@ -11367,21 +11376,21 @@ var ST_CROP = {
      filter alone would have hidden the spend rather than fixed it. */
   inputs: [
     {id:'ci1',  land:1, date:'2025-10-02', product:'Skyfall seed',          reg:'Certified', kind:'seed',        rate:'180 kg/ha',  batch:'SD5567', by:'R. Hughes',  operatorCert:'',        phi:0,  costPerHa:81},
-    {id:'ci2',  land:1, date:'2025-10-16', product:'Liberator',             reg:'MAPP 14313', kind:'herbicide',  rate:'0.6 l/ha',   batch:'LB2210', by:'S. Ellis',   operatorCert:'PA1/PA2', phi:0,  costPerHa:28},
+    {id:'ci2',  land:1, date:'2025-10-16', product:'Liberator',             reg:'MAPP 15206', kind:'herbicide',  rate:'0.6 l/ha',   batch:'LB2210', by:'S. Ellis',   operatorCert:'PA1/PA2', phi:0,  costPerHa:28, act:'diflufenican and flufenacet', targetFor:'blackgrass', time:'09:15', water:'100 l/ha', wind:'SW 5 mph', bbch:'11', method:'Boom Sprayer', buffer:{k:'nowater'}},
     {id:'ci3',  land:1, date:'2026-03-04', product:'Nitram AN 34.5%',       reg:'Fertiliser', kind:'fertiliser', rate:'640 kg/ha',  batch:'',       by:'R. Hughes',  operatorCert:'',        phi:0,  costPerHa:218},
-    {id:'ci4',  land:1, date:'2026-04-22', product:'Ascra Xpro',            reg:'MAPP 17533', kind:'fungicide',  rate:'1.0 l/ha',   batch:'AX8841', by:'S. Ellis',   operatorCert:'PA1/PA2', phi:35, costPerHa:48},
-    {id:'ci5',  land:1, date:'2026-05-19', product:'Revystar XE',           reg:'MAPP 18359', kind:'fungicide',  rate:'1.0 l/ha',   batch:'RV1180', by:'S. Ellis',   operatorCert:'PA1/PA2', phi:35, costPerHa:55},
-    {id:'ci6',  land:2, date:'2025-09-12', product:'Katamaran Turbo',       reg:'MAPP 16536', kind:'herbicide',  rate:'2.0 l/ha',   batch:'KT2210', by:'S. Ellis',   operatorCert:'PA1/PA2', phi:0,  costPerHa:42},
-    {id:'ci7',  land:2, date:'2026-02-18', product:'Proline 275',           reg:'MAPP 13167', kind:'fungicide',  rate:'0.5 l/ha',   batch:'PR1180', by:'S. Ellis',   operatorCert:'PA1/PA2', phi:56, costPerHa:26},
+    {id:'ci4',  land:1, date:'2026-04-22', product:'Ascra Xpro',            reg:'MAPP 17623', kind:'fungicide',  rate:'1.0 l/ha',   batch:'AX8841', by:'S. Ellis',   operatorCert:'PA1/PA2', phi:35, costPerHa:48, act:'bixafen, fluopyram and prothioconazole', targetFor:'septoria', time:'07:30', water:'200 l/ha', wind:'W 6 mph', bbch:'31', method:'Boom Sprayer', buffer:{k:'lerap', m:1, stars:3, dose:1, ww:'3to6', by:'S. Ellis'}},
+    {id:'ci5',  land:1, date:'2026-05-19', product:'Revystar XE',           reg:'MAPP 19250', kind:'fungicide',  rate:'1.0 l/ha',   batch:'RV1180', by:'S. Ellis',   operatorCert:'PA1/PA2', phi:35, costPerHa:55, act:'fluxapyroxad and mefentrifluconazole', targetFor:'septoria', time:'06:45', water:'200 l/ha', wind:'W 8 mph', bbch:'39', method:'Boom Sprayer', buffer:{k:'full', m:5}},
+    {id:'ci6',  land:2, date:'2025-09-12', product:'Katamaran Turbo',       reg:'MAPP 16921', kind:'herbicide',  rate:'2.0 l/ha',   batch:'KT2210', by:'S. Ellis',   operatorCert:'PA1/PA2', phi:0,  costPerHa:42, act:'dimethenamid-P, metazachlor and quinmerac', targetFor:'broad-leaved weeds', time:'10:00', water:'200 l/ha', wind:'NW 4 mph', bbch:'05', method:'Boom Sprayer', buffer:{k:'full', m:5}},
+    {id:'ci7',  land:2, date:'2026-02-18', product:'Proline 275',           reg:'MAPP 14790', kind:'fungicide',  rate:'0.5 l/ha',   batch:'PR1180', by:'S. Ellis',   operatorCert:'PA1/PA2', phi:56, costPerHa:26, act:'prothioconazole', targetFor:'light leaf spot', time:'11:20', water:'200 l/ha', wind:'S 7 mph', bbch:'30', method:'Boom Sprayer', buffer:{k:'none'}},
     {id:'ci8',  land:3, date:'2025-11-08', product:'0:20:30 compound',      reg:'Fertiliser', kind:'fertiliser', rate:'200 kg/ha',  batch:'',       by:'R. Hughes',  operatorCert:'',        phi:0,  costPerHa:78},
-    {id:'ci9',  land:3, date:'2026-01-14', product:'Roundup (glyphosate)',  reg:'MAPP 17517', kind:'herbicide',  rate:'2.0 l/ha',   batch:'GLY3301',by:'S. Ellis',   operatorCert:'PA1/PA2', phi:0,  costPerHa:11},
+    {id:'ci9',  land:3, date:'2026-01-14', product:'Roundup Flex',          reg:'MAPP 15541', kind:'herbicide',  rate:'2.0 l/ha',   batch:'GLY3301',by:'S. Ellis',   operatorCert:'PA1/PA2', phi:0,  costPerHa:11, act:'glyphosate', targetFor:'couch grass', time:'12:00', water:'150 l/ha', wind:'SW 6 mph', method:'Boom Sprayer', buffer:{k:'none'}},
     {id:'ci10', land:6, date:'2025-10-09', product:'Dawsum seed',           reg:'Certified', kind:'seed',        rate:'190 kg/ha',  batch:'SD6012', by:'R. Hughes',  operatorCert:'',        phi:0,  costPerHa:86},
     {id:'ci11', land:6, date:'2025-10-24', product:'0:20:30 compound',      reg:'Fertiliser', kind:'fertiliser', rate:'250 kg/ha',  batch:'',       by:'R. Hughes',  operatorCert:'',        phi:0,  costPerHa:98},
     {id:'ci12', land:6, date:'2026-03-06', product:'Nitram AN 34.5%',       reg:'Fertiliser', kind:'fertiliser', rate:'640 kg/ha',  batch:'',       by:'R. Hughes',  operatorCert:'',        phi:0,  costPerHa:218},
-    {id:'ci13', land:6, date:'2026-04-28', product:'Ascra Xpro',            reg:'MAPP 17533', kind:'fungicide',  rate:'1.0 l/ha',   batch:'AX8842', by:'S. Ellis',   operatorCert:'PA1/PA2', phi:35, costPerHa:48},
+    {id:'ci13', land:6, date:'2026-04-28', product:'Ascra Xpro',            reg:'MAPP 17623', kind:'fungicide',  rate:'1.0 l/ha',   batch:'AX8842', by:'S. Ellis',   operatorCert:'PA1/PA2', phi:35, costPerHa:48, act:'bixafen, fluopyram and prothioconazole', targetFor:'septoria', time:'08:10', water:'200 l/ha', wind:'W 7 mph', bbch:'32', method:'Boom Sprayer', buffer:{k:'nowater'}},
     {id:'ci14', land:4, date:'2026-03-26', product:'Laureate seed',         reg:'Certified', kind:'seed',        rate:'170 kg/ha',  batch:'SD7104', by:'R. Hughes',  operatorCert:'',        phi:0,  costPerHa:77},
     {id:'ci15', land:4, date:'2026-04-10', product:'Nitram AN 34.5%',       reg:'Fertiliser', kind:'fertiliser', rate:'330 kg/ha',  batch:'',       by:'R. Hughes',  operatorCert:'',        phi:0,  costPerHa:112},
-    {id:'ci16', land:1, date:'2026-05-27', product:'Karate Zeon',           reg:'MAPP 12629', kind:'insecticide',rate:'50 ml/ha',   batch:'KZ8841', by:'S. Ellis',   operatorCert:'PA1/PA2', phi:0,  costPerHa:3}
+    {id:'ci16', land:1, date:'2026-05-27', product:'Hallmark with Zeon Technology', reg:'MAPP 12629', kind:'insecticide',rate:'50 ml/ha',   batch:'KZ8841', by:'S. Ellis',   operatorCert:'PA1/PA2', phi:0,  costPerHa:3, act:'lambda-cyhalothrin', targetFor:'orange wheat blossom midge', time:'19:40', water:'200 l/ha', wind:'E 4 mph', bbch:'59', method:'Boom Sprayer', buffer:{k:'full', m:5}}
   ],
   // Compliance records (status derived where possible; doc flags stored)
   compliance: {
@@ -13030,12 +13039,14 @@ function orSaveSprayEdit(id){
   ['reg','rate','batch','by','cert','act','water','wind','time'].forEach(function(k){ n+=fixLog(x,k,x[k]||'',v('or-sp-'+k)); });
   var nx=nxRead(); if(nx.err){ toast(nx.err,'error'); return; }
   n+=fixLog(x,'bbch',x.bbch||'',nx.bbch||''); n+=fixLog(x,'method',x.method||'',nx.method||''); n+=fixLog(x,'eamu',x.eamu||'',nx.eamu||'');
+  n+=fixLog(x,'situation',x.situation||'',nx.situation||''); n+=fixLog(x,'timeEnd',x.timeEnd||'',nx.timeEnd||''); n+=fixLog(x,'weather',x.weather||'',nx.weather||'');
   n+=fixLog(x,'buffer',nxLerapText(x.buffer)||nxBufText(x.buffer),nxLerapText(nx.buffer)||nxBufText(nx.buffer));
   var att=orAttachTake('sp'); if(att){ x.att=att; n+=fixLog(x,'att','',fixT('new attachment','nuwe aanhangsel')); }
   if(!n){ orCloseModal(); orToast(fixT('Nothing changed.','Niks het verander nie.')); return; }
   x.product=prod; x.forx=forx; x.dateISO=dateISO; x.bid=b.id;
   ['reg','rate','batch','by','cert','act','water','wind','time'].forEach(function(k){ x[k]=v('or-sp-'+k); });
   x.bbch=nx.bbch||undefined; x.method=nx.method||undefined; x.buffer=nx.buffer||undefined; x.eamu=nx.eamu||undefined;
+  x.situation=nx.situation||undefined; x.timeEnd=nx.timeEnd||undefined; x.weather=nx.weather||undefined;
   x.phi=orPhiObj(days);
   var dt=new Date(dateISO+'T00:00:00');
   x.t=prod+(forx?' — for '+forx:''); x.s=b.name+' · '+orFmtDM(dt)+' · '+(forx||'spray');
@@ -13081,7 +13092,7 @@ function cropInputEditSave(id){
            date:v('ci-date')||x.date, time:v('ci-time'), act:v('ci-act'), water:v('ci-water'), wind:v('ci-wind') };
   var ppp=!/^(seed|fertiliser)$/.test(nv.kind||'');
   var nx=ppp?nxRead():{}; if(nx.err){ toast(nx.err,'error'); CROP_INPUT_EDIT=id; return; }
-  if(ppp){ nv.bbch=nx.bbch||''; nv.method=nx.method||''; nv.eamu=nx.eamu||''; }
+  if(ppp){ nv.bbch=nx.bbch||''; nv.method=nx.method||''; nv.eamu=nx.eamu||''; nv.situation=nx.situation||''; nv.timeEnd=nx.timeEnd||''; nv.weather=nx.weather||''; }
   var n=0; Object.keys(nv).forEach(function(k){ n+=fixLog(x,k,x[k]==null?'':x[k],nv[k]); });
   var bOld=nxBufText(x.buffer), bNew=ppp?nxBufText(nx.buffer):bOld;
   if(nxLerapText(x.buffer)) bOld=nxLerapText(x.buffer); if(ppp && nxLerapText(nx.buffer)) bNew=nxLerapText(nx.buffer);
@@ -13100,7 +13111,7 @@ function aiRegChanges(from, to, lang){
           by:['Applied by','Toegedien deur'], cert:['Licence','Lisensie'], operatorCert:['Licence','Lisensie'], weather:['Weather','Weer'],
           kind:['Type','Soort'], att:['Attachment','Aanhangsel'],
           act:['Active ingredient','Aktiewe bestanddeel'], water:['Water volume','Watervolume'], wind:['Wind','Wind'], time:['Time','Tyd'],
-          bbch:['Growth stage','Groeistadium'], method:['Applied with','Toegedien met'], buffer:['Buffer next to water','Buffer by water'], eamu:['Off-label permit (EAMU)','Af-etiket permit (EAMU)']};
+          bbch:['Growth stage','Groeistadium'], situation:['Where sprayed','Waar gespuit'], timeEnd:['Finish time','Eindtyd'], method:['Applied with','Toegedien met'], buffer:['Buffer next to water','Buffer by water'], eamu:['Off-label permit (EAMU)','Af-etiket permit (EAMU)']};
   var L=function(en,af){ return lang==='af' ? af : en; };
   var when=function(iso){ var d=new Date(iso); if(isNaN(d)) return String(iso||'');
     return aiRcDate(String(iso).slice(0,10))+' '+('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2); };
@@ -13583,7 +13594,7 @@ function cropRenderAddForm(){
     '<div class="crop-two"><div class="crop-field"><label>Crop</label><select id="crop-f-crop">'+cropOpts+'</select></div>'+
       '<div class="crop-field"><label>Cultivar (optional)</label><input id="crop-f-cultivar" placeholder="e.g. Skyfall"></div></div>'+
     '<div class="crop-two"><div class="crop-field"><label>Area planted (ha)</label><input id="crop-f-area" type="number" placeholder="120"></div>'+
-      '</div>'+
+      '<div class="crop-field"><label>Field number (optional)</label><input id="crop-f-fref" placeholder="DAERA field no. or RPA parcel"></div></div>'+
     '<div class="crop-two"><div class="crop-field"><label>Planting date</label><input id="crop-f-planted" type="date"><div class="hint">Winter wheat: Sep\u2013Oct \u00b7 Spring barley: Feb\u2013Apr</div></div>'+
       '<div class="crop-field"><label>Expected harvest</label><input id="crop-f-harvest" type="date"></div></div>'+
     '<div class="crop-two"><div class="crop-field"><label>Target yield (t/ha)</label><input id="crop-f-yield" type="number" step="0.1" placeholder="6.2"></div>'+
@@ -13661,8 +13672,10 @@ var gmo=false;
   } else {
     land=cropLandById(parseInt(landSel,10)); if(!land){ toast('Land not found','error'); return; }
     if(land.crop) land.prevCrop=land.crop;
+    if(land.crop && land.crop!==crop) cropSnapLand(land);   /* last crop stays on its sprays */
     land.area=area;
   }
+  var _fr=String((($('crop-f-fref')||{}).value)||'').trim(); if(_fr) land.fieldRef=_fr;
   land.crop=crop; land.cultivar=cultivar; land.gmo=gmo; land.irrigated=irr;
   land.planted=planted; land.harvest=harvest; land.targetYield=ty; land.actualYield=null; land.inputPerHa=inp; land.price=prc;
   land.stage = planted ? 'growing' : 'planned';
@@ -13915,6 +13928,29 @@ function ukEamuLoad(){
   return _ukEamuReq;
 }
 
+/* ---- the crop, saved with the spray ----------------------------------------------------
+   The record used to work the crop out from what the field grows NOW, so a replanted field
+   lost the crop off last season's sprays (only sprays from 90 days before drilling to
+   harvest got one). Each new application now keeps the crop and its code as they were on
+   the day; older ones are stamped the moment their field is replanted or its crop edited. */
+function aiLandCropAt(l, iso){
+  if(!l || !l.crop || !iso) return '';
+  var pl=l.planted||'', hv=l.harvest||'';
+  if(pl){ var d0=new Date(pl+'T00:00:00'); d0.setDate(d0.getDate()-90);
+          if(iso < d0.toISOString().slice(0,10)) return ''; }
+  if(hv && iso > hv) return '';
+  return l.crop+(l.cultivar?(' '+String(l.cultivar).split(' · ')[0]):'');
+}
+function cropSnapLand(l){
+  if(!l || !l.crop) return 0;
+  var n=0;
+  ((window.ST_CROP&&ST_CROP.inputs)||[]).concat((window.ST_CROP&&ST_CROP.removed)||[]).forEach(function(i){
+    if(!i || String(i.land)!==String(l.id) || i.cropAt) return;
+    var c=aiLandCropAt(l, i.date); if(!c) return;
+    i.cropAt=c; var e=eppoForLand(l); if(e) i.eppoAt=e; n++;
+  });
+  return n;
+}
 /* ---- the new questions on both spray forms ---------------------------------------- */
 var NX_METHODS=['Boom Sprayer','Broadcast Sprayer','Knapsack / Handheld sprayer','Pellet or Granular Applicator','Weed Wiper','Other'];
 var NX_BUF=[['none','The label doesn’t ask for one'],['nowater','No ditch, stream or pond close enough to need it'],
@@ -13922,6 +13958,13 @@ var NX_BUF=[['none','The label doesn’t ask for one'],['nowater','No ditch, str
 var NX_STARS=[['0','No stars'],['1','1 star'],['2','2 stars'],['3','3 stars']];
 var NX_DOSE=[['1','Full rate'],['0.75','¾ rate'],['0.5','½ rate'],['0.25','¼ rate']];
 var NX_WW=[['dry','Dry ditch'],['lt3','Under 3 m'],['3to6','3 to 6 m'],['gt6','Over 6 m']];
+/* Where the spray went on - DAERA's "Pesticide Treatment Type" values, word for word
+   (including its "Treament" typo), so the CSV matches the list an inspector works from. */
+var NX_SIT=[['outdoor','Outdoors (field or orchard)','Treatment of agricultural fields/outdoor crops'],
+            ['tunnel','Polytunnel or other cover','Treatment of crops in temporary protection'],
+            ['glass','Glasshouse','Treament of crops in greenhouses'],
+            ['store','Store, after harvest','Post Harvest Treatment (storage)']];
+function nxSitDaera(k){ for(var i=0;i<NX_SIT.length;i++) if(NX_SIT[i][0]===(k||'outdoor')) return NX_SIT[i][2]; return NX_SIT[0][2]; }
 var NX_CTX=null;   /* {kind:'crop'|'orchard', date(), reg(), crop(), land()} set by the open form */
 function _nxLbl(a,v){ for(var i=0;i<a.length;i++) if(a[i][0]===String(v)) return a[i][1]; return ''; }
 function nxCss(){
@@ -13964,6 +14007,10 @@ function nxHTML(ctx){
       '<small>The stage number your agronomist gives, e.g. GS 32 is 32. Northern Ireland asks for it when the label says which stages you can spray.</small></div>'+
     '<div><label class="nx-l" for="nx-method">Sprayed with</label><select id="nx-method" onchange="nxLerapHint()">'+(NX_CTX.edit?'<option value="">not recorded</option>':'')+
       NX_METHODS.map(function(m){ return '<option'+(m===dm?' selected':'')+'>'+m+'</option>'; }).join('')+'</select></div></div>'+
+    '<div class="nx-two"><div><label class="nx-l" for="nx-sit">Where</label><select id="nx-sit">'+
+      NX_SIT.map(function(o){ return '<option value="'+o[0]+'"'+(o[0]===(NX_CTX.sit||'outdoor')?' selected':'')+'>'+o[1]+'</option>'; }).join('')+'</select></div>'+
+      '<div><label class="nx-l" for="nx-tend">Finished spraying at <i>optional</i></label><input type="time" id="nx-tend"></div></div>'+
+    '<div class="nx-two"><div><label class="nx-l" for="nx-weather">Weather <i>optional</i></label><input type="text" id="nx-weather" placeholder="e.g. dry, 12°C" autocomplete="off"></div><div></div></div>'+
     '<label class="nx-l">Unsprayed strip next to water</label>'+
     NX_BUF.map(function(b){ return '<label class="nx-opt"><input type="radio" name="nx-buf" value="'+b[0]+'" onchange="nxShow()">'+b[1]+'</label>'; }).join('')+
     '<div class="nx-sub" id="nx-sub-full" hidden><div class="nx-two" style="margin-bottom:0"><div><label class="nx-l" for="nx-bufm-full">Strip left (metres)</label><input type="number" id="nx-bufm-full" min="0" step="0.5" placeholder="e.g. 5"></div><div></div></div></div>'+
@@ -14009,6 +14056,9 @@ function nxRead(){
   var bb=g('nx-bbch').replace(/[–—]/g,'-');
   if(bb){ if(!/^\d{1,2}(\s*[-\/]\s*\d{1,2})?$/.test(bb)) return {err:'Growth stage is a number, such as 32 or 31-32.'}; out.bbch=bb.replace(/\s+/g,''); }
   out.method=g('nx-method')||'';
+  var sit=g('nx-sit'); if(sit && sit!=='outdoor') out.situation=sit;
+  var te=g('nx-tend'); if(te) out.timeEnd=te;
+  var we=g('nx-weather'); if(we) out.weather=we;
   var k=nxBufPick();
   if(k){
     var b={k:k};
@@ -14036,7 +14086,8 @@ function nxRead(){
 function nxFill(x, onlyCarry){
   if(!x) return;
   var set=function(id,v){ var e=$(id); if(e && v!=null && v!=='') e.value=v; };
-  if(!onlyCarry) set('nx-bbch', x.bbch);
+  if(!onlyCarry){ set('nx-bbch', x.bbch); set('nx-tend', x.timeEnd); set('nx-weather', x.weather); }
+  if(x.situation || !onlyCarry){ var si=$('nx-sit'); if(si) si.value=x.situation||'outdoor'; }
   set('nx-method', x.method);
   var b=x.buffer;
   if(b && b.k){
@@ -14157,6 +14208,7 @@ function aiSprayCsvNeeds(rows){
   var need=[], seen={};
   rows.forEach(function(r){
     if(!r.variety) return;                         /* no crop on the record - nothing to code */
+    if(r._src && r._src.cropAt) return;            /* crop saved with the spray - the field's crop now is not its crop */
     var code=r._land?eppoForLand(r._land):(r._block?eppoForBlock(r._block):'');
     if(code) return;
     var o=r._land||r._block; if(!o) return;
@@ -14168,7 +14220,7 @@ function aiSprayCsvNeeds(rows){
 function aiSprayCsvRows(from, to){
   return aiRegRows('spray', from, to).slice().reverse().map(function(r, ix){   /* oldest first, like a diary */
     var x=r._src||{}, l=r._land, b=r._block;
-    var code=r.variety ? (l?eppoForLand(l):(b?eppoForBlock(b):'')) : '';
+    var code=r.eppo||'';
     var wind=_csvWind(x.wind);
     var buf=x.buffer, bm=(buf&&buf.k)?((buf.k==='full'||buf.k==='lerap')?String(buf.m):'N/A'):'';
     var notes=[];
@@ -14178,11 +14230,11 @@ function aiSprayCsvRows(from, to){
     if(buf&&buf.k==='lerap') notes.push(nxLerapText(buf));
     if(x.eamu) notes.push('Used under EAMU '+x.eamu);
     var o=l||b;
-    return [String(ix+1), x.by||r.by||'', _csvDate(r._iso), x.time||'', '',
-      (o&&o.fieldRef)?o.fieldRef:(r.land||''), 'Treatment of agricultural fields/outdoor crops',
+    return [String(ix+1), x.by||r.by||'', _csvDate(r._iso), x.time||'', x.timeEnd||'',
+      (o&&o.fieldRef)?o.fieldRef:(r.land||''), nxSitDaera(x.situation),
       r.product||'', _csvMapp(r.reg),
       code?(eppoName(code)||r.variety):r.variety, code, x.bbch||'',
-      r.ha?(r.ha+' ha'):'', x.method||'', r.rate||'', r.water||'', bm, wind[0], wind[1], '', notes.join('; '),
+      r.ha?(r.ha+' ha'):'', x.method||'', r.rate||'', r.water||'', bm, wind[0], wind[1], x.weather||'', notes.join('; '),
       r.land||'', r.act||'', r.target||'', x.phi!=null?String(orPhiDays(x.phi)):'', r.batch||'', r.cert||'', x.eamu||''];
   });
 }
@@ -14266,7 +14318,9 @@ function cropInputFormSave(){
   var totalAll=0, n=0;
   landIds.forEach(function(lid){
     var l=cropLandById(lid); if(!l) return; n++;
+    var _ca=aiLandCropAt(l, date), _ea=_ca?eppoForLand(l):'';
     ST_CROP.inputs.unshift({ id:cropNextId(ST_CROP.inputs.concat(ST_CROP.removed||[]),'ci'), land:l.id, date:date, product:product,
+      cropAt:_ca||undefined, eppoAt:_ea||undefined, situation:nx.situation||undefined, timeEnd:nx.timeEnd||undefined, weather:nx.weather||undefined,
       reg:reg, kind:kind, rate:rate, batch:batch, by:by, operatorCert:cert, targetFor:forVal, phi:phi, costPerHa:cost,
       act:act||undefined, water:water||undefined, wind:wind||undefined, time:atime||undefined,
       bbch:nx.bbch||undefined, method:nx.method||undefined, buffer:nx.buffer||undefined, eamu:nx.eamu||undefined });
@@ -14401,6 +14455,7 @@ async function cropSaveLandEdit(){
   var nm=($('cle-name').value||'').trim(); if(!nm){ toast('Name the land','error'); return; }
   var newCrop=$('cle-crop').value;
   if(newCrop && newCrop!==l.crop && l.crop) l.prevCrop=l.crop;
+  if(l.crop && (newCrop!==l.crop || $('cle-planted').value!==(l.planted||'') || $('cle-harvest').value!==(l.harvest||''))) cropSnapLand(l);
   var _ep=(($('cle-eppo')||{}).value)||'', _auto=(function(){ var t={crop:newCrop, planted:$('cle-planted').value, cultivar:$('cle-cultivar').value}; return eppoForLand(t); })();
   l.name=nm; l.crop=newCrop; l.cultivar=$('cle-cultivar').value.trim();
   l.fieldRef=String((($('cle-fref')||{}).value)||'').trim()||undefined;
@@ -14833,6 +14888,8 @@ function _pfCropEnts(opts){
     var area=l.area||0;
     if(!by[l.crop]){ by[l.crop]={crop:l.crop,area:0,tons:0,income:0,cost:0,budgetCost:0,plannedArea:0,plannedCount:0,pricedArea:0,price:price,refPrice:(ST_CROP.prices&&ST_CROP.prices[l.crop])||0}; order.push(l.crop); }
     var e=by[l.crop]; e.area+=area; e.tons+=area*yld; e.income+=area*yld*price; e.budgetCost+=area*((l.inputPerHa||0)+cropOtherPerHa(l));
+    /* The crop's own season, from its earliest drilling - not the season on screen (-362). */
+    if(l.planted && typeof seasonOf==='function'){ var _sf=seasonOf(l.planted); if(e.fy==null || _sf<e.fy) e.fy=_sf; }
     if(price>0) e.pricedArea+=area;
     if(isPlanned){ e.plannedArea+=area; e.plannedCount++; }
   });
@@ -14840,7 +14897,11 @@ function _pfCropEnts(opts){
     /* Lands of one crop can now carry different prices, so the crop-level price shown on the
        break-even note and the what-if slider is the weighted average actually realised. */
     e.price = e.tons>0 ? Math.round(e.income/e.tons) : (e.refPrice||e.price||0);
-    e.labour=(typeof wkEnterpriseLabour==='function')?wkEnterpriseLabour('crop:'+c):0; e.taggedCost=entTaggedCost('crop:'+c); var effInput=Math.max(e.taggedCost, e.budgetCost||0); e.sourcePct=(effInput>0)?Math.min(100,Math.round(e.taggedCost/effInput*100)):0; e.cost=effInput+e.labour; e.gm=e.income-e.cost; e.gmHa=e.area?Math.round(e.gm/e.area):0; e.cop=e.tons?Math.round(e.cost/e.tons):0; e.icon=_pfCropIcon(c); e.finance=(typeof LN_cropFinance==='function')?LN_cropFinance(c):0;
+    e.labour=(typeof wkEnterpriseLabour==='function')?wkEnterpriseLabour('crop:'+c):0; /* Costed in the crop's OWN season. From 1 Sep the season on screen is the new one,
+       while the lands still hold the crop just harvested - so every crop was costed against
+       a three-week-old season with no spend and showed "Budget cost", however much of its
+       spend was recorded. The same crop's costs, from the season it was grown in. */
+    e.taggedCost=entTaggedCost('crop:'+c, (e.fy!=null)?e.fy:undefined); var effInput=Math.max(e.taggedCost, e.budgetCost||0); e.sourcePct=(effInput>0)?Math.min(100,Math.round(e.taggedCost/effInput*100)):0; e.cost=effInput+e.labour; e.gm=e.income-e.cost; e.gmHa=e.area?Math.round(e.gm/e.area):0; e.cop=e.tons?Math.round(e.cost/e.tons):0; e.icon=_pfCropIcon(c); e.finance=(typeof LN_cropFinance==='function')?LN_cropFinance(c):0;
     /* Tagged spend is keyed by crop NAME only (ent:'crop:Winter wheat') — the data model has no
        land-level tagging — so a crop that is PART planned cannot have its real costs separated
        from its budgeted ones. We keep it as one row and show the mixture (plannedPct) rather
@@ -15136,7 +15197,7 @@ function _pfGroups(which){
   /* Orchards were in the What-If picker but not this one, so the Details tab carried two
      navigation models at once: a fruit-type roll-up stacked above a picker the blocks were
      not part of. Same picker, same layout, all three. */
-  if(PF_ORCH_SORTED.length) g.push(['orch','\uD83C\uDF4A Orchards & veg',PF_ORCH_SORTED]);
+  if(PF_ORCH_SORTED.length) g.push(['orch','\uD83C\uDF4E Orchards & veg',PF_ORCH_SORTED]);
   return g;
 }
 function _pfChips(which){
@@ -16179,14 +16240,25 @@ function renderProfit(){
     }
   }
   html+='<div class="pf-kpis" id="pf-kpis">'+
-    '<div class="pf-kpi kpi-tap" onclick="kpiOpen(\'pfFarmProfit\')"><span class="kpi-i">\u24D8</span><div class="l">Farm profit, after recurring bills'+profitTags('actual', seasonShortLabel())+'</div><div class="v">'+_pfK(profit)+'</div><div class="s">after '+_pfK(overheads)+' of shared costs \u2014 loans, insurance, admin</div></div>'+
+    '<div class="pf-kpi kpi-tap" onclick="kpiOpen(\'pfFarmProfit\')"><span class="kpi-i">\u24D8</span><div class="l">Farm profit, after recurring bills'+profitTags('proj', seasonShortLabel())+'</div><div class="v">'+_pfK(profit)+'</div><div class="s">expected this season, after '+_pfK(overheads)+' of shared costs. Cash left is on Money Flow.</div></div>'+
     '<div class="pf-kpi kpi-tap" onclick="kpiOpen(\'pfBestEarner\')"><span class="kpi-i">\u24D8</span><div class="l">Best earner</div><div class="v">'+(best?esc(best.crop||best.name):'\u2014')+'</div><div class="s">'+bestTxt+'</div></div>'+
     (watch?'<div class="pf-kpi warn kpi-tap" onclick="kpiOpen(\'pfThird\')"><span class="kpi-i">\u24D8</span><div class="l">Watch</div><div class="v">'+esc(watch)+'</div><div class="s">'+watchSub+'</div></div>':'<div class="pf-kpi kpi-tap" onclick="kpiOpen(\'pfThird\')"><span class="kpi-i">\u24D8</span><div class="l">Crops &amp; herds</div><div class="v">'+(scReal.length+sl.length)+'</div><div class="s">tracked this season</div></div>')+
   '</div>';
   // U9: untagged income never reaches an enterprise margin — surface it
   var _pfValid={}; try { (typeof entList==='function'?entList():[]).forEach(function(e){ if(e&&e.code) _pfValid[e.code]=1; }); } catch(e){}
   var _pfUnalloc=0, _pfUnN=0;
-  (ST.txns||[]).forEach(function(t){ if(t && t.type==='income' && !(t.ent && _pfValid[t.ent])){ _pfUnalloc+=t.amt||0; _pfUnN++; } });
+  /* Only income that BELONGS to a crop, herd or block and is not linked to one - the same
+     test as the Income nudge (entKindForCat). Rent, SFI and the delinked payment are whole-
+     farm income by nature: tagging them to an enterprise would make a margin wrong, so they
+     are not "missing" anything. And only this season, as entTaggedCost counts costs: the
+     check summed the whole ledger, so 2024's income nagged in 2026. */
+  var _pfFY=(typeof planYear!=='undefined')?planYear:null;
+  (ST.txns||[]).forEach(function(t){
+    if(!t || t.type!=='income') return;
+    if(_pfFY!=null){ var _f=entTxnFY(t); if(_f!==null && _f!==_pfFY) return; }
+    var stale=t.ent && !_pfValid[t.ent], untagged=!t.ent && entKindForCat(t.cat);
+    if(stale||untagged){ _pfUnalloc+=t.amt||0; _pfUnN++; }
+  });
   if(_pfUnalloc>0){
     html+='<div class="pf-card" style="border-color:#F1DBA6;background:#FEFBF2"><div style="display:flex;align-items:flex-start;gap:9px"><span style="font-size:18px">\uD83C\uDFF7\uFE0F</span><div style="flex:1"><div style="font-weight:800;color:var(--t1);font-size:13.5px">'+fmt(Math.round(_pfUnalloc))+' income not linked to an enterprise</div><div style="font-size:11.5px;color:var(--t3);margin-top:2px">'+_pfUnN+' transaction'+(_pfUnN===1?'':'s')+' aren\u2019t counted in the margins below. <span onclick="pfShowUnalloc()" style="color:var(--gm);font-weight:800;cursor:pointer;text-decoration:underline">Tag them \u2192</span></div></div></div></div>';
   }
@@ -16658,7 +16730,8 @@ recurring: [
     {date:'15 Jul 2024',desc:'Farm insurance premium',cat:'Insurance',type:'expense',amt:2330,method:'Direct Debit'},
     {date:'18 Jul 2024',desc:'Soft fruit — main crop',cat:'Fruit Sales',type:'income',amt:155230,method:'Bank Deposit',ent:'or:f7'},
     {date:'20 Jul 2024',desc:'Phone & broadband',cat:'Admin & Professional Fees',type:'expense',amt:145,method:'Direct Debit'},
-    {date:'22 Jul 2024',desc:'Winter barley & rape — harvest fuel',cat:'Fuel & Oil',type:'expense',amt:22400,method:'Fuel Card'},
+    {date:'22 Jul 2024',desc:'Harvest fuel — oilseed rape',cat:'Fuel & Oil',type:'expense',amt:13000,method:'Fuel Card',ent:'crop:Oilseed rape'},
+    {date:'22 Jul 2024',desc:'Harvest fuel — spring barley',cat:'Fuel & Oil',type:'expense',amt:9400,method:'Fuel Card',ent:'crop:Spring barley'},
     {date:'25 Jul 2024',desc:'Permanent staff wages (3)',cat:'Labour & Wages',type:'expense',amt:9400,method:'Bank Transfer'},
     {date:'26 Jul 2024',desc:'Oilseed rape sale — Openfield',cat:'Crop Sales',type:'income',amt:142595,method:'Bank Deposit',ent:'crop:Oilseed rape'},
     {date:'28 Jul 2024',desc:'Milk cheque — Jul',cat:'Milk & Dairy',type:'income',amt:8303,method:'Bank Deposit',ent:'ls:4'},
@@ -16704,13 +16777,15 @@ recurring: [
     {date:'26 Sep 2024',desc:'Store cattle to market',cat:'Livestock Sales',type:'income',amt:16786,method:'Bank Deposit',ent:'ls:5'},
     {date:'26 Sep 2024',desc:'Bin hire & field haulage',cat:'Contractors & hire',type:'expense',amt:12000,method:'Bank Debit',ent:'or:f1'},
     {date:'28 Sep 2024',desc:'Milk cheque — Sep',cat:'Milk & Dairy',type:'income',amt:7491,method:'Bank Deposit',ent:'ls:4'},
-    {date:'28 Sep 2024',desc:'Drilling fuel',cat:'Fuel & Oil',type:'expense',amt:18200,method:'Fuel Card'},
+    {date:'28 Sep 2024',desc:'Drilling fuel — winter wheat',cat:'Fuel & Oil',type:'expense',amt:10100,method:'Fuel Card',ent:'crop:Winter wheat'},
+    {date:'28 Sep 2024',desc:'Drilling fuel — oilseed rape',cat:'Fuel & Oil',type:'expense',amt:4550,method:'Fuel Card',ent:'crop:Oilseed rape'},
+    {date:'28 Sep 2024',desc:'Drilling fuel — field beans',cat:'Fuel & Oil',type:'expense',amt:3550,method:'Fuel Card',ent:'crop:Field beans'},
     {date:'01 Oct 2024',desc:'Land let to neighbour (50 ha)',cat:'Rental Income',type:'income',amt:1900,method:'Bank Deposit'},
     {date:'01 Oct 2024',desc:'Rent — Brook Field (FBT)',cat:'Land & Rental',type:'expense',amt:1580,method:'Bank Debit'},
     {date:'02 Oct 2024',desc:'Oxbury Bank facility',cat:'Loan Repayments',type:'expense',amt:2650,method:'Direct Debit'},
     {date:'02 Oct 2024',desc:'Machinery finance',cat:'Loan Repayments',type:'expense',amt:2480,method:'Direct Debit'},
     {date:'08 Oct 2024',desc:'Field bean seed — Vespa',cat:'Seeds & Planting',type:'expense',amt:7200,method:'Merchant Account',ent:'crop:Field beans'},
-    {date:'10 Oct 2024',desc:'Muck spreading contractor',cat:'Contractors & hire',type:'expense',amt:8600,method:'Bank Debit'},
+    {date:'10 Oct 2024',desc:'Muck spreading contractor — field beans',cat:'Contractors & hire',type:'expense',amt:8600,method:'Bank Debit',ent:'crop:Field beans'},
     {date:'12 Oct 2024',desc:'Machinery servicing & parts',cat:'Machinery & Repairs',type:'expense',amt:7200,method:'Merchant Account'},
     {date:'12 Oct 2024',desc:'Autumn herbicide',cat:'Crop Protection',type:'expense',amt:26800,method:'Merchant Account',ent:'crop:Winter wheat'},
     {date:'14 Oct 2024',desc:'Picking labour — late apples',cat:'Labour & Wages',type:'expense',amt:62000,method:'Bank Transfer',ent:'or:f4'},
@@ -16786,7 +16861,9 @@ recurring: [
     {date:'12 Feb 2025',desc:'Winter pruning labour',cat:'Labour & Wages',type:'expense',amt:44000,method:'Bank Transfer',ent:'or:f1'},
     {date:'14 Feb 2025',desc:'Lambing feed & bedding',cat:'Animal Feed',type:'expense',amt:1700,method:'Merchant Account',ent:'ls:2'},
     {date:'15 Feb 2025',desc:'Farm insurance premium',cat:'Insurance',type:'expense',amt:2330,method:'Direct Debit'},
-    {date:'18 Feb 2025',desc:'Fertiliser — forward order',cat:'Fertiliser',type:'expense',amt:26400,method:'Merchant Account'},
+    {date:'18 Feb 2025',desc:'Fertiliser — spring barley compound',cat:'Fertiliser',type:'expense',amt:12600,method:'Merchant Account',ent:'crop:Spring barley'},
+    {date:'18 Feb 2025',desc:'Fertiliser — oilseed rape sulphur & N',cat:'Fertiliser',type:'expense',amt:8100,method:'Merchant Account',ent:'crop:Oilseed rape'},
+    {date:'18 Feb 2025',desc:'Fertiliser — field beans P & K',cat:'Fertiliser',type:'expense',amt:5700,method:'Merchant Account',ent:'crop:Field beans'},
     {date:'20 Feb 2025',desc:'Phone & broadband',cat:'Admin & Professional Fees',type:'expense',amt:145,method:'Direct Debit'},
     {date:'22 Feb 2025',desc:'Stored apples — final',cat:'Fruit Sales',type:'income',amt:43320,method:'Bank Deposit',ent:'or:f1'},
     {date:'25 Feb 2025',desc:'Permanent staff wages (3)',cat:'Labour & Wages',type:'expense',amt:9400,method:'Bank Transfer'},
@@ -16866,7 +16943,8 @@ recurring: [
     {date:'15 Jul 2025',desc:'Farm insurance premium',cat:'Insurance',type:'expense',amt:2330,method:'Direct Debit'},
     {date:'18 Jul 2025',desc:'Soft fruit — main crop',cat:'Fruit Sales',type:'income',amt:166668,method:'Bank Deposit',ent:'or:f7'},
     {date:'20 Jul 2025',desc:'Phone & broadband',cat:'Admin & Professional Fees',type:'expense',amt:145,method:'Direct Debit'},
-    {date:'22 Jul 2025',desc:'Winter barley & rape — harvest fuel',cat:'Fuel & Oil',type:'expense',amt:22400,method:'Fuel Card'},
+    {date:'22 Jul 2025',desc:'Harvest fuel — oilseed rape',cat:'Fuel & Oil',type:'expense',amt:13000,method:'Fuel Card',ent:'crop:Oilseed rape'},
+    {date:'22 Jul 2025',desc:'Harvest fuel — spring barley',cat:'Fuel & Oil',type:'expense',amt:9400,method:'Fuel Card',ent:'crop:Spring barley'},
     {date:'25 Jul 2025',desc:'Permanent staff wages (3)',cat:'Labour & Wages',type:'expense',amt:9400,method:'Bank Transfer'},
     {date:'26 Jul 2025',desc:'Oilseed rape sale — Openfield',cat:'Crop Sales',type:'income',amt:153102,method:'Bank Deposit',ent:'crop:Oilseed rape'},
     {date:'28 Jul 2025',desc:'Milk cheque — Jul',cat:'Milk & Dairy',type:'income',amt:8915,method:'Bank Deposit',ent:'ls:4'},
@@ -16912,13 +16990,15 @@ recurring: [
     {date:'26 Sep 2025',desc:'Store cattle to market',cat:'Livestock Sales',type:'income',amt:18023,method:'Bank Deposit',ent:'ls:5'},
     {date:'26 Sep 2025',desc:'Bin hire & field haulage',cat:'Contractors & hire',type:'expense',amt:12000,method:'Bank Debit',ent:'or:f1'},
     {date:'28 Sep 2025',desc:'Milk cheque — Sep',cat:'Milk & Dairy',type:'income',amt:8043,method:'Bank Deposit',ent:'ls:4'},
-    {date:'28 Sep 2025',desc:'Drilling fuel',cat:'Fuel & Oil',type:'expense',amt:18200,method:'Fuel Card'},
+    {date:'28 Sep 2025',desc:'Drilling fuel — winter wheat',cat:'Fuel & Oil',type:'expense',amt:10100,method:'Fuel Card',ent:'crop:Winter wheat'},
+    {date:'28 Sep 2025',desc:'Drilling fuel — oilseed rape',cat:'Fuel & Oil',type:'expense',amt:4550,method:'Fuel Card',ent:'crop:Oilseed rape'},
+    {date:'28 Sep 2025',desc:'Drilling fuel — field beans',cat:'Fuel & Oil',type:'expense',amt:3550,method:'Fuel Card',ent:'crop:Field beans'},
     {date:'01 Oct 2025',desc:'Land let to neighbour (50 ha)',cat:'Rental Income',type:'income',amt:1900,method:'Bank Deposit'},
     {date:'01 Oct 2025',desc:'Rent — Brook Field (FBT)',cat:'Land & Rental',type:'expense',amt:1580,method:'Bank Debit'},
     {date:'02 Oct 2025',desc:'Oxbury Bank facility',cat:'Loan Repayments',type:'expense',amt:2650,method:'Direct Debit'},
     {date:'02 Oct 2025',desc:'Machinery finance',cat:'Loan Repayments',type:'expense',amt:2480,method:'Direct Debit'},
     {date:'08 Oct 2025',desc:'Field bean seed — Vespa',cat:'Seeds & Planting',type:'expense',amt:7200,method:'Merchant Account',ent:'crop:Field beans'},
-    {date:'10 Oct 2025',desc:'Muck spreading contractor',cat:'Contractors & hire',type:'expense',amt:8600,method:'Bank Debit'},
+    {date:'10 Oct 2025',desc:'Muck spreading contractor — field beans',cat:'Contractors & hire',type:'expense',amt:8600,method:'Bank Debit',ent:'crop:Field beans'},
     {date:'12 Oct 2025',desc:'Machinery servicing & parts',cat:'Machinery & Repairs',type:'expense',amt:7200,method:'Merchant Account'},
     {date:'12 Oct 2025',desc:'Autumn herbicide',cat:'Crop Protection',type:'expense',amt:26800,method:'Merchant Account',ent:'crop:Winter wheat'},
     {date:'14 Oct 2025',desc:'Picking labour — late apples',cat:'Labour & Wages',type:'expense',amt:62000,method:'Bank Transfer',ent:'or:f4'},
@@ -16994,7 +17074,10 @@ recurring: [
     {date:'12 Feb 2026',desc:'Winter pruning labour',cat:'Labour & Wages',type:'expense',amt:44000,method:'Bank Transfer',ent:'or:f1'},
     {date:'14 Feb 2026',desc:'Lambing feed & bedding',cat:'Animal Feed',type:'expense',amt:1700,method:'Merchant Account',ent:'ls:2'},
     {date:'15 Feb 2026',desc:'Farm insurance premium',cat:'Insurance',type:'expense',amt:2330,method:'Direct Debit'},
-    {date:'18 Feb 2026',desc:'Fertiliser — forward order',cat:'Fertiliser',type:'expense',amt:26400,method:'Merchant Account'},
+    {date:'18 Feb 2026',desc:'Fertiliser — spring barley compound',cat:'Fertiliser',type:'expense',amt:12600,method:'Merchant Account',ent:'crop:Spring barley'},
+    {date:'18 Feb 2026',desc:'Fertiliser — oilseed rape sulphur & N',cat:'Fertiliser',type:'expense',amt:8100,method:'Merchant Account',ent:'crop:Oilseed rape'},
+    {date:'18 Feb 2026',desc:'Fertiliser — field beans P & K',cat:'Fertiliser',type:'expense',amt:5700,method:'Merchant Account',ent:'crop:Field beans'},
+    {date:'20 Apr 2026',desc:'Field beans — herbicide & chocolate spot fungicide',cat:'Crop Protection',type:'expense',amt:8400,method:'Merchant Account',ent:'crop:Field beans'},
     {date:'20 Feb 2026',desc:'Phone & broadband',cat:'Admin & Professional Fees',type:'expense',amt:145,method:'Direct Debit'},
     {date:'22 Feb 2026',desc:'Stored apples — final',cat:'Fruit Sales',type:'income',amt:46512,method:'Bank Deposit',ent:'or:f1'},
     {date:'25 Feb 2026',desc:'Permanent staff wages (3)',cat:'Labour & Wages',type:'expense',amt:9400,method:'Bank Transfer'},
@@ -17069,7 +17152,8 @@ recurring: [
     {date:'15 Jul 2026',desc:'Farm insurance premium',cat:'Insurance',type:'expense',amt:2330,method:'Direct Debit'},
     {date:'18 Jul 2026',desc:'Soft fruit — main crop',cat:'Fruit Sales',type:'income',amt:163400,method:'Bank Deposit',ent:'or:f7'},
     {date:'20 Jul 2026',desc:'Phone & broadband',cat:'Admin & Professional Fees',type:'expense',amt:145,method:'Direct Debit'},
-    {date:'22 Jul 2026',desc:'Winter barley & rape — harvest fuel',cat:'Fuel & Oil',type:'expense',amt:22400,method:'Fuel Card'},
+    {date:'22 Jul 2026',desc:'Harvest fuel — oilseed rape',cat:'Fuel & Oil',type:'expense',amt:13000,method:'Fuel Card',ent:'crop:Oilseed rape'},
+    {date:'22 Jul 2026',desc:'Harvest fuel — spring barley',cat:'Fuel & Oil',type:'expense',amt:9400,method:'Fuel Card',ent:'crop:Spring barley'},
     {date:'25 Jul 2026',desc:'Permanent staff wages (3)',cat:'Labour & Wages',type:'expense',amt:9400,method:'Bank Transfer'},
     {date:'26 Jul 2026',desc:'Oilseed rape sale — Openfield',cat:'Crop Sales',type:'income',amt:150100,method:'Bank Deposit',ent:'crop:Oilseed rape'},
     {date:'28 Jul 2026',desc:'Milk cheque — Jul',cat:'Milk & Dairy',type:'income',amt:8740,method:'Bank Deposit',ent:'ls:4'},
@@ -21194,7 +21278,7 @@ function entList(){
     });
   }catch(e){}
   try{ ((typeof ST_FRUIT!=='undefined'&&ST_FRUIT&&ST_FRUIT.blocks)||[]).forEach(function(b){
-    if(b && !b.plan && !b.removed) out.push({code:'or:'+b.id, label:(b.name||'Block'), kind:'orchard', icon:(b.icon||'\uD83C\uDF4A')});
+    if(b && !b.plan && !b.removed) out.push({code:'or:'+b.id, label:(b.name||'Block'), kind:'orchard', icon:(b.icon||'\uD83C\uDF4E')});
   }); }catch(e){}
   return out;
 }
@@ -21530,7 +21614,7 @@ var ST_LOANS = {
     {id:'trac', icon:'\uD83D\uDE9C', name:'Tractor loan', lender:'John Deere Financial', type:'Machine loan', assetId:4, borrowed:1050000, balance:52000, rate:6.9, payment:990, next:'1 Jun'}
   ],
   overdrafts: [
-    {id:'od1', icon:'\uD83C\uDFE6', name:'Production overdraft', lender:'Oxbury Bank', limit:120000, used:34000, rateMode:'prime', prime:4.0, margin:2, flatRate:12.25}
+    {id:'od1', icon:'\uD83C\uDFE6', name:'Production overdraft', lender:'Oxbury Bank', limit:150000, used:34000, rateMode:'prime', prime:4.0, margin:2, flatRate:12.25}
   ],
   coopAccounts: [
     {id:'oc1', icon:'\uD83C\uDF3E', name:'Wynnstay input account', coop:'Wynnstay', lender:'Wynnstay', limit:90000, used:31400, rateMode:'prime', prime:4.0, margin:2, flatRate:12.25}
@@ -37014,9 +37098,69 @@ function recomputePlan() {
     plnCycles(c).forEach(function(cy){ _planPutCycle(c, cy); });
   });
 
+  /* Carry-in (-362): LAST season's crop money that is still to come in. The window
+     counted twelve months of costs but only this season's income, so grain still in
+     store, or beans harvested last month on thirty-day terms, fell into a gap - on the
+     demo farm the 12-month view said the farm ran out of cash in April. The source is
+     the FIELD, which holds last season's crop, its yield and its dates (this season's
+     plan lines only describe what is planted next). Income only: last season's costs
+     are paid and in the bank. Skipped once the money is in: a sale event on the field,
+     or crop income recorded for it since harvest. The field's own payment terms come
+     from its plan line, so a stored crop sells when the farmer said it would. */
+  (function(){
+    if(typeof entOn==='function' && !entOn('crops')) return;
+    var W0=planWindowStart(); if(W0==null || typeof planYear==='undefined' || planYear==null) return;
+    /* Ledger dates are "14 Sep 2024"; _lsTxnISO only passes ISO through, and returns
+       TODAY for anything else - which read every old sale as made after this harvest. */
+    var _cinISO=function(d){ d=String(d||''); if(/^\d{4}-\d{2}-\d{2}/.test(d)) return d.slice(0,10);
+      var m=d.match(/^(\d{1,2})\s+([A-Za-z]{3})\w*\s+(\d{4})/); if(!m) return '';
+      var mi=PLAN_MON3.indexOf(m[2].charAt(0).toUpperCase()+m[2].slice(1,3).toLowerCase()); if(mi<0) return '';
+      return m[3]+'-'+('0'+(mi+1)).slice(-2)+'-'+('0'+m[1]).slice(-2); };
+    var lab=function(iso){ var m=String(iso||'').match(/^(\d{4})-(\d{2})/); return m?(PLAN_MON3[parseInt(m[2],10)-1]+' '+m[1]):null; };
+    /* Last season's fields, each with its value and when its buyer pays. */
+    var due=[];
+    (ST_CROP.lands||[]).forEach(function(l){
+      if(!l || !l.crop || !l.planted || !(l.area>0)) return;
+      if(seasonOf(l.planted)!==planYear-1) return;                 /* last season's crop only */
+      var hAbs=planAbsIdx(lab(l.harvest)); if(hAbs==null) return;
+      var y=(l.actualYield!=null && l.actualYield>0) ? l.actualYield : (l.targetYield||0);
+      var price=(l.price>0) ? l.price : cropPrice(l.crop);
+      var total=Math.round(l.area*y*price); if(!(total>0)) return;
+      var hv=String(l.harvest).slice(0,10);
+      if((ST_CROP.events||[]).some(function(e){ return e && String(e.land)===String(l.id) && e.kind==='delivered' && /^Sold/.test(e.note||'') && (e.date||'')>=hv; })) return;
+      var line=(ST_PLAN.crops||[]).filter(function(c){ return c && c.field===l.name; })[0]||{};
+      var pw=plnPayWhen(line), parts=[];
+      if(pw==='store'){
+        var sAbs=line.sellMonth ? planAbsIdx(line.sellMonth) : null;
+        sAbs=(sAbs!=null) ? sAbs-12 : hAbs+2;                   /* last year's sale month */
+        if(sAbs<hAbs) sAbs=hAbs+1;
+        parts.push([sAbs, total]);
+      } else if(pw){ parts.push([hAbs+plnPayShift(line), total]); }
+      else { var sp=plnPaySplit(line)/100; parts.push([hAbs, Math.round(total*sp)]); parts.push([hAbs+1, Math.round(total*(1-sp))]); }
+      parts.forEach(function(pt){ due.push({crop:l.crop, hv:hv, abs:pt[0], amt:pt[1]}); });
+    });
+    /* Money already in for a crop pays off its fields in the order they fall due. Tags
+       name the crop, not the field, so two wheat fields share one pot: the field sold at
+       harvest is covered, the one still in store is not. */
+    var byCrop={};
+    due.forEach(function(d){ (byCrop[d.crop]=byCrop[d.crop]||[]).push(d); });
+    Object.keys(byCrop).forEach(function(crop){
+      var list=byCrop[crop].sort(function(a,b){ return a.abs-b.abs; });
+      var since=list.reduce(function(m,d){ return (!m||d.hv<m)?d.hv:m; }, '');
+      var got=0; (ST.txns||[]).forEach(function(t){ if(t && t.type==='income' && t.ent==='crop:'+crop && _cinISO(t.date)>=since) got+=(t.amt||0); });
+      list.forEach(function(d){
+        var take=Math.min(got, d.amt); got-=take; var left=d.amt-take;
+        var r=d.abs-W0; if(r<0 || r>11 || left<=0) return;
+        ST_PLAN.months[r].income+=left; ST_PLAN.months[r].incCrops+=left; planIncBy(r, 'crop:'+crop, left);
+        addActivity(r, 'Paid for '+crop+' (last season)');
+      });
+    });
+  })();
+
+
   /* One cycle's money laid across the months. Pulled out of the loop above so a
      second crop goes through exactly the same path as the first. */
-  function _planPutCycle(c, cy){
+  function _planPutCycle(c, cy, carry){
     /* Positions are ABSOLUTE calendar months, not slots in the visible window, so a
        cycle that runs past the end of the season still books each month's money in
        the month it happens. Anything outside the window is simply not shown here —
@@ -37040,6 +37184,7 @@ function recomputePlan() {
     var touched = 0, spillsAfter = false;
 
     function _put(abs, inc, exp, tag, act){
+      if(carry){ if(!inc) return; exp=0; tag=null; act=act?(act+' (last season)'):null; }
       var r = abs - W0;
       if(r < 0 || r > 11){ if(abs > W0 + 11) spillsAfter = true; return; }
       touched++;
@@ -37098,7 +37243,8 @@ function recomputePlan() {
 
     /* Only flag a line that has NO month in this season at all. A crop that merely
        finishes after the season ends is normal, and is noted separately. */
-    if(!touched){
+    if(carry){
+    } else if(!touched){
       PLAN_OUTSIDE.push({nm:nm, when:(cy.plant||'?')+' → '+(cy.harvest||'?')});
     } else if(spillsAfter){
       PLAN_SPILL.push({nm:nm, when:cy.harvest||''});
@@ -37233,6 +37379,16 @@ function recomputePlan() {
   }
 
   // ── Step 3.6: Distribute orchards / fruit & veg (auto-pulled from ST_FRUIT) ──
+  /* Carry-in (-362): the fruit that is paid for after this season ends was, a year ago,
+     last season's fruit paid for early in THIS season. The window dropped it both ways -
+     reported as spill at the far end, never booked at the near end. A block that was not
+     yet bearing last season has nothing to carry. */
+  function _orCarry(b, mi, amt){
+    if(!b || mi<0 || mi>11 || !amt) return;
+    if(b.cat!=='veg' && b.age!=null && b.age<4) return;
+    ST_PLAN.months[mi].income += amt; ST_PLAN.months[mi].incOrch += amt;
+    planIncBy(mi, 'or:'+b.id, amt);
+  }
   if(typeof orPlanRows==='function'){
     ST_PLAN.orchSpill = 0;
     orPlanRows().forEach(function(r){
@@ -37252,7 +37408,7 @@ function recomputePlan() {
           var mm=pm+shift;
           if(mm<12){ ST_PLAN.months[mm].income += perCyc; ST_PLAN.months[mm].incOrch += perCyc;
             planIncBy(mm, 'or:'+r.b.id, perCyc); }
-          else ST_PLAN.orchSpill += perCyc;
+          else { ST_PLAN.orchSpill += perCyc; _orCarry(r.b, mm-12, perCyc); }
         });
       } else {
       var per=Math.round(r.income/span);
@@ -37260,7 +37416,7 @@ function recomputePlan() {
         var m=i+shift;
         if(m<12){ ST_PLAN.months[m].income += per; ST_PLAN.months[m].incOrch += per;
           planIncBy(m, 'or:'+r.b.id, per); }
-        else ST_PLAN.orchSpill += per;
+        else { ST_PLAN.orchSpill += per; _orCarry(r.b, m-12, per); }
       }
       }
 
@@ -39450,7 +39606,7 @@ function orpRowHTML(r){
   return '<div class="orp-item'+(young?' young':'')+'" data-orp-block="'+planEscAttr(b.id)+'">'+
     '<button class="orp-row orp-grid'+(open?' open':'')+'" type="button" data-orprow="'+planEscAttr(b.id)+'"'+
       ' aria-expanded="'+(open?'true':'false')+'">'+
-      '<span class="orp-nm"><span class="orp-ic">'+(young?'🌱':(b.icon||'🍊'))+'</span>'+
+      '<span class="orp-nm"><span class="orp-ic">'+(young?'🌱':(b.icon||'🍎'))+'</span>'+
         '<span class="orp-nmw"><span class="orp-n1">'+esc(b.name||'Block')+'</span>'+
         '<span class="orp-n2">'+esc(b.cultivar||'')+' · '+(b.ha||0)+' ha'+
           (b.trees>0?' · '+_grpInt(b.trees)+' trees':'')+'</span>'+
@@ -40033,8 +40189,8 @@ function bgtRenderHero(c) {
     var over   = c.expOut > 0 ? Math.max(0, -c.aheadOut / c.expOut) : 0;
     eyebrow = status === 'green' ? 'On track' : status === 'amber' ? 'Running tight' : 'Falling behind';
     headline = projNet >= 0
-      ? 'This year is heading for a profit of ' + bgtFmt(projNet)
-      : 'This year is heading for a loss of ' + bgtFmt(Math.abs(projNet));
+      ? 'This tax year is heading for a cash surplus of ' + bgtFmt(projNet)
+      : 'This tax year is heading for a cash shortfall of ' + bgtFmt(Math.abs(projNet));
     if (c.annualIn > 0 && c.annualOut > 0) headline += ' <small>goal: ' + bgtFmt(c.annualNet) + '</small>';
     if (status === 'green')      sub = 'Income and costs are running where you planned. Keep doing what you’re doing.';
     else if (over >= behind) sub = status === 'amber'
@@ -46286,7 +46442,7 @@ function mkrRows(){
        the best figure on the page, because it is what the grower was paid. */
     var rem=(typeof orBlockRemit==='function')?orBlockRemit(b):null;
     grp(veg?'veg':'fruit').rows.push({
-      name:b.name, sub:cat+' · '+Math.round(b.ha||0)+' ha', icon:b.icon||(veg?'🥬':'🍊'),
+      name:b.name, sub:cat+' · '+Math.round(b.ha||0)+' ha', icon:b.icon||(veg?'🥬':'🍎'),
       qty:tons, qtyU:'t', qtyNote:'expected',
       cost:tons?r.cost/tons:null, price:tons?r.income/tons:null, unit:'tonne',
       est:(!veg && !rem), remit:rem, worth:r.income, kind:'orch', ref:b.id
@@ -48342,11 +48498,36 @@ function drawCfLine(months, n){
   /* The facility, drawn the way this chart already draws a threshold: a dashed rule
      and a label in the gutter. No box, no writing across the plot — the sentence
      belongs in the card above, the chart just shows where the line is. */
+  /* Labels are placed where they collide with nothing (-362). They used to sit at fixed
+     spots: "Tightest" under its point, clamped to the left edge, so when the tightest month
+     was the first one it sat against the "-£120k" axis label; and "overdraft limit" always
+     at the right end, on top of the last point whenever the line finished near the limit.
+     Now each tries a few spots and takes the first clear of the line, the points and the
+     other labels. Text width is estimated at 6.2px a character (11px bold). */
+  var _ln=[]; for(var _q=0;_q<bals.length;_q++){ _ln.push({x:X(_q),y:Y(bals[_q])});
+    if(_q+1<bals.length){ for(var _t=1;_t<4;_t++) _ln.push({x:X(_q)+(X(_q+1)-X(_q))*_t/4, y:Y(bals[_q])+(Y(bals[_q+1])-Y(bals[_q]))*_t/4}); } }
+  var _occ=[];
+  var _clear=function(b){
+    if(b.x<xL+2 || b.x+b.w>xR+2 || b.y<padT-2 || b.y+b.h>plotBot+6) return false;
+    for(var k=0;k<_ln.length;k++){ var pt=_ln[k]; if(pt.x>=b.x-7&&pt.x<=b.x+b.w+7&&pt.y>=b.y-7&&pt.y<=b.y+b.h+7) return false; }
+    for(var k2=0;k2<_occ.length;k2++){ var o=_occ[k2]; if(b.x<o.x+o.w&&b.x+b.w>o.x&&b.y<o.y+o.h&&b.y+b.h>o.y) return false; }
+    return true; };
   if(_fac && _floorOn){
     var _fy=Y(_fac.floor);
     out+='<line x1="'+xL+'" y1="'+_fy+'" x2="'+xR+'" y2="'+_fy+'" stroke="#c0392b" stroke-width="1.4" stroke-dasharray="5 4"/>';
     out+='<text x="'+(padL-10)+'" y="'+(_fy+4)+'" text-anchor="end" font-size="11" fill="#c0392b" font-weight="700">\u2212'+fmtK(_fac.limit)+'</text>';
-    out+='<text x="'+xR+'" y="'+(_fy-7)+'" text-anchor="end" font-size="11" fill="#c0392b" font-weight="700" opacity="0.9">overdraft limit</text>';
+    _occ.push({x:0, y:_fy-12, w:xL+16, h:18});            /* the axis label, plus a margin into the plot */
+    var _odW=93, _odC=[{x:xR-_odW,y:_fy-18},{x:xR-_odW,y:_fy+4},{x:xL+6,y:_fy-18},{x:xL+6,y:_fy+4}], _odAt=null;
+    for(var _oi=0;_oi<_odC.length;_oi++){ var _ob={x:_odC[_oi].x,y:_odC[_oi].y,w:_odW,h:14}; if(_clear(_ob)){ _odAt=_ob; break; } }
+    if(_odAt){
+      out+='<text x="'+_odAt.x+'" y="'+(_odAt.y+11)+'" text-anchor="start" font-size="11" fill="#c0392b" font-weight="700" opacity="0.9">overdraft limit</text>';
+      _occ.push(_odAt);
+    } else {
+      /* Nowhere clear on the plot: name the line in the gutter, under its amount. */
+      out+='<text x="'+(padL-10)+'" y="'+(_fy+17)+'" text-anchor="end" font-size="10" fill="#c0392b" font-weight="700" opacity="0.9">limit</text>';
+      _occ.push({x:0, y:_fy+6, w:xL+16, h:14});
+    }
+    _occ.push({x:xL, y:_fy-3, w:xR-xL, h:6});              /* the dashed limit itself: no pill across it */
     var _cr=cfFloorCross(bals, _fac.floor);
     if(_cr){
       var _cx=X(_cr.i)+(X(_cr.i+1)-X(_cr.i))*_cr.f;
@@ -48394,11 +48575,17 @@ function drawCfLine(months, n){
     var stroke=isNow?' stroke="#fff" stroke-width="2"':(isMin?(' stroke="'+(neg?'#c0392b':'#c9791f')+'" stroke-width="2.5"'):(isSel?' stroke="#fff" stroke-width="1.5"':''));
     out+='<circle cx="'+X(p)+'" cy="'+Y(bals[p])+'" r="'+r+'" fill="'+fill+'"'+stroke+' style="pointer-events:none"/>';
   }
-  // "Tightest" pill under the trough (amber, or red if it goes short)
-  var tpx=X(minIdx), tpy=Math.min(Y(bals[minIdx])+18, plotBot-4);
+  // "Tightest" pill by the trough (amber, or red if it goes short): below, above, right, left - first clear spot
+  var tpx=X(minIdx), tpyP=Y(bals[minIdx]);
   var pillCol=(bals[minIdx]<0?'#c0392b':'#b06a17'), pillBg=(bals[minIdx]<0?'rgba(192,57,43,0.13)':'rgba(201,121,31,0.15)');
-  var pillW=56, ppx=Math.max(xL+2, Math.min(xR-pillW-2, tpx-pillW/2));
-  out+='<rect x="'+ppx+'" y="'+(tpy-13)+'" width="'+pillW+'" height="17" rx="8" fill="'+pillBg+'"/><text x="'+(ppx+pillW/2)+'" y="'+(tpy-1)+'" text-anchor="middle" font-size="11" font-weight="800" fill="'+pillCol+'" style="pointer-events:none">Tightest</text>';
+  var pillW=56, pillH=17;
+  var _pc=[{x:tpx-pillW/2,y:tpyP+9},{x:tpx-pillW/2,y:tpyP-9-pillH},{x:tpx+10,y:tpyP-pillH/2},{x:tpx-10-pillW,y:tpyP-pillH/2}], _pAt=null;
+  /* A low point just above the overdraft line has no room under it: go under the line. */
+  if(_fac && _floorOn){ var _fyP=Y(_fac.floor); if(_fyP>tpyP) _pc.splice(1,0,{x:tpx-pillW/2,y:_fyP+5}); }
+  for(var _pi=0;_pi<_pc.length;_pi++){ var _pb={x:_pc[_pi].x,y:_pc[_pi].y,w:pillW,h:pillH}; if(_clear(_pb)){ _pAt=_pb; break; } }
+  if(!_pAt){ var _fx=Math.max(xL+2, Math.min(xR-pillW-2, tpx-pillW/2)); _pAt={x:_fx, y:Math.min(tpyP+9, plotBot-pillH-2)}; }
+  var ppx=_pAt.x, tpy=_pAt.y+13;
+  out+='<rect x="'+ppx+'" y="'+(tpy-13)+'" width="'+pillW+'" height="'+pillH+'" rx="8" fill="'+pillBg+'"/><text x="'+(ppx+pillW/2)+'" y="'+(tpy-1)+'" text-anchor="middle" font-size="11" font-weight="800" fill="'+pillCol+'" style="pointer-events:none">Tightest</text>';
   out+=_cfTipSvg();
   var host=$('cfl-line'); if(host) host.innerHTML='<svg viewBox="0 0 '+W+' '+H+'" class="cfl-svg" xmlns="http://www.w3.org/2000/svg">'+out+'</svg>';
   setEl('cfl-line-title','Cash on hand — next '+n+(n===1?' month':' months'));
@@ -48607,7 +48794,7 @@ function cfBdRender(months, minIdx){
 
 function cfBuildFeeds(){
   var f=[];
-  try{ if(typeof entOn==='function'){ if(entOn('crops')) f.push('🌾 Crop plan'); if(entOn('livestock')) f.push('🐄 Livestock'); if(entOn('orchards')) f.push('🍊 Orchards'); } }catch(e){}
+  try{ if(typeof entOn==='function'){ if(entOn('crops')) f.push('🌾 Crop plan'); if(entOn('livestock')) f.push('🐄 Livestock'); if(entOn('orchards')) f.push('🍎 Orchards'); } }catch(e){}
   try{ if(typeof ST_LOANS!=='undefined' && ST_LOANS.loans && ST_LOANS.loans.some(function(l){return l.payment>0;})) f.push('🏦 Loan repayments'); }catch(e){}
   try{ if(typeof ST_ASSETS!=='undefined' && ST_ASSETS.assets && ST_ASSETS.assets.some(function(a){ var x=(typeof assetFinance==='function')?assetFinance(a):null; return x && !x.linked && x.instalment>0; })) f.push('🚜 Asset finance'); }catch(e){}
   try{ if(typeof ST_WORK!=='undefined' && ST_WORK.workers && ST_WORK.workers.length) f.push('👷 Wages'); }catch(e){}
@@ -49297,8 +49484,9 @@ function renderCfOnBudget() {
   var bad = (c.expIn > 0 && -c.aheadIn / c.expIn > 0.06) || (c.expOut > 0 && -c.aheadOut / c.expOut > 0.06);
   box.className = 'cf-ob' + (bad ? ' warn' : '');
   box.innerHTML = '<div class="cf-ob-ic">🎯</div><div class="cf-ob-body">' +
-    '<div class="cf-ob-h">On budget? Your year is heading for ' + bgtFmt(projNet) + '.</div>' +
-    '<div class="cf-ob-s">' + (bad ? 'Worth a look — the profit story needs attention this month.' : 'Income and spending are tracking your plan.') + '</div>' +
+    '<div class="cf-ob-h">On budget? Cash left over this tax year is heading for ' + bgtFmt(projNet) + '.</div>' +
+    '<div class="cf-ob-s">' + (bad ? 'Worth a look — spending is running ahead of your budget.' : 'Income and spending are tracking your plan.') +
+    ' This is cash to 5 April, loan repayments included, from your monthly budget. Profit shows this season’s expected profit instead, so the two differ.</div>' +
     '</div><button class="cf-ob-cta" onclick="nav(\'budgets\')">Open your budget →</button>';
   box.style.display = 'flex';
 }
@@ -58293,7 +58481,7 @@ var OB_STRINGS = {
     langBtn:'Continue in English ⟶',
     types:[
       {emoji:'🌾',name:'Grain & Field Crops',desc:'Wheat, barley, oilseed rape, beans'},
-      {emoji:'🍊',name:'Orchards, Fruit & Veg',desc:'Top fruit, apples, berries, veg'},
+      {emoji:'🍎',name:'Orchards, Fruit & Veg',desc:'Top fruit, apples, berries, veg'},
       {emoji:'🐄',name:'Livestock',desc:'Cattle, sheep, goats, dairy'},
       {emoji:'🌿',name:'Mixed Farm',desc:'A combination — most common'}
     ],
@@ -58508,7 +58696,7 @@ function obBuildTour() {
         sub: 'Import your bank statement or merchant file — your dashboard fills with real numbers.'});
     }
     if (E.orchards) {
-      items.splice(items.length - 1, 0, { icon:'🍊', iconBg:'#C8962C',
+      items.splice(items.length - 1, 0, { icon:'🍎', iconBg:'#C8962C',
         title: 'Orchards, Fruit & Veg',
         sub: 'Add your blocks — what each brings in, when to pick, and your certificates.'});
     }
@@ -58526,7 +58714,7 @@ function obBuildTour() {
     ];
     items.push({ icon:'🏦', title: 'What you owe', sub: 'Loans, overdrafts & merchant accounts in one place — and what each really costs.'});
     if (E.crops) items.push({ icon:'🌾', iconBg:'#40916C', title: 'Crops & Compliance', sub: 'Lands & sprays, plus compliance reminders and a hand-over audit pack.'});
-    if (E.orchards) items.push({ icon:'🍊', iconBg:'#C8962C', title: 'Orchards, Fruit & Veg', sub: 'What each block brings in, when to pick, and your certificates.'});
+    if (E.orchards) items.push({ icon:'🍎', iconBg:'#C8962C', title: 'Orchards, Fruit & Veg', sub: 'What each block brings in, when to pick, and your certificates.'});
     if (E.livestock) items.push({ icon:'🐄', iconBg:'#7C2D5A', title: 'Livestock & Herd', sub: 'Herd value, movements & health records.'});
     items.push({ icon:'🌱', title: 'Open My Plan', sub: 'Crop, orchard & livestock plans. Try the What-If tool.'});
     items.push({ icon: plusSvg, iconBg:'#40916C', title: 'Record your first transaction', sub: 'Use the green + button (bottom right) — under 30 seconds.'});
@@ -58822,7 +59010,7 @@ var TOUR_STEPS = [
     pos:'smart'
   },
   {
-    page:'orchards', tab:'overview', target:'or-ov-money', icon:'\uD83C\uDF4A', iconBg:'#D8F3DC',
+    page:'orchards', tab:'overview', target:'or-ov-money', icon:'\uD83C\uDF4E', iconBg:'#D8F3DC',
     title:'What will the packhouse actually pay me?',
     desc:'Orchards and veg blocks are estimates until the money lands. Load a packhouse remittance and every block switches from a guess to what you were really paid.',
     tip:'Packout percentage and class split come straight off the remittance.',
@@ -61243,7 +61431,7 @@ var PAGE_TOURS = {
       text:'Each crop gets a row with colour-coded stages across the 12 months — 🌱 Plant, 🌿 Grow, 🌾 Harvest, 💰 Sell. Tap a crop’s Edit button to change dates, yield, price or input cost.', tip:'The calendar turns those dates into a month-by-month income and cost estimate automatically.', pos:'smart' },
     { target:'plan-add-crop-btn', title:'Add a crop cycle', icon:'➕', tab:'crops', ent:'crops',
       text:'Add a crop with its area, expected yield, price and input cost — or link it to a real land from your Crops page so the plan and the field stay in sync.', pos:'smart' },
-    { target:'plan-orch-grid', title:'Orchards, Fruit & Veg plan', icon:'🍊', tab:'orchards', ent:'orchards',
+    { target:'plan-orch-grid', title:'Orchards, Fruit & Veg plan', icon:'🍎', tab:'orchards', ent:'orchards',
       text:'Your bearing blocks are pulled straight from the Orchards page. Set each block’s pick window and season costs here — the money back lands in those months in your forecast and budgets, and edits sync back to the Orchards tab.', tip:'Use the orchard sliders in the what-if to test fruit prices and growing costs for the season.', pos:'smart' },
     { target:'plan-tab-live', title:'Livestock plan', icon:'🐄', tab:'livestock', ent:'livestock',
       text:'The Livestock tab plans herd events through the year — purchases, births, sales and recurring costs like feed and dosing.', pos:'smart' },
@@ -61255,7 +61443,7 @@ var PAGE_TOURS = {
       text:"A fourth tab that compares your plan to what's actually happened — crops, orchards and livestock each get a plan-vs-actual read, with anything drifting off-plan flagged so you can catch it early.", pos:'smart' }
   ],
   orchards: [
-    { intro:true, title:'Orchards, Fruit & Veg', icon:'🍊', tab:'overview',
+    { intro:true, title:'Orchards, Fruit & Veg', icon:'🍎', tab:'overview',
       text:'Everything for your fruit, berry and veg blocks in one place — what each block brings in, when it’s clear to pick, how audit-ready it is, and your spray and certificate records.', pos:'center' },
     { target:'or-ov-money', title:'Your season, at a glance', icon:'📊', tab:'overview',
       text:'The headline up top: your forecast money back for the season, with your average per hectare and crop estimate just below — the one-line answer to “where does my season stand?”', tip:'“Money back” is what the packhouse and buyer actually pay you — after commission, packing, shipping and levies.', pos:'smart' },
@@ -67931,16 +68119,20 @@ var ST_FRUIT = {
   activeTab: 'overview',
   market: 'eu',
   blocks: [
-    {id:'f1', cat:'topfruit', icon:'\uD83C\uDF4A', name:'Long Orchard', cultivar:'Bramley’s Seedling', root:'M9', plant:2015, age:10, ha:14.0, trees:6930, status:'Full bearing', statusTag:'green', tons:620, exp:78, cartonKg:1000, margin:96400, estab:'\u00a3168,000', estabYr:2015, writeoff:11800, perUnit:248, unitWord:'tree', curve:'topfruit', docs:[{name:'nursery-invoice-2015.pdf',kind:'pdf',added:'18 Aug 2015'},{name:'soil-test-Vlei-2024.pdf',kind:'pdf',added:'14 Aug 2024'}]},
-    {id:'f2', cat:'topfruit', icon:'\uD83C\uDF4A', name:'Church Field', cultivar:'Gala', root:'M9', plant:2019, age:6, ha:9.5, trees:5225, status:'Ramping up', statusTag:'blue', tons:399, exp:72, cartonKg:1000, margin:71500, estab:'\u00a3114,000', estabYr:2019, writeoff:8100, perUnit:186, unitWord:'tree', curve:'topfruit', docs:[]},
-    {id:'f3', cat:'topfruit', icon:'\uD83C\uDF4B', name:'Brook Orchard', cultivar:'Plum · Victoria', root:'St Julien A', plant:2013, age:12, ha:7.0, trees:3150, status:'Full bearing', statusTag:'green', tons:147, exp:64, cartonKg:1000, margin:41800, estab:'\u00a352,000', estabYr:2013, writeoff:4400, perUnit:118, unitWord:'tree', curve:'topfruit', docs:[]},
-    {id:'f4', cat:'topfruit', icon:'\uD83C\uDF4A', name:'Netted Block', cultivar:'Cherry · Kordia', root:'Gisela 5', plant:2021, age:4, ha:5.5, trees:3575, status:'First crop', statusTag:'amber', tons:66, exp:85, cartonKg:1000, margin:58200, estab:'\u00a366,000', estabYr:2021, writeoff:5200, perUnit:88, unitWord:'tree', curve:'topfruit', cover:'net', docs:[]},
+    /* planCost: each block's own growing cost for the year - pruning, thinning, sprays,
+       fertiliser and seasonal picking labour; packing, haulage, storage and levy are taken
+       off the price in orNetPer() instead. Scaled so the orchards cost what they did on
+       the AHDB benchmark in total (£686k); per block they follow the crop. */
+    {id:'f1', planCost:146200, cat:'topfruit', icon:'\uD83C\uDF4E', name:'Long Orchard', cultivar:'Bramley’s Seedling', root:'M9', plant:2015, age:10, ha:14.0, trees:6930, status:'Full bearing', statusTag:'green', tons:620, exp:78, cartonKg:1000, margin:96400, estab:'\u00a3168,000', estabYr:2015, writeoff:11800, perUnit:248, unitWord:'tree', curve:'topfruit', docs:[{name:'nursery-invoice-2015.pdf',kind:'pdf',added:'18 Aug 2015'},{name:'soil-test-Vlei-2024.pdf',kind:'pdf',added:'14 Aug 2024'}]},
+    {id:'f2', planCost:112700, cat:'topfruit', icon:'\uD83C\uDF4E', name:'Church Field', cultivar:'Gala', root:'M9', plant:2019, age:6, ha:9.5, trees:5225, status:'Ramping up', statusTag:'blue', tons:399, exp:72, cartonKg:1000, margin:71500, estab:'\u00a3114,000', estabYr:2019, writeoff:8100, perUnit:186, unitWord:'tree', curve:'topfruit', docs:[]},
+    {id:'f3', planCost:59800, cat:'topfruit', icon:'\uD83C\uDF4E', name:'Brook Orchard', cultivar:'Plum · Victoria', root:'St Julien A', plant:2013, age:12, ha:7.0, trees:3150, status:'Full bearing', statusTag:'green', tons:147, exp:64, cartonKg:1000, margin:41800, estab:'\u00a352,000', estabYr:2013, writeoff:4400, perUnit:118, unitWord:'tree', curve:'topfruit', docs:[]},
+    {id:'f4', planCost:99200, cat:'topfruit', icon:'\uD83C\uDF52', name:'Netted Block', cultivar:'Cherry · Kordia', root:'Gisela 5', plant:2021, age:4, ha:5.5, trees:3575, status:'First crop', statusTag:'amber', tons:66, exp:85, cartonKg:1000, margin:58200, estab:'\u00a366,000', estabYr:2021, writeoff:5200, perUnit:88, unitWord:'tree', curve:'topfruit', cover:'net', docs:[]},
     {id:'f5', cat:'topfruit', icon:'\uD83C\uDF31', name:'New Planting', cultivar:'Cox’s Orange Pippin', root:'M9', plant:2024, age:1, ha:4.0, trees:2000, status:'Not bearing', statusTag:'gray', tons:0, exp:0, cartonKg:1000, margin:-18600, estab:'\u00a348,000', estabYr:2024, writeoff:3900, perUnit:0, unitWord:'tree', curve:'topfruit', plan:true, docs:[]},
-    {id:'f6', cat:'fruit', icon:'\uD83C\uDF4F', name:'Top Orchard', cultivar:'Apple · Braeburn', root:'M9', plant:2016, age:9, ha:6.0, trees:9000, status:'Full bearing', statusTag:'green', tons:252, exp:46, cartonKg:1000, estab:'\u00a372,000', estabYr:2016, writeoff:5600, perUnit:164, unitWord:'tree', curve:'topfruit', docs:[]},
+    {id:'f6', planCost:65500, cat:'fruit', icon:'\uD83C\uDF4F', name:'Top Orchard', cultivar:'Apple · Braeburn', root:'M9', plant:2016, age:9, ha:6.0, trees:9000, status:'Full bearing', statusTag:'green', tons:252, exp:46, cartonKg:1000, estab:'\u00a372,000', estabYr:2016, writeoff:5600, perUnit:164, unitWord:'tree', curve:'topfruit', docs:[]},
     {id:'f10', cat:'fruit', icon:'\uD83C\uDF50', name:'Lower Orchard', cultivar:'Pear \u00b7 Conference', root:'Quince A', plant:2008, age:18, ha:5.0, trees:4000, status:'Full bearing', statusTag:'green', tons:155, exp:49, cartonKg:1000, planCost:62000, estab:'\u00a360,000', estabYr:2008, writeoff:4700, perUnit:126, unitWord:'tree', curve:'topfruit', docs:[]},
-    {id:'f7', cat:'berry', icon:'\uD83E\uDED0', name:'Tunnel A', cultivar:'Blueberry · Duke', root:'own root', plant:2022, age:3, ha:2.5, trees:11000, status:'Bearing', statusTag:'green', tons:28, exp:70, cartonKg:1000, unit:'kg', margin:61500, estab:'\u00a392,000', estabYr:2022, writeoff:7400, perUnit:72, unitWord:'bush', curve:'berry', cover:'tunnels', docs:[{name:'blueberry-plant-cert.pdf',kind:'pdf',added:'02 Sep 2022'}]},
-    {id:'f8', cat:'veg', icon:'\uD83C\uDF83', name:'Field 7', cultivar:'Potatoes · Maris Piper', plant:'14 Feb', pickFrom:'~25 May', cycle:'1 of 2', ha:8.0, status:'Growing', statusTag:'blue', tons:392, grade:82, unit:'tonne', margin:74000, days:100, docs:[]},
-    {id:'f9', cat:'veg', icon:'\uD83E\uDD6C', name:'Garden Ground', cultivar:'Cabbage · Kilaton', plant:'2 Apr', pickFrom:'~18 Jun', cycle:'3 of 4', ha:3.0, status:'Growing', statusTag:'blue', tons:141, grade:90, unit:'tonne', margin:38000, days:77, docs:[]}
+    {id:'f7', planCost:90200, cat:'berry', icon:'\uD83E\uDED0', name:'Tunnel A', cultivar:'Blueberry · Duke', root:'own root', plant:2022, age:3, ha:2.5, trees:11000, status:'Bearing', statusTag:'green', tons:28, exp:70, cartonKg:1000, unit:'kg', margin:61500, estab:'\u00a392,000', estabYr:2022, writeoff:7400, perUnit:72, unitWord:'bush', curve:'berry', cover:'tunnels', docs:[{name:'blueberry-plant-cert.pdf',kind:'pdf',added:'02 Sep 2022'}]},
+    {id:'f8', planCost:34900, cat:'veg', icon:'\uD83C\uDF83', name:'Field 7', cultivar:'Potatoes · Maris Piper', plant:'14 Feb', pickFrom:'~25 May', cycle:'1 of 2', ha:8.0, status:'Growing', statusTag:'blue', tons:392, grade:82, unit:'tonne', margin:74000, days:100, docs:[]},
+    {id:'f9', planCost:15700, cat:'veg', icon:'\uD83E\uDD6C', name:'Garden Ground', cultivar:'Cabbage · Kilaton', plant:'2 Apr', pickFrom:'~18 Jun', cycle:'3 of 4', ha:3.0, status:'Growing', statusTag:'blue', tons:141, grade:90, unit:'tonne', margin:38000, days:77, docs:[]}
   ],
   pricing: {
     /* What each block is worth, per TONNE. This was priced per South African export
@@ -67968,29 +68160,33 @@ var ST_FRUIT = {
     water:{ic:'\uD83D\uDCA7',title:'Water use licence',what:'Your legal right to use water. Read the meter monthly and keep within your authorised volume.',type:'record',status:'Valid',statusTag:'green',expiry:'2027-06-30',docs:[],log:'312,000 of 480,000 m\u00b3 used this year',readings:[]},
     operators:{ic:'\uD83E\uDDEA',title:'Spray operators trained',what:'Anyone applying chemicals needs a valid operator certificate.',type:'record',status:'Trained',statusTag:'green',expiry:'2027-05-01',docs:[]},
     diesel:{ic:'\u26FD',title:'Red diesel logbook',what:'Evidences qualifying farm use, so the duty already rebated at the pump stands up.',type:'record',status:'Up to date',statusTag:'green',expiry:'',docs:[],log:'18,400 \u2113 logged this year'},
-    fcm:{ic:'\uD83E\uDD9F',title:'Codling moth',what:'A quarantine pest. Over-threshold traps can block a block from export.',type:'pest',cropcat:'topfruit',status:'Action needed',statusTag:'red',docs:[],checks:[],log:'Long Orchard traps over limit week 21 — extra bait applied'},
-    cbs:{ic:'\uD83C\uDF4A',title:'Top fruit Black Spot (CBS)',what:'A fungal disease watched by the EU.',type:'pest',cropcat:'topfruit',status:'Clear',statusTag:'green',docs:[],checks:[],log:'Spray programme on track'},
+    fcm:{ic:'\uD83E\uDD9F',title:'Codling moth (top fruit)',what:'The main apple and pear pest. Trap counts tell you when to spray.',type:'pest',cropcat:'topfruit',status:'Action needed',statusTag:'red',docs:[],checks:[],log:'Long Orchard traps over the threshold in week 21 — spray timed from the count'},
+    cbs:{ic:'\uD83C\uDF42',title:'Apple scab',what:'The main fungal disease of apples and pears. Sprays follow wet spells in spring.',type:'pest',cropcat:'topfruit',status:'Clear',statusTag:'green',docs:[],checks:[],log:'Spray programme on track'},
     codling:{ic:'\uD83D\uDC1B',title:'Codling moth (apples)',what:'Key pome-fruit pest — managed with mating disruption and monitored on traps.',type:'pest',cropcat:'fruit',status:'Clear',statusTag:'green',docs:[],checks:[],log:'Mating disruption in · traps below threshold'},
     swd:{ic:'\uD83E\uDEBF',title:'Spotted Wing Drosophila (berries)',what:'A berry pest monitored with tunnel traps.',type:'pest',cropcat:'berry',status:'Clear',statusTag:'green',docs:[],checks:[],log:'Below the limit'}
   },
+  /* Illustrative demo sprays: every product is on the GB register (MAPP checked 23 Sep 2026)
+     and every record carries the full set of particulars. Brook Orchard's plum spray is
+     made under a real EAMU, and Tunnel A's is under cover, so the demo shows both. The
+     harvest intervals are demo values - the record shows the mechanism, not label advice. */
   sprayDiary: {
     topfruit:[
-      {ic:'\uD83D\uDC1B',t:'Insegar (fenoxycarb) — codling moth',s:'Long Orchard · 18 May · R. Hughes · MAPP 17984',phi:{eu:20,uk:14,us:7,local:0},bid:'f1',product:'Delegate',forx:'FCM',dateISO:'2025-05-18'},
-      {ic:'\uD83C\uDF44',t:'Score (difenoconazole) — for CBS',s:'Brook Orchard · 9 May · R. Whitaker · reg L7654',phi:{eu:30,uk:21,us:14,local:7},bid:'f3',product:'Score',forx:'scab',dateISO:'2025-05-09'}
+      {id:'osd1',ic:'\uD83D\uDC1B',t:'Coragen — for codling moth',s:'Long Orchard · 18 May · R. Hughes · MAPP 19498',phi:{eu:14,uk:14,us:14,local:14},bid:'f1',product:'Coragen',reg:'MAPP 19498',rate:'0.18 l/ha',act:'chlorantraniliprole',forx:'codling moth',dateISO:'2025-05-18',time:'18:30',timeEnd:'19:45',water:'500 l/ha',wind:'N 3 mph',weather:'dry, 14°C',by:'R. Hughes',cert:'PA1/PA3',bbch:'72',method:'Broadcast Sprayer',buffer:{k:'full',m:5}},
+      {id:'osd2',ic:'\uD83C\uDF42',t:'Teldor — for brown rot',s:'Brook Orchard · 9 May · R. Whitaker · MAPP 11229',phi:{eu:7,uk:7,us:7,local:7},bid:'f3',product:'Teldor',reg:'MAPP 11229',rate:'1.5 kg/ha',act:'fenhexamid',forx:'brown rot',dateISO:'2025-05-09',time:'07:10',timeEnd:'08:05',water:'500 l/ha',wind:'SW 5 mph',weather:'overcast, 11°C',by:'R. Whitaker',cert:'PA1/PA3',bbch:'69',method:'Broadcast Sprayer',buffer:{k:'lerap',m:7,stars:0,dose:0.5,ww:'lt3',by:'R. Whitaker'},eamu:'1866/2003'}
     ],
-    fruit:[ {ic:'\uD83C\uDF4F',t:'Codling moth bait — for codling moth',s:'Top Orchard apple · 5 May · S. Mei · reg L3344',phi:{eu:14,uk:14,us:7,local:0},bid:'f6',product:'Codling moth bait',forx:'codling moth',dateISO:'2025-05-05'} ],
-    berry:[ {ic:'\uD83E\uDED0',t:'Switch (fungicide)',s:'Blueberry tunnels · 6 May · R. Whitaker · reg L8123',phi:{eu:7,uk:7,us:3,local:0},bid:'f7',product:'Switch',forx:'',dateISO:'2025-05-06'} ]
+    fruit:[ {id:'osd3',ic:'\uD83C\uDF4F',t:'Cyflamid — for powdery mildew',s:'Top Orchard · 5 May · S. Mei · MAPP 12403',phi:{eu:14,uk:14,us:14,local:14},bid:'f6',product:'Cyflamid',reg:'MAPP 12403',rate:'0.5 l/ha',act:'cyflufenamid',forx:'powdery mildew',dateISO:'2025-05-05',time:'06:50',timeEnd:'07:40',water:'400 l/ha',wind:'calm',weather:'dry, 9°C',by:'S. Mei',cert:'PA1/PA3',bbch:'57',method:'Broadcast Sprayer',buffer:{k:'nowater'}} ],
+    berry:[ {id:'osd4',ic:'\uD83E\uDED0',t:'Switch — for botrytis',s:'Tunnel A · 6 May · R. Whitaker · MAPP 15129',phi:{eu:7,uk:7,us:7,local:7},bid:'f7',product:'Switch',reg:'MAPP 15129',rate:'1.0 kg/ha',act:'cyprodinil and fludioxonil',forx:'botrytis',dateISO:'2025-05-06',time:'16:00',timeEnd:'16:40',water:'600 l/ha',wind:'calm',weather:'under cover, 18°C',by:'R. Whitaker',cert:'PA1/PA6',bbch:'65',method:'Knapsack / Handheld sprayer',situation:'tunnel',buffer:{k:'none'}} ]
   },
   phi: {
     topfruit:[
-      {n:'Long Orchard (Bramley)',bid:'f1',last:'Delegate · 18 May',days:14,d:'1 Jun',iso:'2025-06-01'},
-      {n:'Brook Orchard (Conference)',bid:'f3',last:'Score · 9 May',days:21,d:'30 May',iso:'2025-05-30'}
+      {n:'Long Orchard (Bramley)',bid:'f1',last:'Coragen · 18 May',days:14,d:'1 Jun',iso:'2025-06-01',hold:'Coragen'},
+      {n:'Brook Orchard (Plum)',bid:'f3',last:'Teldor · 9 May',days:7,d:'16 May',iso:'2025-05-16',hold:'Teldor'}
     ],
-    fruit:[ {n:'Top Orchard (Apple)',bid:'f6',last:'Codling bait · 5 May',days:14,d:'19 May',iso:'2025-05-19'} ],
-    berry:[ {n:'Blueberry tunnels',bid:'f7',last:'Switch · 6 May',days:7,d:'13 May',iso:'2025-05-13'} ]
+    fruit:[ {n:'Top Orchard (Apple)',bid:'f6',last:'Cyflamid · 5 May',days:14,d:'19 May',iso:'2025-05-19',hold:'Cyflamid'} ],
+    berry:[ {n:'Tunnel A (Blueberry)',bid:'f7',last:'Switch · 6 May',days:7,d:'13 May',iso:'2025-05-13',hold:'Switch'} ]
   },
   harvest: [
-    {ic:'\uD83C\uDF4A',t:'Top fruit · Long Orchard — week 21',s:'38 t · 4 bulk bins · 78% Class 1',r:'£21,800'},
+    {ic:'\uD83C\uDF4E',t:'Top fruit · Long Orchard — week 21',s:'38 t · 4 bulk bins · 78% Class 1',r:'£21,800'},
     {ic:'\uD83E\uDED0',t:'Berries · Blueberry tunnels — week 21',s:'1.9 t · 88% Class 1 punnets',r:'£27,350'},
     {ic:'\uD83C\uDF4F',t:'Fruit · Top Orchard apple — week 20',s:'6 t · 74% export cartons',r:'£4,180'}
   ]
@@ -68129,8 +68325,18 @@ async function orMarkRemoved(id){
   b.removed=true; b.status='Removed'; b.statusTag='gray'; orSave(); orCloseModal();
   if(typeof ST_FRUIT!=='undefined') orSetTab(ST_FRUIT.activeTab||'overview'); orToast(b.name+' marked removed');
 }
+function orSaveBlockIds(id){
+  var b=orBlockById(id); if(!b) return;
+  var fr=String((($('or-b-fref')||{}).value)||'').trim(), ep=(($('or-b-eppo')||{}).value)||'';
+  if(fr) b.fieldRef=fr; else delete b.fieldRef;
+  /* Stored only when it differs from what the variety gives. */
+  var auto=eppoGuess(b.cultivar)||eppoGuess(b.name)||'';
+  if(ep && ep!==auto) b.eppo=ep; else delete b.eppo;
+  orSave(); orToast('Saved for the spray record');
+}
 function orReplant(id){
   var b=orBlockById(id); if(!b) return;
+  delete b.eppo;   /* a replanted block may be a new species; its old code must not follow */
   b.removed=false; b.plan=true; b.age=0; b.tons=0; b.exp=0; b.status='Just replanted'; b.statusTag='gray'; b.plant=new Date().getFullYear();
   orSave(); orOpenBlock(id);
   var pg=document.querySelector('.pg.on'); if(pg&&pg.id==='pg-orchards') orSetTab(ST_FRUIT.activeTab||'overview');
@@ -69420,7 +69626,12 @@ function orOpenBlock(id){
   var sp=(ST_FRUIT.sprayDiary[b.cat]||[])[0];
   if(sp){ h+='<div class="or-mlbl">Latest spray</div><div class="or-mlog">'+sp.t+'<br><span style="color:var(--t3);font-size:12px">'+sp.s+'</span></div>'; }
   b.docs=b.docs||[];
-  h+='<div class="or-mlbl">Documents for this block</div>'+orDocList(b.docs,'No documents yet. Attach the nursery invoice, soil test or a block map.')+'<div class="or-adddoc" onclick="orTriggerDoc()">\uFF0B Add document or photo</div>';
+  /* The two things the spray record needs to know about a block: its field number and crop code. */
+  h+='<div class="or-mlbl">For the spray record</div><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-bottom:14px">'+
+     '<div style="flex:1;min-width:150px"><label class="or-flbl" style="font-size:12px">Field number <span class="or-fh">optional</span></label><input class="or-finp" id="or-b-fref" value="'+esc(b.fieldRef||'')+'" placeholder="DAERA field no. or RPA parcel"></div>'+
+     '<div style="flex:1.4;min-width:190px"><label class="or-flbl" style="font-size:12px">Crop code (EPPO)</label><select class="or-finp" id="or-b-eppo">'+eppoOptions(eppoForBlock(b))+'</select></div>'+
+     '<button class="btn-sec" onclick="orSaveBlockIds(\''+id+'\')">Save</button></div>'+
+     '<div class="or-mlbl">Documents for this block</div>'+orDocList(b.docs,'No documents yet. Attach the nursery invoice, soil test or a block map.')+'<div class="or-adddoc" onclick="orTriggerDoc()">\uFF0B Add document or photo</div>';
   var orLifeBtn = b.removed
     ? '<button class="btn-sec" onclick="orReplant(\''+id+'\')">\uD83C\uDF31 Replant this block</button>'
     : '<button class="btn-sec" onclick="orMarkRemoved(\''+id+'\')">\u267B\uFE0F Mark removed / grubbed</button>';
@@ -69447,6 +69658,7 @@ function orOpenSprayForm(editId){
     '<div class="or-fg2"><div class="or-frow"><label class="or-flbl">Harvest interval (days) <span class="or-fh">from the label</span></label><input class="or-finp" id="or-sp-phi" type="number" min="0" value="14"></div><div class="or-frow"><label class="or-flbl">Cost <span class="or-fh">optional — posts to expenses</span></label><input class="or-finp" id="or-sp-cost" inputmode="decimal" placeholder="£ 0"></div></div>'+
     nxHTML({kind:'orchard', edit:!!editId,
       cat:(function(){ var b0=(ST_FRUIT.blocks||[]).filter(function(b){ return !b.plan && !b.removed; })[0]; return b0?b0.cat:''; })(),
+      sit:(function(){ var b0=(ST_FRUIT.blocks||[]).filter(function(b){ return !b.plan && !b.removed; })[0]; return (b0&&/tunnel|poly/i.test(b0.cover||''))?'tunnel':'outdoor'; })(),
       date:function(){ return (($('or-sp-date')||{}).value)||''; }, reg:function(){ return (($('or-sp-reg')||{}).value)||''; },
       crop:function(){ var b=orBlockById((($('or-sp-block')||{}).value)||''); if(!b) return ''; var c=eppoForBlock(b); return c?eppoName(c):String(b.cultivar||'').split(' · ')[0]; }})+
     orAttachField('sp','mix sheet or operator record')+
@@ -69457,6 +69669,7 @@ function orOpenSprayForm(editId){
     var r=$('or-sp-reg'); if(r && !r.value) r.value=reg;
     if(!editId) nxCarry(name, {bid:(($('or-sp-block')||{}).value)||null});
   });
+  var _ob=$('or-sp-block'); if(_ob && !editId) _ob.addEventListener('change', function(){ var bb=orBlockById(_ob.value), si=$('nx-sit'); if(bb && si) si.value=/tunnel|poly/i.test(bb.cover||'')?'tunnel':'outdoor'; });
   var _op=$('or-sp-prod'); if(_op && !editId) _op.addEventListener('change', function(){ nxCarry(_op.value, {bid:(($('or-sp-block')||{}).value)||null}); });
   var di=$('or-sp-date'); if(di&&!di.value) di.value=new Date().toISOString().split('T')[0];
   if(editId) orSprayEditFill(editId);
@@ -69476,7 +69689,8 @@ function orSaveSpray(){
   ST_FRUIT.sprayDiary[cat].unshift({id:'os'+Date.now().toString(36),ic:'\uD83E\uDDEA',t:prod+(forx?' — for '+forx:''),s:b.name+' · '+orFmtDM(dt)+' · '+(forx||'spray'),phi:orPhiObj(days),bid:b.id,product:prod,forx:forx,dateISO:dt.toISOString().slice(0,10),att:orAttachTake('sp'),
     reg:reg||undefined,rate:rate||undefined,batch:batch||undefined,cert:cert||undefined,by:by||undefined,
     act:act||undefined,water:water||undefined,wind:wind||undefined,time:atime||undefined,
-    bbch:nx.bbch||undefined,method:nx.method||undefined,buffer:nx.buffer||undefined,eamu:nx.eamu||undefined});
+    bbch:nx.bbch||undefined,method:nx.method||undefined,buffer:nx.buffer||undefined,eamu:nx.eamu||undefined,
+    situation:nx.situation||undefined,timeEnd:nx.timeEnd||undefined,weather:nx.weather||undefined});
   /* Rebuilt from the diary so the block takes the LATEST of its sprays' dates. */
   orRebuildPhi();
   var pe=orBlockPhiEntry(b), safeOn=orEntryDate(pe)||orFmtDM(orAddDays(dt,days));
@@ -69618,6 +69832,7 @@ function orSaveBlock(){
   }
   if(style==='veg'){ ST_FRUIT.pricing[id]={price:3650,comm:7.5,pack:250,ship:400,levy:0,levyName:'',others:[{label:'Other costs',amt:0}]}; }
   if(!ST_FRUIT.pricing[id]) ST_FRUIT.pricing[id]=orDefaultPricing(cat);
+  var _bf=String((($('or-f-fref')||{}).value)||'').trim(); if(_bf) b.fieldRef=_bf;
   b.sprays=OR_ADD.sprays; b.markets=orAddMarketsArr(); if(b.cat!=='veg') b.exp=orBlockExports(b)?(b.plan?0:70):0;
   ST_FRUIT.blocks.push(b);
   orSave();
@@ -70474,11 +70689,12 @@ function aiRegRows(kind, from, to){
       .filter(function(i){ return i && _regInRange(i.date, from, to); })
       .map(function(i){
         var l=(typeof cropLandById==='function')?cropLandById(i.land):null;
-        var lc=landCrop(l, i.date);
+        var lc=i.cropAt||landCrop(l, i.date);
         return { _iso:i.date, _ppp:!NOT_PPP[i.kind], _kind:i.kind||'', _src:i, _land:l,
-                 stage:i.bbch||'', buffer:nxBufShort(i.buffer), eamu:i.eamu||'', eppo:lc?eppoForLand(l):'',
+                 stage:i.bbch||'', buffer:nxBufShort(i.buffer), eamu:i.eamu||'',
+                 eppo:i.cropAt?(i.eppoAt||''):(lc?eppoForLand(l):''),
                  date:aiRcDate(i.date), time:i.time||'',
-                 land:l?(l.name||''):'', variety:landCrop(l, i.date), ha:l&&l.area?String(l.area):'',
+                 land:l?(l.name||''):'', variety:lc, ha:l&&l.area?String(l.area):'',
                  product:i.product||'', act:i.act||'', reg:i.reg||'', target:i.targetFor||'',
                  rate:i.rate||'', water:i.water||'', wind:i.wind||'',
                  batch:i.batch||'', by:i.by||'', cert:i.operatorCert||'',
@@ -71626,7 +71842,7 @@ function _lsRegCertsCard(){
   <div class="imp-shell">
     <div class="imp-hdr">
       <div class="imp-hdr-l">
-        <div class="imp-hdr-ic" style="background:#E07B2A">&#127818;</div>
+        <div class="imp-hdr-ic" style="background:#E07B2A">&#127822;</div>
         <div>
           <div class="imp-hdr-t">Import a packhouse remittance</div>
           <div class="imp-hdr-s" id="rmt-imp-sub">What your fruit actually fetched, per block</div>
@@ -71856,7 +72072,7 @@ function _lsRegCertsCard(){
     <div><div class="tours-menu-label">Crops</div><div class="tours-menu-sub">Lands, inputs & compliance</div></div>
   </div>
   <div class="tours-menu-item ent-orchards" onclick="toggleToursMenu();startPageTour('orchards')">
-    <span class="tours-menu-icon">🍊</span>
+    <span class="tours-menu-icon">🍎</span>
     <div><div class="tours-menu-label">Orchards, Fruit & Veg</div><div class="tours-menu-sub">Money back, picks & certificates</div></div>
   </div>
   <div class="tours-menu-item ent-livestock" onclick="toggleToursMenu();startPageTour('livestock')">
