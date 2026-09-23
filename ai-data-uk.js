@@ -402,6 +402,11 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
      sent, so a signed-in farm's workers came back from the cloud on 1257L and the
      national minimum wage. */
   let CAN_WKR_PAY      = false;   /* workers: tax_code/age/awo_grade/apprentice/visa_worker/pension_out */
+  /* uk-payroll-cumulative.sql (UK -367): per-worker lines on each pay run, the run's PAYE /
+     employer NI / allowance used, and a starter's P45 - what cumulative PAYE and the
+     Employment Allowance running total need to survive a reload from the cloud. */
+  let CAN_PR_LINES     = false;   /* pay_runs.lines/paye/employer_ni/ea_used/employer_pension */
+  let CAN_WKR_P45      = false;   /* workers.p45_year/p45_pay/p45_tax */
   /* ---- what this database actually has, asked once ------------------------
      Ported from SA -438, same reasoning. Every late-added column is gated on a
      CAN_* flag, and each flag cost its own round trip in series on every
@@ -466,7 +471,7 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     ['orchard_sprays','removed_at'], ['crop_inputs','removed_at'],
     ['crop_inputs','bbch'], ['orchard_sprays','bbch'], ['crop_lands','field_ref'], ['orchard_blocks','field_ref'],
     ['crop_inputs','situation'], ['orchard_sprays','situation'],
-    ['workers','tax_code']
+    ['workers','tax_code'], ['pay_runs','lines'], ['workers','p45_pay']
   ];
 
   async function probeCaps(farmId){
@@ -525,6 +530,8 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     CAN_INPUT_NI2     = keep(CAN_INPUT_NI2,     'crop_inputs','situation');
     CAN_ORCH_NI2      = keep(CAN_ORCH_NI2,      'orchard_sprays','situation');
     CAN_WKR_PAY       = keep(CAN_WKR_PAY,       'workers','tax_code');
+    CAN_PR_LINES      = keep(CAN_PR_LINES,      'pay_runs','lines');
+    CAN_WKR_P45       = keep(CAN_WKR_P45,       'workers','p45_pay');
   }
   probeCaps.reset = function(){ _colCache = Object.create(null); _colRpcDead = false; };
   probeCaps.seen  = function(){ return _colCache; };
@@ -2492,6 +2499,7 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
       r.awo_grade=(w.awoGrade!=null&&w.awoGrade!=='')?String(w.awoGrade):null;
       r.apprentice=!!w.apprentice; r.visa_worker=!!w.visaWorker; r.pension_out=!!w.pensionOut;
     }
+    if(CAN_WKR_P45){ var p=w.p45||null; r.p45_year=p?(parseInt(p.sy,10)||null):null; r.p45_pay=p?(Number(p.pay)||0):null; r.p45_tax=p?(Number(p.tax)||0):null; }
     return r; }
   function wkrFromDb(r){ var w={ id:r.local_id, name:r.name||'', role:r.role||'', type:r.worker_type||'',
     start:r.start_date||'', onFarm:!!r.on_farm, niNo:r.ni_no||'', basis:r.basis||'month',
@@ -2503,6 +2511,7 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
       w.awoGrade=(r.awo_grade!=null&&r.awo_grade!=='')?(isNaN(r.awo_grade)?r.awo_grade:parseInt(r.awo_grade,10)):null;
       w.apprentice=!!r.apprentice; w.visaWorker=!!r.visa_worker; w.pensionOut=!!r.pension_out;
     }
+    if(r.p45_year!=null) w.p45={ sy:Number(r.p45_year), pay:Number(r.p45_pay)||0, tax:Number(r.p45_tax)||0 };
     if(r.leave_annual!=null||r.leave_sick!=null||r.leave_family!=null){ w.leave={annual:Number(r.leave_annual)||0,sick:Number(r.leave_sick)||0,family:(r.leave_family!=null)?Number(r.leave_family):3}; }
     if(r.housing_deduction!=null) w.housing={deduction:Number(r.housing_deduction)};
     if(r.adv_owing!=null||r.adv_per_pay!=null||r.adv_reason||r.adv_consent!=null){ w.adv={owing:Number(r.adv_owing)||0,perPay:Number(r.adv_per_pay)||0,reason:r.adv_reason||'',consent:!!r.adv_consent}; } else { w.adv=null; }
@@ -2539,8 +2548,14 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
       if(r.sunday||r.holiday){ var e=(extra[L]=extra[L]||{})[wid]=(extra[L][wid]||{}); if(r.sunday)e.sun=Number(r.sunday); if(r.holiday)e.ph=Number(r.holiday); }
       if(r.seasonal_days){ (seasonal[L]=seasonal[L]||{})[wid]=Number(r.seasonal_days); } });
     return { paye:paye, bonus:bonus, extra:extra, seasonal:seasonal }; }
-  function payRunToDb(r, fid){ return { farm_id:fid, local_id:String(r.id), label:r.label||null, kind:r.kind||null, net:(r.net!=null)?Number(r.net):null, gross:(r.gross!=null)?Number(r.gross):null, employee_ni:(r.ni!=null)?Number(r.ni):((r.uif!=null)?Number(r.uif):null), run_date:r.date||null, seasonal:!!r.seasonal }; }
-  function payRunFromDb(r){ var o={ id:r.local_id, label:r.label||'', kind:r.kind||'', net:Number(r.net)||0, date:r.run_date||'' }; if(r.gross!=null)o.gross=Number(r.gross); if(r.employee_ni!=null)o.ni=Number(r.employee_ni); else if(r.uif!=null)o.ni=Number(r.uif); if(r.seasonal)o.seasonal=true; return o; }
+  function payRunToDb(r, fid){ var o={ farm_id:fid, local_id:String(r.id), label:r.label||null, kind:r.kind||null, net:(r.net!=null)?Number(r.net):null, gross:(r.gross!=null)?Number(r.gross):null, employee_ni:(r.ni!=null)?Number(r.ni):((r.uif!=null)?Number(r.uif):null), run_date:r.date||null, seasonal:!!r.seasonal };
+    if(CAN_PR_LINES){ o.lines=Array.isArray(r.lines)?r.lines:null; o.paye=(r.paye!=null)?Number(r.paye):null; o.employer_ni=(r.employerNI!=null)?Number(r.employerNI):null;
+      o.ea_used=(r.eaUsed!=null)?Number(r.eaUsed):null; o.employer_pension=(r.employerPension!=null)?Number(r.employerPension):null; }
+    return o; }
+  function payRunFromDb(r){ var o={ id:r.local_id, label:r.label||'', kind:r.kind||'', net:Number(r.net)||0, date:r.run_date||'' }; if(r.gross!=null)o.gross=Number(r.gross); if(r.employee_ni!=null)o.ni=Number(r.employee_ni); else if(r.uif!=null)o.ni=Number(r.uif); if(r.seasonal)o.seasonal=true;
+    if(Array.isArray(r.lines)) o.lines=r.lines; if(r.paye!=null) o.paye=Number(r.paye); if(r.employer_ni!=null) o.employerNI=Number(r.employer_ni);
+    if(r.ea_used!=null) o.eaUsed=Number(r.ea_used); if(r.employer_pension!=null) o.employerPension=Number(r.employer_pension);
+    return o; }
   function payAppliedRows(stw, fid){ var rows=[]; (stw.payRuns||[]).forEach(function(r){ (r.applied||[]).forEach(function(a){ rows.push({ farm_id:fid, run_local_id:String(r.id), worker_local_id:String(a.wid), adv_repaid:(a.advRepay!=null)?Number(a.advRepay):0, savings_in:(a.savings!=null)?Number(a.savings):0 }); }); }); return rows; }
 
   load.workers = async function(farmId){

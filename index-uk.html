@@ -33,7 +33,7 @@
 <script defer src="vendor/chart.umd.js"></script>
 <!-- AgriInsights backend: Supabase client + data service (load order matters) -->
 <script src="vendor/supabase.js"></script>
-<script src="ai-data-uk.js?v=uk122"></script>
+<script src="ai-data-uk.js?v=uk123"></script>
 <script src="ai-auth-uk.js?v=uk105"></script>
 <link rel="stylesheet" href="fonts.css"/>
 <style>
@@ -9136,9 +9136,12 @@ button.rn-gchip{border:0;font-family:inherit;cursor:pointer}
        than the National Living Wage. -->
   <div class="wk-sl" style="margin:18px 0 10px;font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--gm)">Tax &amp; wage floor</div>
   <div class="wk-f" style="margin:0 0 12px"><label>Tax code</label><input type="text" id="awf-taxcode" placeholder="1257L" maxlength="8">
-    <div class="hint">On their P45, P60 or HMRC letter. Leave blank and we assume 1257L, the standard code. An S at the front means Scottish rates; K codes, 0T, BR and D0 are all handled.</div></div>
+    <div class="hint">On their P45, P60 or HMRC letter. Leave blank and we assume 1257L, the standard code. An S at the front means Scottish rates; K codes, 0T, BR and D0 are all handled. Worked cumulatively unless the code ends W1, M1 or X. A new starter with no P45: ticked A on the starter checklist &rarr; 1257L; B &rarr; 1257L M1; C &rarr; BR; no checklist &rarr; 0T M1.</div></div>
+  <div class="wk-f" style="margin:0 0 12px"><label>From their P45 <span style="color:var(--t4);font-weight:600">&mdash; only if they had another job since 6 April</span></label>
+    <div style="display:flex;gap:8px"><div class="wk-ipre" style="flex:1"><span class="r">&pound;</span><input type="number" id="awf-p45pay" placeholder="Pay to date"></div><div class="wk-ipre" style="flex:1"><span class="r">&pound;</span><input type="number" id="awf-p45tax" placeholder="Tax to date"></div></div>
+    <div class="hint">Boxes &ldquo;Total pay to date&rdquo; and &ldquo;Total tax to date&rdquo;. Their first PAYE here carries on from those figures.</div></div>
   <div class="wk-f" style="margin:0 0 12px"><label>Age <span style="color:var(--t4);font-weight:600">&mdash; optional</span></label><input type="number" id="awf-age" placeholder="e.g. 34" min="15" max="90">
-    <div class="hint">Only used to pick the right minimum-wage band. Under 21 and apprentices have lower floors.</div></div>
+    <div class="hint">Picks the minimum-wage band and the National Insurance category: under 21, and apprentices under 25, cost you no employer NI on pay up to &pound;50,270 a year; from 67 the worker pays none.</div></div>
   <div class="wk-f" style="margin:0 0 12px"><label>Agricultural Wages Order grade <span style="color:var(--t4);font-weight:600">&mdash; Wales, Scotland &amp; NI only</span></label><input type="text" id="awf-awo" placeholder="e.g. 3, C, or Q" maxlength="2">
     <div class="hint">England has no Agricultural Wages Board &mdash; leave blank. Wales: A&ndash;E. Northern Ireland: 1&ndash;5. Scotland has one rate for everyone &mdash; enter Q if they hold an agricultural qualification. We check against whichever minimum is higher.</div></div>
   <div class="wk-switch"><div><div class="t">Apprentice</div><div class="d">First year, or under 19 &mdash; a lower minimum applies.</div></div><div class="wk-sw" id="awf-appr" onclick="wkTogSwitch(this)"></div></div>
@@ -26687,8 +26690,25 @@ function renderWkRegister(){ wkSync();
 /* Employee (Class 1) NI on a MONTHLY gross. Banded, not the flat capped levy UIF was:
    nothing below the primary threshold, 8% to the upper earnings limit, 2% above it.
    Thresholds are annual, so they are divided into monthly equivalents here. */
-function wkNI(gross){
+/* The NI category a worker's pay is reported under. HMRC letters, from the age the farmer
+   types (we hold no date of birth, so the boundaries are read conservatively):
+     M  under 21                      - employer pays 0% up to the upper secondary threshold
+     H  apprentice under 25           - employer pays 0% up to the apprentice UST
+     C  over State Pension age        - the WORKER pays no NI; the employer still does.
+        State Pension age is rising from 66 to 67 across 2026-28, so only 67+ is taken as
+        certainly over it; a 66-year-old keeps paying until the farmer says otherwise.
+     A  everyone else. */
+function wkNiCat(w){
+  var age=(w&&w.age!=null&&w.age!=='')?Number(w.age):NaN;
+  if(isNaN(age)) return 'A';
+  if(age<21) return 'M';
+  if(w.apprentice && age<25) return 'H';
+  if(age>=67) return 'C';
+  return 'A';
+}
+function wkNI(gross, w){
   var g=Number(gross)||0;
+  if(w && wkNiCat(w)==='C') return 0;
   var PT=((STATUTORY.niPrimaryThresh&&STATUTORY.niPrimaryThresh.value)||12570)/12,
       UEL=((STATUTORY.niUpperLimit&&STATUTORY.niUpperLimit.value)||50270)/12;
   var main=(STATUTORY.niEmployeeRate&&STATUTORY.niEmployeeRate.value)||0.08, upper=0.02;
@@ -26699,9 +26719,12 @@ function wkNI(gross){
 /* Employer NI: 15% above the 5,000 secondary threshold, with the Employment Allowance
    offsetting up to 10,500 a year across the whole payroll. The allowance is a BUSINESS
    level relief, so it is applied to the annual bill, never per worker. */
-function wkEmployerNI(monthlyGross){
+function wkEmployerNI(monthlyGross, w){
   var g=Number(monthlyGross)||0, ST_=(STATUTORY._ref&&STATUTORY._ref.employerNiThresh&&STATUTORY._ref.employerNiThresh.value)||5000;
   var rate=(STATUTORY._ref&&STATUTORY._ref.employerNiRate&&STATUTORY._ref.employerNiRate.value)||0.15;
+  /* Under 21 (M) and apprentices under 25 (H): nothing up to the upper secondary threshold. */
+  var cat=w?wkNiCat(w):'A';
+  if(cat==='M'||cat==='H') ST_=Math.max(ST_, (STATUTORY._ref&&STATUTORY._ref.employerNiUST&&STATUTORY._ref.employerNiUST.value)||50270);
   var over=Math.max(0, g-(ST_/12));
   return Math.round(over*rate*100)/100;
 }
@@ -26741,7 +26764,7 @@ function wkEaSingleDirectorRisk(){
   try{
     if(!(typeof ukIsCompany==='function' && ukIsCompany())) return false;
     var liable=((typeof wkList==='function')?wkList():[]).filter(function(w){
-      return (typeof wkEmployerNI==='function') && wkEmployerNI(w.amt||0)>0; });
+      return (typeof wkEmployerNI==='function') && wkEmployerNI(w.amt||0, w)>0; });
     return liable.length===1;
   }catch(e){ return false; }
 }
@@ -26773,14 +26796,14 @@ function wkEmploymentAllowance(annualEmployerNI){
 function wkErNIRawMonth(label){
   var tot=0;
   try{
-    (wkPayRows(label)||[]).forEach(function(r){ tot+=wkEmployerNI(r.gross||0); });
+    (wkPayRows(label)||[]).forEach(function(r){ tot+=wkEmployerNI(r.gross||0, r.w); });
   }catch(e){}
   try{
     (wkSeasList()||[]).forEach(function(w){
       var d=(typeof wkSeasDaysFor==='function')?(wkSeasDaysFor(label,w.id)||0):0;
       if(d<=0) return;
       if(typeof ukSeasonalPay==='function'){ var r=ukSeasonalPay(w,d); tot+=(r&&r.employerNI)||0; }
-      else tot+=wkEmployerNI(d*(w.amt||0));
+      else tot+=wkEmployerNI(d*(w.amt||0), w);
     });
   }catch(e){}
   return Math.round(tot*100)/100;
@@ -26814,8 +26837,13 @@ function wkErNIPeriod(labels){
 /* Pension auto-enrolment: 8% of QUALIFYING earnings (the slice between the lower and
    upper limits), of which at least 3% is the employer's. Only workers earning above
    the trigger must be enrolled. */
-function wkPensionAE(monthlyGross){
+/* Auto-enrolment is for an "eligible jobholder": aged 22 up to State Pension age and
+   earning over the trigger. Younger or older workers can ask to join, but the farm has no
+   duty to enrol them - so with an age on file outside that band nothing is deducted. */
+function wkPensionAE(monthlyGross, w){
   var R=(STATUTORY._ref)||{}, g=Number(monthlyGross)||0;
+  var age=(w&&w.age!=null&&w.age!=='')?Number(w.age):NaN;
+  if(!isNaN(age) && (age<22 || age>=67)) return { enrol:false, qualifying:0, total:0, employer:0, ageOut:true };
   var lo=((R.pensionLower&&R.pensionLower.value)||6240)/12, hi=((R.pensionUpper&&R.pensionUpper.value)||50270)/12;
   var trig=((R.aeEarningsTrigger&&R.aeEarningsTrigger.value)||10000)/12;
   if(g<trig) return { enrol:false, qualifying:0, total:0, employer:0 };
@@ -26962,6 +26990,81 @@ function ukPAYE(gross, taxCode, periodsPerYear){
   tax=Math.min(Math.max(0,tax), g*0.5);
   return Math.round(tax*100)/100;
 }
+/* ── Cumulative PAYE (the HMRC default) ──────────────────────────────────────────
+   Every code is worked CUMULATIVELY unless it ends W1, M1 or X: tax due to date is the
+   tax on (pay to date - free pay to date) on the bands to date, and this month's PAYE is
+   that less the tax already taken. So a worker who starts in October with no other job
+   gets the six months of allowance they have not used, a bonus month does not overtax
+   them for the year, and a low month is followed by a smaller deduction - which is what
+   Sage, Xero and BrightPay all do. ukPAYE above stays the non-cumulative (W1/M1) sum and
+   the annual estimates.
+
+   The tax month comes from the pay-month label, dated to the month end: April = 1 ...
+   March = 12. Pay and tax to date come from, in order:
+     · a P45 from a job earlier in this tax year (w.p45 = {sy, pay, tax});
+     · each earlier pay run's line for this worker (lines = [{w, g, t}]);
+     · for a month with no stored line (runs posted before this build, or a month the
+       farm never ran) the pay is rebuilt from the worker's pay and that month's bonus or
+       days, and the tax as if that month had been run cumulatively. */
+function ukTaxPeriod(label){
+  var d=(typeof wkLabelToDate==='function')?wkLabelToDate(label):new Date();
+  var m=d.getMonth(); return { n:((m-3+12)%12)+1, sy:(m>=3?d.getFullYear():d.getFullYear()-1) };
+}
+/* Monthly free pay the way HMRC's PAYE tax table routines (v24, s4) work it: per 500 of
+   code 416.67, the rest as (code x 10 + 9) / 12 rounded UP to the penny - so 1257L is
+   1,048.26 a month, not the 1,048.25 a plain twelfth gives. K codes add the same amount. */
+function _ukFreePayMonth(A){
+  var code=Math.round((Math.abs(A.annual)-(A.k?0:9))/10); if(code<=0) return 0;
+  var q=Math.floor((code-1)/500), r=((code-1)%500)+1;
+  var f=q*416.67 + Math.ceil(((r*10+9)/12)*100-1e-9)/100;
+  return A.k ? -f : f;
+}
+function _ukCumDue(payToDate, n, A){
+  if(A.flatRate!=null) return Math.floor(payToDate*A.flatRate*100+1e-6)/100;
+  var taxable=Math.floor(Math.max(0, payToDate - _ukFreePayMonth(A)*n));   // whole pounds, as the tables do
+  return Math.floor(_taxFromBands(taxable*12/n, _ukPayeBands(A.region))*n/12*100+1e-6)/100;   // rounded DOWN to the penny
+}
+function _ukMonthLabel(sy, n){ var mi=(3+n-1)%12, y=(mi>=3)?sy:sy+1; return WK_MO[mi]+' '+y; }
+function _ukMonthGross(w, L){
+  if(w.basis==='month'){
+    var s=w.start?new Date(w.start):null, end=wkLabelToDate(L); end=new Date(end.getFullYear(), end.getMonth()+1, 0);
+    if(s && !isNaN(s) && s>end) return 0;
+    return (w.amt||0) + (((ST_WORK.bonus&&ST_WORK.bonus[L])||{})[w.id]||0);
+  }
+  var d=(typeof wkSeasDaysFor==='function')?(wkSeasDaysFor(L,w.id)||0):0;
+  return (d>0 && typeof ukSeasonalPay==='function') ? ukSeasonalPay(w,d).gross : 0;
+}
+function ukPayeToDate(w, label){
+  var tp=ukTaxPeriod(label), A=ukTaxCodeAllowance(w.taxCode), rec={}, pay=0, paid=0, est=0;
+  if(w.p45 && Number(w.p45.sy)===tp.sy){ pay+=Number(w.p45.pay)||0; paid+=Number(w.p45.tax)||0; }
+  ((ST_WORK&&ST_WORK.payRuns)||[]).forEach(function(r){
+    if(!r || !r.lines || !r.label) return; var p=ukTaxPeriod(r.label);
+    if(p.sy!==tp.sy || p.n>=tp.n) return;
+    r.lines.forEach(function(x){ if(String(x.w)!==String(w.id)) return;
+      var o=rec[p.n]||(rec[p.n]={g:0,t:0}); o.g+=Number(x.g)||0; o.t+=Number(x.t)||0; });
+  });
+  for(var k=1;k<tp.n;k++){
+    if(rec[k]){ pay+=rec[k].g; paid+=rec[k].t; continue; }
+    var g=_ukMonthGross(w, _ukMonthLabel(tp.sy,k)); if(g<=0) continue;
+    pay+=g; est++;
+    if(A.annual!==Infinity) paid=A.nonCumulative ? paid+ukPAYE(g, w.taxCode, 12) : Math.max(0, _ukCumDue(pay,k,A));
+  }
+  return { n:tp.n, sy:tp.sy, pay:Math.round(pay*100)/100, tax:Math.round(paid*100)/100, estimated:est };
+}
+function ukPAYECum(gross, w, label){
+  var g=Number(gross)||0, A=ukTaxCodeAllowance(w&&w.taxCode);
+  if(A.annual===Infinity) return 0;
+  if(A.nonCumulative || !label) return ukPAYE(g, w&&w.taxCode, 12);
+  var y=ukPayeToDate(w, label);
+  var tax=_ukCumDue(y.pay+g, y.n, A) - y.tax;
+  tax=Math.max(tax, -y.tax);                     // a refund can only give back tax already taken
+  /* The regulatory limit (PAYE Regs 2003 reg 2, CWG2 1.12): never more than half this
+     month's pay, on every code. What it holds back is still due to date, so next month
+     picks it up. It is not applied to a refund. */
+  if(tax>0) tax=Math.min(tax, Math.floor(g*0.5*100)/100);
+  return Math.round(tax*100)/100;
+}
+window.ukPAYECum=ukPAYECum; window.ukPayeToDate=ukPayeToDate; window.ukTaxPeriod=ukTaxPeriod;
 /* ── One worker, one period ───────────────────────────────────────────────────────
    Returns BOTH sides: what the worker takes home, and what the farm actually spends.
    The second is the number missing from the SA model and the one a farm plans with. */
@@ -26971,12 +27074,12 @@ function ukPayrollWorker(w, opts){
   var per=opts.periodsPerYear||12;
   var floor=ukWageFloor(w);
   var hourly=(typeof wkHourly==='function')?wkHourly(w):0;
-  var paye=ukPAYE(gross, w.taxCode, per);
-  var eeNI=wkNI(gross);
-  var erNI=wkEmployerNI(gross);
+  var paye=(opts.label && per===12) ? ukPAYECum(gross, w, opts.label) : ukPAYE(gross, w.taxCode, per);
+  var eeNI=wkNI(gross, w);
+  var erNI=wkEmployerNI(gross, w);
   /* A worker who has opted out of the workplace pension pays nothing into it and nor
      does the farm. It was deducted regardless. */
-  var pen=w.pensionOut ? { enrol:false, qualifying:0, total:0, employer:0, optedOut:true } : wkPensionAE(gross);
+  var pen=w.pensionOut ? { enrol:false, qualifying:0, total:0, employer:0, optedOut:true } : wkPensionAE(gross, w);
   var eePen=Math.max(0, pen.total-pen.employer);
   var advRepay=(w.adv&&w.adv.owing>0)?Math.min(w.adv.perPay||0, w.adv.owing):0;
   var savings=(w.fund&&w.fund.on&&w.fund.freq==='month')?(w.fund.perPay||0):0;
@@ -27034,7 +27137,7 @@ window.UK_WAGE_FLOORS=UK_WAGE_FLOORS; window.ukWageFloor=ukWageFloor;
 window.ukTaxCodeAllowance=ukTaxCodeAllowance; window.ukPAYE=ukPAYE;
 window.ukPayrollWorker=ukPayrollWorker; window.ukPayrollRun=ukPayrollRun;
 
-window.wkEmployerNI=wkEmployerNI; window.wkEmploymentAllowance=wkEmploymentAllowance;
+window.wkEmployerNI=wkEmployerNI; window.wkNiCat=wkNiCat; window.wkEmploymentAllowance=wkEmploymentAllowance;
 window.wkPensionAE=wkPensionAE; window.wkHolidayAccrual=wkHolidayAccrual;
 function wkTodayStr(){ var d=(typeof APP_TODAY!=='undefined'&&APP_TODAY)?APP_TODAY:new Date(); var mo=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']; return d.getDate()+' '+mo[d.getMonth()]+' '+d.getFullYear(); }
 function wkMonthLabel(){ var d=(typeof APP_TODAY!=='undefined'&&APP_TODAY)?APP_TODAY:new Date(); var mo=['January','February','March','April','May','June','July','August','September','October','November','December']; return mo[d.getMonth()]+' '+d.getFullYear(); }
@@ -27058,9 +27161,9 @@ function wkPayRows(labelOverride){
        TAX CODE and returns the employer side too. The SA version read PAYE from a map
        the farmer typed in and had no employer NI or pension at all, so the wage bill it
        showed was roughly a fifth short of what the farm actually spends. */
-    var uk=(typeof ukPayrollWorker==='function') ? ukPayrollWorker(w,{gross:gross}) : null;
+    var uk=(typeof ukPayrollWorker==='function') ? ukPayrollWorker(w,{gross:gross,label:label}) : null;
     var paye = uk ? uk.paye : ((typeof wkPayeFor==='function')?(wkPayeFor(label,w.id)||0):0);
-    var ni  = uk ? uk.employeeNI : wkNI(gross);
+    var ni  = uk ? uk.employeeNI : wkNI(gross, w);
     var eePen= uk ? uk.employeePension : 0;
     var advRepay=(w.adv&&w.adv.owing>0)?Math.min(w.adv.perPay||0, w.adv.owing):0;
     var savings=(w.fund&&w.fund.on&&w.fund.freq==='month')?(w.fund.perPay||0):0;
@@ -27210,7 +27313,8 @@ function wkPostPayRun(){
   ST_WORK.payRuns.unshift({ id:runId, label:label, kind:rows.length+' permanent', net:Math.round(totNet), gross:Math.round(totGross),
     employeeNI:Math.round(totNI*100)/100, employerNI:Math.round(_erNI*100)/100, eaUsed:Math.round(_eaUsed*100)/100,
     paye:Math.round(totPAYE*100)/100,
-    ni:Math.round((totNI+Math.max(0,_erNI-_eaUsed))*100)/100, date:wkTodayStr(), applied:applied });
+    ni:Math.round((totNI+Math.max(0,_erNI-_eaUsed))*100)/100, date:wkTodayStr(), applied:applied,
+    lines:rows.map(function(r){ return { w:r.w.id, g:Math.round(r.gross*100)/100, t:Math.round((r.paye||0)*100)/100 }; }) });
   try { if(typeof dataChanged==='function') dataChanged('transaction'); } catch(e){}
   if(typeof saveState==='function') saveState();
   if(typeof toast==='function') toast('Posted '+wkMoney(cost)+' to Labour & Wages.','success');
@@ -27250,8 +27354,8 @@ function wkPostSeasonal(){
      run paid employer NI in full while relief sat unused, AND, because it recorded no
      eaUsed, the monthly runs then believed more allowance was left than really was.
      One pool, both paths. */
-  var sg=0,sni=0,spen=0,totDays=0,buckets={}; wkSeasList().forEach(function(w){ var days=wkSeasDaysFor(label,w.id); if(days>0){
-    var P=ukSeasonalPay(w,days);
+  var sg=0,sni=0,spen=0,totDays=0,buckets={},_lines=[]; wkSeasList().forEach(function(w){ var days=wkSeasDaysFor(label,w.id); if(days>0){
+    var P=ukSeasonalPay(w,days,{label:label}); _lines.push({w:w.id, g:P.gross, t:P.paye});
     sg+=P.gross; sni+=P.employerNI; spen+=P.employerPension; totDays+=days;
     var key=w.activity||''; var b=buckets[key]||(buckets[key]={gross:0,ni:0,pen:0}); b.gross+=P.gross; b.ni+=P.employerNI; b.pen+=P.employerPension; } });
   if(sg<=0){ if(typeof toast==='function') toast('Enter days worked first.','info'); return; }
@@ -27269,7 +27373,7 @@ function wkPostSeasonal(){
   if(typeof ST!=='undefined' && ST.txns){ for(var _k in buckets){ if(!buckets.hasOwnProperty(_k)) continue; var _b=buckets[_k]; var _c=Math.round((_b.gross+_b.ni)*100)/100; var _sd='Seasonal wages \u2014 '+label+(_k?(' \u00b7 '+wkActLabel(_k)):''); ST.txns.unshift({ date:wkTodayStr(), desc:_sd, cat:'Labour & Wages', type:'expense', amt:_c, method:'Bank', source:'Payroll', ent:_k||undefined, payRunId:runId }); var _wkSTx=ST.txns[0]; (function(_e,_amt,_desc,_ent){ try{ if(window.AI && AI.farm && AI.farm.active()){ txnWriteThrough(_e, {date:wkTodayStr(),amt:_amt,cat:'Labour & Wages',type:'expense',desc:_desc,method:'Bank',source:'Payroll',ent:_ent}); } }catch(er){} })(_wkSTx,_c,_sd,(_k||('payrun:'+runId))); } }
   ST_WORK.payRuns.unshift({ id:runId, label:label, kind:'Seasonal \u00b7 '+totDays+' days', seasonal:true, net:Math.round(sg-su), gross:Math.round(sg),
     employerNI:Math.round(sni*100)/100, employerPension:Math.round(spen*100)/100, eaUsed:_relief,
-    ni:_niPaid, date:wkTodayStr() });
+    ni:_niPaid, date:wkTodayStr(), lines:_lines, paye:Math.round(_lines.reduce(function(a,x){ return a+(x.t||0); },0)*100)/100 });
   try { if(typeof dataChanged==='function') dataChanged('transaction'); } catch(e){}
   if(typeof saveState==='function') saveState();
   if(typeof toast==='function') toast('Posted '+wkMoney(cost)+' to Labour & Wages.','success');
@@ -27278,7 +27382,7 @@ function wkPostSeasonal(){
 function wkSeasPostRow(label){
   if(wkSeasonalPosted(label)) return '<div style="margin-top:11px;font-size:12px;font-weight:800;color:var(--gm);background:var(--gp);border-radius:10px;padding:11px 13px;display:flex;align-items:center;gap:8px"><span>\u2713</span> Paid \u2014 posted to Labour &amp; Wages</div>';
   var sg=0,sni=0,spen=0,hol=0,short=[],visa=[]; wkSeasList().forEach(function(w){ var days=wkSeasDaysFor(label,w.id); if(days>0){
-    var P=ukSeasonalPay(w,days); sg+=P.gross; sni+=P.employerNI; spen+=P.employerPension; hol+=P.holidayPay;
+    var P=ukSeasonalPay(w,days,{label:label}); sg+=P.gross; sni+=P.employerNI; spen+=P.employerPension; hol+=P.holidayPay;
     if(P.belowFloor) short.push(w.name); if(P.visaShort) visa.push(w.name); } });
   if(sg<=0) return '';
   var _eaLeft=(typeof wkEaRemaining==='function')?wkEaRemaining():0;
@@ -27338,7 +27442,7 @@ function wkPayslip(id){
 function wkSeasonalSlipHtml(id,label){
   var w=wkFind(id); if(!w) return '';
   var days=(typeof wkSeasDaysFor==='function')?wkSeasDaysFor(label,id):0;
-  var P=(typeof ukSeasonalPay==='function')?ukSeasonalPay(w,days):null;
+  var P=(typeof ukSeasonalPay==='function')?ukSeasonalPay(w,days,{label:label}):null;
   var gross=P?P.gross:wkSeasGross(w,days);
   var ni=P?P.ni:0, net=P?P.net:gross;
   var farm=(typeof ST!=='undefined'&&ST.farmName)?ST.farmName:'Your farm';
@@ -27393,7 +27497,7 @@ function wkComplianceState(){
 }
 function wkSeasonalAnnual(){ var t=0; var sm=(typeof ST_WORK!=='undefined'&&ST_WORK&&ST_WORK.seasonal)||{}; var ids={}; (wkList()||[]).forEach(function(w){ if(w.basis!=='month') ids[w.id]=w; }); for(var k in sm){ if(!sm.hasOwnProperty(k)) continue; var m=sm[k]||{}; for(var wid in m){ if(!m.hasOwnProperty(wid)) continue; var w=ids[wid]; if(!w) continue; t+=(m[wid]||0)*(w.amt||0); } } return Math.round(t); }
 function wkAnnualWageBill(){ var monthly=wkList().filter(function(w){return w.basis==='month';}).reduce(function(a,w){return a+(w.amt||0);},0)*12; return monthly + wkSeasonalAnnual(); }
-function wkMonthlyLabourCost(){ return Math.round(wkList().filter(function(w){return w.basis==='month';}).reduce(function(a,w){ return a+(w.amt||0)+((typeof wkNI==='function')?wkNI(w.amt||0):0); },0)); }
+function wkMonthlyLabourCost(){ return Math.round(wkList().filter(function(w){return w.basis==='month';}).reduce(function(a,w){ return a+(w.amt||0)+((typeof wkNI==='function')?wkNI(w.amt||0, w):0); },0)); }
 function wkSyncLabourBudget(){
   if(typeof ST==='undefined' || !ST.recurring) return;
   var n=wkList().filter(function(w){return w.basis==='month';}).length;
@@ -27608,8 +27712,8 @@ function wkCompNI(){
      own, lower threshold, and the Employment Allowance comes off it, so the two sides are
      summed separately. */
   var _perm=wkList().filter(function(w){return w.basis==='month';});
-  var _eeMo=_perm.reduce(function(a,w){return a+wkNI(w.amt||0);},0);
-  var _erMo=_perm.reduce(function(a,w){return a+wkEmployerNI(w.amt||0);},0);
+  var _eeMo=_perm.reduce(function(a,w){return a+wkNI(w.amt||0, w);},0);
+  var _erMo=_perm.reduce(function(a,w){return a+wkEmployerNI(w.amt||0, w);},0);
   var _ea=wkEmploymentAllowance(_erMo*12);
   var monthly=_eeMo + _ea.payable/12;
   var pays=cs.niPayments.map(function(pm){ return '<div class="wk-doc"><span class="ok">\u2713</span> NI paid '+wkMoney(pm.amt)+' <span style="color:var(--t4);margin-left:auto">'+wkE(pm.date)+'</span></div>'; }).join('');
@@ -27920,7 +28024,7 @@ function wkPayeFor(label,wid){
       return 0;
     }
     var d=(typeof wkSeasDaysFor==='function')?(wkSeasDaysFor(label,wid)||0):0;
-    if(d>0 && typeof ukSeasonalPay==='function') return Math.round((ukSeasonalPay(w,d).paye||0)*100)/100;
+    if(d>0 && typeof ukSeasonalPay==='function') return Math.round((ukSeasonalPay(w,d,{label:label}).paye||0)*100)/100;
     return 0;
   } finally { _WK_PAYE_REENTRY=false; }
 }
@@ -28064,10 +28168,10 @@ function ukSeasonalPay(w, days, opts){
   var gross=Math.round((basePay+holidayPay)*100)/100;
   /* Period NI. Casual runs are monthly here, matching how the pay run is grouped. */
   var per=opts.periodsPerYear||12;
-  var ni=(typeof wkNI==='function')?wkNI(gross):0;
-  var paye=(typeof ukPAYE==='function')?ukPAYE(gross, w.taxCode, per):0;
-  var erNI=(typeof wkEmployerNI==='function')?wkEmployerNI(gross):0;
-  var pen=(w.pensionOut||typeof wkPensionAE!=='function')?{enrol:false,total:0,employer:0}:wkPensionAE(gross);
+  var ni=(typeof wkNI==='function')?wkNI(gross, w):0;
+  var paye=(opts.label && per===12) ? ukPAYECum(gross, w, opts.label) : ((typeof ukPAYE==='function')?ukPAYE(gross, w.taxCode, per):0);
+  var erNI=(typeof wkEmployerNI==='function')?wkEmployerNI(gross, w):0;
+  var pen=(w.pensionOut||typeof wkPensionAE!=='function')?{enrol:false,total:0,employer:0}:wkPensionAE(gross, w);
   var eePen=Math.max(0, (pen.total||0)-(pen.employer||0));
   /* Wage floor, region aware - seasonal workers are covered by the same NLW and, in
      the devolved nations, the same Agricultural Wages Order grades. */
@@ -28295,9 +28399,9 @@ function wkPRStatutory(){
   var perWorker=wkList().map(function(w){
     var rem=(w.basis!=='month')? (wkSeasGross(w,wkSeasDaysFor(t.label,w.id))) : (w.amt||0);
     if(w.basis!=='month' && rem<=0) return '';
-    var ee=wkNI(rem), erW=wkEmployerNI(rem);
+    var ee=wkNI(rem, w), erW=wkEmployerNI(rem, w), _cat=wkNiCat(w);
     var no=wkNiNo(w)?('NI no. '+wkE(wkNiNo(w))):'<span style="color:var(--rd)">NI number missing</span>';
-    return '<div class="pr-stat-row"><div><div class="nm">'+wkE(w.name)+'</div><div class="s">'+no+'</div></div>'
+    return '<div class="pr-stat-row"><div><div class="nm">'+wkE(w.name)+'</div><div class="s">'+no+' \u00b7 category '+_cat+(_cat==='M'?' (under 21)':_cat==='H'?' (apprentice under 25)':_cat==='C'?' (over State Pension age)':'')+'</div></div>'
       +'<div class="right">'+wkMoney(rem)+' \u00b7 employee <b>'+wkMoney(ee)+'</b> \u00b7 employer <b>'+wkMoney(erW)+'</b></div></div>';
   }).join('');
   var pt=((STATUTORY.niPrimaryThresh&&STATUTORY.niPrimaryThresh.value)||12570),
@@ -28315,7 +28419,7 @@ function wkPRStatutory(){
 function wkPRTaxYear(){
   var ty=wkTaxYear();
   var rows=wkList().filter(function(w){return w.basis==='month';}).map(function(w){
-    var m=wkMonthsInTY(w); var gross=(w.amt||0)*m; var ni=wkNI(w.amt)*m;
+    var m=wkMonthsInTY(w); var gross=(w.amt||0)*m; var ni=wkNI(w.amt, w)*m;
     /* The comment said "across this tax year's month labels" and the loop walked EVERY
        label ever stored, so a figure entered last year was added to this year's total.
        It also read only the typed store, which is why a farmer on 18,900 was told they
@@ -28581,7 +28685,7 @@ function wkNmw(){
   else{ line.className='wk-nmw bad'; line.innerHTML='<span class="e">&#9888;</span><span>That&rsquo;s only '+_curSym()+hr+'/hour &mdash; <b>below the '+_curSym()+rate.toFixed(2)+' minimum</b>. Bump it up before you save.</span>'; }
 }
 function wkFormReset(){
-  var ids=['awf-name','awf-role','awf-id','awf-amt','awf-advamt','awf-advoff','awf-scheme','awf-funamt'];
+  var ids=['awf-name','awf-role','awf-id','awf-amt','awf-advamt','awf-advoff','awf-scheme','awf-funamt','awf-taxcode','awf-age','awf-awo','awf-p45pay','awf-p45tax'];
   ids.forEach(function(id){ var e=$(id); if(e) e.value=''; });
   var hrs=$('awf-hours'); if(hrs) hrs.value=45;
   var _ae=$('awf-activity'); if(_ae) _ae.innerHTML=wkActOptions('');
@@ -28709,6 +28813,8 @@ function wkSaveWorker(){
     type:wkSegVal('awf-type')||'Permanent', start:(($('awf-start')||{}).value||''), onFarm:wkSwOn('awf-onfarm'),
     niNo:(($('awf-id')||{}).value||'').trim(), basis:basis, amt:amt,
     taxCode:((($('awf-taxcode')||{}).value||'').trim().toUpperCase())||'1257L',
+    p45:(function(){ var pp=parseFloat(($('awf-p45pay')||{}).value)||0, pt=parseFloat(($('awf-p45tax')||{}).value)||0;
+      return (pp>0||pt>0) ? { sy:wkTaxYear().sy, pay:pp, tax:pt } : null; })(),
     age:_age, awoGrade:(_awo && !isNaN(_awo)? parseInt(_awo,10) : _awo), apprentice:_appr,
     visaWorker:wkSwOn('awf-visa'), pensionOut:wkSwOn('awf-penout'),
     hoursWeek:(basis==='month'?hrs:40), hoursDay:(basis==='day'?hrs:8), niReg:wkSwOn('awf-nireg'), activity:(($('awf-activity')||{}).value||''),
@@ -29299,6 +29405,7 @@ var STATUTORY = {
   _ref: {
     employerNiRate:  { value: 0.15,  source:'Employer NI 15% above the 5,000 secondary threshold (from Apr 2025)' },
     employerNiThresh:{ value: 5000,  source:'Secondary threshold, frozen to 2030-31' },
+    employerNiUST:   { value: 50270, source:'Upper secondary threshold (under 21) and apprentice UST (under 25): employer pays 0% up to here' },
     employmentAllow: { value: 10500, source:'Employment Allowance, off employer NI' },
     pensionTotalPct: { value: 0.08,  source:'Auto-enrolment minimum 8% of qualifying earnings' },
     pensionEmpPct:   { value: 0.03,  source:'Auto-enrolment minimum employer share 3%' },
@@ -55402,8 +55509,8 @@ function taxPayrollAnnual(){
   var uk=function(w,gross){
     return (typeof ukPayrollWorker==='function')
       ? ukPayrollWorker(w,{gross:gross})
-      : { paye:0, employeeNI:(typeof wkNI==='function'?wkNI(gross):0),
-          employerNI:(typeof wkEmployerNI==='function'?wkEmployerNI(gross):0) };
+      : { paye:0, employeeNI:(typeof wkNI==='function'?wkNI(gross, w):0),
+          employerNI:(typeof wkEmployerNI==='function'?wkEmployerNI(gross, w):0) };
   };
 
   // Monthly: a standing wage, so the year is twelve of it.
@@ -65317,7 +65424,7 @@ function accCsvPayroll(){
     var hdr=['Employee','NI number','Gross pay (GBP)','Employee NI (GBP)','PAYE (GBP)','Net pay (GBP)','Year-end form'];
     var rows=[];
     wkList().filter(function(w){return w.basis==='month';}).forEach(function(w){
-      var m=wkMonthsInTY(w); var gross=(w.amt||0)*m; var ni=wkNI(w.amt)*m;
+      var m=wkMonthsInTY(w); var gross=(w.amt||0)*m; var ni=wkNI(w.amt, w)*m;
       var paye=0, pm=ST_WORK.paye||{}; for(var k in pm){ if(pm.hasOwnProperty(k)&&pm[k][w.id]) paye+=pm[k][w.id]; }
       var net=gross-ni-paye; var cert=(paye>0)?'P60':'no PAYE this year';
       rows.push([w.name, wkNiNo(w), gross.toFixed(2), ni.toFixed(2), paye.toFixed(2), net.toFixed(2), cert]);
@@ -65353,7 +65460,7 @@ function wkPRExportNI(){
   labels.forEach(function(L){ wkList().forEach(function(w){
     var rem=(w.basis!=='month')?(wkSeasGross(w,wkSeasDaysFor(L,w.id))):(w.amt||0);
     if(w.basis!=='month'&&rem<=0) return;
-    data.push([L, w.name, wkNiNo(w), rem.toFixed(2), wkNI(rem).toFixed(2), wkEmployerNI(rem).toFixed(2)]);
+    data.push([L, w.name, wkNiNo(w), rem.toFixed(2), wkNI(rem, w).toFixed(2), wkEmployerNI(rem, w).toFixed(2)]);
   }); });
   wkDownload('Employee_NI_summary_'+wkPRTag(),
     toCSV(['Month','Employee','NI number','Gross pay (GBP)','Employee NI (GBP)','Employer NI (GBP)'], data));
@@ -65404,7 +65511,7 @@ function wkPRPrint(){
     var er=labels.map(function(L){ var paye=0,eeNI=0; rows.forEach(function(r){ paye+=wkPayeFor(L,r.w.id); eeNI+=r.ni; }); wkSeasList().forEach(function(w){ var days=wkSeasDaysFor(L,w.id); if(days>0) eeNI+=wkSeasNI(wkSeasGross(w,days),days,w); }); var erM=wkErNIMonth(L); var tot=paye+eeNI+erM.payable; return '<tr><td>'+wkE(L)+'</td><td>'+paye.toFixed(2)+'</td><td>'+eeNI.toFixed(2)+'</td><td>'+erM.payable.toFixed(2)+'</td><td>'+tot.toFixed(2)+'</td></tr>'; }).join('');
     empSec='<table><thead><tr><th>Month</th><th>PAYE</th><th>Employee NI</th><th>Employer NI</th><th>Total</th></tr></thead><tbody>'+er+'</tbody></table><p style="font-size:11px;color:#6B7280">Each month is filed as a separate Full Payment Submission.</p>';
   }
-  var niPerWorker=wkList().map(function(w){ var rem=(w.basis!=='month')?(wkSeasGross(w,wkSeasDaysFor(focus,w.id))):(w.amt||0); if(w.basis!=='month'&&rem<=0) return ''; return '<tr><td>'+wkE(w.name)+'</td><td>'+wkE(wkNiNo(w)||'\u2014')+'</td><td>'+rem.toFixed(2)+'</td><td>'+wkNI(rem).toFixed(2)+'</td><td>'+wkEmployerNI(rem).toFixed(2)+'</td></tr>'; }).join('');
+  var niPerWorker=wkList().map(function(w){ var rem=(w.basis!=='month')?(wkSeasGross(w,wkSeasDaysFor(focus,w.id))):(w.amt||0); if(w.basis!=='month'&&rem<=0) return ''; return '<tr><td>'+wkE(w.name)+'</td><td>'+wkE(wkNiNo(w)||'\u2014')+'</td><td>'+rem.toFixed(2)+'</td><td>'+wkNI(rem, w).toFixed(2)+'</td><td>'+wkEmployerNI(rem, w).toFixed(2)+'</td></tr>'; }).join('');
   var html='<!DOCTYPE html><html><head><meta charset="utf-8"><title>Payroll report \u2014 '+wkE(farm)+'</title>'
     +'<style>body{font-family:Arial,Helvetica,sans-serif;color:#1A1F1C;max-width:760px;margin:24px auto;padding:0 18px;line-height:1.5}h1{font-size:20px;margin:0 0 2px}.sub{color:#6B7280;font-size:13px;margin-bottom:18px}h2{font-size:14px;border-bottom:2px solid #1B4332;padding-bottom:5px;margin:22px 0 10px;color:#1B4332}table{width:100%;border-collapse:collapse;font-size:12px}th,td{text-align:right;padding:6px 7px;border-bottom:1px solid #E9ECEF}th:first-child,td:first-child{text-align:left}th{font-size:11px;text-transform:uppercase;color:#6B7280}.kv{display:flex;justify-content:space-between;font-size:13px;padding:5px 0;border-bottom:1px solid #E9ECEF}.foot{font-size:11px;color:#9CA3AF;margin-top:22px;border-top:1px solid #E9ECEF;padding-top:10px}@media print{.noprint{display:none}}</style></head><body>'
     +'<h1>'+wkE(farm)+' \u2014 Payroll report</h1><div class="sub">'+wkE(periodLbl)+'</div>'
@@ -71630,7 +71737,7 @@ function aiPaySlipData(id, label){
               lower threshold. An earlier fix in this same expression had already gone
               looking for STATUTORY.uifCap, which never existed. */
            net:gross-totDed,
-           employerNi:(typeof wkEmployerNI==='function') ? wkEmployerNI(gross) : 0 };
+           employerNi:(typeof wkEmployerNI==='function') ? wkEmployerNI(gross, w) : 0 };
 }
 function aiPaySlipBuild(id, label, opts){
   opts=opts||{};
