@@ -386,6 +386,13 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
      cannot store would come straight back on the next load. */
   let CAN_ORCH_FIX     = false;   /* orchard_sprays: removed_at/removed_reason/removed_by/changes */
   let CAN_INPUT_FIX    = false;   /* crop_inputs:    the same four */
+  /* The rest of the record (uk-spray-ni-record.sql, signed off 23 Sep 2026): growth stage,
+     how it was applied, the buffer decision and the EAMU on each spray; the field number
+     and crop code on each field and block. One flag a table, one ALTER a table. */
+  let CAN_INPUT_NI     = false;   /* crop_inputs:    bbch/method/buffer_kind/buffer_m/lerap/eamu */
+  let CAN_ORCH_NI      = false;   /* orchard_sprays: the same six */
+  let CAN_LAND_NI      = false;   /* crop_lands:     field_ref/eppo/eppo_crop */
+  let CAN_BLOCK_NI     = false;   /* orchard_blocks: field_ref/eppo */
   /* ---- what this database actually has, asked once ------------------------
      Ported from SA -438, same reasoning. Every late-added column is gated on a
      CAN_* flag, and each flag cost its own round trip in series on every
@@ -447,7 +454,8 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     ['orchard_block_docs','path'], ['transaction_assets','asset_id'], ['livestock_moves','txn_ref'],
     ['category_rules','match_text'], ['category_rules','hits'],
     ['orchard_sprays','att'], ['crop_inputs','act'], ['orchard_sprays','act'],
-    ['orchard_sprays','removed_at'], ['crop_inputs','removed_at']
+    ['orchard_sprays','removed_at'], ['crop_inputs','removed_at'],
+    ['crop_inputs','bbch'], ['orchard_sprays','bbch'], ['crop_lands','field_ref'], ['orchard_blocks','field_ref']
   ];
 
   async function probeCaps(farmId){
@@ -499,6 +507,10 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     CAN_ORCH_PARTS    = keep(CAN_ORCH_PARTS,    'orchard_sprays','act');
     CAN_ORCH_FIX      = keep(CAN_ORCH_FIX,      'orchard_sprays','removed_at');
     CAN_INPUT_FIX     = keep(CAN_INPUT_FIX,     'crop_inputs','removed_at');
+    CAN_INPUT_NI      = keep(CAN_INPUT_NI,      'crop_inputs','bbch');
+    CAN_ORCH_NI       = keep(CAN_ORCH_NI,       'orchard_sprays','bbch');
+    CAN_LAND_NI       = keep(CAN_LAND_NI,       'crop_lands','field_ref');
+    CAN_BLOCK_NI      = keep(CAN_BLOCK_NI,      'orchard_blocks','field_ref');
   }
   probeCaps.reset = function(){ _colCache = Object.create(null); _colRpcDead = false; };
   probeCaps.seen  = function(){ return _colCache; };
@@ -2053,8 +2065,29 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
   // so 'crop:<type>' tags + crop profit (keyed off land.crop/yields) keep working.
   // Lands edit-in-place (upsert); events/inputs append-only (upsert, no prune —
   // no delete UI). Config (prices/compliance/season) is 3b-ii.
-  function landToDb(l,fid){ return { farm_id:fid, local_id:String(l.id), name:l.name||null, area:(l.area!=null&&l.area!=='')?Number(l.area):null, crop:l.crop||null, cultivar:l.cultivar||null, gmo:!!l.gmo, irrigated:!!l.irrigated, planted:l.planted||null, harvest:l.harvest||null, stage:l.stage||null, target_yield:(l.targetYield!=null&&l.targetYield!=='')?Number(l.targetYield):null, actual_yield:(l.actualYield!=null&&l.actualYield!=='')?Number(l.actualYield):null, input_per_ha:(l.inputPerHa!=null&&l.inputPerHa!=='')?Number(l.inputPerHa):null, prev_crop:l.prevCrop||null, price:(l.price!=null&&l.price!=='')?Number(l.price):null, plan_link:l.planId||null }; }
-  function landFromDb(r){ var l={ id:_numIf(r.local_id), name:r.name||'', area:Number(r.area)||0, crop:r.crop||'', cultivar:r.cultivar||'', gmo:!!r.gmo, irrigated:!!r.irrigated, planted:r.planted||'', harvest:r.harvest||'', stage:r.stage||'', targetYield:Number(r.target_yield)||0, actualYield:(r.actual_yield!=null)?Number(r.actual_yield):null, inputPerHa:Number(r.input_per_ha)||0, prevCrop:r.prev_crop||'' }; if(r.price) l.price=Number(r.price); if(r.plan_link) l.planId=r.plan_link; return l; }
+  /* The four spray fields both tables share. buffer is {k, m, stars, dose, ww, by}:
+     k and m are columns (DAERA's "Buffer Zone Applied" is a number), the LERAP details a
+     jsonb, present only for a reduced buffer. */
+  function _nxToDb(x, row){
+    var b=x.buffer||null;
+    row.bbch=x.bbch||null; row.method=x.method||null; row.eamu=x.eamu||null;
+    row.buffer_kind=(b&&b.k)||null; row.buffer_m=(b&&b.m!=null&&b.m!=='')?Number(b.m):null;
+    row.lerap=(b&&b.k==='lerap')?{stars:b.stars||0, dose:b.dose||1, ww:b.ww||'', by:b.by||''}:null;
+    return row;
+  }
+  function _nxFromDb(r, o){
+    if(r.bbch) o.bbch=r.bbch;
+    if(r.method) o.method=r.method;
+    if(r.eamu) o.eamu=r.eamu;
+    if(r.buffer_kind){ var b={k:r.buffer_kind}; if(r.buffer_m!=null) b.m=Number(r.buffer_m);
+      if(r.lerap && typeof r.lerap==='object'){ b.stars=Number(r.lerap.stars)||0; b.dose=Number(r.lerap.dose)||1; b.ww=r.lerap.ww||''; if(r.lerap.by) b.by=r.lerap.by; }
+      o.buffer=b; }
+    return o;
+  }
+  function landToDb(l,fid){ var row = { farm_id:fid, local_id:String(l.id), name:l.name||null, area:(l.area!=null&&l.area!=='')?Number(l.area):null, crop:l.crop||null, cultivar:l.cultivar||null, gmo:!!l.gmo, irrigated:!!l.irrigated, planted:l.planted||null, harvest:l.harvest||null, stage:l.stage||null, target_yield:(l.targetYield!=null&&l.targetYield!=='')?Number(l.targetYield):null, actual_yield:(l.actualYield!=null&&l.actualYield!=='')?Number(l.actualYield):null, input_per_ha:(l.inputPerHa!=null&&l.inputPerHa!=='')?Number(l.inputPerHa):null, prev_crop:l.prevCrop||null, price:(l.price!=null&&l.price!=='')?Number(l.price):null, plan_link:l.planId||null };
+    if(CAN_LAND_NI){ row.field_ref=l.fieldRef||null; row.eppo=l.eppo||null; row.eppo_crop=l.eppo?(l.eppoCrop||l.crop||null):null; }
+    return row; }
+  function landFromDb(r){ var l={ id:_numIf(r.local_id), name:r.name||'', area:Number(r.area)||0, crop:r.crop||'', cultivar:r.cultivar||'', gmo:!!r.gmo, irrigated:!!r.irrigated, planted:r.planted||'', harvest:r.harvest||'', stage:r.stage||'', targetYield:Number(r.target_yield)||0, actualYield:(r.actual_yield!=null)?Number(r.actual_yield):null, inputPerHa:Number(r.input_per_ha)||0, prevCrop:r.prev_crop||'' }; if(r.price) l.price=Number(r.price); if(r.plan_link) l.planId=r.plan_link; if(r.field_ref) l.fieldRef=r.field_ref; if(r.eppo){ l.eppo=r.eppo; l.eppoCrop=r.eppo_crop||''; } return l; }
   function cevToDb(e,fid){ return { farm_id:fid, local_id:String(e.id), land_local_id:(e.land!=null)?String(e.land):null, kind:e.kind||null, event_date:e.date||null, note:e.note||null, tons:(e.tons!=null)?Number(e.tons):null, yield_val:(e.yield!=null)?Number(e.yield):null, cert:e.cert||null }; }
   function cevFromDb(r){ var e={ id:r.local_id, land:_numIf(r.land_local_id), kind:r.kind||'', date:r.event_date||'', note:r.note||'' }; if(r.tons!=null) e.tons=Number(r.tons); if(r.yield_val!=null) e.yield=Number(r.yield_val); if(r.cert) e.cert=r.cert; return e; }
   function cinToDb(i,fid){ var row = { farm_id:fid, local_id:String(i.id), land_local_id:(i.land!=null)?String(i.land):null, input_date:i.date||null, product:i.product||null, reg:i.reg||null, kind:i.kind||null, rate:i.rate||null, batch:i.batch||null, by_who:i.by||null, operator_cert:i.operatorCert||null, target_for:i.targetFor||null, phi:(i.phi!=null)?parseInt(i.phi,10):null, cost_per_ha:(i.costPerHa!=null)?Number(i.costPerHa):null };
@@ -2062,9 +2095,10 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     if(CAN_INPUT_FIX){ row.removed_at=(i.removed&&i.removed.at)||null; row.removed_reason=(i.removed&&i.removed.reason)||null;
       row.removed_by=(i.removed&&i.removed.by)||null;
       row.changes=Array.isArray(i.changes)?i.changes:[]; }   /* NOT NULL on the server: never send null */
+    if(CAN_INPUT_NI) _nxToDb(i,row);
     return row; }
-  function cinFromDb(r){ return { id:r.local_id, land:_numIf(r.land_local_id), date:r.input_date||'', product:r.product||'', reg:r.reg||'', kind:r.kind||'', rate:r.rate||'', batch:r.batch||'', by:r.by_who||'', operatorCert:r.operator_cert||'', targetFor:r.target_for||'', phi:Number(r.phi)||0, costPerHa:Number(r.cost_per_ha)||0, act:r.act||undefined, water:r.water_vol||undefined, wind:r.wind||undefined, time:r.applied_time||undefined, removed:r.removed_at?{at:r.removed_at, reason:r.removed_reason||'', by:r.removed_by||''}:undefined,
-    changes:(Array.isArray(r.changes)&&r.changes.length)?r.changes:undefined }; }
+  function cinFromDb(r){ return _nxFromDb(r, { id:r.local_id, land:_numIf(r.land_local_id), date:r.input_date||'', product:r.product||'', reg:r.reg||'', kind:r.kind||'', rate:r.rate||'', batch:r.batch||'', by:r.by_who||'', operatorCert:r.operator_cert||'', targetFor:r.target_for||'', phi:Number(r.phi)||0, costPerHa:Number(r.cost_per_ha)||0, act:r.act||undefined, water:r.water_vol||undefined, wind:r.wind||undefined, time:r.applied_time||undefined, removed:r.removed_at?{at:r.removed_at, reason:r.removed_reason||'', by:r.removed_by||''}:undefined,
+    changes:(Array.isArray(r.changes)&&r.changes.length)?r.changes:undefined }); }
 
   // ---- crop compliance: relational (Option A) — settings row + areas + children
   // ST_CROP.compliance is one farm-level record: flat scalar settings, tracked{}/
@@ -2192,9 +2226,12 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
   // table for the variable others[] lines. Sprays/harvest are append logs.
   // PHI (safe-to-pick) is NOT stored — it is recomputed from sprays on load.
   function _n(v){ return (v!=null&&v!=='')?Number(v):null; }
-  function obToDb(b,fid){ return { farm_id:fid, local_id:String(b.id), cat:b.cat||null, icon:b.icon||null, name:b.name||null, cultivar:b.cultivar||null, root:b.root||null, plant:(b.plant!=null)?String(b.plant):null, age:(b.age!=null&&b.age!=='')?parseInt(b.age,10):null, ha:_n(b.ha), trees:(b.trees!=null&&b.trees!=='')?parseInt(b.trees,10):null, status:b.status||null, status_tag:b.statusTag||null, tons:_n(b.tons), exp:_n(b.exp), carton_kg:_n(b.cartonKg), margin:_n(b.margin), estab:b.estab||null, estab_yr:(b.estabYr!=null&&b.estabYr!=='')?parseInt(b.estabYr,10):null, writeoff:_n(b.writeoff), per_unit:_n(b.perUnit), unit_word:b.unitWord||null, curve:b.curve||null, cover:b.cover||null, plan:(b.plan!=null)?!!b.plan:null, grade:_n(b.grade), unit:b.unit||null, days:(b.days!=null&&b.days!=='')?parseInt(b.days,10):null, pick_from:b.pickFrom||null, cycle:b.cycle||null, removed:(b.removed!=null)?!!b.removed:null }; }
+  function obToDb(b,fid){ var row = { farm_id:fid, local_id:String(b.id), cat:b.cat||null, icon:b.icon||null, name:b.name||null, cultivar:b.cultivar||null, root:b.root||null, plant:(b.plant!=null)?String(b.plant):null, age:(b.age!=null&&b.age!=='')?parseInt(b.age,10):null, ha:_n(b.ha), trees:(b.trees!=null&&b.trees!=='')?parseInt(b.trees,10):null, status:b.status||null, status_tag:b.statusTag||null, tons:_n(b.tons), exp:_n(b.exp), carton_kg:_n(b.cartonKg), margin:_n(b.margin), estab:b.estab||null, estab_yr:(b.estabYr!=null&&b.estabYr!=='')?parseInt(b.estabYr,10):null, writeoff:_n(b.writeoff), per_unit:_n(b.perUnit), unit_word:b.unitWord||null, curve:b.curve||null, cover:b.cover||null, plan:(b.plan!=null)?!!b.plan:null, grade:_n(b.grade), unit:b.unit||null, days:(b.days!=null&&b.days!=='')?parseInt(b.days,10):null, pick_from:b.pickFrom||null, cycle:b.cycle||null, removed:(b.removed!=null)?!!b.removed:null };
+    if(CAN_BLOCK_NI){ row.field_ref=b.fieldRef||null; row.eppo=b.eppo||null; }
+    return row; }
   function obFromDb(r){ var b={ id:r.local_id, cat:r.cat||'', icon:r.icon||'', name:r.name||'', cultivar:r.cultivar||'', status:r.status||'', statusTag:r.status_tag||'' };
     if(r.root!=null) b.root=r.root; if(r.plant!=null) b.plant=_numIf(r.plant); if(r.age!=null) b.age=Number(r.age); if(r.ha!=null) b.ha=Number(r.ha); if(r.trees!=null) b.trees=Number(r.trees); if(r.tons!=null) b.tons=Number(r.tons); if(r.exp!=null) b.exp=Number(r.exp); if(r.carton_kg!=null) b.cartonKg=Number(r.carton_kg); if(r.margin!=null) b.margin=Number(r.margin); if(r.estab!=null) b.estab=r.estab; if(r.estab_yr!=null) b.estabYr=Number(r.estab_yr); if(r.writeoff!=null) b.writeoff=Number(r.writeoff); if(r.per_unit!=null) b.perUnit=Number(r.per_unit); if(r.unit_word!=null) b.unitWord=r.unit_word; if(r.curve!=null) b.curve=r.curve; if(r.cover!=null) b.cover=r.cover; if(r.plan!=null) b.plan=!!r.plan; if(r.grade!=null) b.grade=Number(r.grade); if(r.unit!=null) b.unit=r.unit; if(r.days!=null) b.days=Number(r.days); if(r.pick_from!=null) b.pickFrom=r.pick_from; if(r.cycle!=null) b.cycle=r.cycle; if(r.removed!=null) b.removed=!!r.removed;
+    if(r.field_ref) b.fieldRef=r.field_ref; if(r.eppo) b.eppo=r.eppo;
     return b; }
   // compliance item: persist full item (queryable) ; load overlays user fields onto app defaults
   function ociToDb(key,c,fid){ c=c||{}; return { farm_id:fid, item_key:String(key), kind:c.type||null, icon:c.ic||null, title:c.title||null, what:c.what||null, status:c.status||null, status_tag:c.statusTag||null, expiry:c.expiry||null, cropcat:c.cropcat||null, log:(c.log!=null)?String(c.log):null }; }
@@ -2212,9 +2249,10 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     if(CAN_ORCH_FIX){ row.removed_at=(s.removed&&s.removed.at)||null; row.removed_reason=(s.removed&&s.removed.reason)||null;
       row.removed_by=(s.removed&&s.removed.by)||null;
       row.changes=Array.isArray(s.changes)?s.changes:[]; }   /* NOT NULL on the server: never send null */
+    if(CAN_ORCH_NI) _nxToDb(s,row);
     return row; }
-  function osFromDb(r){ return { id:r.local_id, ic:r.icon||'\uD83E\uDDEA', t:r.title||'', s:r.sub||'', phi:{eu:Number(r.phi_eu)||0,uk:Number(r.phi_uk)||0,us:Number(r.phi_us)||0,local:Number(r.phi_local)||0}, bid:r.block_local_id||'', product:r.product||'', reg:r.reg||'', forx:r.target_for||'', by:r.applied_by||'', att:r.att||undefined, dateISO:r.spray_date||'', cropcat:r.cropcat||'', rate:r.rate||'', batch:r.batch||'', cert:r.operator_cert||'', act:r.act||undefined, water:r.water_vol||undefined, wind:r.wind||undefined, time:r.applied_time||undefined, removed:r.removed_at?{at:r.removed_at, reason:r.removed_reason||'', by:r.removed_by||''}:undefined,
-    changes:(Array.isArray(r.changes)&&r.changes.length)?r.changes:undefined }; }
+  function osFromDb(r){ return _nxFromDb(r, { id:r.local_id, ic:r.icon||'\uD83E\uDDEA', t:r.title||'', s:r.sub||'', phi:{eu:Number(r.phi_eu)||0,uk:Number(r.phi_uk)||0,us:Number(r.phi_us)||0,local:Number(r.phi_local)||0}, bid:r.block_local_id||'', product:r.product||'', reg:r.reg||'', forx:r.target_for||'', by:r.applied_by||'', att:r.att||undefined, dateISO:r.spray_date||'', cropcat:r.cropcat||'', rate:r.rate||'', batch:r.batch||'', cert:r.operator_cert||'', act:r.act||undefined, water:r.water_vol||undefined, wind:r.wind||undefined, time:r.applied_time||undefined, removed:r.removed_at?{at:r.removed_at, reason:r.removed_reason||'', by:r.removed_by||''}:undefined,
+    changes:(Array.isArray(r.changes)&&r.changes.length)?r.changes:undefined }); }
   function ohToDb(h,fid){ return { farm_id:fid, local_id:String(h.id), cropcat:h.cat||null, block_local_id:(h.bid!=null&&h.bid!=='')?String(h.bid):null, bins:_n(h.bins), tons:_n(h.tons!=null?h.tons:h.tn), cartons:_n(h.cartons), top_grade_pct:_n(h.grade), sold_to:h.to||null, amount:_n(h.money), pick_date:h.dateISO||null, title:h.t||null, sub:h.s||null, revenue:h.r||null, icon:h.ic||null }; }
   function ohFromDb(r){ return { id:r.local_id, ic:r.icon||'\uD83C\uDF4A', t:r.title||'', s:r.sub||'', r:r.revenue||'\u2014', cat:r.cropcat||'', bid:r.block_local_id||'', tn:Number(r.tons)||0, tons:Number(r.tons)||0, cartons:Number(r.cartons)||0, to:r.sold_to||'', money:Number(r.amount)||0, dateISO:r.pick_date||'' }; }
 

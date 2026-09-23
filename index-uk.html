@@ -33,7 +33,7 @@
 <script defer src="vendor/chart.umd.js"></script>
 <!-- AgriInsights backend: Supabase client + data service (load order matters) -->
 <script src="vendor/supabase.js"></script>
-<script src="ai-data-uk.js?v=uk119"></script>
+<script src="ai-data-uk.js?v=uk120"></script>
 <script src="ai-auth-uk.js?v=uk105"></script>
 <link rel="stylesheet" href="fonts.css"/>
 <style>
@@ -9553,8 +9553,8 @@ button.rn-gchip{border:0;font-family:inherit;cursor:pointer}
   <div id="or-view-spray" style="display:none">
     <div class="card" style="margin-bottom:16px">
       <div style="margin-bottom:10px">
-        <div style="font-size:14px;font-weight:800" data-t="or.spray.safe">Safe to pick — all markets</div>
-        <div style="font-size:12px;color:var(--t3)" data-t="or.spray.safesub">Green = clear to pick · amber = waiting on a spray rule</div>
+        <div style="font-size:14px;font-weight:800" data-t="or.spray.safe">Safe to pick</div>
+        <div style="font-size:12px;color:var(--t3)" data-t="or.spray.safesub">Green = clear to pick · amber = a harvest interval is still running</div>
       </div>
       <div id="or-phi-list"></div>
     </div>
@@ -9631,12 +9631,12 @@ button.rn-gchip{border:0;font-family:inherit;cursor:pointer}
       </div>
       <div class="or-frow"><label class="or-flbl"><span data-t="or.add.markets">Where do you sell it?</span> <span class="or-fh" data-t="or.add.markets.h">pick all that apply</span></label>
         <div class="or-mktrow" id="or-f-markets">
-          <span class="or-mktchip on" data-m="eu" onclick="orAddToggleMkt('eu')"><span class="bx">✓</span>🇪🇺 EU</span>
-          <span class="or-mktchip" data-m="uk" onclick="orAddToggleMkt('uk')"><span class="bx">✓</span>🇬🇧 UK</span>
+          <span class="or-mktchip" data-m="eu" onclick="orAddToggleMkt('eu')"><span class="bx">✓</span>🇪🇺 EU</span>
+          <span class="or-mktchip on" data-m="uk" onclick="orAddToggleMkt('uk')"><span class="bx">✓</span>🇬🇧 UK</span>
           <span class="or-mktchip" data-m="us" onclick="orAddToggleMkt('us')"><span class="bx">✓</span>🇺🇸 USA</span>
-          <span class="or-mktchip on" data-m="local" onclick="orAddToggleMkt('local')"><span class="bx">✓</span>🇿🇦 Local</span>
+          <span class="or-mktchip on" data-m="local" onclick="orAddToggleMkt('local')"><span class="bx">✓</span>🏡 Local / farm gate</span>
         </div>
-        <div class="or-fh" style="margin-top:6px" data-t="or.add.markets.note">Export markets bring stricter safe-to-pick rules and extra certificates. Local-only skips them.</div>
+        <div class="or-fh" style="margin-top:6px" data-t="or.add.markets.note">Sets the export share in your figures and which certificates apply. The harvest interval is the label’s, whoever buys it.</div>
       </div>
       <div class="or-fg2">
         <div class="or-frow"><label class="or-flbl"><span id="or-lbl-when">Year planted</span></label><input class="or-finp" id="or-f-year" placeholder="e.g. 2019"></div>
@@ -12007,16 +12007,16 @@ function cropComplianceDefs(){
      desc:'All sprays must use registered products at label rate, applied by a competent operator, with records kept. PHI observed before harvest.',
      kv:[['Registered products', ST_CROP.inputs.length+' logged'],['PHI observed', withinPHI?(withinPHI+' land within PHI'):'\u2713 all clear'],['Missing batch no.', missingBatch?(missingBatch+' record'):'\u2713 none'],['SDS register', c.sdsRegister?'\u2713 kept':'\u26a0 none'],['Empty containers', c.containerDisposal?'\u2713 triple-rinsed/disposed':'\u26a0 record it'],['Operators (from OHS)', c.operatorsTrained>=c.operatorsTotal?'\u2713 certified':'\u26a0 check']],
      fields:[{k:'sdsRegister',label:'Safety Data Sheet (SDS) register kept?',type:'bool'},{k:'containerDisposal',label:'Empty containers triple-rinsed & disposal recorded?',type:'bool'}],
-     keep:['Registered product (L-number) used at label rate','Date, land, batch & applicator per application','Pre-harvest interval observed before harvest','SDS for every product in the chemical store','Empty-container triple-rinse & disposal record'],
+     keep:['Authorised product (MAPP number) used at label rate','Date, land, batch & applicator per application','Pre-harvest interval observed before harvest','SDS for every product in the chemical store','Empty-container triple-rinse & disposal record'],
      note:'Spray records (product, rate, batch, PHI) are logged on the Inputs & Spray tab \u2014 they flow into this automatically. Operator training is managed under Worker safety.'},
     {id:'water', t:'Water abstraction licence', law:'Water Resources Act 1991 \u00b7 abstraction licence', auto:anyIrr, status: anyIrr ? (c.waterMetered && c.waterUsed<=c.waterAuthorised ? 'g':'a') : 'g',
      desc: anyIrr ? 'Abstraction is licensed and recorded against the authorised volume; feeds your Environment Agency abstraction return.' : 'No irrigated lands recorded \u2014 rain-fed only. Abstracting more than 20 m\u00b3 a day needs a licence, so apply before you start.',
      kv: anyIrr ? [['Abstraction licence', c.waterLicence||'\u2014'],['Authorised', (c.waterAuthorised||0).toLocaleString('en-GB')+' m\u00b3/yr'],['Used this season', (c.waterUsed||0).toLocaleString('en-GB')+' m\u00b3 ('+(c.waterAuthorised?Math.round(c.waterUsed/c.waterAuthorised*100):0)+'%)'],['Meter readings', c.waterMetered?'\u2713 logged':'\u26a0 none']] : [['Irrigated lands','none']],
      fields:[{k:'waterLicence',label:'Abstraction licence number',type:'text'},{k:'waterAuthorised',label:'Authorised volume (m\u00b3/yr)',type:'number'},{k:'waterUsed',label:'Abstracted this season (m\u00b3)',type:'number'},{k:'waterMetered',label:'Monthly meter readings kept?',type:'bool'}], keep:['Water-use licence / registration','Monthly meter readings vs authorised volume','Annual water-use return']},
-    {id:'lerap', t:'LERAP \u00b7 buffer zones at every spray', law:'Plant Protection Products Regs \u00b7 HSE', auto:true, status: c.lerapRecorded ? 'g':'a',
+    {id:'lerap', t:'LERAP \u00b7 buffer zones at every spray', law:'Plant Protection Products Regs \u00b7 HSE', auto:true, status: (function(){ var s=nxLerapStats(); return (!s.tot||s.rec===s.tot)?'g':'a'; })(),
      desc:'At each application near a watercourse you must either carry out and record a Local Environment Risk Assessment for Pesticides, or record the decision to observe the full label buffer. Records are kept 3 years.',
-     kv:[['Assessments recorded', c.lerapRecorded?'\u2713 logged':'\u26a0 none'],['Default buffer','5 m watercourse \u00b7 1 m dry ditch'],['Records kept','3 years']],
-     fields:[{k:'lerapRecorded',label:'LERAP or buffer decision recorded for every application?',type:'bool'},{k:'lerapLast',label:'Last assessment',type:'text',ph:'e.g. Long Field \u00b7 12 Jun 2026'}], keep:['LERAP assessment or buffer decision per application','Watercourse map and buffer widths','3 years of records']},
+     kv:[['Buffer decision recorded', (function(){ var s=nxLerapStats(); return s.tot?(s.rec+' of '+s.tot+' sprays'):'no sprays yet'; })()],['Default buffer','5 m watercourse \u00b7 1 m dry ditch'],['Records kept','3 years']],
+     fields:[{k:'lerapLast',label:'Last assessment',type:'text',ph:'e.g. Long Field \u00b7 12 Jun 2026'}], keep:['LERAP assessment or buffer decision per application','Watercourse map and buffer widths','3 years of records']},
     {id:'nvz', t:'Nitrate Vulnerable Zone records', law:'Nitrate Pollution Prevention Regs 2015', auto:true, status: (c.nvzPlan && c.nvzWithinLimit) ? 'g':'a',
      desc:'In an NVZ you must hold a fertilisation plan, record every nitrogen application per field, and stay within the 170 kg/ha organic-nitrogen limit. Records are kept 5 years.',
      kv:[['In an NVZ', c.nvzInZone?'yes':'not recorded'],['Fertilisation plan', c.nvzPlan?'\u2713 held':'\u26a0 missing'],['Organic N limit','170 kg/ha'],['Within limit', c.nvzWithinLimit?'\u2713 yes':'\u26a0 check']],
@@ -13001,7 +13001,7 @@ function orSprayEditFill(id){
   var h=fixFindSpray(id); if(!h) return;
   var x=h.x, set=function(k,v){ var e=$(k); if(e && v!=null) e.value=v; };
   set('or-sp-block', x.bid); set('or-sp-prod', x.product); set('or-sp-for', x.forx); set('or-sp-date', x.dateISO);
-  set('or-sp-phi', (x.phi && (x.phi.uk||x.phi.eu||x.phi.local)) || 0);
+  set('or-sp-phi', orPhiDays(x.phi));
   set('or-sp-reg', x.reg); set('or-sp-rate', x.rate); set('or-sp-batch', x.batch);
   set('or-sp-by', x.by); set('or-sp-cert', x.cert);
   set('or-sp-act', x.act); set('or-sp-water', x.water); set('or-sp-wind', x.wind); set('or-sp-time', x.time);
@@ -13012,6 +13012,8 @@ function orSprayEditFill(id){
   var t=root&&root.querySelector('.or-mt'); if(t) t.textContent=fixT('Correct this spray','Stel hierdie spuit reg');
   var s=root&&root.querySelector('.or-ms'); if(s) s.textContent=fixT('Change what was wrong. The record keeps this entry and notes what changed.','Verander wat verkeerd was. Die rekord hou hierdie inskrywing en teken aan wat verander het.');
   var b=root&&root.querySelector('.btn-pri'); if(b) b.textContent=fixT('Save correction','Stoor regstelling');
+  var me=$('nx-method'); if(me) me.value=x.method||'';
+  nxFill(x);
 }
 function orSaveSprayEdit(id){
   if(!fixReady('spray')){ fixNotReady(); return; }
@@ -13020,17 +13022,21 @@ function orSaveSprayEdit(id){
   var b=orBlockById(v('or-sp-block')); if(!b) return;
   var prod=v('or-sp-prod')||x.product, forx=v('or-sp-for'), dateISO=v('or-sp-date')||x.dateISO;
   var days=parseInt(v('or-sp-phi'),10); if(isNaN(days)) days=0;
-  var oldDays=(x.phi && (x.phi.uk||x.phi.eu||x.phi.local)) || 0, oldB=orBlockById(x.bid);
+  var oldDays=orPhiDays(x.phi), oldB=orBlockById(x.bid);
   var n=0;
   n+=fixLog(x,'product',x.product,prod);   n+=fixLog(x,'forx',x.forx,forx);
   n+=fixLog(x,'dateISO',x.dateISO,dateISO); n+=fixLog(x,'phi',oldDays,days);
   n+=fixLog(x,'bid', oldB?oldB.name:x.bid, b.name);
   ['reg','rate','batch','by','cert','act','water','wind','time'].forEach(function(k){ n+=fixLog(x,k,x[k]||'',v('or-sp-'+k)); });
+  var nx=nxRead(); if(nx.err){ toast(nx.err,'error'); return; }
+  n+=fixLog(x,'bbch',x.bbch||'',nx.bbch||''); n+=fixLog(x,'method',x.method||'',nx.method||''); n+=fixLog(x,'eamu',x.eamu||'',nx.eamu||'');
+  n+=fixLog(x,'buffer',nxLerapText(x.buffer)||nxBufText(x.buffer),nxLerapText(nx.buffer)||nxBufText(nx.buffer));
   var att=orAttachTake('sp'); if(att){ x.att=att; n+=fixLog(x,'att','',fixT('new attachment','nuwe aanhangsel')); }
   if(!n){ orCloseModal(); orToast(fixT('Nothing changed.','Niks het verander nie.')); return; }
   x.product=prod; x.forx=forx; x.dateISO=dateISO; x.bid=b.id;
   ['reg','rate','batch','by','cert','act','water','wind','time'].forEach(function(k){ x[k]=v('or-sp-'+k); });
-  x.phi={eu:days, uk:days, us:Math.max(0,days-7), local:days};
+  x.bbch=nx.bbch||undefined; x.method=nx.method||undefined; x.buffer=nx.buffer||undefined; x.eamu=nx.eamu||undefined;
+  x.phi=orPhiObj(days);
   var dt=new Date(dateISO+'T00:00:00');
   x.t=prod+(forx?' — for '+forx:''); x.s=b.name+' · '+orFmtDM(dt)+' · '+(forx||'spray');
   if(b.cat!==h.cat){
@@ -13061,6 +13067,8 @@ function cropInputEditFill(id){
   var card=$('crop-comply-card');
   var t=card && card.firstElementChild && card.firstElementChild.firstElementChild; if(t) t.textContent=fixT('Correct this application','Stel hierdie toediening reg');
   var sv=card && card.querySelector('.crop-formbtn'); if(sv) sv.textContent=fixT('Save correction','Stoor regstelling');
+  var me=$('nx-method'); if(me) me.value=x.method||'';
+  nxFill(x);
 }
 function cropInputEditSave(id){
   CROP_INPUT_EDIT=null;
@@ -13071,9 +13079,16 @@ function cropInputEditSave(id){
   var nv={ product:product, reg:v('ci-reg'), kind:v('ci-kind')||x.kind, rate:v('ci-rate'), batch:v('ci-batch'),
            by:v('ci-by')||x.by, operatorCert:v('ci-cert'), targetFor:v('ci-for'), phi:parseInt(v('ci-phi'),10)||0,
            date:v('ci-date')||x.date, time:v('ci-time'), act:v('ci-act'), water:v('ci-water'), wind:v('ci-wind') };
+  var ppp=!/^(seed|fertiliser)$/.test(nv.kind||'');
+  var nx=ppp?nxRead():{}; if(nx.err){ toast(nx.err,'error'); CROP_INPUT_EDIT=id; return; }
+  if(ppp){ nv.bbch=nx.bbch||''; nv.method=nx.method||''; nv.eamu=nx.eamu||''; }
   var n=0; Object.keys(nv).forEach(function(k){ n+=fixLog(x,k,x[k]==null?'':x[k],nv[k]); });
+  var bOld=nxBufText(x.buffer), bNew=ppp?nxBufText(nx.buffer):bOld;
+  if(nxLerapText(x.buffer)) bOld=nxLerapText(x.buffer); if(ppp && nxLerapText(nx.buffer)) bNew=nxLerapText(nx.buffer);
+  n+=fixLog(x,'buffer',bOld,bNew);
   if(!n){ cropCloseModal(); toast(fixT('Nothing changed.','Niks het verander nie.'),'info'); return; }
   Object.keys(nv).forEach(function(k){ x[k]=nv[k]; });
+  if(ppp) x.buffer=nx.buffer||undefined;
   dataChanged('crop'); cropCloseModal();
   toast(fixT('Correction saved. The record notes what changed.','Regstelling gestoor. Die rekord teken aan wat verander het.'),'success');
 }
@@ -13081,10 +13096,11 @@ function cropInputEditSave(id){
 /* ---- the register's last page ---- */
 function aiRegChanges(from, to, lang){
   var FL={product:['Product','Produk'], forx:['Target','Teiken'], targetFor:['Target','Teiken'], dateISO:['Date','Datum'], date:['Date','Datum'],
-          phi:['Wait (days)','Wagtyd (dae)'], bid:['Block','Blok'], reg:['Reg no.','Reg.nr.'], rate:['Rate','Tempo'], batch:['Batch','Lotnr.'],
+          phi:['Harvest interval (days)','Oes-interval (dae)'], bid:['Block','Blok'], reg:['Reg no.','Reg.nr.'], rate:['Rate','Tempo'], batch:['Batch','Lotnr.'],
           by:['Applied by','Toegedien deur'], cert:['Licence','Lisensie'], operatorCert:['Licence','Lisensie'], weather:['Weather','Weer'],
           kind:['Type','Soort'], att:['Attachment','Aanhangsel'],
-          act:['Active ingredient','Aktiewe bestanddeel'], water:['Water volume','Watervolume'], wind:['Wind','Wind'], time:['Time','Tyd']};
+          act:['Active ingredient','Aktiewe bestanddeel'], water:['Water volume','Watervolume'], wind:['Wind','Wind'], time:['Time','Tyd'],
+          bbch:['Growth stage','Groeistadium'], method:['Applied with','Toegedien met'], buffer:['Buffer next to water','Buffer by water'], eamu:['EAMU','EAMU']};
   var L=function(en,af){ return lang==='af' ? af : en; };
   var when=function(iso){ var d=new Date(iso); if(isNaN(d)) return String(iso||'');
     return aiRcDate(String(iso).slice(0,10))+' '+('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2); };
@@ -13774,6 +13790,408 @@ function cropHarvestCommit(l, y, moneyNum, dest){
   dataChanged('crop');
   toast(moneyNum>0?('Harvest recorded — '+l.name+' · '+cropFmtR(moneyNum)+' in'):('Harvest recorded — '+l.name),'success');
 }
+/* =====================================================================================
+   THE REST OF THE SPRAY RECORD  (UK -360, signed off 23 Sep 2026: D2-D5, D7, D8)
+   Pack: https://claude.ai/artifact/46rTAEHeawKyUW7LMHHy2P
+
+   Northern Ireland: Implementing Reg (EU) 2023/564 applies under the Windsor Framework.
+   From 1 Jan 2026 the record needs the product's authorisation (MAPP) number, the crop as
+   an EPPO code and the growth stage as BBCH "where relevant"; from 1 Jan 2027 DAERA wants
+   it as a machine-readable file - CSV, XLSX, XML or JSON, and a PDF does not count.
+   GB law asks for none of that, but nothing in it is wrong for a GB farm either, so every
+   farm gets the same fields and the same file.
+
+   Buffer next to water (LERAP): HSE's booklets - "No matter how you decide to apply the
+   PPP, you are legally required to record your decision", even when the full buffer is
+   kept. The app RECORDS the decision and the width the farmer set; it never calculates
+   one (D8). HSE's width tables are images, and boom and orchard sprayers follow different
+   rules, so a computed width would put a legal figure on the record nobody checked.
+
+   EAMU: not a required particular anywhere, but the notice's conditions replace the
+   label's, so the number is what shows which set applied (D7). Checked against HSE's
+   register, bundled as data/uk-eamu.json (tools/fetch-hse-eamu.py).
+   ===================================================================================== */
+
+/* ---- EPPO crop codes -----------------------------------------------------------------
+   Names are DAERA's dropdown values, spelled exactly as its template has them (typos
+   included), so the CSV's crop column matches the list an NI inspector works from.
+   DAERA's published crop list (template v10, July 2026) with two corrections: "Fodder
+   beet" is BEAVC - DAERA gives BEAVP, which EPPO names planted sugar beet - and sugar
+   beet is listed once, as BEAVA. The last eight are crops the app offers that DAERA's
+   list lacks. Every code below was opened on gd.eppo.int on 23 Sep 2026.
+   EPPO Open Data Licence: free for commercial use, crediting EPPO with the date. */
+var EPPO_CREDIT='Contains EPPO Codes (www.eppo.int), checked 23 Sep 2026';
+var EPPO_LIST=[
+  ['Apple','MABSD'],['Arable Crops - Other','3ARAC'],['Arable silage','3ARAC'],['Asparagus','ASPOF'],
+  ['Barley - Spring','HORVS'],['Barley - Winter','HORVW'],['Bean - Field','VICFM'],['Beans - Broad','VICFX'],
+  ['Beans - Other','PHSVX'],['Beetroot','BEAVD'],['Blackberry','RUBFR'],['Blackcurrant','RIBNI'],
+  ['Brassicas - Other','3VBRC'],['Broccoli / Calabrese','BRSOK'],['Brussels sprouts','BRSOF'],['Cabbage','3HCAC'],
+  ['Carrots','DAUCS'],['Cauliflower','BRSOB'],['Celeriac','APUGR'],['Celery','APUGD'],
+  ['Courgette / Marrow','CUUPG'],['Cucumber','CUMSC'],['Endive /Chichory','CICEN'],['Fodder beet','BEAVC'],
+  ['Fodder Crop - Other','NNNFP'],['Fodder kale','BRSOA'],['Fodder maize','ZEAMX'],['Fodder rape','BRSNS'],
+  ['Fodder swede','BRSNA'],['Fodder turnip','BRSRR'],['Garlic','ALLSA'],['Gooseberry','RIBUC'],
+  ['Grass Crops','3GRAC'],['Grassland - Rotational','3RGRC'],['Grazing - Enclosed','3RGRC'],['Grazing - Rough','3GRLC'],
+  ['Herb Crops','3HERC'],['Leeks','ALLPO'],['Lettuce crops','3LETC'],['Linseed','LIUUT'],
+  ['Mushroom Crops','3EDMC'],['Oats - Spring','AVESP'],['Oats - Winter','AVESW'],['Oilseed Rape (spring)','BRSNS'],
+  ['Oilseed Rape (winter)','BRSNW'],['Onion - common / bulb','ALLCE'],['Onion - Salad /Spring','ALLFI'],['Onion - Shallot','ALLAS'],
+  ['Parsley','PARCR'],['Parsnips','PAVSA'],['Pea - Field','PIBSA'],['Pear','PYUCO'],
+  ['Peas','PIBSX'],['Peppers / Capsicum','CPSAN'],['Permanent Pasture','3PGLC'],['Pome (Top) Fruit - Other','3PMFC'],
+  ['Potato - Seed','SOLTU'],['Potato – Ware','SOLTU'],['Pumpkin','CUUPE'],['Radish','RAPSR'],
+  ['Raspberry','RUBID'],['Redcurrant','RIBRU'],['Rhubarb','RHERH'],['Rubus Hybrid Crops','RUBLO'],
+  ['Rye','3RYEC'],['Small Fruit (soft)- Other','3SMFC'],['Spinach','SPQOL'],['Squash','CUUMO'],
+  ['Strawberry','FRAAN'],['Sugar Beet','BEAVA'],['Sweetcorn','ZEAMX'],['Tomatoes','LYPES'],
+  ['Triticale','3TRIC'],['Turnip / Swede','3RSBC'],['Vegetable Crops - Other','3VEGC'],['Wheat - Spring','TRZAS'],
+  ['Wheat - Winter','TRZAW'],
+  ['Plum / gage / damson','PRNDO'],['Cherry','PRNAV'],['Peach / nectarine','PRNPS'],['Quince','CYDOB'],
+  ['Cob nut / hazel','CYLAV'],['Grapes','VITVI'],['Blueberry','VACCO'],['Runner bean','PHSCO']
+];
+function eppoName(code){ for(var i=0;i<EPPO_LIST.length;i++) if(EPPO_LIST[i][1]===code) return EPPO_LIST[i][0]; return ''; }
+/* Worked out from the crop the farmer already chose (D3). Broad choices - "Grass / silage",
+   "Vegetables", "Top fruit", "Soft fruit", "Other" - return '' and are asked once. Winter or
+   spring comes from the word, else from the drilling month; with neither it is asked. */
+function eppoGuess(txt, planted){
+  var t=String(txt||'').toLowerCase(); if(!t) return '';
+  var mo=planted?parseInt(String(planted).slice(5,7),10):0;
+  var season=function(w,s){ if(/winter/.test(t)) return w; if(/spring/.test(t)) return s; if(mo>=7) return w; if(mo>=1&&mo<=6) return s; return ''; };
+  var R=[
+    [/\bwheat\b/, function(){ return season('TRZAW','TRZAS'); }],
+    [/\bbarley\b/, function(){ return season('HORVW','HORVS'); }],
+    [/\boats?\b/, function(){ return season('AVESW','AVESP'); }],
+    [/oilseed rape|\bosr\b/, function(){ return season('BRSNW','BRSNS'); }],
+    [/triticale/,'3TRIC'], [/\brye\b/,'3RYEC'], [/linseed/,'LIUUT'],
+    [/sugar ?beet/,'BEAVA'], [/fodder beet/,'BEAVC'], [/beetroot/,'BEAVD'],
+    [/maize|sweetcorn/,'ZEAMX'],
+    [/field beans?/,'VICFM'], [/broad beans?/,'VICFX'], [/runner beans?/,'PHSCO'], [/french beans?|dwarf beans?/,'PHSVX'],
+    [/potato/,'SOLTU'],
+    [/\bpears?\b|conference|comice|concorde/,'PYUCO'],
+    [/peach|nectarine/,'PRNPS'],
+    [/apple|bramley|\bgala\b|\bcox|braeburn|\bjazz\b|egremont|discovery|jonagold|cameo|kanzi|rubens|worcester|\bcider\b/,'MABSD'],
+    [/\bplums?\b|\bgages?\b|damson/,'PRNDO'], [/cherr/,'PRNAV'], [/quince/,'CYDOB'], [/cob ?nut|hazel/,'CYLAV'], [/grape/,'VITVI'],
+    [/blueberr/,'VACCO'], [/raspberr/,'RUBID'], [/blackberr/,'RUBFR'], [/strawberr/,'FRAAN'], [/gooseberr/,'RIBUC'],
+    [/blackcurrant/,'RIBNI'], [/redcurrant/,'RIBRU'],
+    [/combining peas?|field peas?|\bpeas?\b/,'PIBSA'],
+    [/carrot/,'DAUCS'], [/parsnip/,'PAVSA'], [/\bleeks?\b/,'ALLPO'], [/shallot/,'ALLAS'], [/spring onion|salad onion/,'ALLFI'],
+    [/onion/,'ALLCE'], [/garlic/,'ALLSA'],
+    [/cauliflower/,'BRSOB'], [/broccoli|calabrese/,'BRSOK'], [/sprout/,'BRSOF'], [/cabbage/,'3HCAC'], [/swede|turnip/,'3RSBC'],
+    [/courgette|marrow/,'CUUPG'], [/squash/,'CUUMO'], [/pumpkin/,'CUUPE'], [/lettuce/,'3LETC'], [/asparagus/,'ASPOF'],
+    [/permanent (grass|pasture)/,'3PGLC'], [/\bley\b|rotational grass/,'3RGRC']
+  ];
+  for(var i=0;i<R.length;i++){ if(R[i][0].test(t)) return (typeof R[i][1]==='function')?R[i][1]():R[i][1]; }
+  return '';
+}
+/* A land's answer holds only for the crop it was given for (eppoCrop): a field is
+   replanted every year, and last year's "permanent pasture" must not follow this year's
+   wheat. A block is perennial, so its answer holds until it is replanted. */
+function eppoForLand(l){
+  if(!l || !l.crop) return '';
+  if(l.eppo && l.eppoCrop===l.crop) return l.eppo;
+  return eppoGuess(l.crop, l.planted) || eppoGuess(l.cultivar, l.planted) || '';
+}
+function eppoForBlock(b){ if(!b) return ''; return b.eppo || eppoGuess(b.cultivar) || eppoGuess(b.name) || ''; }
+function eppoOptions(sel){
+  var L=EPPO_LIST.slice().sort(function(a,b){ return a[0]<b[0]?-1:1; });
+  return '<option value="">— choose —</option>'+L.map(function(e){
+    return '<option value="'+e[1]+'"'+(e[1]===sel?' selected':'')+'>'+esc(e[0])+' ('+e[1]+')</option>'; }).join('');
+}
+
+/* ---- EAMU numbers ----------------------------------------------------------------------
+   HSE's register stores 20241309; the notice says "1309 of 2024". The record keeps 1309/2024. */
+function eamuNorm(s){
+  s=String(s||'').trim(); if(!s) return '';
+  var p4=function(n){ n=String(parseInt(n,10)); while(n.length<4) n='0'+n; return n; };
+  var m=s.match(/^(20\d{2})(\d{4})$/); if(m) return p4(m[2])+'/'+m[1];
+  m=s.match(/^(\d{1,4})\s*(?:\/|of|-)\s*(20\d{2})$/i); if(m) return p4(m[1])+'/'+m[2];
+  m=s.match(/^(20\d{2})\s*[\/\-]\s*(\d{1,4})$/); if(m) return p4(m[2])+'/'+m[1];
+  return null;
+}
+function eamuKey(n){ var m=String(n||'').match(/^(\d{4})\/(\d{4})$/); return m?(m[2]+m[1]):''; }
+var UK_EAMU=null, _ukEamuReq=null;
+function ukEamuLoad(){
+  if(UK_EAMU) return Promise.resolve(UK_EAMU);
+  if(_ukEamuReq) return _ukEamuReq;
+  _ukEamuReq=fetch('data/uk-eamu.json').then(function(r){ return r.ok?r.json():[]; })
+    .then(function(j){ UK_EAMU=Array.isArray(j)?j:[]; return UK_EAMU; })
+    .catch(function(){ UK_EAMU=null; _ukEamuReq=null; return []; });   /* offline: try again next time */
+  return _ukEamuReq;
+}
+
+/* ---- the new questions on both spray forms ---------------------------------------- */
+var NX_METHODS=['Boom Sprayer','Broadcast Sprayer','Knapsack / Handheld sprayer','Pellet or Granular Applicator','Weed Wiper','Other'];
+var NX_BUF=[['none','The label sets no buffer next to water'],['nowater','No water within the label’s buffer'],
+            ['full','Kept the full label buffer'],['lerap','Reduced it with a LERAP']];
+var NX_STARS=[['0','No stars'],['1','1-star'],['2','2-star'],['3','3-star']];
+var NX_DOSE=[['1','Full dose'],['0.75','¾ dose'],['0.5','½ dose'],['0.25','¼ dose']];
+var NX_WW=[['dry','Dry ditch'],['lt3','Under 3 m'],['3to6','3–6 m'],['gt6','Over 6 m']];
+var NX_CTX=null;   /* {kind:'crop'|'orchard', date(), reg(), crop(), land()} set by the open form */
+function _nxLbl(a,v){ for(var i=0;i<a.length;i++) if(a[i][0]===String(v)) return a[i][1]; return ''; }
+function nxCss(){
+  if(document.getElementById('nx-css')) return;
+  var st=document.createElement('style'); st.id='nx-css';
+  st.textContent='.nx{border-top:2px solid var(--gm,#2D6A4F);margin-top:14px;padding-top:12px}'+
+    '.nx-h{font-size:11px;font-weight:800;color:var(--gm,#2D6A4F);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px}'+
+    '.nx-h span{font-weight:600;text-transform:none;letter-spacing:0;color:var(--t4,#8a958d)}'+
+    '.nx label.nx-l{display:block;font-size:11px;font-weight:800;color:var(--gm,#2D6A4F);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px}'+
+    '.nx label.nx-l i{font-style:normal;color:var(--t4,#8a958d);font-weight:600;text-transform:none;letter-spacing:0}'+
+    '.nx input[type=text],.nx input[type=number],.nx select{width:100%;height:38px;border:1px solid var(--br,#dfe4df);border-radius:9px;background-color:#fff;padding:0 11px;font-size:13.5px;font-family:inherit;box-sizing:border-box}'+
+    /* On the orchard form: that form's own label and field style, not the field-crop one. */
+    '.nx.nx-or label.nx-l{font-size:13px;font-weight:700;color:var(--t1);text-transform:none;letter-spacing:0;margin-bottom:6px}'+
+    '.nx.nx-or label.nx-l i{font-size:11px;font-weight:400;color:var(--t3)}'+
+    '.nx.nx-or input[type=text],.nx.nx-or input[type=number],.nx.nx-or select{height:auto;padding:10px 12px;border:1.5px solid var(--br);font-size:14px}'+
+    '.nx-two{display:flex;gap:10px;margin-bottom:12px}.nx-two>div{flex:1;min-width:0}'+
+    '.nx-four{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:8px 0 4px}'+
+    '.nx small{display:block;font-size:11px;color:var(--t4,#8a958d);margin-top:4px;line-height:1.45}'+
+    '.nx-opt{display:flex;align-items:center;gap:9px;padding:8px 10px;border:1px solid var(--br,#dfe4df);border-radius:9px;margin-bottom:6px;font-size:13px;cursor:pointer}'+
+    '.nx-opt input{width:auto;height:auto;flex:none;margin:0}'+
+    '.nx-sub{margin:4px 0 10px 4px}'+
+    '.nx-chk{display:flex;align-items:center;gap:9px;font-size:13px;font-weight:700;margin:12px 0 6px;cursor:pointer}'+
+    '.nx-chk input{width:17px;height:17px;flex:none;margin:0}'+
+    '.nx-res{margin-top:8px;border:1px solid var(--br,#dfe4df);border-radius:9px;padding:9px 11px;font-size:12px;line-height:1.5;background:var(--bg2,#f6f8f5)}'+
+    '.nx-res .ok{color:var(--gm,#2D6A4F);font-weight:800}.nx-res .warn{color:#A85C24;font-weight:800}'+
+    '@media (max-width:560px){.nx-four{grid-template-columns:1fr 1fr}.nx-two{flex-direction:column}}';
+  document.head.appendChild(st);
+}
+function nxDefaultMethod(ctx){
+  if(ctx && ctx.kind==='orchard'){ var c=ctx.cat||''; return (c==='topfruit'||c==='fruit')?'Broadcast Sprayer':'Boom Sprayer'; }
+  return 'Boom Sprayer';
+}
+function nxHTML(ctx){
+  nxCss(); NX_CTX=ctx||{kind:'crop'};
+  var dm=nxDefaultMethod(NX_CTX);
+  var opt=function(a,sel){ return a.map(function(o){ return '<option value="'+o[0]+'"'+(o[0]===sel?' selected':'')+'>'+o[1]+'</option>'; }).join(''); };
+  return '<div class="nx'+(NX_CTX.kind==='orchard'?' nx-or':'')+'" id="nx-box">'+
+    '<div class="nx-h">For the record <span>· growth stage, buffer and EAMU</span></div>'+
+    '<div class="nx-two"><div><label class="nx-l" for="nx-bbch">Growth stage (BBCH) <i>optional</i></label><input type="text" id="nx-bbch" placeholder="e.g. 32" inputmode="numeric" autocomplete="off">'+
+      '<small>For cereals it is the GS number your agronomist uses. Needed in Northern Ireland when the label limits the stage.</small></div>'+
+    '<div><label class="nx-l" for="nx-method">Applied with</label><select id="nx-method" onchange="nxLerapHint()">'+(NX_CTX.edit?'<option value="">not recorded</option>':'')+
+      NX_METHODS.map(function(m){ return '<option'+(m===dm?' selected':'')+'>'+m+'</option>'; }).join('')+'</select></div></div>'+
+    '<label class="nx-l">Buffer next to water</label>'+
+    NX_BUF.map(function(b){ return '<label class="nx-opt"><input type="radio" name="nx-buf" value="'+b[0]+'" onchange="nxShow()">'+b[1]+'</label>'; }).join('')+
+    '<div class="nx-sub" id="nx-sub-full" hidden><div class="nx-two" style="margin-bottom:0"><div><label class="nx-l" for="nx-bufm-full">Width kept (m)</label><input type="number" id="nx-bufm-full" min="0" step="0.5" placeholder="e.g. 5"></div><div></div></div></div>'+
+    '<div class="nx-sub" id="nx-sub-lerap" hidden>'+
+      '<div class="nx-four">'+
+        '<div><label class="nx-l" for="nx-stars">Sprayer</label><select id="nx-stars">'+opt(NX_STARS,'0')+'</select></div>'+
+        '<div><label class="nx-l" for="nx-dose">Dose</label><select id="nx-dose">'+opt(NX_DOSE,'1')+'</select></div>'+
+        '<div><label class="nx-l" for="nx-ww">Watercourse</label><select id="nx-ww"><option value="">—</option>'+opt(NX_WW,'')+'</select></div>'+
+        '<div><label class="nx-l" for="nx-bufm-lerap">Buffer set (m)</label><input type="number" id="nx-bufm-lerap" min="0" step="0.5" placeholder="m"></div>'+
+      '</div>'+
+      '<div class="nx-two" style="margin:6px 0 0"><div><label class="nx-l" for="nx-lerap-by">Assessed by <i>optional</i></label><input type="text" id="nx-lerap-by" placeholder="the operator, unless someone else"></div><div></div></div>'+
+      '<small id="nx-lerap-hint"></small>'+
+    '</div>'+
+    '<label class="nx-chk"><input type="checkbox" id="nx-eamu-on" onchange="nxShow()">Used under an EAMU (off-label)</label>'+
+    '<div class="nx-sub" id="nx-sub-eamu" hidden><input type="text" id="nx-eamu" placeholder="e.g. 1309/2024, as on the notice" oninput="nxEamuCheck()" autocomplete="off"><div id="nx-eamu-res"></div></div>'+
+  '</div>';
+}
+function nxBufPick(){ var r=document.querySelector('input[name="nx-buf"]:checked'); return r?r.value:''; }
+function nxShow(){
+  var k=nxBufPick(), f=$('nx-sub-full'), l=$('nx-sub-lerap'), e=$('nx-sub-eamu'), on=$('nx-eamu-on');
+  if(f) f.hidden=(k!=='full'); if(l) l.hidden=(k!=='lerap');
+  Array.prototype.forEach.call(document.querySelectorAll('#nx-box .nx-opt'), function(o){
+    var i=o.querySelector('input'); o.style.borderColor=(i&&i.checked)?'var(--gm,#2D6A4F)':''; o.style.background=(i&&i.checked)?'#eef4ec':''; });
+  if(e) e.hidden=!(on&&on.checked);
+  nxLerapHint();
+  if(on && on.checked) nxEamuCheck();
+}
+/* HSE's rules, as reminders, never as a calculation (D8). Verified 23 Sep 2026 against the
+   LERAP booklets for horizontal boom and broadcast air-assisted sprayers. */
+function nxLerapHint(){
+  var h=$('nx-lerap-hint'); if(!h) return;
+  var m=($('nx-method')||{}).value||'';
+  h.textContent = m==='Broadcast Sprayer'
+    ? 'Orchard sprayers (HSE): a dry ditch gives 5 m; a dose cut alone, no less than 7 m; the minimum with a low-drift sprayer or windbreak is 5 m. Keep the assessment for three years.'
+    : m.indexOf('Knapsack')===0
+    ? 'Hand-held sprayers keep 1 m from the top of the bank. Keep the assessment for three years.'
+    : 'Boom sprayers (HSE): only a 5 m label buffer can be reduced, and not below 1 m; a dry ditch gives 1 m. Buffers of 6, 12 or 18 m cannot be reduced. Keep the assessment for three years.';
+}
+/* Read the fields. Returns {err} for a value the record cannot keep as typed. */
+function nxRead(){
+  var g=function(id){ var e=$(id); return e?String(e.value||'').trim():''; };
+  var out={};
+  var bb=g('nx-bbch').replace(/[–—]/g,'-');
+  if(bb){ if(!/^\d{1,2}(\s*[-\/]\s*\d{1,2})?$/.test(bb)) return {err:'Growth stage is a BBCH number, such as 32 or 31-32.'}; out.bbch=bb.replace(/\s+/g,''); }
+  out.method=g('nx-method')||'';
+  var k=nxBufPick();
+  if(k){
+    var b={k:k};
+    if(k==='full'||k==='lerap'){
+      var mv=g(k==='full'?'nx-bufm-full':'nx-bufm-lerap');
+      var m=parseFloat(mv);
+      if(mv===''||isNaN(m)||m<0||m>100) return {err: k==='full'?'How wide was the buffer you kept, in metres?':'What buffer did the LERAP set, in metres?'};
+      b.m=m;
+    }
+    if(k==='lerap'){
+      b.stars=parseInt(g('nx-stars'),10)||0; b.dose=parseFloat(g('nx-dose'))||1; b.ww=g('nx-ww');
+      if(!b.ww) return {err:'How wide is the watercourse? A LERAP needs it (or “dry ditch”).'};
+      var by=g('nx-lerap-by'); if(by) b.by=by;
+    }
+    out.buffer=b;
+  }
+  var on=$('nx-eamu-on');
+  if(on && on.checked){
+    var n=eamuNorm(g('nx-eamu'));
+    if(!n) return {err:'EAMU numbers look like 1309/2024 (the notice says “1309 of 2024”).'};
+    out.eamu=n;
+  }
+  return out;
+}
+function nxFill(x, onlyCarry){
+  if(!x) return;
+  var set=function(id,v){ var e=$(id); if(e && v!=null && v!=='') e.value=v; };
+  if(!onlyCarry) set('nx-bbch', x.bbch);
+  set('nx-method', x.method);
+  var b=x.buffer;
+  if(b && b.k){
+    var r=document.querySelector('input[name="nx-buf"][value="'+b.k+'"]'); if(r) r.checked=true;
+    if(b.k==='full') set('nx-bufm-full', b.m);
+    if(b.k==='lerap'){ set('nx-bufm-lerap', b.m); set('nx-stars', String(b.stars||0)); set('nx-dose', String(b.dose||1)); set('nx-ww', b.ww); set('nx-lerap-by', b.by); }
+  }
+  if(x.eamu){ var on=$('nx-eamu-on'); if(on) on.checked=true; set('nx-eamu', x.eamu); }
+  nxShow();
+}
+/* A repeat spray of the same product on the same field needs no new LERAP, but the
+   decision must still be written down: carry the last one over for the farmer to confirm. */
+function nxLast(product, where){
+  var p=String(product||'').trim().toLowerCase(); if(!p) return null;
+  var pool=[];
+  if(where && where.land!=null) pool=((window.ST_CROP&&ST_CROP.inputs)||[]).filter(function(i){ return String(i.land)===String(where.land); })
+    .map(function(i){ return {x:i, d:i.date}; });
+  if(where && where.bid!=null){ var sd=(window.ST_FRUIT&&ST_FRUIT.sprayDiary)||{};
+    Object.keys(sd).forEach(function(c){ (sd[c]||[]).forEach(function(s){ if(String(s.bid)===String(where.bid)) pool.push({x:s, d:s.dateISO}); }); }); }
+  pool=pool.filter(function(o){ return String(o.x.product||'').trim().toLowerCase()===p && (o.x.buffer||o.x.method||o.x.eamu); })
+           .sort(function(a,b){ return (a.d||'')<(b.d||'')?1:-1; });
+  return pool.length?pool[0].x:null;
+}
+function nxCarry(product, where){
+  if(nxBufPick() || (($('nx-eamu')||{}).value)) return;          /* never overwrite what they chose */
+  var last=nxLast(product, where); if(last) nxFill(last, true);
+}
+function nxEamuCheck(){
+  var box=$('nx-eamu-res'); if(!box) return;
+  var raw=(($('nx-eamu')||{}).value||'').trim();
+  if(!raw){ box.innerHTML=''; return; }
+  var n=eamuNorm(raw);
+  if(!n){ box.innerHTML='<div class="nx-res"><span class="warn">EAMU numbers look like 1309/2024</span> — the notice says “1309 of 2024”.</div>'; return; }
+  ukEamuLoad().then(function(L){
+    if((($('nx-eamu')||{}).value||'').trim()!==raw) return;        /* typed on since */
+    if(!L || !L.length){ box.innerHTML='<div class="nx-res">HSE’s list could not be loaded (offline?). The number is still recorded.</div>'; return; }
+    var key=eamuKey(n), hit=null;
+    for(var i=0;i<L.length;i++){ if(L[i][0]===key){ hit=L[i]; break; } }
+    if(!hit){ box.innerHTML='<div class="nx-res"><span class="warn">⚠ '+esc(n)+' is not on HSE’s list</span> of '+L.length.toLocaleString('en-GB')+' EAMUs. Check the number on the notice.</div>'; return; }
+    var ctx=NX_CTX||{}, warns=[];
+    var date=(ctx.date&&ctx.date())||new Date().toISOString().slice(0,10);
+    var ext={B:'GB and NI',G:'GB only',N:'Northern Ireland only'}[hit[3]]||'';
+    var exp=hit[5], pending=(exp==='2099-09-09');
+    if(hit[8]==='W') warns.push('It is no longer on HSE’s register.');
+    if(exp && !pending && exp<date) warns.push('It expired on '+aiRcDate(exp)+', before this spray.');
+    var ni=(typeof aiRegIsNI==='function')&&aiRegIsNI();
+    if(hit[3]==='N' && !ni) warns.push('It covers Northern Ireland only, and this farm is in '+esc((typeof ukRegion==='function')?ukRegion():'Great Britain')+'.');
+    if(hit[3]==='G' && ni) warns.push('It covers Great Britain only, and this farm is in Northern Ireland.');
+    var reg=String((ctx.reg&&ctx.reg())||'').replace(/\D/g,'');
+    if(reg && hit[2] && !/^0+$/.test(hit[2]) && reg!==hit[2]) warns.push('It is for '+esc(hit[1])+' (MAPP '+esc(hit[2])+'), not MAPP '+esc(reg)+'.');
+    var crop=String((ctx.crop&&ctx.crop())||'').toLowerCase();
+    if(crop){
+      var words=crop.split(/[^a-z]+/).filter(function(w){ return w.length>=4 && !/^(winter|spring|field|crop|crops|seed|ware|outdoor|protected|combining)$/.test(w); });
+      var cl=String(hit[7]||'').toLowerCase();
+      if(words.length && !words.some(function(w){ return cl.indexOf(w.replace(/(es|s)$/,''))>=0; }))
+        warns.push('Its crop list does not name '+esc(crop)+' — check it covers this crop.');
+    }
+    box.innerHTML='<div class="nx-res">'+
+      (warns.length?'<span class="warn">⚠ Check this EAMU</span>':'<span class="ok">✓ On HSE’s list</span>')+' · '+esc(hit[1])+' · '+esc(hit[6])+' · '+esc(ext)+
+      '<div style="margin-top:3px">Crops: '+esc(hit[7])+'</div>'+
+      '<div style="margin-top:3px">Issued '+aiRcDate(hit[4])+' · '+(pending?'renewal pending':'expires '+aiRcDate(exp))+'</div>'+
+      (warns.length?'<div style="margin-top:5px;color:#7a4a10">'+warns.join('<br>')+'</div>':'')+
+      '<div style="margin-top:5px;color:var(--t4,#8a958d)">Keep a copy of the notice with your records. Its conditions replace the label’s, including the harvest interval.</div></div>';
+  });
+}
+
+/* ---- how the record reads the new fields ------------------------------------------ */
+function nxBufText(b){
+  if(!b||!b.k) return '';
+  if(b.k==='none') return 'No buffer on the label';
+  if(b.k==='nowater') return 'No water within the label buffer';
+  if(b.k==='full') return 'Full label buffer '+b.m+' m';
+  return 'LERAP '+b.m+' m';
+}
+function nxBufShort(b){
+  if(!b||!b.k) return '';
+  return {none:'None on label', nowater:'No water', full:b.m+' m', lerap:b.m+' m LERAP'}[b.k]||'';
+}
+function nxLerapText(b){
+  if(!b||b.k!=='lerap') return '';
+  var bits=['LERAP: '+(b.stars?b.stars+'-star sprayer':'no star rating'), _nxLbl(NX_DOSE,String(b.dose||1)).toLowerCase(),
+            'watercourse '+(_nxLbl(NX_WW,b.ww)||'?').toLowerCase(), 'buffer '+b.m+' m'];
+  if(b.by) bits.push('assessed by '+b.by);
+  return bits.join(', ');
+}
+/* PPP sprays in the last three years, and how many carry a buffer decision. Feeds the
+   compliance card, which used to be one farm-wide tick-box that never reached the server. */
+function nxLerapStats(){
+  var since=new Date(); since.setFullYear(since.getFullYear()-3); var s=since.toISOString().slice(0,10);
+  var tot=0, rec=0, NOT={seed:1,fertiliser:1};
+  ((window.ST_CROP&&ST_CROP.inputs)||[]).forEach(function(i){ if(!i||NOT[i.kind]||!(i.date>=s)) return; tot++; if(i.buffer&&i.buffer.k) rec++; });
+  var sd=(window.ST_FRUIT&&ST_FRUIT.sprayDiary)||{};
+  Object.keys(sd).forEach(function(c){ (sd[c]||[]).forEach(function(x){ if(!x||!(x.dateISO>=s)) return; tot++; if(x.buffer&&x.buffer.k) rec++; }); });
+  return {tot:tot, rec:rec};
+}
+
+/* ---- the CSV, in DAERA's column order (D2) ------------------------------------------
+   DAERA's template v10 headers, word for word, then the particulars the GB record and Red
+   Tractor need that DAERA's sheet does not carry. One row per application, PPPs only - the
+   same rows as the PDF, which already merges field and orchard sprays. */
+var DAERA_COLS=['Line No.','Operator Name','Date Applied (dd-mmm-yyyy)','Start Time (hh:mm)','Finish Time (hh:mm)',
+  'Location of Treated Area or Unit','Pesticide Treatment Type','Product Name','Product Number (MAPP)',
+  'Crop Grown or Situation/Land Use','EPPO Code','Growth Stage (BBCH Code - where applicable)',
+  'Total Area Treated or Amount treated (Ha, m²,g,Kg)','Method of Application','Dose Rate (Litres or kg per hectare)',
+  'Water Volume (L/Ha)','Buffer Zone Applied (meters)','Wind','Wind - Direction','Weather Conditions','Comments'];
+var CSV_EXTRA=['Field name','Active ingredient','Target','Harvest interval (days)','Batch','Operator certificate','EAMU'];
+var _CSV_MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function _csvDate(iso){ var m=String(iso||'').match(/^(\d{4})-(\d{2})-(\d{2})/); return m?(m[3]+'-'+_CSV_MON[parseInt(m[2],10)-1]+'-'+m[1]):''; }
+function _csvWind(w){
+  w=String(w||'').trim(); if(!w) return ['',''];
+  var m=w.match(/^(NNE|ENE|ESE|SSE|SSW|WSW|WNW|NNW|NE|SE|SW|NW|N|E|S|W)\b[\s,]*(.*)$/i);
+  return m?[m[2]||'', m[1].toUpperCase()]:[w,''];
+}
+function _csvMapp(reg){ var r=String(reg||'').trim(); if(!r || !/\d/.test(r)) return ''; var d=r.replace(/\D/g,''); return (d.length>=4&&d.length<=6)?d:''; }
+/* What each row's crop code is, and which field or block would have to answer for it. */
+function aiSprayCsvNeeds(rows){
+  var need=[], seen={};
+  rows.forEach(function(r){
+    if(!r.variety) return;                         /* no crop on the record - nothing to code */
+    var code=r._land?eppoForLand(r._land):(r._block?eppoForBlock(r._block):'');
+    if(code) return;
+    var o=r._land||r._block; if(!o) return;
+    var k=(r._land?'l':'b')+o.id; if(seen[k]) return; seen[k]=1;
+    need.push({k:k, land:r._land||null, block:r._block||null, name:o.name||'', crop:r._land?(o.crop||''):(o.cultivar||'')});
+  });
+  return need;
+}
+function aiSprayCsvRows(from, to){
+  return aiRegRows('spray', from, to).slice().reverse().map(function(r, ix){   /* oldest first, like a diary */
+    var x=r._src||{}, l=r._land, b=r._block;
+    var code=r.variety ? (l?eppoForLand(l):(b?eppoForBlock(b):'')) : '';
+    var wind=_csvWind(x.wind);
+    var buf=x.buffer, bm=(buf&&buf.k)?((buf.k==='full'||buf.k==='lerap')?String(buf.m):'N/A'):'';
+    var notes=[];
+    if(buf&&buf.k==='none') notes.push('Label sets no buffer next to water');
+    if(buf&&buf.k==='nowater') notes.push('No surface water within the label buffer');
+    if(buf&&buf.k==='full') notes.push('Full label buffer kept');
+    if(buf&&buf.k==='lerap') notes.push(nxLerapText(buf));
+    if(x.eamu) notes.push('Used under EAMU '+x.eamu);
+    var o=l||b;
+    return [String(ix+1), x.by||r.by||'', _csvDate(r._iso), x.time||'', '',
+      (o&&o.fieldRef)?o.fieldRef:(r.land||''), 'Treatment of agricultural fields/outdoor crops',
+      r.product||'', _csvMapp(r.reg),
+      code?(eppoName(code)||r.variety):r.variety, code, x.bbch||'',
+      r.ha?(r.ha+' ha'):'', x.method||'', r.rate||'', r.water||'', bm, wind[0], wind[1], '', notes.join('; '),
+      r.land||'', r.act||'', r.target||'', x.phi!=null?String(orPhiDays(x.phi)):'', r.batch||'', r.cert||'', x.eamu||''];
+  });
+}
+function aiSprayCsvFile(from, to){
+  var rows=aiSprayCsvRows(from, to);
+  var name='spray-record-'+(from||'start')+'-to-'+(to||new Date().toISOString().slice(0,10))+'.csv';
+  downloadFile(name, toCSV(DAERA_COLS.concat(CSV_EXTRA), rows), 'text/csv;charset=utf-8');
+  return rows.length;
+}
+
 function cropLogInput(editId){
   CROP_INPUT_EDIT = editId || null;
   var planted=ST_CROP.lands.filter(cropPlanted);
@@ -13799,19 +14217,27 @@ function cropLogInput(editId){
     '<div style="margin-bottom:12px">'+lbl('What for?',true)+'<input id="ci-for" placeholder="e.g. septoria, blackgrass, aphids" style="'+inpCss+'"></div>'+
     '<div style="display:flex;gap:10px;margin-bottom:12px"><div style="flex:1">'+lbl('Water volume',true)+'<input id="ci-water" placeholder="200 l/ha" style="'+inpCss+'"></div>'+
       '<div style="flex:1">'+lbl('Wind',true)+'<input id="ci-wind" placeholder="SW 6 mph" style="'+inpCss+'"></div></div>'+
-    '<div style="display:flex;gap:10px;margin-bottom:12px"><div style="flex:1">'+lbl('Days to wait (PHI)',true)+'<input id="ci-phi" type="number" placeholder="0" style="'+inpCss+'"></div>'+
+    '<div style="display:flex;gap:10px;margin-bottom:12px"><div style="flex:1">'+lbl('Harvest interval (days)',true)+'<input id="ci-phi" type="number" min="0" placeholder="0" style="'+inpCss+'"></div>'+
       '<div style="flex:1">'+lbl('Cost per hectare',true)+'<input id="ci-cost" type="number" inputmode="decimal" placeholder="£ 0" style="'+inpCss+'"></div></div>'+
     '<div style="display:flex;gap:10px;margin-bottom:4px"><div style="flex:1">'+lbl('Date applied')+'<input id="ci-date" type="date" value="'+today+'" style="'+inpCss+'"></div>'+
       /* One of Article 67(1)'s five particulars, and the app has never asked for it. */
       '<div style="flex:1">'+lbl('Time applied')+'<input id="ci-time" type="time" style="'+inpCss+'"></div></div>'+
-    '<div style="background:#eef4ec;border:1px solid #cfe3d4;border-radius:9px;padding:9px 11px;font-size:11px;color:#3a5a45;line-height:1.5;margin-top:12px">The wait time sets the <b>safe-to-harvest date</b> automatically \u2014 and this one entry becomes your HMRC cost line and your Red Tractor spray record.</div>';
+    nxHTML({kind:'crop', edit:!!editId,
+      date:function(){ return (($('ci-date')||{}).value)||''; }, reg:function(){ return (($('ci-reg')||{}).value)||''; },
+      crop:function(){ var c=document.querySelector('.ci-land-cb:checked'); var l=c?cropLandById(parseInt(c.value,10)):null; return l?(l.crop||''):''; }})+
+    '<div style="background:#eef4ec;border:1px solid #cfe3d4;border-radius:9px;padding:9px 11px;font-size:11px;color:#3a5a45;line-height:1.5;margin-top:12px">The harvest interval sets the <b>safe-to-harvest date</b> automatically \u2014 and this one entry becomes your HMRC cost line and your Red Tractor spray record.</div>';
   var footer='<button class="crop-formbtn" style="flex:1" onclick="cropInputFormSave()">Save application</button>'+
     '<button onclick="cropCloseModal()" style="width:110px;border:1px solid var(--br);border-radius:10px;background:#fff;color:var(--t3);font-size:13.5px;font-weight:600;font-family:inherit;cursor:pointer">Cancel</button>';
   cropModalShell('Log an application', body, footer);
+  var _ciWhere=function(){ var c=document.querySelector('.ci-land-cb:checked'); return {land:c?c.value:null}; };
   ukProdAttach('ci-product', function(name, act, reg){
     var a=$('ci-act'); if(a && !a.value) a.value=act;
     var r=$('ci-reg'); if(r && !r.value) r.value=reg;
+    if(!editId) nxCarry(name, _ciWhere());
   });
+  var _cp=$('ci-product'); if(_cp && !editId) _cp.addEventListener('change', function(){ nxCarry(_cp.value, _ciWhere()); });
+  /* Fertiliser and seed are not plant protection products: no buffer, no EAMU, no stage. */
+  var _ck=$('ci-kind'); if(_ck){ var _nxTg=function(){ var bx=$('nx-box'); if(bx) bx.hidden=/^(seed|fertiliser)$/.test(_ck.value); }; _ck.addEventListener('change',_nxTg); _nxTg(); }
   if(editId) cropInputEditFill(editId);
 }
 function cropInputFormSave(){
@@ -13829,6 +14255,8 @@ function cropInputFormSave(){
   var reg=(($('ci-reg')||{}).value||'').trim(), rate=(($('ci-rate')||{}).value||'').trim(),
       batch=(($('ci-batch')||{}).value||'').trim(), by=(($('ci-by')||{}).value||'').trim()||(FARM.owner||''),
       cert=(($('ci-cert')||{}).value||'').trim();
+  var nx=/^(seed|fertiliser)$/.test(kind) ? {} : nxRead();
+  if(nx.err){ toast(nx.err,'error'); return; }
   var catMap={seed:'Seeds & Planting',fertiliser:'Fertiliser',herbicide:'Crop Protection',fungicide:'Crop Protection',insecticide:'Crop Protection'};
   var cat=catMap[kind]||'Crop Protection';
   /* One tank mix can cover several lands. The rate is per-hectare, so each land gets its own
@@ -13839,7 +14267,8 @@ function cropInputFormSave(){
     var l=cropLandById(lid); if(!l) return; n++;
     ST_CROP.inputs.unshift({ id:cropNextId(ST_CROP.inputs.concat(ST_CROP.removed||[]),'ci'), land:l.id, date:date, product:product,
       reg:reg, kind:kind, rate:rate, batch:batch, by:by, operatorCert:cert, targetFor:forVal, phi:phi, costPerHa:cost,
-      act:act||undefined, water:water||undefined, wind:wind||undefined, time:atime||undefined });
+      act:act||undefined, water:water||undefined, wind:wind||undefined, time:atime||undefined,
+      bbch:nx.bbch||undefined, method:nx.method||undefined, buffer:nx.buffer||undefined, eamu:nx.eamu||undefined });
     var total = cost * (l.area||0);
     if(total>0){
       totalAll+=total;
@@ -13937,7 +14366,8 @@ function cropRenderLandModal(){
   var body='<div style="padding:16px 20px">'+
     F('Land name','<input id="cle-name" value="'+esc(l.name)+'">')+
     '<div class="crop-two">'+F('Crop','<select id="cle-crop"><option value="">\u2014 none (fallow)</option>'+cropOpts+'</select>')+F('Cultivar','<input id="cle-cultivar" value="'+esc(l.cultivar||'')+'">')+'</div>'+
-    '<div class="crop-two">'+F('Area (ha)','<input id="cle-area" type="number" value="'+(l.area||0)+'">')+'</div>'+
+    '<div class="crop-two">'+F('Area (ha)','<input id="cle-area" type="number" value="'+(l.area||0)+'">')+F('Field number <span style="font-weight:500;color:var(--t4)">optional</span>','<input id="cle-fref" placeholder="DAERA field no. or RPA parcel" value="'+esc(l.fieldRef||'')+'">')+'</div>'+
+    F('Crop code (EPPO) <span style="font-weight:500;color:var(--t4)">worked out from the crop; change it if it is wrong</span>','<select id="cle-eppo">'+eppoOptions(eppoForLand(l))+'</select><div style="font-size:11px;color:var(--t4);margin-top:4px">Northern Ireland records the crop as an EPPO code. '+esc(EPPO_CREDIT)+'.</div>')+
     '<div class="crop-two">'+F('Planting date','<input id="cle-planted" type="date" value="'+(l.planted||'')+'">')+F('Expected harvest','<input id="cle-harvest" type="date" value="'+(l.harvest||'')+'">')+'</div>'+
     '<div class="crop-two">'+F('Expected yield (t/ha)','<input id="cle-yield" type="number" step="0.1" value="'+(l.targetYield||0)+'">')+F('Input cost (£/ha)','<input id="cle-input" type="number" value="'+(l.inputPerHa||0)+'">')+'</div>'+
     F('Price (£ per tonne)','<input id="cle-price" type="number" inputmode="decimal" value="'+(l.price>0?l.price:'')+'" placeholder="'+(cropPrice(l.crop)>0?('AHDB \u2248 '+cropPrice(l.crop)):'enter your own price')+'" oninput="cropEditPriceTouched=true"><div id="cle-price-chip"></div>')+
@@ -13970,7 +14400,11 @@ async function cropSaveLandEdit(){
   var nm=($('cle-name').value||'').trim(); if(!nm){ toast('Name the land','error'); return; }
   var newCrop=$('cle-crop').value;
   if(newCrop && newCrop!==l.crop && l.crop) l.prevCrop=l.crop;
+  var _ep=(($('cle-eppo')||{}).value)||'', _auto=(function(){ var t={crop:newCrop, planted:$('cle-planted').value, cultivar:$('cle-cultivar').value}; return eppoForLand(t); })();
   l.name=nm; l.crop=newCrop; l.cultivar=$('cle-cultivar').value.trim();
+  l.fieldRef=String((($('cle-fref')||{}).value)||'').trim()||undefined;
+  /* Stored only when it differs from what the crop gives, and only for THIS crop. */
+  if(_ep && _ep!==_auto){ l.eppo=_ep; l.eppoCrop=newCrop; } else { delete l.eppo; delete l.eppoCrop; }
   l.area=parseFloat($('cle-area').value)||0;
   l.gmo=!!l.gmo;   /* control removed - no GM crop is grown commercially in the UK; keep what is stored */ l.irrigated=$('cle-irr').value==='yes';
   l.planted=$('cle-planted').value; l.harvest=$('cle-harvest').value;
@@ -49182,7 +49616,7 @@ function renderRecentIncome() {
 
 
 // Key-based dictionary — elements tagged data-t translate exactly and reversibly
-var I18N = {"nav.group.daily":{"en":"Daily"},"nav.dashboard":{"en":"Dashboard"},"nav.transactions":{"en":"Transactions"},"nav.group.money":{"en":"Money"},"nav.income":{"en":"Income"},"nav.expenses":{"en":"Expenses"},"nav.cashflow":{"en":"Money Flow"},"nav.budgets":{"en":"Budgets"},"nav.loans":{"en":"Loans & Debt"},"nav.tax":{"en":"Tax & HMRC"},"tax.title":{"en":"Tax & HMRC"},"tax.sub":{"en":"What to set aside, what’s due and when — in plain words."},"nav.reports":{"en":"Reports"},"nav.group.farm":{"en":"My Farm"},"nav.planning":{"en":"Planning"},"nav.crop":{"en":"Crops"},"nav.orchards":{"en":"Orchards, Fruit & Veg"},"nav.livestock":{"en":"Livestock"},"nav.profit":{"en":"Profit"},"nav.assets":{"en":"Assets"},"nav.workers":{"en":"Workers"},"nav.group.market":{"en":"Market"},"nav.market":{"en":"Market Prices"},"nav.settings":{"en":"Settings"},"offline.sub":{"en":"Working offline. Data syncs when online."},"or.title":{"en":"Orchards, Fruit & Veg"},"or.sub":{"en":"Trees, vines, berries and veg — what each block costs, yields and earns"},"or.tab.overview":{"en":"Overview"},"or.tab.blocks":{"en":"Blocks"},"or.tab.spray":{"en":"Spray & Safety"},"or.tab.harvest":{"en":"Harvest & Pack"},"or.tab.comply":{"en":"Compliance"},"or.tab.add":{"en":"＋ Add block"},"or.add.btn":{"en":"＋ Add block"},"or.view.cards":{"en":"Cards"},"or.view.compare":{"en":"Compare"},"or.spray.safe":{"en":"Safe to pick — all markets"},"or.spray.safesub":{"en":"Green = clear to pick · amber = waiting on a spray rule"},"or.local":{"en":"Local"},"or.spray.diary":{"en":"Spray diary"},"or.spray.log":{"en":"＋ Log spray"},"or.harvest.calc":{"en":"What one packed unit pays you"},"or.harvest.calcsub":{"en":"Edit any number — your money-back updates live"},"or.harvest.block":{"en":"Block"},"or.harvest.recent":{"en":"Recent picks"},"or.harvest.log":{"en":"＋ Log pick"},"or.arch.all":{"en":"🗂️ All records"},"or.cmp.certs":{"en":"Certificates & audits"},"or.cmp.pests":{"en":"Pests & diseases watched"},"or.cmp.other":{"en":"Other records on file"},"or.add.title":{"en":"Add a block"},"or.add.sub":{"en":"Tell us what you're growing — we set up the rest"},"or.add.tree":{"en":"Tree / vine"},"or.add.treesub":{"en":"top fruit, avo, apple…"},"or.add.berry":{"en":"Berry"},"or.add.berrysub":{"en":"blueberry, rasp…"},"or.add.veg":{"en":"Vegetable"},"or.add.vegsub":{"en":"replanted each season"},"or.add.name":{"en":"Block name"},"or.add.crop":{"en":"What are you growing?"},"or.add.area":{"en":"Area (ha)"},"or.add.spacing":{"en":"Spacing"},"or.add.yield":{"en":"Target yield once mature"},"or.add.save":{"en":"Save block"},"or.add.spray":{"en":"Do you spray this block?"},"or.add.spray.y":{"en":"Yes — we spray"},"or.add.spray.n":{"en":"No — organic / no-spray"},"or.add.markets":{"en":"Where do you sell it?"},"or.add.markets.h":{"en":"pick all that apply"},"or.add.markets.note":{"en":"Export markets bring stricter safe-to-pick rules and extra certificates. Local-only skips them."},"hero.h":{"en":"Let's grow your profit this season."},"offline.title":{"en":"Offline Mode"},"or.add.root":{"en":"Rootstock"},"or.add.carton":{"en":"Carton size"},"or.add.estab":{"en":"What it cost to establish"},"sync.last":{"en":"Saved"},"crop.tab.inputs":{"en":"Inputs & Spray"},"crop.plant.btn":{"en":"＋ Plant a land"},"plan.spill.head":{"en":"crops finish after this season ends"},"plan.spill.head1":{"en":"crop finishes after this season ends"},"plan.spill.sub":{"en":"Normal for summer grain. The growing costs sit in this season; the sale lands in the next financial year, so plan the tax for it there."},"plan.miss.head":{"en":"lines have no month in this season"},"plan.miss.head1":{"en":"line has no month in this season"},"plan.miss.sub":{"en":"They are not counted anywhere. Give them a planting and harvest month, or step to the season they belong to."},"st.marginNote":{"en":"Margin is what each crop, block and herd earns after its own growing costs — before farm overheads like loans, insurance and admin."},"st.planIs":{"en":"Your plan is"},"st.marginFrom":{"en":"margin from crops, orchards and livestock"},"st.notStarted":{"en":"not started"},"st.notStartedCap":{"en":"Not started"},"st.nothingYet":{"en":"nothing harvested or sold yet"},"st.progNone":{"en":"Season progress — nothing harvested yet"},"st.progSome":{"en":"Season progress — money in so far"},"st.stillExpecting":{"en":"Still expecting"},"st.nothingThisOne":{"en":"nothing harvested from this one yet"},"st.marginPace":{"en":"margin at this pace"},"st.planIfSeason":{"en":"margin, if the season went to plan"},"st.plannedToMake":{"en":"You planned to make"},"st.onTrackFor":{"en":"Now on track for"},"plan.title":{"en":"My Plan"},"plan.sub":{"en":"Crops, orchards, livestock and your year ahead."},"plan.thisYear":{"en":"This year"},"plan.addCrop":{"en":"+ Add a crop"},"plan.addEvent":{"en":"+ Add livestock event"},"plan.totalProfit":{"en":"Planned margin"},"plan.orchPulled":{"en":"Pulled from your Orchards module."},"plan.thisSeason":{"en":"This season"},"plan.expExceed":{"en":"Expenses exceed income"},"plan.realData":{"en":"Real data from transactions"},"plan.inMoney":{"en":"Your plan, in money"},"plan.stress":{"en":"Stress-test your crop plan"},"plan.drag":{"en":"Drag a lever to see how your year changes"},"plan.needsAttn":{"en":"Needs your attention"},"plan.lever.grain":{"en":"Grain prices"},"plan.lever.input":{"en":"Input costs"},"plan.lever.sale":{"en":"Sale prices"},"plan.lever.run":{"en":"Running & buy costs"},"plan.helps":{"en":"helps your profit"},"plan.hurts":{"en":"costs you profit"}};
+var I18N = {"nav.group.daily":{"en":"Daily"},"nav.dashboard":{"en":"Dashboard"},"nav.transactions":{"en":"Transactions"},"nav.group.money":{"en":"Money"},"nav.income":{"en":"Income"},"nav.expenses":{"en":"Expenses"},"nav.cashflow":{"en":"Money Flow"},"nav.budgets":{"en":"Budgets"},"nav.loans":{"en":"Loans & Debt"},"nav.tax":{"en":"Tax & HMRC"},"tax.title":{"en":"Tax & HMRC"},"tax.sub":{"en":"What to set aside, what’s due and when — in plain words."},"nav.reports":{"en":"Reports"},"nav.group.farm":{"en":"My Farm"},"nav.planning":{"en":"Planning"},"nav.crop":{"en":"Crops"},"nav.orchards":{"en":"Orchards, Fruit & Veg"},"nav.livestock":{"en":"Livestock"},"nav.profit":{"en":"Profit"},"nav.assets":{"en":"Assets"},"nav.workers":{"en":"Workers"},"nav.group.market":{"en":"Market"},"nav.market":{"en":"Market Prices"},"nav.settings":{"en":"Settings"},"offline.sub":{"en":"Working offline. Data syncs when online."},"or.title":{"en":"Orchards, Fruit & Veg"},"or.sub":{"en":"Trees, vines, berries and veg — what each block costs, yields and earns"},"or.tab.overview":{"en":"Overview"},"or.tab.blocks":{"en":"Blocks"},"or.tab.spray":{"en":"Spray & Safety"},"or.tab.harvest":{"en":"Harvest & Pack"},"or.tab.comply":{"en":"Compliance"},"or.tab.add":{"en":"＋ Add block"},"or.add.btn":{"en":"＋ Add block"},"or.view.cards":{"en":"Cards"},"or.view.compare":{"en":"Compare"},"or.spray.safe":{"en":"Safe to pick"},"or.spray.safesub":{"en":"Green = clear to pick · amber = a harvest interval is still running"},"or.local":{"en":"Local"},"or.spray.diary":{"en":"Spray diary"},"or.spray.log":{"en":"＋ Log spray"},"or.harvest.calc":{"en":"What one packed unit pays you"},"or.harvest.calcsub":{"en":"Edit any number — your money-back updates live"},"or.harvest.block":{"en":"Block"},"or.harvest.recent":{"en":"Recent picks"},"or.harvest.log":{"en":"＋ Log pick"},"or.arch.all":{"en":"🗂️ All records"},"or.cmp.certs":{"en":"Certificates & audits"},"or.cmp.pests":{"en":"Pests & diseases watched"},"or.cmp.other":{"en":"Other records on file"},"or.add.title":{"en":"Add a block"},"or.add.sub":{"en":"Tell us what you're growing — we set up the rest"},"or.add.tree":{"en":"Tree / vine"},"or.add.treesub":{"en":"top fruit, avo, apple…"},"or.add.berry":{"en":"Berry"},"or.add.berrysub":{"en":"blueberry, rasp…"},"or.add.veg":{"en":"Vegetable"},"or.add.vegsub":{"en":"replanted each season"},"or.add.name":{"en":"Block name"},"or.add.crop":{"en":"What are you growing?"},"or.add.area":{"en":"Area (ha)"},"or.add.spacing":{"en":"Spacing"},"or.add.yield":{"en":"Target yield once mature"},"or.add.save":{"en":"Save block"},"or.add.spray":{"en":"Do you spray this block?"},"or.add.spray.y":{"en":"Yes — we spray"},"or.add.spray.n":{"en":"No — organic / no-spray"},"or.add.markets":{"en":"Where do you sell it?"},"or.add.markets.h":{"en":"pick all that apply"},"or.add.markets.note":{"en":"Sets the export share in your figures and which certificates apply. The harvest interval is the label’s, whoever buys it."},"hero.h":{"en":"Let's grow your profit this season."},"offline.title":{"en":"Offline Mode"},"or.add.root":{"en":"Rootstock"},"or.add.carton":{"en":"Carton size"},"or.add.estab":{"en":"What it cost to establish"},"sync.last":{"en":"Saved"},"crop.tab.inputs":{"en":"Inputs & Spray"},"crop.plant.btn":{"en":"＋ Plant a land"},"plan.spill.head":{"en":"crops finish after this season ends"},"plan.spill.head1":{"en":"crop finishes after this season ends"},"plan.spill.sub":{"en":"Normal for summer grain. The growing costs sit in this season; the sale lands in the next financial year, so plan the tax for it there."},"plan.miss.head":{"en":"lines have no month in this season"},"plan.miss.head1":{"en":"line has no month in this season"},"plan.miss.sub":{"en":"They are not counted anywhere. Give them a planting and harvest month, or step to the season they belong to."},"st.marginNote":{"en":"Margin is what each crop, block and herd earns after its own growing costs — before farm overheads like loans, insurance and admin."},"st.planIs":{"en":"Your plan is"},"st.marginFrom":{"en":"margin from crops, orchards and livestock"},"st.notStarted":{"en":"not started"},"st.notStartedCap":{"en":"Not started"},"st.nothingYet":{"en":"nothing harvested or sold yet"},"st.progNone":{"en":"Season progress — nothing harvested yet"},"st.progSome":{"en":"Season progress — money in so far"},"st.stillExpecting":{"en":"Still expecting"},"st.nothingThisOne":{"en":"nothing harvested from this one yet"},"st.marginPace":{"en":"margin at this pace"},"st.planIfSeason":{"en":"margin, if the season went to plan"},"st.plannedToMake":{"en":"You planned to make"},"st.onTrackFor":{"en":"Now on track for"},"plan.title":{"en":"My Plan"},"plan.sub":{"en":"Crops, orchards, livestock and your year ahead."},"plan.thisYear":{"en":"This year"},"plan.addCrop":{"en":"+ Add a crop"},"plan.addEvent":{"en":"+ Add livestock event"},"plan.totalProfit":{"en":"Planned margin"},"plan.orchPulled":{"en":"Pulled from your Orchards module."},"plan.thisSeason":{"en":"This season"},"plan.expExceed":{"en":"Expenses exceed income"},"plan.realData":{"en":"Real data from transactions"},"plan.inMoney":{"en":"Your plan, in money"},"plan.stress":{"en":"Stress-test your crop plan"},"plan.drag":{"en":"Drag a lever to see how your year changes"},"plan.needsAttn":{"en":"Needs your attention"},"plan.lever.grain":{"en":"Grain prices"},"plan.lever.input":{"en":"Input costs"},"plan.lever.sale":{"en":"Sale prices"},"plan.lever.run":{"en":"Running & buy costs"},"plan.helps":{"en":"helps your profit"},"plan.hurts":{"en":"costs you profit"}};
 I18N['demo.ribbon']={en:"You’re exploring a sample farm — nothing here is saved to an account."};
 I18N['demo.watch']={en:"▶ Watch demo"};
 I18N['demo.restart']={en:"↺ Restart demo"};
@@ -60830,8 +61264,8 @@ var PAGE_TOURS = {
       text:'Each block is a clean card — its money back as the headline, rand-per-hectare underneath — grouped by fruit type. Tap a card to open its tonnage, export %, carton size and pricing. Use the chips up top to filter to top fruit, fruit, berries or veg.', tip:'Change a price and the money back updates everywhere — the same number on every page.', pos:'smart' },
     { target:'or-bl-compare', title:'Compare & benchmark', icon:'📈', tab:'blocks', onEnter:'orTourShowCompare',
       text:'Switch to Compare and every block lines up in one table — money back, rand-per-hectare and yield side by side — so you can see which blocks are carrying the season and which are lagging the pack.', pos:'smart' },
-    { target:'or-phi-list', title:'Safe to pick — every market', icon:'🚦', tab:'spray',
-      text:'A traffic-light for each block across your markets — EU, UK, local and more: green means clear to pick, amber means a spray rule still has it waiting. Log every spray in the diary below — it feeds this grid and doubles as your Red Tractor spray record.', tip:'Each market has its own waiting period, so a block can be clear for local sale but not yet for the EU.', pos:'smart' },
+    { target:'or-phi-list', title:'Safe to pick', icon:'🚦', tab:'spray',
+      text:'A traffic-light for each block: green means clear to pick, amber means a harvest interval from a spray is still running, with the date it clears. Log every spray in the diary below — it feeds this grid and doubles as your spray record.', tip:'The harvest interval is the one on the product label. It is the same whoever buys the fruit; buyers check residues, not days.', pos:'smart' },
     { target:'or-estvact', title:'How the harvest is tracking', icon:'📦', tab:'harvest',
       text:'The progress board compares what you estimated against what you’ve actually brought in, block by block — so you spot a block coming in light long before the season closes.', pos:'smart' },
     { target:'or-wf-body', title:'What one packed unit pays', icon:'🧮', tab:'harvest',
@@ -67548,11 +67982,11 @@ var ST_FRUIT = {
   },
   phi: {
     topfruit:[
-      {n:'Long Orchard (Bramley)',last:'Delegate · 18 May',d:{eu:'7 Jun',uk:'1 Jun',us:'25 May',local:'18 May'}},
-      {n:'Brook Orchard (Conference)',last:'Score · 9 May',d:{eu:'8 Jun',uk:'30 May',us:'23 May',local:'16 May'}}
+      {n:'Long Orchard (Bramley)',bid:'f1',last:'Delegate · 18 May',days:14,d:'1 Jun',iso:'2025-06-01'},
+      {n:'Brook Orchard (Conference)',bid:'f3',last:'Score · 9 May',days:21,d:'30 May',iso:'2025-05-30'}
     ],
-    fruit:[ {n:'Top Orchard (Apple)',last:'Codling bait · 5 May',d:{eu:'19 May',uk:'19 May',us:'12 May',local:'5 May'}} ],
-    berry:[ {n:'Blueberry tunnels',last:'Switch · 6 May',d:{eu:'13 May',uk:'13 May',us:'9 May',local:'6 May'}} ]
+    fruit:[ {n:'Top Orchard (Apple)',bid:'f6',last:'Codling bait · 5 May',days:14,d:'19 May',iso:'2025-05-19'} ],
+    berry:[ {n:'Blueberry tunnels',bid:'f7',last:'Switch · 6 May',days:7,d:'13 May',iso:'2025-05-13'} ]
   },
   harvest: [
     {ic:'\uD83C\uDF4A',t:'Top fruit · Long Orchard — week 21',s:'38 t · 4 bulk bins · 78% Class 1',r:'£21,800'},
@@ -67586,27 +68020,51 @@ function orSave(){ if(typeof debouncedSave==='function') debouncedSave(); else i
   try{ if(window.AI && AI.farm && AI.farm.active() && AI.orchard){ AI.orchard.saveAll(ST_FRUIT).catch(function(e){console.error('Backend orchard save failed:',e);}); AI.orchard.saveConfig(ST_FRUIT).catch(function(e){console.error('Backend orchard config save failed:',e);}); } }catch(e){} }
 function orToast(m){ if(typeof toast==='function') toast(m,'success'); }
 /* PHI / safe-to-pick is DERIVED — rebuilt from the spray diary on load, never stored. */
+/* U2 B - ONE harvest interval (signed off 23 Sep 2026, D1). HSE lists the harvest interval
+   among a label's statutory conditions of use: one number per use, whoever buys the fruit.
+   What differs by market is the residue limit (MRL), and buyers check residues, not days.
+   The four-market model showed a USA date that was the typed number minus 7 (on no label)
+   and a "Local" date that could clear before the UK legal one. The four phi_* columns stay
+   on the server so nothing needs migrating: a new spray writes the same number to all four,
+   and an old one is read from its UK figure, which always held the number the farmer typed. */
+function orPhiDays(ph){
+  if(ph==null||ph==='') return 0;
+  if(typeof ph!=='object') return Math.max(0,parseInt(ph,10)||0);
+  var v=(ph.uk!=null&&ph.uk!=='')?ph.uk:((ph.eu!=null&&ph.eu!=='')?ph.eu:ph.local);
+  return Math.max(0,parseInt(v,10)||0);
+}
+function orPhiObj(days){ days=Math.max(0,parseInt(days,10)||0); return {eu:days,uk:days,us:days,local:days}; }
+function orIso(d){ var m=d.getMonth()+1, x=d.getDate(); return d.getFullYear()+'-'+(m<10?'0':'')+m+'-'+(x<10?'0':'')+x; }
+/* The safe-to-pick date on an entry of ST_FRUIT.phi: a string, or on a farm that kept the
+   old four-market shape an object - read its UK date, never the EU/USA/Local ones. */
+function orEntryDate(e){ if(!e||e.d==null) return null; if(typeof e.d==='object') return e.d.uk||e.d.eu||e.d.local||null; return e.d; }
+/* Days until an entry clears. From the FULL date where there is one: "19 Jan" alone was read
+   as January of THIS year, so a spray on 20 December with a 30-day interval showed clear at once. */
+function orEntryWait(e){
+  if(!e) return null;
+  if(e.iso){ var t=new Date(); t.setHours(0,0,0,0); return Math.round((new Date(e.iso+'T00:00:00')-t)/86400000); }
+  var d=orEntryDate(e); return d?orDaysUntil(d):null;
+}
 function orRebuildPhi(){
   if(!window.ST_FRUIT) return;
   ST_FRUIT.phi={};
   var sd=ST_FRUIT.sprayDiary||{};
   Object.keys(sd).forEach(function(cat){
     var arr=(sd[cat]||[]).slice().filter(function(s){return s.dateISO&&s.bid;});
-    arr.sort(function(a,b){ return (a.dateISO||'')<(b.dateISO||'')?-1:1; }); // oldest first → latest spray per block wins
+    arr.sort(function(a,b){ return (a.dateISO||'')<(b.dateISO||'')?-1:1; }); // oldest first -> "last" ends on the newest spray
     arr.forEach(function(s){
       var b=(typeof orBlockById==='function')?orBlockById(s.bid):null;
-      var name=b?b.name:((s.s||'').split(' \u00b7 ')[0]||'Block');
-      var cultivar=(b&&b.cultivar)?b.cultivar.split(' \u00b7 ')[0]:'';
-      var dt=new Date(s.dateISO+'T00:00:00'); var ph=s.phi||{eu:0,uk:0,us:0,local:0};
-      /* local falls back to uk. Every spray written before this build stored local:0, which
-         made the grid say the fruit was clear to pick on the day it was sprayed. In Britain
-         "local" and "UK" are the same market, and HSE treats the harvest interval as a
-         statutory condition of use — there is no shorter domestic one to fall back to. */
-      var safe={eu:orFmtDM(orAddDays(dt,ph.eu||0)),uk:orFmtDM(orAddDays(dt,ph.uk||0)),us:orFmtDM(orAddDays(dt,ph.us||0)),local:orFmtDM(orAddDays(dt,(ph.local||ph.uk||ph.eu||0)))};
-      var last=(s.product||'Spray')+' \u00b7 '+orFmtDM(dt);
+      var name=b?b.name:((s.s||'').split(' · ')[0]||'Block');
+      var cultivar=(b&&b.cultivar)?b.cultivar.split(' · ')[0]:'';
+      var dt=new Date(s.dateISO+'T00:00:00'), days=orPhiDays(s.phi), sdt=orAddDays(dt,days), iso=orIso(sdt);
+      var last=(s.product||'Spray')+' · '+orFmtDM(dt);
       ST_FRUIT.phi[cat]=ST_FRUIT.phi[cat]||[];
-      var ex=ST_FRUIT.phi[cat].filter(function(r){return r.n.indexOf(name)===0;})[0];
-      if(ex){ ex.last=last; ex.d=safe; } else ST_FRUIT.phi[cat].unshift({n:name+(cultivar?' ('+cultivar+')':''),last:last,d:safe});
+      var ex=ST_FRUIT.phi[cat].filter(function(r){ return r.bid!=null ? r.bid===s.bid : r.n.indexOf(name)===0; })[0];
+      /* A block is safe on the LATEST of its sprays' dates, not the newest spray's: a 7-day
+         product on 5 Sep does not clear a 30-day one from 1 Sep. This took the newest
+         spray's date, which could clear a block weeks before the law does. */
+      if(!ex){ ST_FRUIT.phi[cat].unshift({n:name+(cultivar?' ('+cultivar+')':''), bid:s.bid, last:last, days:days, d:orFmtDM(sdt), iso:iso, hold:(s.product||'Spray')}); }
+      else { ex.last=last; if(!ex.iso || iso>ex.iso){ ex.days=days; ex.d=orFmtDM(sdt); ex.iso=iso; ex.hold=(s.product||'Spray'); } }
     });
   });
 }
@@ -67756,10 +68214,11 @@ function orCardHealthHTML(b){
     var list=(ST_FRUIT.phi&&ST_FRUIT.phi[b.cat])||[];
     var hit=null;
     list.forEach(function(e){ if(!e||!e.n) return; if(String(e.n).toLowerCase().indexOf(String(b.name).toLowerCase())>=0) hit=e; });
+    hit=orBlockPhiEntry(b)||hit;
     if(hit&&hit.d){
-      var dd=orDaysUntil(hit.d.eu||hit.d.local);
-      if(dd!=null&&dd>0) return '<div class="oa-hbox warn"><span class="hl">Spray hold — EU export</span>Clear to export-pick from '+esc(hit.d.eu||hit.d.local)+'. Local &amp; USA may differ — see Spray tab.</div>';
-      return '<div class="oa-hbox okk"><span class="hl">Clear to pick</span>Last spray '+esc(hit.last||'')+'. No active export waiting period.</div>';
+      var dd=orEntryWait(hit);
+      if(dd!=null&&dd>0) return '<div class="oa-hbox warn"><span class="hl">Spray hold</span>Safe to pick from '+esc(orEntryDate(hit))+' — last spray '+esc(hit.last||'')+'.</div>';
+      return '<div class="oa-hbox okk"><span class="hl">Clear to pick</span>Last spray '+esc(hit.last||'')+'. No harvest interval still running.</div>';
     }
   }catch(e){}
   return '<div class="oa-hbox okk"><span class="hl">Clear to pick</span>No active spray waiting period on record for this block.</div>';
@@ -67952,13 +68411,14 @@ function orPickWindow(b){
 /* Safe-to-pick clearance for a block, matched to its PHI entry by name. */
 function orBlockPhiEntry(b){
   var list=(ST_FRUIT.phi&&ST_FRUIT.phi[b.cat])||[];
-  for(var i=0;i<list.length;i++){ var e=list[i]; if(e&&e.n&&String(e.n).toLowerCase().indexOf(String(b.name).toLowerCase())>=0) return e; }
+  /* By block id first: "Top Orchard" also matched "Top Orchard North" by name. */
+  for(var k=0;k<list.length;k++){ if(list[k]&&list[k].bid!=null&&list[k].bid===b.id) return list[k]; }
+  for(var i=0;i<list.length;i++){ var e=list[i]; if(e&&e.bid==null&&e.n&&String(e.n).toLowerCase().indexOf(String(b.name).toLowerCase())>=0) return e; }
   return null;
 }
 function orBlockClearance(b){
-  var e=orBlockPhiEntry(b), mk=['eu','uk','us','local'], waiting=[], soonest=null;
-  if(e&&e.d){ mk.forEach(function(m){ var dd=orDaysUntil(e.d[m]); if(dd!=null&&dd>0){ waiting.push(m); if(!soonest||dd<soonest.days) soonest={m:m,days:dd,date:e.d[m]}; } }); }
-  return {entry:e, waiting:waiting, soonest:soonest, clearAll:waiting.length===0};
+  var e=orBlockPhiEntry(b), dd=orEntryWait(e), wait=(dd!=null&&dd>0);
+  return {entry:e, date:orEntryDate(e), days:wait?dd:0, waiting:wait, clearAll:!wait};
 }
 var OR_MKT_LABEL={eu:'EU',uk:'UK',us:'USA',local:'Local'};
 function orSafePickStripHTML(){
@@ -67967,11 +68427,11 @@ function orSafePickStripHTML(){
   var clear=0, chips='';
   bearing.forEach(function(b){
     var c=orBlockClearance(b);
-    if(c.clearAll){ clear++; chips+='<span class="or-sp-chip ok">'+esc(b.name)+' ✓ all markets</span>'; }
-    else { var mk=c.waiting.map(function(m){return OR_MKT_LABEL[m];}).join(' & '); chips+='<span class="or-sp-chip wait">'+esc(b.name)+' ⏳ '+mk+' · '+c.soonest.days+'d</span>'; }
+    if(c.clearAll){ clear++; chips+='<span class="or-sp-chip ok">'+esc(b.name)+' ✓ clear</span>'; }
+    else { chips+='<span class="or-sp-chip wait">'+esc(b.name)+' ⏳ from '+esc(c.date||'')+' · '+c.days+'d</span>'; }
   });
   orActiveBlocks().filter(function(b){return b.plan;}).forEach(function(b){ chips+='<span class="or-sp-chip na">'+esc(b.name)+' · first crop '+(b.plant+3)+'</span>'; });
-  return '<div class="or-sp"><div class="or-sp-h">🧺 Safe to pick today <span class="n">'+clear+' of '+bearing.length+' clear</span> <span class="more" onclick="orSetTab(\'spray\')">Full market view ›</span></div><div class="or-sp-chips">'+chips+'</div></div>';
+  return '<div class="or-sp"><div class="or-sp-h">🧺 Safe to pick today <span class="n">'+clear+' of '+bearing.length+' clear</span> <span class="more" onclick="orSetTab(\'spray\')">Spray diary ›</span></div><div class="or-sp-chips">'+chips+'</div></div>';
 }
 function orSeasonRibbonHTML(){
   var blocks=orActiveBlocks().filter(function(b){ return !b.plan && b.tons>0 && orPickWindow(b); });
@@ -68007,25 +68467,24 @@ function orTeaserHTML(){
   html+='<button class="or-cmpbtn" onclick="orGoCompare()">Compare all blocks →</button></div>';
   return html;
 }
-function orMatCell(e,m){
-  if(!e||!e.d||e.d[m]==null) return '<span class="or-mc na">—</span>';
-  var dd=orDaysUntil(e.d[m]);
+function orMatCell(e){
+  var dd=orEntryWait(e), d=orEntryDate(e);
   if(dd==null) return '<span class="or-mc na">—</span>';
   if(dd<=0) return '<span class="or-mc ok">✓ Clear</span>';
-  return '<span class="or-mc wait">'+esc(e.d[m])+' · '+dd+'d</span>';
+  return '<span class="or-mc wait">'+esc(d)+' · '+dd+'d</span>';
 }
 function orSprayMatrixHTML(){
   var rows='';
   OR_CAT_ORDER.forEach(function(cat){
     (ST_FRUIT.phi[cat]||[]).forEach(function(e){
       rows+='<tr><td><span class="or-mbn">'+OR_CATS[cat].ic+' '+esc(e.n)+'<small>Last: '+esc(e.last||'—')+'</small></span></td>'+
-        '<td>'+orMatCell(e,'eu')+'</td><td>'+orMatCell(e,'uk')+'</td><td>'+orMatCell(e,'us')+'</td><td>'+orMatCell(e,'local')+'</td></tr>';
+        '<td>'+(e.days!=null?esc(e.days+' days'+((e.hold&&String(e.last||'').indexOf(e.hold)!==0)?' ('+e.hold+')':'')):'—')+'</td><td>'+orMatCell(e)+'</td></tr>';
     });
   });
-  if(!rows) rows='<tr><td colspan="5" style="text-align:center;color:var(--t4);padding:16px">No spray records yet — nothing on hold.</td></tr>';
+  if(!rows) rows='<tr><td colspan="3" style="text-align:center;color:var(--t4);padding:16px">No spray records yet — nothing on hold.</td></tr>';
   return '<div class="or-mat"><div class="or-mat-scroll"><table>'+
-    '<tr><th>Block · last spray</th><th>🇪🇺 EU</th><th>🇬🇧 UK</th><th>🇺🇸 USA</th><th>🇿🇦 Local</th></tr>'+
-    rows+'</table></div><div style="font-size:11px;color:var(--t4);padding:9px 13px;border-top:1px solid var(--br2);line-height:1.5">Dates are the first day you may pick for that market, from each product’s label rule.</div></div>';
+    '<tr><th>Block · last spray</th><th>Harvest interval</th><th>Safe to pick</th></tr>'+
+    rows+'</table></div><div style="font-size:11px;color:var(--t4);padding:9px 13px;border-top:1px solid var(--br2);line-height:1.5">The harvest interval on the product label, or on the EAMU notice for an off-label use. It is the same whoever buys the fruit; a block clears on the latest of its sprays.</div></div>';
 }
 
 function orMonIdx(m){ return ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'].indexOf(String(m||'').slice(0,3).toLowerCase()); }
@@ -68064,9 +68523,9 @@ function orAttentionHTML(){
   // 4) picking / spray withholding (best effort from PHI safe-to-pick dates)
   try{
     var inHold=[]; var phi=ST_FRUIT.phi||{};
-    Object.keys(phi).forEach(function(cat){ (phi[cat]||[]).forEach(function(e){ var dd=e&&e.d?orDaysUntil(e.d.eu||e.d.local):null; if(dd!=null&&dd>0) inHold.push(e.n+' ('+(e.d.eu||e.d.local)+')'); }); });
-    if(inHold.length){ rows.push(['amber','\u23F3','<b>Spray waiting period active</b> \u2014 can\u2019t export-pick yet: '+esc(inHold.join(', '))+'.']); }
-    else { rows.push(['green','\u2713','<b>All blocks are clear to pick</b> \u2014 no spray waiting periods active for any market.']); }
+    Object.keys(phi).forEach(function(cat){ (phi[cat]||[]).forEach(function(e){ var dd=e&&e.d?orEntryWait(e):null; if(dd!=null&&dd>0) inHold.push(e.n+' ('+orEntryDate(e)+')'); }); });
+    if(inHold.length){ rows.push(['amber','\u23F3','<b>Harvest interval running</b> \u2014 not safe to pick yet: '+esc(inHold.join(', '))+'.']); }
+    else { rows.push(['green','\u2713','<b>All blocks are clear to pick</b> \u2014 no harvest interval still running.']); }
   }catch(e){}
   if(!rows.length) return '';
   var body=rows.map(function(r){ return '<div class="or-arow"><div class="or-adot '+r[0]+'">'+r[1]+'</div><div class="or-atext">'+r[2]+'</div></div>'; }).join('');
@@ -68154,8 +68613,8 @@ function orRenderCompare(elId){
 
 /* ---------- spray tab ---------- */
 function orGrpHead(cat){return '<div class="or-grp"><div class="or-gic '+cat+'">'+OR_CATS[cat].ic+'</div><div class="or-gnm">'+OR_CATS[cat].nm+'</div></div>';}
-function orSprayRow(x,m){var d=x.phi[m];var chip=d===0?'<span class="or-cc ok">Clear now</span>':'<span class="or-cc due">'+d+'-day wait</span>';return '<div class="or-lrow" role="button" tabindex="0" style="cursor:pointer" onclick="orSprayTap(\''+String(x.id).replace(/[^A-Za-z0-9_\-]/g,'')+'\')"><div class="or-lic">'+x.ic+'</div><div class="or-lmid"><div class="or-lt">'+x.t+'</div><div class="or-ls">'+x.s+'</div></div><div class="or-lr">'+chip+'</div></div>';}
-function orPhiRow(b,m){var clear=m==='local';return '<div class="or-lrow"><div class="or-lic">'+(clear?'\u2705':'\uD83D\uDCC5')+'</div><div class="or-lmid"><div class="or-lt">'+b.n+'</div><div class="or-ls">Last spray: '+b.last+'</div></div><div class="or-lr"><div style="font-size:13px;font-weight:800;color:'+(clear?'var(--gm)':'var(--t1)')+'">'+b.d[m]+'</div><div style="font-size:11px;color:var(--t3)">safe to pick</div></div></div>';}
+function orSprayRow(x,m){var d=orPhiDays(x.phi);var chip=d===0?'<span class="or-cc ok">Clear now</span>':'<span class="or-cc due">'+d+'-day wait</span>';return '<div class="or-lrow" role="button" tabindex="0" style="cursor:pointer" onclick="orSprayTap(\''+String(x.id).replace(/[^A-Za-z0-9_\-]/g,'')+'\')"><div class="or-lic">'+x.ic+'</div><div class="or-lmid"><div class="or-lt">'+x.t+'</div><div class="or-ls">'+x.s+'</div></div><div class="or-lr">'+chip+'</div></div>';}
+function orPhiRow(b,m){var clear=m==='local';return '<div class="or-lrow"><div class="or-lic">'+(clear?'\u2705':'\uD83D\uDCC5')+'</div><div class="or-lmid"><div class="or-lt">'+b.n+'</div><div class="or-ls">Last spray: '+b.last+'</div></div><div class="or-lr"><div style="font-size:13px;font-weight:800;color:'+(clear?'var(--gm)':'var(--t1)')+'">'+esc(orEntryDate(b)||'—')+'</div><div style="font-size:11px;color:var(--t3)">safe to pick</div></div></div>';}
 function orRenderSpray(m){
   fixEnsureIds();
   ST_FRUIT.market=m||ST_FRUIT.market||'eu';
@@ -68497,7 +68956,7 @@ function orP3Ensure(){
 /* Audit readiness v2 — crop-aware weighted checklist derived from block crop + sprays + markets */
 var OR_AUDIT_REQ = [
   {k:'spray',    w:25, label:'Spray records up to date',       short:'Spray',    d:'every application logged for this block',      act:'Log a spray'},
-  {k:'phi',      w:25, label:'Safe-to-pick honoured',          short:'PHI',      d:'no picking inside an export waiting period',   act:'Review holds'},
+  {k:'phi',      w:25, label:'Safe-to-pick honoured',          short:'PHI',      d:'no picking inside a harvest interval',         act:'Review holds'},
   {k:'pest',     w:20, label:'Pest status clear or actioned',  short:'Pest',     d:'no open quarantine-pest alert for this crop',  act:'Resolve alert'},
   {k:'docs',     w:15, label:'Required documents on file',     short:'Docs',     d:'a document attached to this block',            act:'Attach'},
   {k:'training', w:15, label:'Operator training current',      short:'Training', d:'your spray operators hold valid certificates', act:'Add certificate'}
@@ -68514,7 +68973,7 @@ function orBlockAuditScore(b){
   var items=OR_AUDIT_REQ.map(function(r){
     var applies, done;
     if(r.k==='spray'){ applies=sprays; done=orBlockHasSprayRec(b); }
-    else if(r.k==='phi'){ applies=sprays&&exporting; done=applies?(function(){ try{ return orBlockClearance(b).clearAll; }catch(e){ return true; } })():false; }
+    else if(r.k==='phi'){ applies=sprays; /* the law binds every sprayed block, not only exporters */ done=applies?(function(){ try{ return orBlockClearance(b).clearAll; }catch(e){ return true; } })():false; }
     else if(r.k==='pest'){ applies=exporting&&pests.length>0; done=applies?!orBlockPestOpen(b):false; }
     else if(r.k==='docs'){ applies=true; done=!!(b.docs&&b.docs.length); }
     else { applies=sprays; done=applies?orTrainingOk():false; }
@@ -68984,14 +69443,20 @@ function orOpenSprayForm(editId){
     '<div class="or-fg2"><div class="or-frow"><label class="or-flbl">Water volume <span class="or-fh">optional</span></label><input class="or-finp" id="or-sp-water" placeholder="500 l/ha"></div><div class="or-frow"><label class="or-flbl">Wind <span class="or-fh">optional</span></label><input class="or-finp" id="or-sp-wind" placeholder="SW 6 mph"></div></div>'+
     '<div class="or-fg2"><div class="or-frow"><label class="or-flbl">What for? <span class="or-fh">optional</span></label><input class="or-finp" id="or-sp-for" placeholder="e.g. codling moth, apple scab"></div><div class="or-frow"><label class="or-flbl">Date sprayed</label><input class="or-finp" id="or-sp-date" type="date"></div></div>'+
     '<div class="or-fg2"><div class="or-frow"><label class="or-flbl">Time sprayed</label><input class="or-finp" id="or-sp-time" type="time"></div><div class="or-frow"><label class="or-flbl">Who sprayed it? <span class="or-fh">optional</span></label><input class="or-finp" id="or-sp-by" placeholder="name of the operator"></div></div>'+
-    '<div class="or-fg2"><div class="or-frow"><label class="or-flbl">Days to wait (PHI)</label><input class="or-finp" id="or-sp-phi" type="number" value="14"></div><div class="or-frow"><label class="or-flbl">Cost <span class="or-fh">optional — posts to expenses</span></label><input class="or-finp" id="or-sp-cost" inputmode="decimal" placeholder="£ 0"></div></div>'+
+    '<div class="or-fg2"><div class="or-frow"><label class="or-flbl">Harvest interval (days) <span class="or-fh">from the label</span></label><input class="or-finp" id="or-sp-phi" type="number" min="0" value="14"></div><div class="or-frow"><label class="or-flbl">Cost <span class="or-fh">optional — posts to expenses</span></label><input class="or-finp" id="or-sp-cost" inputmode="decimal" placeholder="£ 0"></div></div>'+
+    nxHTML({kind:'orchard', edit:!!editId,
+      cat:(function(){ var b0=(ST_FRUIT.blocks||[]).filter(function(b){ return !b.plan && !b.removed; })[0]; return b0?b0.cat:''; })(),
+      date:function(){ return (($('or-sp-date')||{}).value)||''; }, reg:function(){ return (($('or-sp-reg')||{}).value)||''; },
+      crop:function(){ var b=orBlockById((($('or-sp-block')||{}).value)||''); if(!b) return ''; var c=eppoForBlock(b); return c?eppoName(c):String(b.cultivar||'').split(' · ')[0]; }})+
     orAttachField('sp','mix sheet or operator record')+
     '<div style="display:flex;gap:10px;margin-top:8px"><button class="btn-pri" onclick="orSaveSpray()">Save spray</button><button class="btn-sec" onclick="orCloseModal()">Cancel</button></div></div>';
   orModalHTML(h);
   ukProdAttach('or-sp-prod', function(name, act, reg){
     var a=$('or-sp-act'); if(a && !a.value) a.value=act;
     var r=$('or-sp-reg'); if(r && !r.value) r.value=reg;
+    if(!editId) nxCarry(name, {bid:(($('or-sp-block')||{}).value)||null});
   });
+  var _op=$('or-sp-prod'); if(_op && !editId) _op.addEventListener('change', function(){ nxCarry(_op.value, {bid:(($('or-sp-block')||{}).value)||null}); });
   var di=$('or-sp-date'); if(di&&!di.value) di.value=new Date().toISOString().split('T')[0];
   if(editId) orSprayEditFill(editId);
 }
@@ -69004,20 +69469,21 @@ function orSaveSpray(){
   var act=g('or-sp-act'), reg=g('or-sp-reg'), rate=g('or-sp-rate'), batch=g('or-sp-batch'),
       cert=g('or-sp-cert'), water=g('or-sp-water'), wind=g('or-sp-wind'),
       atime=g('or-sp-time'), by=g('or-sp-by')||(window.FARM&&FARM.owner)||'';
+  var nx=nxRead(); if(nx.err){ toast(nx.err,'error'); return; }
   var dt=new Date($('or-sp-date').value||new Date()); var cat=b.cat;
   ST_FRUIT.sprayDiary[cat]=ST_FRUIT.sprayDiary[cat]||[];
-  ST_FRUIT.sprayDiary[cat].unshift({id:'os'+Date.now().toString(36),ic:'\uD83E\uDDEA',t:prod+(forx?' — for '+forx:''),s:b.name+' · '+orFmtDM(dt)+' · '+(forx||'spray'),phi:{eu:days,uk:days,us:Math.max(0,days-7),local:days},bid:b.id,product:prod,forx:forx,dateISO:dt.toISOString().slice(0,10),att:orAttachTake('sp'),
+  ST_FRUIT.sprayDiary[cat].unshift({id:'os'+Date.now().toString(36),ic:'\uD83E\uDDEA',t:prod+(forx?' — for '+forx:''),s:b.name+' · '+orFmtDM(dt)+' · '+(forx||'spray'),phi:orPhiObj(days),bid:b.id,product:prod,forx:forx,dateISO:dt.toISOString().slice(0,10),att:orAttachTake('sp'),
     reg:reg||undefined,rate:rate||undefined,batch:batch||undefined,cert:cert||undefined,by:by||undefined,
-    act:act||undefined,water:water||undefined,wind:wind||undefined,time:atime||undefined});
-  ST_FRUIT.phi[cat]=ST_FRUIT.phi[cat]||[];
-  var safe={eu:orFmtDM(orAddDays(dt,days)),uk:orFmtDM(orAddDays(dt,days)),us:orFmtDM(orAddDays(dt,Math.max(0,days-7))),local:orFmtDM(orAddDays(dt,days))};
-  var ex=ST_FRUIT.phi[cat].filter(function(r){return r.n.indexOf(b.name)===0;})[0];
-  if(ex){ ex.last=prod+' · '+orFmtDM(dt); ex.d=safe; } else ST_FRUIT.phi[cat].unshift({n:b.name+' ('+b.cultivar.split(' · ')[0]+')',last:prod+' · '+orFmtDM(dt),d:safe});
+    act:act||undefined,water:water||undefined,wind:wind||undefined,time:atime||undefined,
+    bbch:nx.bbch||undefined,method:nx.method||undefined,buffer:nx.buffer||undefined,eamu:nx.eamu||undefined});
+  /* Rebuilt from the diary so the block takes the LATEST of its sprays' dates. */
+  orRebuildPhi();
+  var pe=orBlockPhiEntry(b), safeOn=orEntryDate(pe)||orFmtDM(orAddDays(dt,days));
   if(cost>0 && typeof queueOrSave==='function'){
     queueOrSave({date:orFmtDM(dt)+' '+dt.getFullYear(),desc:prod+' — '+b.name,cat:'Crop Protection',type:'expense',amt:cost,method:'Bank Debit'});
   }
   orSave(); orRenderSpray(ST_FRUIT.market); orCloseModal();
-  orToast('Spray logged \u2713 Safe to pick for EU: '+safe.eu+(cost>0?' · '+_curSym()+_grpInt(Math.round(cost))+' to expenses':''));
+  orToast('Spray logged \u2713 '+b.name+' safe to pick from '+safeOn+(cost>0?' · '+_curSym()+_grpInt(Math.round(cost))+' to expenses':''));
 }
 function orOpenPickForm(){
   OR_MODAL_CTX={type:'pickform'};
@@ -69135,13 +69601,13 @@ function orSaveBlock(){
   var id='f'+(Date.now().toString(36));
   var b;
   if(style==='veg'){
-    b={id:id,cat:'veg',icon:icon,name:name,cultivar:crop.replace(/^.*\u2014\s*/,''),plant:($('or-f-year')||{}).value||'\u2014',pickFrom:'\u2014',cycle:'1 of 1',ha:ha,status:'New',statusTag:'blue',tons:orValNum('or-f-yield'),grade:80,unit:'tonne',margin:0,days:90,docs:[]};
+    b={id:id,cat:'veg',icon:icon,name:name,cultivar:crop.replace(/\s*—\s*/,' · '),plant:($('or-f-year')||{}).value||'\u2014',pickFrom:'\u2014',cycle:'1 of 1',ha:ha,status:'New',statusTag:'blue',tons:orValNum('or-f-yield'),grade:80,unit:'tonne',margin:0,days:90,docs:[]};
   } else {
     var yr=parseInt(($('or-f-year')||{}).value,10)||new Date().getFullYear();
     var age=Math.max(0,new Date().getFullYear()-yr);
     var ck=orParseCartonKg(prof.sold); var cval=$('or-f-carton')?$('or-f-carton').value:''; if(cval==='custom') cval=orValNum('or-f-carton-custom'); var cartonKg=parseFloat(cval)||ck||15;
     var bearing=age>=3;
-    b={id:id,cat:cat,icon:icon,name:name,cultivar:crop.replace(/^.*\u2014\s*/,''),root:($('or-f-root')||{}).value||'',plant:yr,age:age,ha:ha,
+    b={id:id,cat:cat,icon:icon,name:name,cultivar:crop.replace(/\s*—\s*/,' · '),root:($('or-f-root')||{}).value||'',plant:yr,age:age,ha:ha,
        trees:orValNum('or-f-trees')||0,space:orValNum('or-f-space')||undefined,status:bearing?'Bearing':(age>=1?'Not bearing':'Just planted'),statusTag:bearing?'green':'gray',
        tons:bearing?orValNum('or-f-yield'):0,exp:bearing?70:0,cartonKg:(cat==='berry'?0:cartonKg),unit:(cat==='berry'?'kg':undefined),
        margin:0,estab:($('or-f-estab')||{}).value||'\u2014',estabYr:yr,writeoff:0,perUnit:0,unitWord:(style==='berry'?'bush':'tree'),
@@ -69262,7 +69728,7 @@ function orExportAudit(){
   var certRows=['gap','siza','ppecb','phytclean'].filter(function(k){return C[k];}).map(function(k){var c=C[k];return orRowHtml([c.title,c.status,(c.expiry||'\u2014'),((c.docs&&c.docs.length)||0)+' file(s)']);}).join('');
   var pestRows=Object.keys(C).filter(function(k){return C[k].type==='pest';}).map(function(k){var c=C[k];return orRowHtml([c.title,c.status,(c.log||''),((c.checks&&c.checks.length)||0)+' check(s)']);}).join('');
   var sprayRows='';
-  OR_CAT_ORDER.forEach(function(cat){ (ST_FRUIT.sprayDiary[cat]||[]).forEach(function(x){ sprayRows+=orRowHtml([(OR_CATS[cat]?OR_CATS[cat].nm:cat),x.t,x.s,'EU '+x.phi.eu+'d / UK '+x.phi.uk+'d / Local '+(x.phi.local||x.phi.uk||x.phi.eu||0)+'d']); }); });
+  OR_CAT_ORDER.forEach(function(cat){ (ST_FRUIT.sprayDiary[cat]||[]).forEach(function(x){ sprayRows+=orRowHtml([(OR_CATS[cat]?OR_CATS[cat].nm:cat),x.t,x.s,'Harvest interval '+orPhiDays(x.phi)+' days']); }); });
   var otherRows=['water','operators','diesel'].filter(function(k){return C[k];}).map(function(k){var c=C[k];return orRowHtml([c.title,c.status,(c.log||c.expiry||'\u2014'),((c.docs&&c.docs.length)||0)+' file(s)']);}).join('');
   var html='<h1>Orchard Compliance &amp; Audit Pack</h1><div class="meta">'+orFarmName()+' \u00b7 generated '+(new Date().toLocaleDateString('en-GB'))+'</div>'+
     '<h2>Certificates &amp; audits</h2><table><thead><tr><th>Item</th><th>Status</th><th>Expiry</th><th>Documents</th></tr></thead><tbody>'+(certRows||orRowHtml(['\u2014','','','']))+'</tbody></table>'+
@@ -69880,17 +70346,33 @@ function aiDocTable(doc, spec){
   return {y:y, gaps:gaps, minor:minor};
 }
 
+/* The citation for the farm's own nation (U1). Only the spray record has an NI variant. */
+function aiRegIsNI(){ try{ var r=(typeof ukRegion==='function')?ukRegion():((window.ST&&(ST.region||ST.province))||''); return /northern ireland/i.test(String(r)); }catch(e){ return false; } }
+function aiRegLaw(cfg){ return (cfg&&cfg.lawNI&&aiRegIsNI())?cfg.lawNI:cfg.law; }
+function aiRegFoot(cfg,lang){ var f=(cfg&&cfg.footNI&&aiRegIsNI())?cfg.footNI:cfg.foot; return f[lang]||f.en; }
+/* Northern Ireland's record carries the crop as an EPPO code: one more column there,
+   marked as a statutory gap when it is missing. GB records keep their layout. */
+function aiRegCols(kind, cfg){
+  if(kind!=='spray' || !aiRegIsNI()) return cfg.cols;
+  var out=[];
+  cfg.cols.forEach(function(c){ out.push(c); if(c.k==='variety') out.push({k:'eppo',label:'EPPO',w:9,gap:'dot'}); });
+  return out;
+}
 var AI_REG={
   spray:{
     /* Was "Spray & Agricultural Remedy Record", with a footer about producing "records
        of agricultural remedies to the responsible authority" - Act 36 of 1947 wording,
        ported from the South African build. A British inspector says plant protection
-       product. GB citation only: Northern Ireland runs its own version of this record
-       (MAPP, EPPO and BBCH mandatory from 1 Jan 2026) and gets its own line once U1 is
-       territory-aware - not a guessed one. */
+       product. Territory-aware (U1, signed off 23 Sep 2026): a farm whose nation in
+       Settings is Northern Ireland gets lawNI/footNI - there the duty is SR 2011/295
+       reg 18 (GB: SI 2011/2131 reg 19), with Implementing Reg (EU) 2023/564 applying
+       under the Windsor Framework (MAPP, EPPO and BBCH from 1 Jan 2026; produce within
+       10 working days on request, Art 4). */
     title:{en:'Plant Protection Product Record'},
     law:'Article 67(1), Regulation (EC) 1107/2009  ·  Plant Protection Products Regulations 2011, reg 19  ·  Red Tractor CR.EC.8.b',
     foot:{en:'Keep for at least three years (Article 67(1); Red Tractor CR.EC.8.c) and produce to the competent authority on request.'},
+    lawNI:'Article 67(1), Regulation (EC) 1107/2009 and Implementing Regulation (EU) 2023/564, as they apply in Northern Ireland  ·  Plant Protection Products Regulations (Northern Ireland) 2011, reg 18  ·  Red Tractor CR.EC.8.b',
+    footNI:{en:'Keep for at least three years (Article 67(1)) and give to DAERA within 10 working days of a request (Regulation (EU) 2023/564, Article 4). From 1 January 2027 DAERA needs it as a machine-readable file: use Download CSV, since a PDF does not count. Contains EPPO Codes (www.eppo.int).'},
     sig:{en:'Certified correct — responsible person'},
     /* One line per application. Active ingredient is a property of the PRODUCT, so it
        is printed once per product on the "Products used" page rather than truncated on
@@ -69900,9 +70382,11 @@ var AI_REG={
        gap:'dash' - a Red Tractor condition, or something neither standard requires. */
     cols:[{k:'date',label:'Date',w:16,gap:'dot'},{k:'time',label:'Time',w:8,gap:'dot'},
           {k:'land',label:'Land',w:18,gap:'dot'},{k:'variety',label:'Crop / variety',w:22,gap:'dot'},
+          {k:'stage',label:'BBCH',w:7},
           {k:'ha',label:'Ha',w:6,gap:'dot'},{k:'product',label:'Product',w:22,gap:'dot'},
           {k:'target',label:'Target',w:16,gap:'dash'},{k:'rate',label:'Rate',w:11,gap:'dot'},
           {k:'water',label:'Water',w:11,gap:'dash'},{k:'wind',label:'Wind',w:12,gap:'dash'},
+          {k:'buffer',label:'Buffer',w:13,gap:'dash'},
           {k:'batch',label:'Batch',w:12,gap:'dash'},{k:'by',label:'Operator',w:14,gap:'dash'},
           {k:'cert',label:'Cert',w:11,gap:'dash'},{k:'phi',label:'Interval',w:11,gap:'dash'}]
   },
@@ -69989,7 +70473,9 @@ function aiRegRows(kind, from, to){
       .filter(function(i){ return i && _regInRange(i.date, from, to); })
       .map(function(i){
         var l=(typeof cropLandById==='function')?cropLandById(i.land):null;
-        return { _iso:i.date, _ppp:!NOT_PPP[i.kind], _kind:i.kind||'',
+        var lc=landCrop(l, i.date);
+        return { _iso:i.date, _ppp:!NOT_PPP[i.kind], _kind:i.kind||'', _src:i, _land:l,
+                 stage:i.bbch||'', buffer:nxBufShort(i.buffer), eamu:i.eamu||'', eppo:lc?eppoForLand(l):'',
                  date:aiRcDate(i.date), time:i.time||'',
                  land:l?(l.name||''):'', variety:landCrop(l, i.date), ha:l&&l.area?String(l.area):'',
                  product:i.product||'', act:i.act||'', reg:i.reg||'', target:i.targetFor||'',
@@ -70003,16 +70489,14 @@ function aiRegRows(kind, from, to){
         (sd[cat]||[]).forEach(function(x){
           if(!x || !_regInRange(x.dateISO, from, to)) return;
           var b=(typeof orBlockById==='function')?orBlockById(x.bid):null;
-          /* INTERIM, until U2 collapses the four markets into one. The farmer types ONE
-             wait period; uk and eu both hold it verbatim. For a British register the uk
-             figure is the typed one. */
-          var ph=x.phi||{}; var d=(ph.uk||ph.eu||0);
+          var d=orPhiDays(x.phi);   /* one harvest interval (U2 B) */
           /* A block is perennial - its cultivar does not change until it is replanted -
              so the variety holds for any spray since the year it went in. */
           var bv='';
           if(b && b.cultivar && !(b.plant && x.dateISO && String(x.dateISO).slice(0,4) < String(b.plant)))
             bv=String(b.cultivar).split(' · ')[0];
-          rows.push({ _iso:x.dateISO, _ppp:true, _kind:'',
+          rows.push({ _iso:x.dateISO, _ppp:true, _kind:'', _src:x, _block:b, _cat:cat,
+                      stage:x.bbch||'', buffer:nxBufShort(x.buffer), eamu:x.eamu||'', eppo:bv?eppoForBlock(b):'',
                       date:aiRcDate(x.dateISO), time:x.time||'',
                       land:b?(b.name||''):((String(x.s||'').split(' · ')[0])||''),
                       variety:bv, ha:(b&&b.ha)?String(b.ha):'',
@@ -70070,11 +70554,13 @@ function aiRegBuild(kind, opts){
       d.text(cfg.title[lang], g.M, 30);
       d.setFont('helvetica','normal'); d.setFontSize(7.5);
       d.setTextColor(AI_DOC.GREY[0],AI_DOC.GREY[1],AI_DOC.GREY[2]);
-      d.text(cfg.law, g.M, 35);
-      return 43;
+      /* The NI line is longer than one landscape line: wrap it, and push the table down. */
+      var lawL=d.splitTextToSize(aiAnsi(aiRegLaw(cfg)), g.W-2*g.M);
+      d.text(lawL, g.M, 35);
+      return 43+(lawL.length-1)*3.4;
     };
 
-    var res=aiDocTable(doc, {geo:g, cols:cfg.cols, rows:rows, header:header, landscape:true});
+    var res=aiDocTable(doc, {geo:g, cols:aiRegCols(kind, cfg), rows:rows, header:header, landscape:true});
     var _y=res.y+4;
     /* Totals: an inspector reads the summary before the rows. */
     /* A total that silently excludes rows with the figure missing understates the
@@ -70142,10 +70628,11 @@ function aiRegBuild(kind, opts){
       rows.slice().reverse().forEach(function(r){          /* oldest first: the latest entry wins */
         var p=String(r.product||'').trim(); if(!p) return;
         var k=p.toLowerCase();
-        if(!seen[k]){ seen[k]={p:p, act:'', reg:'', n:0}; plist.push(seen[k]); }
+        if(!seen[k]){ seen[k]={p:p, act:'', reg:'', eamu:'', n:0}; plist.push(seen[k]); }
         seen[k].n++;
         if(r.act) seen[k].act=r.act;
         if(r.reg) seen[k].reg=r.reg;
+        if(r.eamu && (' '+seen[k].eamu+',').indexOf(' '+r.eamu+',')<0) seen[k].eamu=(seen[k].eamu?seen[k].eamu+', ':'')+r.eamu;
       });
       plist.sort(function(a,b){ return a.p.toLowerCase()<b.p.toLowerCase()?-1:1; });
       plist.forEach(function(e){ e.n=String(e.n); });
@@ -70169,8 +70656,8 @@ function aiRegBuild(kind, opts){
         var lres=aiDocTable(doc, {geo:g, landscape:true, rows:plist,
           header:section('Products used in this period',
             'Each product once, with its active ingredient as recorded on this farm (Red Tractor CR.EC.8.b). Not a statutory particular under Article 67(1).'),
-          cols:[{k:'p',label:'Product',w:34},{k:'act',label:'Active ingredient',w:62,gap:'dash'},
-                {k:'reg',label:'Reg no.',w:18,gap:'dash'},{k:'n',label:'Applications',w:14}]});
+          cols:[{k:'p',label:'Product',w:34},{k:'act',label:'Active ingredient',w:56,gap:'dash'},
+                {k:'reg',label:'Reg no.',w:16,gap:'dash'},{k:'eamu',label:'EAMU (off-label)',w:22,opt:true},{k:'n',label:'Applications',w:14}]});
         ly=lres.y;
       }
       if(other.length){
@@ -70216,7 +70703,7 @@ function aiRegBuild(kind, opts){
                 {k:'entry',label:'Entry',w:46,opt:true},{k:'what',label:'What changed',w:46,opt:true},{k:'by',label:'By',w:16,opt:true}]});
       }
     }
-    aiDocFoot(doc, cfg.foot[lang], g);
+    aiDocFoot(doc, aiRegFoot(cfg,lang), g);
     return {doc:doc, rows:rows.length, gaps:res.gaps};
   });
 }
@@ -70630,8 +71117,8 @@ function aiPaySlipShare(id, label){
 
 /* ---------- range picker ---------- */
 var REG_STATE={kind:'spray'};
-function regOpen(kind){
-  REG_STATE.kind=kind;
+function regOpen(kind, mode){
+  REG_STATE.kind=kind; REG_STATE.mode=mode||'pdf';
   var bg=$('reg-bg'); if(!bg) return;
   bg.classList.add('on'); regRender();
 }
@@ -70652,16 +71139,53 @@ function regRender(){
   var d=_regDefaults();
   var n=aiRegRows(REG_STATE.kind, d.from, d.to).length;
   b.innerHTML=
-    '<div class="rc-sub" style="margin-top:0">'+esc(cfg.law)+'</div>'+
+    '<div class="rc-sub" style="margin-top:0">'+esc(aiRegLaw(cfg))+'</div>'+
     '<div class="rc-grid">'+
       '<div><label class="rc-k" style="display:block;margin-bottom:4px">From</label><input type="date" id="reg-from" value="'+d.from+'" onchange="regCount()"></div>'+
       '<div><label class="rc-k" style="display:block;margin-bottom:4px">To</label><input type="date" id="reg-to" value="'+d.to+'" onchange="regCount()"></div>'+
     '</div>'+
     '<div class="rc-note" id="reg-count" style="margin-top:0">'+n+' record'+(n===1?'':'s')+' in this period.</div>'+
     '<div class="rc-acts" style="margin-top:14px">'+
-      '<button class="ls-mv-save" style="margin:0" onclick="regGo()">Generate register</button>'+
+      ((REG_STATE.kind==='spray' && REG_STATE.mode==='csv')
+        ? '<button class="ls-mv-save" style="margin:0" onclick="regCsv()">Download CSV</button><button class="rc-btn" onclick="regGo()">PDF instead</button>'
+        : '<button class="ls-mv-save" style="margin:0" onclick="regGo()">Generate register</button>'+(REG_STATE.kind==='spray'?'<button class="rc-btn" onclick="regCsv()">CSV</button>':''))+
       '<button class="rc-btn" onclick="regClose()">Cancel</button>'+
-    '</div>';
+    '</div>'+
+    (REG_STATE.kind==='spray'?'<div class="rc-note" style="margin-top:10px">The CSV follows DAERA’s spray-record template column for column, then adds active ingredient, target, harvest interval, batch, certificate and EAMU. From 1 January 2027 Northern Ireland needs the record in this form; a PDF does not count.</div>':'');
+}
+/* Before the file: a crop with no code yet (grass, "vegetables", a block whose species was
+   lost) is asked here, once, and remembered on the field or block (D3). */
+function regCsv(){
+  var f=($('reg-from')||{}).value, t=($('reg-to')||{}).value;
+  var need=aiSprayCsvNeeds(aiRegRows('spray', f, t));
+  if(!need.length) return regCsvGo(f,t);
+  REG_STATE.need=need; REG_STATE.f=f; REG_STATE.t=t;
+  var b=$('reg-body'); if(!b) return;
+  b.innerHTML='<div class="rc-sub" style="margin-top:0"><b>'+need.length+' crop'+(need.length===1?'':'s')+' need'+(need.length===1?'s':'')+' a crop code</b> — Northern Ireland records the crop as an EPPO code. Asked once; the field or block remembers it.</div>'+
+    need.map(function(n,i){
+      return '<div style="margin:10px 0"><label class="rc-k" style="display:block;margin-bottom:4px">'+esc(n.name)+(n.crop?' · '+esc(n.crop):'')+'</label>'+
+        '<div style="display:flex;gap:8px;flex-wrap:wrap"><select id="reg-eppo-'+i+'" style="flex:2;min-width:180px">'+eppoOptions('')+'</select>'+
+        '<input id="reg-fref-'+i+'" placeholder="field number (optional)" value="'+esc(((n.land||n.block)||{}).fieldRef||'')+'" style="flex:1;min-width:120px"></div></div>';
+    }).join('')+
+    '<div class="rc-note">'+esc(EPPO_CREDIT)+'. Field number: the DAERA field number or RPA parcel ID; the field name is used without it.</div>'+
+    '<div class="rc-acts" style="margin-top:14px"><button class="ls-mv-save" style="margin:0" onclick="regCsvSave()">Save and download</button>'+
+    '<button class="rc-btn" onclick="regCsvGo(REG_STATE.f,REG_STATE.t)">Download without</button><button class="rc-btn" onclick="regRender()">Back</button></div>';
+}
+function regCsvSave(){
+  var crop=false, orch=false;
+  (REG_STATE.need||[]).forEach(function(n,i){
+    var code=(($('reg-eppo-'+i)||{}).value)||'', fr=String((($('reg-fref-'+i)||{}).value)||'').trim();
+    if(n.land){ if(code){ n.land.eppo=code; n.land.eppoCrop=n.land.crop; } if(fr) n.land.fieldRef=fr; if(code||fr) crop=true; }
+    if(n.block){ if(code) n.block.eppo=code; if(fr) n.block.fieldRef=fr; if(code||fr) orch=true; }
+  });
+  if(crop) dataChanged('crop');
+  if(orch) orSave();
+  regCsvGo(REG_STATE.f, REG_STATE.t);
+}
+function regCsvGo(f,t){
+  var n=aiSprayCsvFile(f,t);
+  regClose();
+  toast(n+' application'+(n===1?'':'s')+' downloaded as CSV','success');
 }
 function regCount(){
   var f=($('reg-from')||{}).value, t=($('reg-to')||{}).value;
@@ -70689,8 +71213,9 @@ function aiRegCard(kind){
   return '<div class="card" style="margin-bottom:16px">'+
     '<div class="rc-hd">Compliance register</div>'+
     '<div class="rc-pend">'+
-      '<div><b>'+esc(cfg.title[lang])+'</b><br><span style="font-size:11.5px;color:var(--t4)">'+esc(cfg.law)+' · '+n+' record'+(n===1?'':'s')+' this season'+extra+'</span></div>'+
-      '<button class="rc-fix" onclick="regOpen(\''+kind+'\')">Generate PDF</button>'+
+      '<div><b>'+esc(cfg.title[lang])+'</b><br><span style="font-size:11.5px;color:var(--t4)">'+esc(aiRegLaw(cfg))+' · '+n+' record'+(n===1?'':'s')+' this season'+extra+'</span></div>'+
+      '<div style="display:flex;gap:6px;flex-wrap:wrap">'+(kind==='spray'?'<button class="rc-fix" onclick="regOpen(\'spray\',\'csv\')">Download CSV</button>':'')+
+      '<button class="rc-fix" onclick="regOpen(\''+kind+'\')">Generate PDF</button></div>'+
     '</div></div>';
 }
 
