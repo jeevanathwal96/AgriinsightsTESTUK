@@ -33,7 +33,7 @@
 <script defer src="vendor/chart.umd.js"></script>
 <!-- AgriInsights backend: Supabase client + data service (load order matters) -->
 <script src="vendor/supabase.js"></script>
-<script src="ai-data-uk.js?v=uk117"></script>
+<script src="ai-data-uk.js?v=uk118"></script>
 <script src="ai-auth-uk.js?v=uk104"></script>
 <link rel="stylesheet" href="fonts.css"/>
 <style>
@@ -12861,6 +12861,137 @@ function cropRenderInputs(){
     cropCta('cost','\uD83E\uDDFE','Crop Input Cost Report (HMRC)','Seed, fertiliser, chemicals & fuel \u2014 allowable business expenses and red diesel litres.','openCropInputCostReport()')+
     '<div onclick="cropSetTab(\'overview\')" style="margin-top:8px;font-size:12px;font-weight:700;color:var(--gm);cursor:pointer">All crop reports on the Overview \u2192</div>';
 }
+/* ===================== UK plant protection products =========================
+   Red Tractor CR.EC.8.b asks for the product name AND its active ingredient.
+   Article 67(1) does NOT — its five particulars are the product name, the time
+   and dose, the area and the crop — so the active ingredient is an assurance
+   requirement and never a legal one. Nothing here may be presented as
+   authority: everything below SUGGESTS, and the farmer's own words are what
+   saves.
+
+   Two sources, in this order:
+
+     1. THIS FARM'S OWN RECORD — the most recent application of the same
+        product. No separate store to drift: correcting a typo on an old row
+        corrects every future suggestion, and the farm's own spelling wins.
+     2. The bundled HSE Pesticides Register snapshot (data/uk-ppp.json, Crown
+        copyright, Open Government Licence v3). Reached only for a product this
+        farm has never used.
+
+   Why a bundled snapshot rather than a live lookup: secure.pesticides.gov.uk
+   sends no CORS headers, so a browser cannot read it — and a snapshot keeps
+   WITHDRAWN products, which the live register by definition cannot. A 2019
+   record needs the product that existed in 2019. tools/fetch-hse-pestreg.py
+   refreshes it and MERGES rather than replaces. HSE's own disclaimer: "no legal
+   responsibility is accepted for any errors, omissions or misleading
+   statements."                                                              */
+var UK_PPP=null, _ukPppReq=null;
+function ukPppLoad(){
+  if(UK_PPP) return Promise.resolve(UK_PPP);
+  if(_ukPppReq) return _ukPppReq;
+  _ukPppReq = fetch('data/uk-ppp.json').then(function(r){ return r.ok?r.json():[]; })
+    .then(function(j){ UK_PPP=Array.isArray(j)?j:[]; return UK_PPP; })
+    .catch(function(){ UK_PPP=[]; return UK_PPP; });  /* offline: the farm's own memory still works */
+  return _ukPppReq;
+}
+function _ukTok(s){ return String(s||'').toLowerCase().split(/[^a-z0-9]+/).filter(Boolean); }
+
+/* Every word typed must START some word of the product name. Plain prefix or substring
+   matching is not enough: a farmer types "Hallmark Zeon" and HSE registers it as
+   "Hallmark with Zeon Technology", which neither test finds. */
+function ukProdSearch(q, n){
+  var qt=_ukTok(q); if(!qt.length || !UK_PPP) return [];
+  var out=[];
+  for(var i=0;i<UK_PPP.length && out.length<400;i++){
+    var pt=_ukTok(UK_PPP[i][0]), ok=true;
+    for(var a=0;a<qt.length;a++){
+      var found=false;
+      for(var b=0;b<pt.length;b++){ if(pt[b].indexOf(qt[a])===0){ found=true; break; } }
+      if(!found){ ok=false; break; }
+    }
+    if(ok) out.push(UK_PPP[i]);
+  }
+  var lq=String(q||'').trim().toLowerCase();
+  out.sort(function(a,b){
+    var ae=(a[0].toLowerCase()===lq)?0:1, be=(b[0].toLowerCase()===lq)?0:1;
+    if(ae!==be) return ae-be;                                  /* an exact name first */
+    var aw=(a[3]==='W')?1:0, bw=(b[3]==='W')?1:0;
+    if(aw!==bw) return aw-bw;                                  /* withdrawn last */
+    if(a[0].length!==b[0].length) return a[0].length-b[0].length;
+    return a[0].toLowerCase()<b[0].toLowerCase()?-1:1;
+  });
+  return out.slice(0, n||8);
+}
+
+/* What this farm itself last recorded for this product, across both capture paths. */
+function ukProdRecall(name){
+  var q=String(name||'').trim().toLowerCase(); if(!q) return null;
+  var best=null;
+  var take=function(d,act,reg){ if(!best || String(d||'')>String(best.d||'')) best={d:d,act:act,reg:reg}; };
+  ((window.ST_CROP&&ST_CROP.inputs)||[]).forEach(function(i){
+    if(String(i.product||'').trim().toLowerCase()===q) take(i.date,i.act,i.reg);
+  });
+  var sd=(window.ST_FRUIT&&ST_FRUIT.sprayDiary)||{};
+  Object.keys(sd).forEach(function(c){ (sd[c]||[]).forEach(function(x){
+    if(x && String(x.product||'').trim().toLowerCase()===q) take(x.dateISO,x.act,x.reg);
+  }); });
+  return (best && (best.act || best.reg)) ? best : null;
+}
+
+/* Wire a product-name input to the suggestions. fill(name, act, reg) writes the other
+   fields. Everything it writes stays editable — the farmer overrules the list. */
+function ukProdAttach(inputId, fill){
+  var el=document.getElementById(inputId); if(!el || el._ukWired) return; el._ukWired=1;
+  ukPppLoad();
+  var par=el.parentNode; if(!par) return;
+  try{ if(getComputedStyle(par).position==='static') par.style.position='relative'; }catch(e){}
+  var box=document.createElement('div');
+  box.style.cssText='position:absolute;z-index:60;left:0;right:0;top:100%;background:#fff;border:1px solid var(--br);'+
+    'border-radius:10px;box-shadow:0 8px 24px rgba(16,30,22,.13);max-height:232px;overflow:auto;display:none';
+  par.appendChild(box);
+  var close=function(){ box.style.display='none'; };
+  var draw=function(){
+    var q=el.value||'';
+    if(q.trim().length<2){ close(); return; }
+    var mem=ukProdRecall(q), hits=ukProdSearch(q,8), h='';
+    if(mem){
+      h+='<div class="ukp-row" data-n="'+esc(q.trim())+'" data-a="'+esc(mem.act||'')+'" data-r="'+esc(mem.reg||'')+'"'+
+         ' style="padding:8px 11px;cursor:pointer;border-bottom:1px solid var(--bg)">'+
+         '<div style="font-size:13px;font-weight:700">'+esc(q.trim())+'</div>'+
+         '<div style="font-size:11px;color:var(--t3)">'+(mem.act?esc(mem.act)+' · ':'')+'what you recorded last time</div></div>';
+    }
+    hits.forEach(function(p){
+      if(mem && p[0].trim().toLowerCase()===q.trim().toLowerCase()) return;
+      var tag = p[3]==='W' ? '<span style="font-size:10px;color:#A85C24;font-weight:700"> · no longer authorised</span>'
+              : p[3]==='N' ? '<span style="font-size:10px;color:var(--t4);font-weight:700"> · NI only</span>'
+              : p[3]==='G' ? '<span style="font-size:10px;color:var(--t4);font-weight:700"> · GB only</span>' : '';
+      h+='<div class="ukp-row" data-n="'+esc(p[0])+'" data-a="'+esc(p[2])+'" data-r="'+(p[1]?'MAPP '+esc(p[1]):'')+'"'+
+         ' style="padding:8px 11px;cursor:pointer;border-bottom:1px solid var(--bg)">'+
+         '<div style="font-size:13px;font-weight:600">'+esc(p[0])+tag+'</div>'+
+         '<div style="font-size:11px;color:var(--t3)">'+esc(p[2])+(p[1]?' · MAPP '+esc(p[1]):'')+'</div></div>';
+    });
+    if(!h){ close(); return; }
+    /* A condition of re-using the register, not decoration: OGL v3 requires the
+       acknowledgement wherever the information appears. */
+    if(hits.length) h+='<div style="padding:6px 11px;font-size:10px;line-height:1.35;color:var(--t4);background:var(--bg)">'+
+      'Contains public sector information published by the Health and Safety Executive and licensed under the Open Government Licence. '+
+      'Check the label: the list can be out of date.</div>';
+    box.innerHTML=h; box.style.display='block';
+  };
+  el.addEventListener('input', function(){ ukPppLoad().then(draw); });
+  el.addEventListener('focus', function(){ ukPppLoad().then(draw); });
+  /* mousedown, not click: blur fires first and would close the box before a click landed. */
+  box.addEventListener('mousedown', function(ev){
+    var t=ev.target, r=null;
+    while(t && t!==box){ if(t.className==='ukp-row'){ r=t; break; } t=t.parentNode; }
+    if(!r) return;
+    ev.preventDefault();
+    el.value=r.getAttribute('data-n'); close();
+    if(fill) fill(r.getAttribute('data-n'), r.getAttribute('data-a')||'', r.getAttribute('data-r')||'');
+  });
+  el.addEventListener('blur', function(){ setTimeout(close,180); });
+}
+
 /* Pre-fill the log modal from the most recent application \u2014 most spray programs repeat the
    same product/rate a few weeks apart. Land, batch and date stay fresh for the farmer to set. */
 function cropRepeatLastInput(){
@@ -12871,6 +13002,7 @@ function cropRepeatLastInput(){
   var set=function(id,v){ var e=document.getElementById(id); if(e&&v!=null&&v!=='') e.value=v; };
   set('ci-product', last.product); set('ci-reg', last.reg); set('ci-kind', last.kind);
   set('ci-rate', last.rate); set('ci-by', last.by); set('ci-cert', last.operatorCert);
+  set('ci-act', last.act); set('ci-water', last.water); set('ci-wind', last.wind);
   set('ci-for', last.targetFor); set('ci-phi', last.phi); set('ci-cost', last.costPerHa);
   Array.prototype.forEach.call(document.querySelectorAll('.ci-land-cb'), function(c){ c.checked=false; });
   var cb=document.querySelector('.ci-land-cb[value="'+last.land+'"]'); if(cb) cb.checked=true;
@@ -13351,20 +13483,31 @@ function cropLogInput(){
   var body=''+
     '<div style="margin-bottom:12px">'+lbl('Which lands? — tick all it went on')+'<div id="ci-lands">'+landBoxes+'</div><div style="font-size:11px;color:var(--t4);margin-top:2px">Cost is per hectare — one record per land, each with the same batch, operator &amp; wait period.</div></div>'+
     '<div style="margin-bottom:12px">'+lbl('What did you apply?')+'<input id="ci-product" placeholder="e.g. Karate Zeon" style="'+inpCss+'"></div>'+
-    '<div style="display:flex;gap:10px;margin-bottom:12px"><div style="flex:1">'+lbl('Registration no.',true)+'<input id="ci-reg" placeholder="L7723 (on the label)" style="'+inpCss+'"></div>'+
+    '<div style="display:flex;gap:10px;margin-bottom:12px"><div style="flex:1">'+lbl('Registration no.',true)+'<input id="ci-reg" placeholder="MAPP 12629 (on the label)" style="'+inpCss+'"></div>'+
       '<div style="flex:1">'+lbl('Type')+'<select id="ci-kind" style="'+inpCss+'">'+kindOpts+'</select></div></div>'+
+    /* Red Tractor CR.EC.8.b wants the chemical alongside the trade name. Filled by picking
+       a product above; still typeable, because a product withdrawn years ago is on no list. */
+    '<div style="margin-bottom:12px">'+lbl('Active ingredient',true)+'<input id="ci-act" placeholder="filled in when you pick a product" style="'+inpCss+'"></div>'+
     '<div style="display:flex;gap:10px;margin-bottom:12px"><div style="flex:1">'+lbl('Rate used',true)+'<input id="ci-rate" placeholder="200 ml/ha" style="'+inpCss+'"></div>'+
       '<div style="flex:1">'+lbl('Batch no.',true)+'<input id="ci-batch" placeholder="on the container" style="'+inpCss+'"></div></div>'+
     '<div style="display:flex;gap:10px;margin-bottom:12px"><div style="flex:1">'+lbl('Applied by',true)+'<input id="ci-by" placeholder="who applied it" style="'+inpCss+'"></div>'+
-      '<div style="flex:1">'+lbl('Spray licence',true)+'<input id="ci-cert" placeholder="e.g. P2" style="'+inpCss+'"></div></div>'+
+      '<div style="flex:1">'+lbl('Spray licence',true)+'<input id="ci-cert" placeholder="e.g. PA1/PA2" style="'+inpCss+'"></div></div>'+
     '<div style="margin-bottom:12px">'+lbl('What for?',true)+'<input id="ci-for" placeholder="e.g. stalk borer, ryegrass, leaf rust" style="'+inpCss+'"></div>'+
+    '<div style="display:flex;gap:10px;margin-bottom:12px"><div style="flex:1">'+lbl('Water volume',true)+'<input id="ci-water" placeholder="200 l/ha" style="'+inpCss+'"></div>'+
+      '<div style="flex:1">'+lbl('Wind',true)+'<input id="ci-wind" placeholder="SW 6 mph" style="'+inpCss+'"></div></div>'+
     '<div style="display:flex;gap:10px;margin-bottom:12px"><div style="flex:1">'+lbl('Days to wait (PHI)',true)+'<input id="ci-phi" type="number" placeholder="0" style="'+inpCss+'"></div>'+
       '<div style="flex:1">'+lbl('Cost per hectare',true)+'<input id="ci-cost" type="number" inputmode="decimal" placeholder="£ 0" style="'+inpCss+'"></div></div>'+
-    '<div style="margin-bottom:4px">'+lbl('Date applied')+'<input id="ci-date" type="date" value="'+today+'" style="'+inpCss+'"></div>'+
+    '<div style="display:flex;gap:10px;margin-bottom:4px"><div style="flex:1">'+lbl('Date applied')+'<input id="ci-date" type="date" value="'+today+'" style="'+inpCss+'"></div>'+
+      /* One of Article 67(1)'s five particulars, and the app has never asked for it. */
+      '<div style="flex:1">'+lbl('Time applied')+'<input id="ci-time" type="time" style="'+inpCss+'"></div></div>'+
     '<div style="background:#eef4ec;border:1px solid #cfe3d4;border-radius:9px;padding:9px 11px;font-size:11px;color:#3a5a45;line-height:1.5;margin-top:12px">The wait time sets the <b>safe-to-harvest date</b> automatically \u2014 and this one entry becomes your HMRC cost line and your Red Tractor spray record.</div>';
   var footer='<button class="crop-formbtn" style="flex:1" onclick="cropInputFormSave()">Save application</button>'+
     '<button onclick="cropCloseModal()" style="width:110px;border:1px solid var(--br);border-radius:10px;background:#fff;color:var(--t3);font-size:13.5px;font-weight:600;font-family:inherit;cursor:pointer">Cancel</button>';
   cropModalShell('Log an application', body, footer);
+  ukProdAttach('ci-product', function(name, act, reg){
+    var a=$('ci-act'); if(a && !a.value) a.value=act;
+    var r=$('ci-reg'); if(r && !r.value) r.value=reg;
+  });
 }
 function cropInputFormSave(){
   var landIds=Array.prototype.slice.call(document.querySelectorAll('.ci-land-cb:checked')).map(function(c){return parseInt(c.value,10);}).filter(function(x){return !isNaN(x);});
@@ -13375,6 +13518,8 @@ function cropInputFormSave(){
   var cost=parseFloat(($('ci-cost')||{}).value)||0;
   var date=(($('ci-date')||{}).value)||LS_TODAY.toISOString().slice(0,10);
   var forVal=(($('ci-for')||{}).value||'').trim();
+  var act=(($('ci-act')||{}).value||'').trim(), water=(($('ci-water')||{}).value||'').trim(),
+      wind=(($('ci-wind')||{}).value||'').trim(), atime=(($('ci-time')||{}).value||'').trim();
   var reg=(($('ci-reg')||{}).value||'').trim(), rate=(($('ci-rate')||{}).value||'').trim(),
       batch=(($('ci-batch')||{}).value||'').trim(), by=(($('ci-by')||{}).value||'').trim()||(FARM.owner||''),
       cert=(($('ci-cert')||{}).value||'').trim();
@@ -13387,7 +13532,8 @@ function cropInputFormSave(){
   landIds.forEach(function(lid){
     var l=cropLandById(lid); if(!l) return; n++;
     ST_CROP.inputs.unshift({ id:cropNextId(ST_CROP.inputs,'ci'), land:l.id, date:date, product:product,
-      reg:reg, kind:kind, rate:rate, batch:batch, by:by, operatorCert:cert, targetFor:forVal, phi:phi, costPerHa:cost });
+      reg:reg, kind:kind, rate:rate, batch:batch, by:by, operatorCert:cert, targetFor:forVal, phi:phi, costPerHa:cost,
+      act:act||undefined, water:water||undefined, wind:wind||undefined, time:atime||undefined });
     var total = cost * (l.area||0);
     if(total>0){
       totalAll+=total;
@@ -68521,21 +68667,39 @@ function orOpenSprayForm(){
   OR_MODAL_CTX={type:'sprayform'};
   var h='<div class="or-mhd"><div class="or-mic">\uD83E\uDDEA</div><div><div class="or-mt">Log a spray</div><div class="or-ms">Updates your spray diary, your audit pack and the safe-to-pick dates.</div></div><button class="or-mx" onclick="orCloseModal()">\u00d7</button></div><div class="or-mbd">'+
     '<div class="or-frow"><label class="or-flbl">Which block?</label><select class="or-finp" id="or-sp-block">'+orBlockOptions(function(b){return !b.plan;})+'</select></div>'+
-    '<div class="or-frow"><label class="or-flbl">What did you spray?</label><input class="or-finp" id="or-sp-prod" placeholder="e.g. Delegate"></div>'+
+    '<div class="or-frow"><label class="or-flbl">What did you spray?</label><input class="or-finp" id="or-sp-prod" placeholder="start typing a product name"></div>'+
+    '<div class="or-frow"><label class="or-flbl">Active ingredient <span class="or-fh">optional</span></label><input class="or-finp" id="or-sp-act" placeholder="filled in when you pick a product"></div>'+
+    /* An orchard spray could never carry these three. They are on the field-crop form and
+       on the register, so every orchard row printed "not recorded" for all three: same
+       farm, same law, half a record. */
+    '<div class="or-fg2"><div class="or-frow"><label class="or-flbl">Registration no. <span class="or-fh">optional</span></label><input class="or-finp" id="or-sp-reg" placeholder="MAPP 17984"></div><div class="or-frow"><label class="or-flbl">Rate used <span class="or-fh">optional</span></label><input class="or-finp" id="or-sp-rate" placeholder="50 ml/100L"></div></div>'+
+    '<div class="or-fg2"><div class="or-frow"><label class="or-flbl">Batch no. <span class="or-fh">optional</span></label><input class="or-finp" id="or-sp-batch" placeholder="on the container"></div><div class="or-frow"><label class="or-flbl">Spray licence <span class="or-fh">optional</span></label><input class="or-finp" id="or-sp-cert" placeholder="e.g. PA3"></div></div>'+
+    '<div class="or-fg2"><div class="or-frow"><label class="or-flbl">Water volume <span class="or-fh">optional</span></label><input class="or-finp" id="or-sp-water" placeholder="500 l/ha"></div><div class="or-frow"><label class="or-flbl">Wind <span class="or-fh">optional</span></label><input class="or-finp" id="or-sp-wind" placeholder="SW 6 mph"></div></div>'+
     '<div class="or-fg2"><div class="or-frow"><label class="or-flbl">What for? <span class="or-fh">optional</span></label><input class="or-finp" id="or-sp-for" placeholder="e.g. False Codling Moth"></div><div class="or-frow"><label class="or-flbl">Date sprayed</label><input class="or-finp" id="or-sp-date" type="date"></div></div>'+
+    '<div class="or-fg2"><div class="or-frow"><label class="or-flbl">Time sprayed</label><input class="or-finp" id="or-sp-time" type="time"></div><div class="or-frow"><label class="or-flbl">Who sprayed it? <span class="or-fh">optional</span></label><input class="or-finp" id="or-sp-by" placeholder="name of the operator"></div></div>'+
     '<div class="or-fg2"><div class="or-frow"><label class="or-flbl">Days to wait (PHI)</label><input class="or-finp" id="or-sp-phi" type="number" value="14"></div><div class="or-frow"><label class="or-flbl">Cost <span class="or-fh">optional — posts to expenses</span></label><input class="or-finp" id="or-sp-cost" inputmode="decimal" placeholder="£ 0"></div></div>'+
     orAttachField('sp','mix sheet or operator record')+
     '<div style="display:flex;gap:10px;margin-top:8px"><button class="btn-pri" onclick="orSaveSpray()">Save spray</button><button class="btn-sec" onclick="orCloseModal()">Cancel</button></div></div>';
   orModalHTML(h);
+  ukProdAttach('or-sp-prod', function(name, act, reg){
+    var a=$('or-sp-act'); if(a && !a.value) a.value=act;
+    var r=$('or-sp-reg'); if(r && !r.value) r.value=reg;
+  });
   var di=$('or-sp-date'); if(di&&!di.value) di.value=new Date().toISOString().split('T')[0];
 }
 function orSaveSpray(){
   var b=orBlockById($('or-sp-block').value); if(!b) return;
   var prod=$('or-sp-prod').value||'Spray'; var forx=$('or-sp-for').value; var days=parseInt($('or-sp-phi').value,10); if(isNaN(days))days=14;
   var cost=parseFloat($('or-sp-cost').value)||0;
+  var g=function(id){ var e=$(id); return e?String(e.value||'').trim():''; };
+  var act=g('or-sp-act'), reg=g('or-sp-reg'), rate=g('or-sp-rate'), batch=g('or-sp-batch'),
+      cert=g('or-sp-cert'), water=g('or-sp-water'), wind=g('or-sp-wind'),
+      atime=g('or-sp-time'), by=g('or-sp-by')||(window.FARM&&FARM.owner)||'';
   var dt=new Date($('or-sp-date').value||new Date()); var cat=b.cat;
   ST_FRUIT.sprayDiary[cat]=ST_FRUIT.sprayDiary[cat]||[];
-  ST_FRUIT.sprayDiary[cat].unshift({id:'os'+Date.now().toString(36),ic:'\uD83E\uDDEA',t:prod+(forx?' — for '+forx:''),s:b.name+' · '+orFmtDM(dt)+' · '+(forx||'spray'),phi:{eu:days,uk:days,us:Math.max(0,days-7),local:days},bid:b.id,product:prod,forx:forx,dateISO:dt.toISOString().slice(0,10),att:orAttachTake('sp')});
+  ST_FRUIT.sprayDiary[cat].unshift({id:'os'+Date.now().toString(36),ic:'\uD83E\uDDEA',t:prod+(forx?' — for '+forx:''),s:b.name+' · '+orFmtDM(dt)+' · '+(forx||'spray'),phi:{eu:days,uk:days,us:Math.max(0,days-7),local:days},bid:b.id,product:prod,forx:forx,dateISO:dt.toISOString().slice(0,10),att:orAttachTake('sp'),
+    reg:reg||undefined,rate:rate||undefined,batch:batch||undefined,cert:cert||undefined,by:by||undefined,
+    act:act||undefined,water:water||undefined,wind:wind||undefined,time:atime||undefined});
   ST_FRUIT.phi[cat]=ST_FRUIT.phi[cat]||[];
   var safe={eu:orFmtDM(orAddDays(dt,days)),uk:orFmtDM(orAddDays(dt,days)),us:orFmtDM(orAddDays(dt,Math.max(0,days-7))),local:orFmtDM(orAddDays(dt,days))};
   var ex=ST_FRUIT.phi[cat].filter(function(r){return r.n.indexOf(b.name)===0;})[0];
@@ -69319,7 +69483,7 @@ function aiDocGeo(landscape){
    {y, gaps} — gaps being particulars that were asked for and not recorded. */
 function aiDocTable(doc, spec){
   var g=spec.geo, cols=spec.cols, rows=spec.rows||[];
-  var x0=g.M, rowH=spec.rowH||6.4, bottom=g.H-24, gaps=0, y=0;
+  var x0=g.M, rowH=spec.rowH||6.4, bottom=g.H-24, gaps=0, minor=0, y=0;
   var totalW=cols.reduce(function(a,c){ return a+c.w; },0);
   var scale=(g.W-(g.M*2))/totalW;
 
@@ -69337,7 +69501,8 @@ function aiDocTable(doc, spec){
   };
   var newPage=function(first){
     if(!first) doc.addPage(spec.landscape?'a4':'a4', spec.landscape?'landscape':'portrait');
-    y = spec.header ? spec.header(doc) : g.M;
+    /* startY lets a second table begin part-way down a page that already holds one. */
+    y = (first && spec.startY) ? spec.startY : (spec.header ? spec.header(doc) : g.M);
     drawHead();
   };
   newPage(true);
@@ -69349,6 +69514,17 @@ function aiDocTable(doc, spec){
       var v=r[c.k];
       var blank=(v==null || String(v).trim()==='');
       doc.setFontSize(7);
+      if(blank && c.gap){
+        /* Opt-in, spray record only. "not recorded" at 6.2pt truncated to "not recor.."
+           in the narrow Time and Ha columns - the same fault as a truncated active
+           ingredient - and a hundred of them turned the record into an error log.
+           A filled dot is one of Article 67(1)'s five particulars; a light dash is a
+           scheme condition. Different SHAPES, so a mono printer still tells them apart. */
+        if(c.gap==='dot'){ gaps++; doc.setFillColor(176,98,36); doc.circle(x+1.1, y-1.0, 0.9, 'F'); }
+        else { minor++; doc.setFont('helvetica','normal'); doc.setFontSize(7.2);
+               doc.setTextColor(186,192,188); doc.text('\u2013', x, y); }
+        x+=c.w*scale; return;
+      }
       if(blank && c.opt){
         /* Legitimately empty — a beef treatment has no milk withdrawal. */
         doc.setFont('helvetica','normal');
@@ -69389,20 +69565,34 @@ function aiDocTable(doc, spec){
     doc.text('No records in this period.', x0, y+2);
     y+=8;
   }
-  return {y:y, gaps:gaps};
+  return {y:y, gaps:gaps, minor:minor};
 }
 
 var AI_REG={
   spray:{
-    title:{en:'Spray & Agricultural Remedy Record'},
-    law:'Plant Protection Products Regulations 2011',
-    foot:{en:'Records of agricultural remedies must be produced to the responsible authority on request.'},
-    sig:{en:'Certified correct \u2014 responsible person'},
-    cols:[{k:'date',label:'Date',w:13},{k:'land',label:'Land',w:16},{k:'ha',label:'Ha',w:8},
-          {k:'product',label:'Product',w:20},{k:'reg',label:'Reg no.',w:12},
-          {k:'target',label:'Target',w:16},{k:'rate',label:'Rate',w:12},
-          {k:'batch',label:'Batch',w:13},{k:'by',label:'Operator',w:15},
-          {k:'cert',label:'Cert',w:14},{k:'phi',label:'PHI',w:11}]
+    /* Was "Spray & Agricultural Remedy Record", with a footer about producing "records
+       of agricultural remedies to the responsible authority" - Act 36 of 1947 wording,
+       ported from the South African build. A British inspector says plant protection
+       product. GB citation only: Northern Ireland runs its own version of this record
+       (MAPP, EPPO and BBCH mandatory from 1 Jan 2026) and gets its own line once U1 is
+       territory-aware - not a guessed one. */
+    title:{en:'Plant Protection Product Record'},
+    law:'Article 67(1), Regulation (EC) 1107/2009  ·  Plant Protection Products Regulations 2011, reg 19  ·  Red Tractor CR.EC.8.b',
+    foot:{en:'Keep for at least three years (Article 67(1); Red Tractor CR.EC.8.c) and produce to the competent authority on request.'},
+    sig:{en:'Certified correct — responsible person'},
+    /* One line per application. Active ingredient is a property of the PRODUCT, so it
+       is printed once per product on the "Products used" page rather than truncated on
+       every line - at 16 columns a single row cut "fluxapyroxad + mefentrifluconazole"
+       to "fluxapyroxad + mef..".
+       gap:'dot'  - one of Article 67(1)'s five: product, time, dose, area, crop.
+       gap:'dash' - a Red Tractor condition, or something neither standard requires. */
+    cols:[{k:'date',label:'Date',w:16,gap:'dot'},{k:'time',label:'Time',w:8,gap:'dot'},
+          {k:'land',label:'Land',w:18,gap:'dot'},{k:'variety',label:'Crop / variety',w:22,gap:'dot'},
+          {k:'ha',label:'Ha',w:6,gap:'dot'},{k:'product',label:'Product',w:22,gap:'dot'},
+          {k:'target',label:'Target',w:16,gap:'dash'},{k:'rate',label:'Rate',w:11,gap:'dot'},
+          {k:'water',label:'Water',w:11,gap:'dash'},{k:'wind',label:'Wind',w:12,gap:'dash'},
+          {k:'batch',label:'Batch',w:12,gap:'dash'},{k:'by',label:'Operator',w:14,gap:'dash'},
+          {k:'cert',label:'Cert',w:11,gap:'dash'},{k:'phi',label:'Interval',w:11,gap:'dash'}]
   },
   diesel:{
     title:{en:'Diesel Logbook'},
@@ -69455,18 +69645,43 @@ function aiRegRows(kind, from, to){
                  qual: i.qualifies ? 'Yes' : 'No \u2014 road/private' };
       });
   }
-  if(kind==='spray'){
-    /* Field-crop applications AND orchard sprays. The register read ST_CROP.inputs alone,
-       so a farm with orchards printed a fraction of its record. Nothing in law splits
-       them: Article 67(1) says "the crop where the plant protection product was used"
-       without distinction, and Red Tractor CR.EC.8.a covers seed, in-field, pre-harvest
-       store and post-harvest alike. One record, both sources, one sort. */
+  if(kind==='spray' || kind==='spray-other'){
+    /* Field-crop applications AND orchard sprays: nothing in law splits them. Article
+       67(1) says "the crop where the plant protection product was used" without
+       distinction, and Red Tractor CR.EC.8.a covers in-field and orchard alike.
+
+       'spray' is the plant protection product record. 'spray-other' is what the same
+       capture form also holds - fertiliser and certified seed - which are NOT plant
+       protection products, have no active ingredient, and printed on a PPP record as
+       a permanent false gap. They are not dropped: the document prints them in their
+       own section. An input with no kind at all is treated as a PPP, because on a
+       statutory record the safe error is to include it. */
+    var NOT_PPP={seed:1, fertiliser:1};
+
+    /* The crop is one of Article 67(1)'s five particulars, and it is DERIVED here from
+       the land's current planting. A field is replanted every year, so deriving it for
+       an old application would print this year's crop on last year's spray - a wrong
+       statutory particular, which is worse than a missing one. Only an application
+       from 90 days before drilling (pre-drilling glyphosate) to harvest gets it;
+       anything older prints as a gap for the farmer to fill. */
+    var landCrop=function(l, iso){
+      if(!l || !l.crop || !iso) return '';
+      var pl=l.planted||'', hv=l.harvest||'';
+      if(pl){ var d0=new Date(pl+'T00:00:00'); d0.setDate(d0.getDate()-90);
+              if(iso < d0.toISOString().slice(0,10)) return ''; }
+      if(hv && iso > hv) return '';
+      return l.crop+(l.cultivar?(' '+String(l.cultivar).split(' · ')[0]):'');
+    };
+
     var rows=((window.ST_CROP&&ST_CROP.inputs)||[])
-      .filter(function(i){ return _regInRange(i.date, from, to); })
+      .filter(function(i){ return i && _regInRange(i.date, from, to); })
       .map(function(i){
         var l=(typeof cropLandById==='function')?cropLandById(i.land):null;
-        return { _iso:i.date, date:aiRcDate(i.date), land:l?(l.name||''):'', ha:l&&l.area?String(l.area):'',
-                 product:i.product||'', reg:i.reg||'', target:i.targetFor||'', rate:i.rate||'',
+        return { _iso:i.date, _ppp:!NOT_PPP[i.kind], _kind:i.kind||'',
+                 date:aiRcDate(i.date), time:i.time||'',
+                 land:l?(l.name||''):'', variety:landCrop(l, i.date), ha:l&&l.area?String(l.area):'',
+                 product:i.product||'', act:i.act||'', reg:i.reg||'', target:i.targetFor||'',
+                 rate:i.rate||'', water:i.water||'', wind:i.wind||'',
                  batch:i.batch||'', by:i.by||'', cert:i.operatorCert||'',
                  phi:i.phi?(i.phi+' d'):'' };
       });
@@ -69477,19 +69692,28 @@ function aiRegRows(kind, from, to){
           if(!x || !_regInRange(x.dateISO, from, to)) return;
           var b=(typeof orBlockById==='function')?orBlockById(x.bid):null;
           /* INTERIM, until U2 collapses the four markets into one. The farmer types ONE
-             wait period; uk and eu both hold it verbatim, us is that minus seven and local
-             is hard-coded 0. For a British register the uk figure is the typed one. */
+             wait period; uk and eu both hold it verbatim. For a British register the uk
+             figure is the typed one. */
           var ph=x.phi||{}; var d=(ph.uk||ph.eu||0);
-          rows.push({ _iso:x.dateISO, date:aiRcDate(x.dateISO),
-                      land:b?(b.name||''):((String(x.s||'').split(' \u00b7 ')[0])||''),
-                      ha:(b&&b.ha)?String(b.ha):'',
-                      product:x.product||'', reg:x.reg||'', target:x.forx||'',
-                      rate:x.rate||'', batch:x.batch||'', by:x.by||'', cert:x.cert||'',
+          /* A block is perennial - its cultivar does not change until it is replanted -
+             so the variety holds for any spray since the year it went in. */
+          var bv='';
+          if(b && b.cultivar && !(b.plant && x.dateISO && String(x.dateISO).slice(0,4) < String(b.plant)))
+            bv=String(b.cultivar).split(' · ')[0];
+          rows.push({ _iso:x.dateISO, _ppp:true, _kind:'',
+                      date:aiRcDate(x.dateISO), time:x.time||'',
+                      land:b?(b.name||''):((String(x.s||'').split(' · ')[0])||''),
+                      variety:bv, ha:(b&&b.ha)?String(b.ha):'',
+                      product:x.product||'', act:x.act||'', reg:x.reg||'', target:x.forx||'',
+                      rate:x.rate||'', water:x.water||'', wind:x.wind||'',
+                      batch:x.batch||'', by:x.by||'', cert:x.cert||'',
                       phi:d?(d+' d'):'' });
         });
       });
     }catch(e){}
-    return rows.sort(function(a,b){ return (a._iso||'')<(b._iso||'')?1:-1; });
+    var want=(kind==='spray');
+    return rows.filter(function(r){ return r._ppp===want; })
+               .sort(function(a,b){ return (a._iso||'')<(b._iso||'')?1:-1; });
   }
   return ((window.ST_LS&&ST_LS.treatments)||[])
     .filter(function(t){ return _regInRange(t.date, from, to); })
@@ -69571,20 +69795,96 @@ function aiRegBuild(kind, opts){
     doc.text(_tot, g.M, _y);
     /* A register is certified by the responsible person; without that signature it
        is a printout rather than a record. */
-    var _sy=_y+(res.gaps?18:13);
+    var _sy=_y+((res.gaps||res.minor)?18:13);
     doc.setDrawColor(30,50,40); doc.setLineWidth(0.4);
     doc.line(g.M, _sy, g.M+70, _sy); doc.line(g.M+90, _sy, g.M+150, _sy);
     doc.setFont('helvetica','normal'); doc.setFontSize(7);
     doc.setTextColor(AI_DOC.GREY[0],AI_DOC.GREY[1],AI_DOC.GREY[2]);
     doc.text(cfg.sig[lang], g.M, _sy+4);
     doc.text(('Date'), g.M+90, _sy+4);
-    if(res.gaps){
+    if(kind==='spray' && (res.gaps||res.minor)){
+      /* Words, not the marks themselves: jsPDF's Helvetica has no dot glyph, and aiAnsi
+         turns an unknown one into "?". */
+      doc.setFont('helvetica','bold'); doc.setFontSize(7.5);
+      doc.setTextColor(150,80,28);
+      doc.text('(!) '+res.gaps+' particular'+(res.gaps===1?'':'s')+' required by Article 67(1) not recorded, shown as a dot'+
+               (res.minor?('  \u00b7  '+res.minor+' Red Tractor condition'+(res.minor===1?'':'s')+' not recorded, shown as a dash'):''),
+               g.M, _y+5);
+    }
+    if(res.gaps && kind!=='spray'){
       doc.setFont('helvetica','bold'); doc.setFontSize(7.5);
       doc.setTextColor(150,80,28);
       /* '(!)' as well as colour: most farm printers are mono, and amber drops to
          mid-grey and stops reading as a warning. */
       doc.text('(!) '+res.gaps+' particular'+(res.gaps===1?'':'s')+' not recorded \u2014 shown in the rows above, not left blank.',
                g.M, _y+5);
+    }
+    if(kind==='spray'){
+      /* ---- Products used. Red Tractor CR.EC.8.b asks for the product name AND its
+         active ingredient. That is a fact about the product, not the application - a
+         farm runs hundreds of applications across a dozen products - so each is named
+         once, in a column wide enough for the whole chemical name. What prints is the
+         farmer's own entry, latest wins. It is never filled from the bundled HSE list:
+         the form offers that list, the record carries what the farmer confirmed. */
+      var seen={}, plist=[];
+      rows.slice().reverse().forEach(function(r){          /* oldest first: the latest entry wins */
+        var p=String(r.product||'').trim(); if(!p) return;
+        var k=p.toLowerCase();
+        if(!seen[k]){ seen[k]={p:p, act:'', reg:'', n:0}; plist.push(seen[k]); }
+        seen[k].n++;
+        if(r.act) seen[k].act=r.act;
+        if(r.reg) seen[k].reg=r.reg;
+      });
+      plist.sort(function(a,b){ return a.p.toLowerCase()<b.p.toLowerCase()?-1:1; });
+      plist.forEach(function(e){ e.n=String(e.n); });
+      var other=aiRegRows('spray-other', opts.from, opts.to);
+
+      var section=function(title, note){
+        return function(d){
+          var yy=header(d);
+          d.setFont('helvetica','bold'); d.setFontSize(9.5);
+          d.setTextColor(AI_DOC.INK[0],AI_DOC.INK[1],AI_DOC.INK[2]);
+          d.text(title, g.M, yy);
+          d.setFont('helvetica','normal'); d.setFontSize(7.2);
+          d.setTextColor(AI_DOC.GREY[0],AI_DOC.GREY[1],AI_DOC.GREY[2]);
+          d.text(note, g.M, yy+4.6);
+          return yy+13;
+        };
+      };
+      var ly=null;
+      if(plist.length){
+        doc.addPage('a4','landscape');
+        var lres=aiDocTable(doc, {geo:g, landscape:true, rows:plist,
+          header:section('Products used in this period',
+            'Each product once, with its active ingredient as recorded on this farm (Red Tractor CR.EC.8.b). Not a statutory particular under Article 67(1).'),
+          cols:[{k:'p',label:'Product',w:34},{k:'act',label:'Active ingredient',w:62,gap:'dash'},
+                {k:'reg',label:'Reg no.',w:18,gap:'dash'},{k:'n',label:'Applications',w:14}]});
+        ly=lres.y;
+      }
+      if(other.length){
+        /* Fertiliser and certified seed come through the same form but are not plant
+           protection products. They are kept - removing them would lose the record -
+           and printed apart so they stop reading as a PPP with a missing chemical. */
+        var startY=null;
+        if(ly!=null && ly+30+other.length*6.4 < g.H-24){
+          doc.setFont('helvetica','bold'); doc.setFontSize(9.5);
+          doc.setTextColor(AI_DOC.INK[0],AI_DOC.INK[1],AI_DOC.INK[2]);
+          doc.text('Other inputs recorded in this period', g.M, ly+8);
+          doc.setFont('helvetica','normal'); doc.setFontSize(7.2);
+          doc.setTextColor(AI_DOC.GREY[0],AI_DOC.GREY[1],AI_DOC.GREY[2]);
+          doc.text('Fertiliser and seed. Not plant protection products, so not part of the record above; listed so nothing entered is left out.', g.M, ly+12.6);
+          startY=ly+21;
+        } else {
+          doc.addPage('a4','landscape');
+        }
+        var ocols=[{k:'date',label:'Date',w:16,opt:true},{k:'land',label:'Land',w:18,opt:true},
+                   {k:'product',label:'Product',w:26,opt:true},{k:'_kind',label:'Type',w:14,opt:true},
+                   {k:'rate',label:'Rate',w:14,opt:true},{k:'batch',label:'Batch',w:14,opt:true},
+                   {k:'by',label:'Applied by',w:18,opt:true}];
+        aiDocTable(doc, {geo:g, landscape:true, rows:other, cols:ocols, startY:startY,
+          header:section('Other inputs recorded in this period',
+            'Fertiliser and seed. Not plant protection products, so not part of the record; listed so nothing entered is left out.')});
+      }
     }
     aiDocFoot(doc, cfg.foot[lang], g);
     return {doc:doc, rows:rows.length, gaps:res.gaps};

@@ -11,7 +11,7 @@
  */
 'use strict';
 
-var APP_VERSION = 'uk-2026-09-22-355';
+var APP_VERSION = 'uk-2026-09-23-356';
 var CACHE = 'agriinsights-uk-' + APP_VERSION;
 
 /* App shell precached on install. The ?v=-suffixed JS is intentionally left to
@@ -22,6 +22,7 @@ var PRECACHE = [
   './fonts.css',
   './vendor/chart.umd.js',
   './vendor/supabase.js',
+  './data/uk-ppp.json',
   /* './Logo.png' was here — an SA-build filename that has never existed in this folder.
      cache.addAll() rejects the whole batch if any one entry 404s, so this single dead
      path could take the entire app-shell precache down with it. */

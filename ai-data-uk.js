@@ -376,6 +376,11 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
   let CAN_CAT_RULES    = false;   /* the category_rules table */
   let CAN_RULE_HITS    = false;
   let CAN_ORCH_ATT     = false;   /* orchard_sprays.att - the mix sheet */   /* tools/uk-category-rules-hits.sql */
+  /* The particulars Red Tractor CR.EC.8.b asks for and Article 67(1)'s time of day.
+     One flag a table: tools/uk-spray-particulars.sql adds each table's columns in a
+     single statement, so they arrive together or not at all. */
+  let CAN_CROP_PARTS   = false;   /* crop_inputs.act/water_vol/wind/applied_time */
+  let CAN_ORCH_PARTS   = false;   /* orchard_sprays + rate/batch/operator_cert too */
   /* ---- what this database actually has, asked once ------------------------
      Ported from SA -438, same reasoning. Every late-added column is gated on a
      CAN_* flag, and each flag cost its own round trip in series on every
@@ -436,7 +441,7 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     ['farms','consent_version'], ['farms','partners'], ['farms','rain_prefs'], ['farms','budget_cat_targets'],
     ['orchard_block_docs','path'], ['transaction_assets','asset_id'], ['livestock_moves','txn_ref'],
     ['category_rules','match_text'], ['category_rules','hits'],
-    ['orchard_sprays','att']
+    ['orchard_sprays','att'], ['crop_inputs','act'], ['orchard_sprays','act']
   ];
 
   async function probeCaps(farmId){
@@ -480,6 +485,12 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
        always captured it and osToDb never sent it, so it lived on one device and was
        dropped on the next load - the column has sat on the table unused. */
     CAN_ORCH_ATT      = keep(CAN_ORCH_ATT,      'orchard_sprays','att');
+    /* Probing one column a table is the whole answer here only because the migration
+       adds each table's columns in one ALTER. PostgREST names just the FIRST unknown
+       column in its error, so a partially-applied migration would otherwise be read
+       as fully applied - which is why these must not be split across migrations. */
+    CAN_CROP_PARTS    = keep(CAN_CROP_PARTS,    'crop_inputs','act');
+    CAN_ORCH_PARTS    = keep(CAN_ORCH_PARTS,    'orchard_sprays','act');
   }
   probeCaps.reset = function(){ _colCache = Object.create(null); _colRpcDead = false; };
   probeCaps.seen  = function(){ return _colCache; };
@@ -2038,8 +2049,10 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
   function landFromDb(r){ var l={ id:_numIf(r.local_id), name:r.name||'', area:Number(r.area)||0, crop:r.crop||'', cultivar:r.cultivar||'', gmo:!!r.gmo, irrigated:!!r.irrigated, planted:r.planted||'', harvest:r.harvest||'', stage:r.stage||'', targetYield:Number(r.target_yield)||0, actualYield:(r.actual_yield!=null)?Number(r.actual_yield):null, inputPerHa:Number(r.input_per_ha)||0, prevCrop:r.prev_crop||'' }; if(r.price) l.price=Number(r.price); if(r.plan_link) l.planId=r.plan_link; return l; }
   function cevToDb(e,fid){ return { farm_id:fid, local_id:String(e.id), land_local_id:(e.land!=null)?String(e.land):null, kind:e.kind||null, event_date:e.date||null, note:e.note||null, tons:(e.tons!=null)?Number(e.tons):null, yield_val:(e.yield!=null)?Number(e.yield):null, cert:e.cert||null }; }
   function cevFromDb(r){ var e={ id:r.local_id, land:_numIf(r.land_local_id), kind:r.kind||'', date:r.event_date||'', note:r.note||'' }; if(r.tons!=null) e.tons=Number(r.tons); if(r.yield_val!=null) e.yield=Number(r.yield_val); if(r.cert) e.cert=r.cert; return e; }
-  function cinToDb(i,fid){ return { farm_id:fid, local_id:String(i.id), land_local_id:(i.land!=null)?String(i.land):null, input_date:i.date||null, product:i.product||null, reg:i.reg||null, kind:i.kind||null, rate:i.rate||null, batch:i.batch||null, by_who:i.by||null, operator_cert:i.operatorCert||null, target_for:i.targetFor||null, phi:(i.phi!=null)?parseInt(i.phi,10):null, cost_per_ha:(i.costPerHa!=null)?Number(i.costPerHa):null }; }
-  function cinFromDb(r){ return { id:r.local_id, land:_numIf(r.land_local_id), date:r.input_date||'', product:r.product||'', reg:r.reg||'', kind:r.kind||'', rate:r.rate||'', batch:r.batch||'', by:r.by_who||'', operatorCert:r.operator_cert||'', targetFor:r.target_for||'', phi:Number(r.phi)||0, costPerHa:Number(r.cost_per_ha)||0 }; }
+  function cinToDb(i,fid){ var row = { farm_id:fid, local_id:String(i.id), land_local_id:(i.land!=null)?String(i.land):null, input_date:i.date||null, product:i.product||null, reg:i.reg||null, kind:i.kind||null, rate:i.rate||null, batch:i.batch||null, by_who:i.by||null, operator_cert:i.operatorCert||null, target_for:i.targetFor||null, phi:(i.phi!=null)?parseInt(i.phi,10):null, cost_per_ha:(i.costPerHa!=null)?Number(i.costPerHa):null };
+    if(CAN_CROP_PARTS){ row.act=i.act||null; row.water_vol=i.water||null; row.wind=i.wind||null; row.applied_time=i.time||null; }
+    return row; }
+  function cinFromDb(r){ return { id:r.local_id, land:_numIf(r.land_local_id), date:r.input_date||'', product:r.product||'', reg:r.reg||'', kind:r.kind||'', rate:r.rate||'', batch:r.batch||'', by:r.by_who||'', operatorCert:r.operator_cert||'', targetFor:r.target_for||'', phi:Number(r.phi)||0, costPerHa:Number(r.cost_per_ha)||0, act:r.act||undefined, water:r.water_vol||undefined, wind:r.wind||undefined, time:r.applied_time||undefined }; }
 
   // ---- crop compliance: relational (Option A) — settings row + areas + children
   // ST_CROP.compliance is one farm-level record: flat scalar settings, tracked{}/
@@ -2177,8 +2190,13 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     /* Never sent: the farmer photographed the mix sheet, it saved locally, and the next
        server load discarded it. The SA build has written this since -411. */
     if(CAN_ORCH_ATT) row.att = s.att || null;
+    /* rate, batch and the operator's certificate were never on this table at all, so
+       every orchard row on the spray register printed "not recorded" for three columns
+       the field-crop rows fill from the same form. */
+    if(CAN_ORCH_PARTS){ row.rate=s.rate||null; row.batch=s.batch||null; row.operator_cert=s.cert||null;
+                        row.act=s.act||null; row.water_vol=s.water||null; row.wind=s.wind||null; row.applied_time=s.time||null; }
     return row; }
-  function osFromDb(r){ return { id:r.local_id, ic:r.icon||'\uD83E\uDDEA', t:r.title||'', s:r.sub||'', phi:{eu:Number(r.phi_eu)||0,uk:Number(r.phi_uk)||0,us:Number(r.phi_us)||0,local:Number(r.phi_local)||0}, bid:r.block_local_id||'', product:r.product||'', reg:r.reg||'', forx:r.target_for||'', by:r.applied_by||'', att:r.att||undefined, dateISO:r.spray_date||'', cropcat:r.cropcat||'' }; }
+  function osFromDb(r){ return { id:r.local_id, ic:r.icon||'\uD83E\uDDEA', t:r.title||'', s:r.sub||'', phi:{eu:Number(r.phi_eu)||0,uk:Number(r.phi_uk)||0,us:Number(r.phi_us)||0,local:Number(r.phi_local)||0}, bid:r.block_local_id||'', product:r.product||'', reg:r.reg||'', forx:r.target_for||'', by:r.applied_by||'', att:r.att||undefined, dateISO:r.spray_date||'', cropcat:r.cropcat||'', rate:r.rate||'', batch:r.batch||'', cert:r.operator_cert||'', act:r.act||undefined, water:r.water_vol||undefined, wind:r.wind||undefined, time:r.applied_time||undefined }; }
   function ohToDb(h,fid){ return { farm_id:fid, local_id:String(h.id), cropcat:h.cat||null, block_local_id:(h.bid!=null&&h.bid!=='')?String(h.bid):null, bins:_n(h.bins), tons:_n(h.tons!=null?h.tons:h.tn), cartons:_n(h.cartons), top_grade_pct:_n(h.grade), sold_to:h.to||null, amount:_n(h.money), pick_date:h.dateISO||null, title:h.t||null, sub:h.s||null, revenue:h.r||null, icon:h.ic||null }; }
   function ohFromDb(r){ return { id:r.local_id, ic:r.icon||'\uD83C\uDF4A', t:r.title||'', s:r.sub||'', r:r.revenue||'\u2014', cat:r.cropcat||'', bid:r.block_local_id||'', tn:Number(r.tons)||0, tons:Number(r.tons)||0, cartons:Number(r.cartons)||0, to:r.sold_to||'', money:Number(r.amount)||0, dateISO:r.pick_date||'' }; }
 
