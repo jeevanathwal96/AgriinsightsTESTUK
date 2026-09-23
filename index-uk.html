@@ -12845,7 +12845,7 @@ function cropRenderInputs(){
     var safeCls = cropInputActive(i)?'st-wd':'st-ok';
     var batch = (i.kind==='fertiliser'||i.kind==='seed') ? (i.batch||'\u2014') : (i.batch?esc(i.batch):'<span class="miss">missing</span>');
     return '<tr><td>'+cropDispDate(i.date)+'</td><td>'+esc(l?l.name:'?')+'</td>'+
-      '<td>'+esc(i.product)+'<br><span style="color:var(--t4);font-size:11px">MAPP '+esc(i.reg||'\u2014')+(i.targetFor?' \u00b7 for '+esc(i.targetFor):'')+'</span></td>'+
+      '<td>'+esc(i.product)+'<br><span style="color:var(--t4);font-size:11px">'+esc(ukRegLabel(i.reg))+(i.targetFor?' \u00b7 for '+esc(i.targetFor):'')+'</span></td>'+
       '<td><span class="crop-tagp '+meta[1]+'">'+meta[0]+'</span></td><td>'+esc(i.rate||'')+'</td><td>'+batch+'</td>'+
       '<td>'+esc(i.by||'')+(i.operatorCert?'<br><span style="color:var(--t4);font-size:11px">'+esc(i.operatorCert)+' cert</span>':'')+'</td>'+
       '<td>'+(i.phi?i.phi+' d':'None')+'</td><td class="'+safeCls+'">'+safe+'</td></tr>';
@@ -12885,6 +12885,14 @@ function cropRenderInputs(){
    refreshes it and MERGES rather than replaces. HSE's own disclaimer: "no legal
    responsibility is accepted for any errors, omissions or misleading
    statements."                                                              */
+/* The registration number as the farmer or the lookup stored it. Screens used to put "MAPP "
+   in front of it, but the lookup and the demo both store "MAPP 19250" already, so the list
+   read "MAPP MAPP 19250". Add the prefix only to a bare number. */
+function ukRegLabel(r){
+  r=String(r==null?'':r).trim();
+  if(!r) return '\u2014';
+  return /^[0-9]+$/.test(r) ? ('MAPP '+r) : r;
+}
 var UK_PPP=null, _ukPppReq=null;
 function ukPppLoad(){
   if(UK_PPP) return Promise.resolve(UK_PPP);
@@ -13482,7 +13490,7 @@ function cropLogInput(){
   var inpCss='width:100%;height:38px;border:1px solid var(--br);border-radius:9px;background:#fff;padding:0 11px;font-size:13.5px;font-family:inherit;box-sizing:border-box';
   var body=''+
     '<div style="margin-bottom:12px">'+lbl('Which lands? — tick all it went on')+'<div id="ci-lands">'+landBoxes+'</div><div style="font-size:11px;color:var(--t4);margin-top:2px">Cost is per hectare — one record per land, each with the same batch, operator &amp; wait period.</div></div>'+
-    '<div style="margin-bottom:12px">'+lbl('What did you apply?')+'<input id="ci-product" placeholder="e.g. Karate Zeon" style="'+inpCss+'"></div>'+
+    '<div style="margin-bottom:12px">'+lbl('What did you apply?')+'<input id="ci-product" placeholder="start typing a product name" style="'+inpCss+'"></div>'+
     '<div style="display:flex;gap:10px;margin-bottom:12px"><div style="flex:1">'+lbl('Registration no.',true)+'<input id="ci-reg" placeholder="MAPP 12629 (on the label)" style="'+inpCss+'"></div>'+
       '<div style="flex:1">'+lbl('Type')+'<select id="ci-kind" style="'+inpCss+'">'+kindOpts+'</select></div></div>'+
     /* Red Tractor CR.EC.8.b wants the chemical alongside the trade name. Filled by picking
@@ -13492,7 +13500,7 @@ function cropLogInput(){
       '<div style="flex:1">'+lbl('Batch no.',true)+'<input id="ci-batch" placeholder="on the container" style="'+inpCss+'"></div></div>'+
     '<div style="display:flex;gap:10px;margin-bottom:12px"><div style="flex:1">'+lbl('Applied by',true)+'<input id="ci-by" placeholder="who applied it" style="'+inpCss+'"></div>'+
       '<div style="flex:1">'+lbl('Spray licence',true)+'<input id="ci-cert" placeholder="e.g. PA1/PA2" style="'+inpCss+'"></div></div>'+
-    '<div style="margin-bottom:12px">'+lbl('What for?',true)+'<input id="ci-for" placeholder="e.g. stalk borer, ryegrass, leaf rust" style="'+inpCss+'"></div>'+
+    '<div style="margin-bottom:12px">'+lbl('What for?',true)+'<input id="ci-for" placeholder="e.g. septoria, blackgrass, aphids" style="'+inpCss+'"></div>'+
     '<div style="display:flex;gap:10px;margin-bottom:12px"><div style="flex:1">'+lbl('Water volume',true)+'<input id="ci-water" placeholder="200 l/ha" style="'+inpCss+'"></div>'+
       '<div style="flex:1">'+lbl('Wind',true)+'<input id="ci-wind" placeholder="SW 6 mph" style="'+inpCss+'"></div></div>'+
     '<div style="display:flex;gap:10px;margin-bottom:12px"><div style="flex:1">'+lbl('Days to wait (PHI)',true)+'<input id="ci-phi" type="number" placeholder="0" style="'+inpCss+'"></div>'+
@@ -13734,7 +13742,7 @@ function openCropSprayReport(){
     var batch=(i.kind==='fertiliser'||i.kind==='seed')?(i.batch||'\u2014'):(i.batch?escTxHtml(i.batch):'<span class="lsr-miss">missing</span>');
     var safe=cropInputActive(i)?('\u23F3 '+cropDispDate(cropInputSafe(i).toISOString().slice(0,10))):(i.phi?'cleared':'\u2014');
     var status=cropInputActive(i)?'<span class="lsr-wd">\u23F3 within PHI</span>':'<span class="lsr-ok">\u2713 clear</span>';
-    return '<tr><td>'+cropDispDate(i.date)+'</td><td>'+escTxHtml(l?l.name:'?')+'</td><td>'+escTxHtml(i.product)+'<br><span style="color:#9ca3af;font-size:11px">MAPP '+escTxHtml(i.reg||'\u2014')+'</span></td><td><span class="lsr-pill '+meta[1].replace('p-','lsr-')+'">'+meta[0]+'</span></td><td>'+escTxHtml(i.rate||'')+'</td><td>'+batch+'</td><td>'+escTxHtml(i.by||'')+(i.operatorCert?' ('+escTxHtml(i.operatorCert)+')':'')+'</td><td>'+(i.phi?i.phi+' d':'None')+'</td><td>'+safe+'</td><td>'+status+'</td></tr>';
+    return '<tr><td>'+cropDispDate(i.date)+'</td><td>'+escTxHtml(l?l.name:'?')+'</td><td>'+escTxHtml(i.product)+'<br><span style="color:#9ca3af;font-size:11px">'+escTxHtml(ukRegLabel(i.reg))+'</span></td><td><span class="lsr-pill '+meta[1].replace('p-','lsr-')+'">'+meta[0]+'</span></td><td>'+escTxHtml(i.rate||'')+'</td><td>'+batch+'</td><td>'+escTxHtml(i.by||'')+(i.operatorCert?' ('+escTxHtml(i.operatorCert)+')':'')+'</td><td>'+(i.phi?i.phi+' d':'None')+'</td><td>'+safe+'</td><td>'+status+'</td></tr>';
   }).join('');
   var banner=active.length?'<div class="lsr-banner warn"><b>\u23F3 '+active.length+' land(s) within a pre-harvest interval.</b> Do not harvest before the safe date (Section 1).'+(missing.length?(' '+missing.length+' record(s) missing a batch number.'):'')+'</div>':'<div class="lsr-banner ok"><b>\u2713 No active pre-harvest intervals.</b> All treated lands are safe to harvest.'+(missing.length?(' Note: '+missing.length+' record(s) missing a batch number.'):'')+'</div>';
   var html='<h1>Spray Program &amp; Pre-Harvest Interval Audit</h1>'+
@@ -68675,7 +68683,7 @@ function orOpenSprayForm(){
     '<div class="or-fg2"><div class="or-frow"><label class="or-flbl">Registration no. <span class="or-fh">optional</span></label><input class="or-finp" id="or-sp-reg" placeholder="MAPP 17984"></div><div class="or-frow"><label class="or-flbl">Rate used <span class="or-fh">optional</span></label><input class="or-finp" id="or-sp-rate" placeholder="50 ml/100L"></div></div>'+
     '<div class="or-fg2"><div class="or-frow"><label class="or-flbl">Batch no. <span class="or-fh">optional</span></label><input class="or-finp" id="or-sp-batch" placeholder="on the container"></div><div class="or-frow"><label class="or-flbl">Spray licence <span class="or-fh">optional</span></label><input class="or-finp" id="or-sp-cert" placeholder="e.g. PA3"></div></div>'+
     '<div class="or-fg2"><div class="or-frow"><label class="or-flbl">Water volume <span class="or-fh">optional</span></label><input class="or-finp" id="or-sp-water" placeholder="500 l/ha"></div><div class="or-frow"><label class="or-flbl">Wind <span class="or-fh">optional</span></label><input class="or-finp" id="or-sp-wind" placeholder="SW 6 mph"></div></div>'+
-    '<div class="or-fg2"><div class="or-frow"><label class="or-flbl">What for? <span class="or-fh">optional</span></label><input class="or-finp" id="or-sp-for" placeholder="e.g. False Codling Moth"></div><div class="or-frow"><label class="or-flbl">Date sprayed</label><input class="or-finp" id="or-sp-date" type="date"></div></div>'+
+    '<div class="or-fg2"><div class="or-frow"><label class="or-flbl">What for? <span class="or-fh">optional</span></label><input class="or-finp" id="or-sp-for" placeholder="e.g. codling moth, apple scab"></div><div class="or-frow"><label class="or-flbl">Date sprayed</label><input class="or-finp" id="or-sp-date" type="date"></div></div>'+
     '<div class="or-fg2"><div class="or-frow"><label class="or-flbl">Time sprayed</label><input class="or-finp" id="or-sp-time" type="time"></div><div class="or-frow"><label class="or-flbl">Who sprayed it? <span class="or-fh">optional</span></label><input class="or-finp" id="or-sp-by" placeholder="name of the operator"></div></div>'+
     '<div class="or-fg2"><div class="or-frow"><label class="or-flbl">Days to wait (PHI)</label><input class="or-finp" id="or-sp-phi" type="number" value="14"></div><div class="or-frow"><label class="or-flbl">Cost <span class="or-fh">optional — posts to expenses</span></label><input class="or-finp" id="or-sp-cost" inputmode="decimal" placeholder="£ 0"></div></div>'+
     orAttachField('sp','mix sheet or operator record')+
@@ -68761,7 +68769,10 @@ var OR_TYPES={
 };
 function orAutoFor(t){
   t=t.toLowerCase();
-  if(/valencia|navel|lemon|mandarin|soft top fruit|grapefruit|top fruit/.test(t)) return {sold:'1 tonne bulk bins',body:'British Apples &amp; Pears',watch:'False Codling Moth, Top fruit Black Spot, fruit fly'};
+  /* This branch came from the SA build's citrus line and kept citrus pests (False Codling Moth,
+     citrus black spot, fruit fly), so every UK block described as "top fruit" was told to watch
+     for pests that are not established here. British top fruit is apples and pears. */
+  if(/valencia|navel|lemon|mandarin|soft top fruit|grapefruit|top fruit/.test(t)) return {sold:'1 tonne bulk bins',body:'British Apples &amp; Pears',watch:'Codling moth, scab, powdery mildew'};
   if(/apple|pear/.test(t)) return {sold:'1 tonne bulk bins',body:'British Apples &amp; Pears',watch:'Codling moth, scab'};
   if(/peach|nectarine|plum/.test(t)) return {sold:'5 kg punnets',body:'British Apples &amp; Pears',watch:'Brown rot, aphid'};
   if(/table grapes/.test(t)) return {sold:'5 kg punnets',body:'British Berry Growers',watch:'Mealybug, powdery mildew'};
