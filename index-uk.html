@@ -6748,8 +6748,8 @@ button.rn-gchip{border:0;font-family:inherit;cursor:pointer}
 
       <div class="ob-left-footer">
         Made for UK farmers<br>
-        Works offline · No accountant needed<br>
-        Your data stays on your device
+        Works offline · Your accountant can open it too<br>
+        Saved privately to your own account
       </div>
     </div>
 
@@ -8496,7 +8496,7 @@ button.rn-gchip{border:0;font-family:inherit;cursor:pointer}
   <!-- HMRC info -->
   <div class="info-box">
     <div class="ib-t"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="var(--gd)" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg> Capital allowances — farm assets</div>
-    <div class="ib-d">Farm equipment, irrigation and storage qualify for accelerated depreciation: <strong>50%</strong> year 1, <strong>30%</strong> year 2, <strong>20%</strong> year 3. This reduces your taxable income and flows directly into your Tax Summary report.</div>
+    <div class="ib-d">Tractors, machinery and most farm equipment are written off <strong>in full the year you buy them</strong> under the Annual Investment Allowance (up to &pound;1m a year). Cars and anything over the limit go into a pool written down at <strong>14%</strong> a year (6% for solar and integral features), and new farm buildings at <strong>3%</strong> a year. These come off your taxable profit and flow into Tax &amp; HMRC and your Self Assessment figures.</div>
   </div>
 
   </div><!-- /ast-view-register -->
@@ -9110,7 +9110,7 @@ button.rn-gchip{border:0;font-family:inherit;cursor:pointer}
   <div class="wk-f"><label id="awf-hwlbl">Hours a week</label><input type="number" id="awf-hours" value="40" oninput="wkNmw()">
     <div class="hint" id="awf-hwhint">The Working Time Regulations cap the average at 48 hours a week &mdash; change this to match how this worker actually works.</div></div>
   <div class="wk-f"><label id="awf-paylbl">Pay each month</label>
-    <div class="wk-ipre"><span class="r">£</span><input type="number" id="awf-amt" placeholder="5 950" oninput="wkNmw()"></div>
+    <div class="wk-ipre"><span class="r">£</span><input type="number" id="awf-amt" placeholder="2400" oninput="wkNmw()"></div>
     <div class="wk-nmw neutral" id="awf-nmw"><span class="e">&#8987;</span><span>Enter a wage and we&rsquo;ll check it against the minimum.</span></div>
   </div>
   <div class="wk-switch"><div><div class="t">Include them in PAYE and NI</div><div class="d">Worked out from their pay each payday, employee and employer.</div></div><div class="wk-sw on" id="awf-nireg" onclick="wkTogSwitch(this)"></div></div>
@@ -9498,8 +9498,8 @@ button.rn-gchip{border:0;font-family:inherit;cursor:pointer}
 
 <div class="pg" id="pg-crop">
   <div class="page-hdr">
-    <div><div class="page-title" data-t="nav.crop">Crops</div><div class="page-sub" id="crop-tab-sub">Your lands, yields and margins</div></div>
-    <button class="btn-pri" data-t="crop.plant.btn" onclick="cropSetTab('add')">＋ Plant a land</button>
+    <div><div class="page-title" data-t="nav.crop">Crops</div><div class="page-sub" id="crop-tab-sub">Your fields, yields and margins</div></div>
+    <button class="btn-pri" data-t="crop.plant.btn" onclick="cropSetTab('add')">＋ Plant a field</button>
   </div>
   <div class="tabs" style="margin-bottom:16px">
     <div class="tab on" id="crop-tab-overview" data-t="or.tab.overview" onclick="cropSetTab('overview')">Overview</div>
@@ -10181,9 +10181,9 @@ button.rn-gchip{border:0;font-family:inherit;cursor:pointer}
              Act 6 of 2002 this once cited. -->
         <div class="fg2" style="margin-top:12px">
           <div><label>Farm address <span style="color:var(--t4);font-weight:600">&mdash; printed on payslips</span></label><input id="set-addr" value="" placeholder="e.g. Oakvale Farm, Ashbourne, DE6 1AA"/></div>
-          <div><label>PAYE reference <span style="color:var(--t4);font-weight:600">&mdash; optional</span></label><input id="set-payeref" value="" placeholder="e.g. 7040/123/45/6"/></div>
-          <div><label>Registered stock mark</label><input id="set-mark" value="" placeholder="e.g. DKB"/></div>
-          <div><label>How it is applied</label><input id="set-mark-type" value="" placeholder="e.g. Tattoo, left ear"/></div>
+          <div><label>PAYE reference <span style="color:var(--t4);font-weight:600">&mdash; optional</span></label><input id="set-payeref" value="" placeholder="e.g. 123/AB45678"/></div>
+          <div><label>Herd or flock mark</label><input id="set-mark" value="" placeholder="e.g. UK 123456"/></div>
+          <div><label>How it is applied</label><input id="set-mark-type" value="" placeholder="e.g. ear tags, both ears"/></div>
         </div>
       </div>
       <!-- Tax & VAT -->
@@ -11575,7 +11575,7 @@ function cropSyncToPlan(land, seedOther){
     /* The land owns crop, area, dates, yield, price and input cost. Everything
        else on the line belongs to the PLANNER and the land knows nothing about
        it — so a resync used to wipe it. Editing a land silently deleted the
-       farmer's payment terms (C3), his second crop on that land (C6) and his
+       farmer's payment terms (C3), his second crop on that field (C6) and his
        other-costs figure. Carried over explicitly. */
     var prev=ST_PLAN.crops[idx];
     ['inForecast','payWhen','paySplit','sellMonth','c2','otherCost'].forEach(function(k){
@@ -11981,7 +11981,7 @@ function demoRepairCropLands(){
 function cropViewInPlanning(id){
   var l=cropLandById(id); if(!l) return;
   cropHideLandModal && cropHideLandModal();
-  if(!l.planId || cropFindPlanLine(l)<0){ toast('This land has no forecast line yet \u2014 add a price & yield','info'); }
+  if(!l.planId || cropFindPlanLine(l)<0){ toast('This field has no forecast line yet \u2014 add a price & yield','info'); }
   CROP_FLASH_LINK = l.planId || null;
   nav('planning');
   setTimeout(function(){ if(typeof setPlanTab==='function') setPlanTab('crops'); cropFlashPlanLine(); }, 80);
@@ -12038,8 +12038,8 @@ function cropComplianceDefs(){
      keep:['Authorised product (MAPP number) used at label rate','Date, field, batch and who sprayed, for every spray','No harvesting before the harvest interval is up','SDS for every product in the chemical store','Empty-container triple-rinse & disposal record'],
      note:'Spray records (product, rate, batch, harvest interval) come from the Inputs & Spray tab automatically. Spray certificates are kept under Worker safety.'},
     {id:'water', t:'Water abstraction licence', law:'Water Resources Act 1991 \u00b7 abstraction licence', auto:anyIrr, status: anyIrr ? (c.waterMetered && c.waterUsed<=c.waterAuthorised ? 'g':'a') : 'g',
-     desc: anyIrr ? 'Abstraction is licensed and recorded against the authorised volume; feeds your Environment Agency abstraction return.' : 'No irrigated lands recorded \u2014 rain-fed only. Abstracting more than 20 m\u00b3 a day needs a licence, so apply before you start.',
-     kv: anyIrr ? [['Abstraction licence', c.waterLicence||'\u2014'],['Authorised', (c.waterAuthorised||0).toLocaleString('en-GB')+' m\u00b3/yr'],['Used this season', (c.waterUsed||0).toLocaleString('en-GB')+' m\u00b3 ('+(c.waterAuthorised?Math.round(c.waterUsed/c.waterAuthorised*100):0)+'%)'],['Meter readings', c.waterMetered?'\u2713 logged':'\u26a0 none']] : [['Irrigated lands','none']],
+     desc: anyIrr ? 'Abstraction is licensed and recorded against the authorised volume; feeds your Environment Agency abstraction return.' : 'No irrigated fields recorded \u2014 rain-fed only. Abstracting more than 20 m\u00b3 a day needs a licence, so apply before you start.',
+     kv: anyIrr ? [['Abstraction licence', c.waterLicence||'\u2014'],['Authorised', (c.waterAuthorised||0).toLocaleString('en-GB')+' m\u00b3/yr'],['Used this season', (c.waterUsed||0).toLocaleString('en-GB')+' m\u00b3 ('+(c.waterAuthorised?Math.round(c.waterUsed/c.waterAuthorised*100):0)+'%)'],['Meter readings', c.waterMetered?'\u2713 logged':'\u26a0 none']] : [['Irrigated fields','none']],
      fields:[{k:'waterLicence',label:'Abstraction licence number',type:'text'},{k:'waterAuthorised',label:'Authorised volume (m\u00b3/yr)',type:'number'},{k:'waterUsed',label:'Abstracted this season (m\u00b3)',type:'number'},{k:'waterMetered',label:'Monthly meter readings kept?',type:'bool'}], keep:['Water-use licence / registration','Monthly meter readings vs authorised volume','Annual water-use return']},
     {id:'lerap', t:'Unsprayed strips next to water (LERAP)', law:'Plant Protection Products Regs \u00b7 HSE', auto:true, status: (function(){ var s=nxLerapStats(); return (!s.tot||s.rec===s.tot)?'g':'a'; })(),
      desc:'When a label asks for an unsprayed strip next to water, write down what you did every time: the full width, or a narrower strip worked out with a LERAP (the HSE buffer check). You answer it on the spray form. Keep it for 3 years.',
@@ -12052,11 +12052,11 @@ function cropComplianceDefs(){
     {id:'seed', t:'Certified seed & variety rights', law:'Plant Varieties Act 1997 \u00b7 farm-saved seed', auto:true, status: c.seedCertified ? 'g':'a',
      desc:'Seed source and cultivar are recorded; any retained/farm-saved seed and royalties are tracked for protected cultivars.',
      kv:[['Seed source', c.seedCertified?'Certified (invoice on file)':'\u26a0 unverified'],['Retained seed', c.retainedSeed?'Yes \u2014 track royalty':'None this season']],
-     fields:[{k:'seedCertified',label:'Certified seed (invoice on file)?',type:'bool'},{k:'retainedSeed',label:'Using retained / farm-saved seed?',type:'bool'},{k:'seedNote',label:'Note (royalty / supplier)',type:'text'}], keep:['Seed invoice / certification per cultivar','Supplier & cultivar per land','Retained-seed royalty record (protected cultivars)']},
+     fields:[{k:'seedCertified',label:'Certified seed (invoice on file)?',type:'bool'},{k:'retainedSeed',label:'Using retained / farm-saved seed?',type:'bool'},{k:'seedNote',label:'Note (royalty / supplier)',type:'text'}], keep:['Seed invoice / certification per cultivar','Supplier & cultivar per field','Retained-seed royalty record (protected cultivars)']},
     {id:'soil', t:'Soil management plan', law:'Farming Rules for Water 2018', auto:true, status: c.soilPractice ? 'g':'a',
-     desc:'Cultivation must not cause erosion; conservation measures (contours, minimum till, cover) recorded per land.',
+     desc:'Cultivation must not cause erosion; conservation measures (contours, minimum till, cover) recorded per field.',
      kv:[['Practice', c.soilPractice||'\u2014'],['Soil test', c.soilTest||'\u2014']],
-     fields:[{k:'soilPractice',label:'Conservation practice',type:'text',ph:'e.g. Min-till + contours'},{k:'soilTest',label:'Latest soil test',type:'text',ph:'e.g. Home Field \u00b7 Aug 2024'}], keep:['Conservation practice per land (contours, min-till, cover)','Soil test results','Any erosion-control directive from the department']},
+     fields:[{k:'soilPractice',label:'Conservation practice',type:'text',ph:'e.g. Min-till + contours'},{k:'soilTest',label:'Latest soil test',type:'text',ph:'e.g. Home Field \u00b7 Aug 2024'}], keep:['Conservation practice per field (contours, min-till, cover)','Soil test results','Any erosion-control directive from the department']},
     {id:'ohs', t:'Worker safety & PPE', law:'Health and Safety at Work etc. Act 1974', auto:true, status: (c.operatorsTrained>=c.operatorsTotal && c.ppeIssued && c.firstAidKit) ? 'g':'a',
      desc:'Workers are trained and issued PPE; the chemical store, first-aid and spill response meet safety requirements. This is the single place to record worker training.',
      kv:[['Operators trained', c.operatorsTrained+' of '+c.operatorsTotal],['Training record', c.workerTraining||'\u2014'],['PPE issued', c.ppeIssued?'\u2713 logged':'\u26a0 none'],['First-aid / spill kit', c.firstAidKit?'\u2713 in place':'\u26a0 check']],
@@ -12072,12 +12072,12 @@ function cropComplianceDefs(){
      desc:'Red diesel may only be used for qualifying agricultural work. HMRC can inspect purchase records, usage records and stock balances. Log the week here and the record prints from those entries.',
      kv:[['Logged with detail', Math.round(_dslC().logged).toLocaleString('en-GB')+' L'],
          ['Bought this year', Math.round(_dslC().bought).toLocaleString('en-GB')+' L'],
-         ['Not yet claimable', _dslC().unlogged>0 ? (Math.round(_dslC().unlogged).toLocaleString('en-GB')+' L \u00b7 '+aiDieselMoney(_dslC().losing)) : '\u2014']],
+         ['Bought, not yet logged', _dslC().unlogged>0 ? (Math.round(_dslC().unlogged).toLocaleString('en-GB')+' L') : '\u2014']],
      fields:[{k:'dieselLitres',label:'Litres logged on paper, outside the app (optional)',type:'number'},{k:'dieselLogbook',label:'Paper logbook kept as well?',type:'bool'}], keep:['Red vs white diesel split','Per-activity usage log (date, machine, litres)','Purchase invoices and tank stock balances']},
     {id:'export', t:'Export / GlobalGAP readiness', law:'Optional \u00b7 market access', auto:false, status: c.exportReady ? 'g':'a',
      desc:'For crops sold to export buyers: traceability, spray records and residue limits (MRLs) are ready for the buyer from your spray programme.',
-     kv:[['Spray records', missingBatch?'\u26a0 '+missingBatch+' incomplete':'\u2713 complete'],['Scheme', c.exportScheme||'\u2014'],['Traceability','Land \u2192 batch \u2192 delivery']],
-     fields:[{k:'exportScheme',label:'Certification scheme',type:'text',ph:'e.g. GlobalGAP, Red Tractor'},{k:'exportReady',label:'Records export-ready?',type:'bool'}], keep:['Valid scheme certificate (with expiry)','Full traceability: land \u2192 batch \u2192 delivery','Residues under the buyer’s limits (MRLs), shown from your spray records']}
+     kv:[['Spray records', missingBatch?'\u26a0 '+missingBatch+' incomplete':'\u2713 complete'],['Scheme', c.exportScheme||'\u2014'],['Traceability','Field \u2192 batch \u2192 delivery']],
+     fields:[{k:'exportScheme',label:'Certification scheme',type:'text',ph:'e.g. GlobalGAP, Red Tractor'},{k:'exportReady',label:'Records export-ready?',type:'bool'}], keep:['Valid scheme certificate (with expiry)','Full traceability: field \u2192 batch \u2192 delivery','Residues under the buyer’s limits (MRLs), shown from your spray records']}
   ];
 }
 // Only the areas the farmer has chosen to track
@@ -12511,14 +12511,14 @@ function renderCrop(){
   cropSetTab(ST_CROP.activeTab || 'overview');
 }
 function cropSetTab(tab){
-  if(tab==='lands'){ ST_CROP.ovView='table'; tab='overview'; }   // Lands merged into Overview's table view
+  if(tab==='lands'){ ST_CROP.ovView='table'; tab='overview'; }   // Fields merged into Overview's table view
   ST_CROP.activeTab = tab;
   ['overview','lands','inputs','comply','add'].forEach(function(t){
     var b=$('crop-tab-'+t); if(b) b.classList.toggle('on', t===tab);
     var v=$('crop-view-'+t); if(v) v.style.display = (t===tab?'block':'none');
   });
   var sub=$('crop-tab-sub');
-  if(sub){ sub.textContent = {overview:'Your lands, yields and margins \u2014 season '+cropSeasonStr(),lands:'Land register \u2014 area, crop and rotation history',inputs:'Inputs & spray program \u2014 cost and compliance in one place',comply:'Compliance \u2014 your obligations across UK farming law',add:'Plant a land and start its season'}[tab] || ''; }
+  if(sub){ sub.textContent = {overview:'Your fields, yields and margins \u2014 season '+cropSeasonStr(),lands:'Field register \u2014 area, crop and rotation history',inputs:'Inputs & spray programme \u2014 cost and compliance in one place',comply:'Compliance \u2014 your obligations across UK farming law',add:'Plant a field and start its season'}[tab] || ''; }
   if(tab==='overview') cropRenderOverview();
   if(tab==='lands')    cropRenderLands();
   if(tab==='inputs')   cropRenderInputs();
@@ -12577,13 +12577,13 @@ function _cropAttention(){
   if(ready.length===1)
     items.push({ic:'\uD83C\uDF3E', tx:'Did you harvest <b>'+esc(ready[0].name)+'</b>? It was due <b>'+cropDispDate(ready[0].harvest)+'</b>', go:"cropHarvestChoose("+ready[0].id+")"});
   else if(ready.length)
-    items.push({ic:'\uD83C\uDF3E', tx:'<b>'+ready.length+' lands</b> are past their harvest date \u2014 did you harvest? '+esc(ready.slice(0,3).map(function(l){return l.name;}).join(', ')), go:"cropHarvestPick()"});
+    items.push({ic:'\uD83C\uDF3E', tx:'<b>'+ready.length+' fields</b> are past their harvest date \u2014 did you harvest? '+esc(ready.slice(0,3).map(function(l){return l.name;}).join(', ')), go:"cropHarvestPick()"});
   return items;
 }
 function _cropHeroHTML(att, T){
   var n=att.length, name='';
   try{ name=String((ST&&ST.owner)||'').trim().split(' ')[0]||''; }catch(e){}
-  var ttl = n ? (n+' thing'+(n===1?'':'s')+' need'+(n===1?'s':'')+' you today') : ('All clear across your lands'+(name?', '+esc(name):''));
+  var ttl = n ? (n+' thing'+(n===1?'':'s')+' need'+(n===1?'s':'')+' you today') : ('All clear across your fields'+(name?', '+esc(name):''));
   var ic = n ? '\u26A0' : '\u2713';
   var readyN=(ST_CROP.lands||[]).filter(function(l){return cropEffStage(l)==='harvest';}).length;
   var sub = T.landCount+' land'+(T.landCount===1?'':'s')+' \u00b7 '+(T.phiLands?(T.phiLands+' inside a spray wait'):'all clear to harvest')+(readyN?(' \u00b7 '+readyN+' ready'):'');
@@ -12592,7 +12592,7 @@ function _cropHeroHTML(att, T){
     '<div class="hstat" onclick="cropKpiTog(\'area\',this)"><div class="hv">'+T.plantedArea+' ha</div><div class="hl">planted \u00b7 '+T.cropCount+' crop'+(T.cropCount===1?'':'s')+'</div></div>'+
     '<div class="hstat" onclick="cropKpiTog(\'value\',this)"><div class="hv">'+_lsCompactRand(T.expValue)+'</div><div class="hl">expected value</div></div>'+
     '<div class="hstat" onclick="cropKpiTog(\'margin\',this)"><div class="hv'+(hasM?(mp?'':' neg'):'')+'">'+(hasM?((mp?'+':'')+T.marginPct+'%'):'\u2014')+'</div><div class="hl">'+(hasM?'margin vs put in':'margin \u00b7 add prices')+'</div></div>'+
-    '<div class="hstat" onclick="cropKpiTog(\'paying\',this)"><div class="hv">'+T.paying+' / '+T.payTotal+'</div><div class="hl">lands paying their way</div></div>'+
+    '<div class="hstat" onclick="cropKpiTog(\'paying\',this)"><div class="hv">'+T.paying+' / '+T.payTotal+'</div><div class="hl">fields paying their way</div></div>'+
   '</div>';
   return '<div class="ls-hero" id="crop-hero"><div class="hic">'+ic+'</div><div class="htx"><div class="htt">'+ttl+'</div><div class="hsub">'+sub+'</div></div>'+stats+'</div>'+
     '<div class="ls-kpipanel" id="crop-kpipanel"></div>';
@@ -12614,7 +12614,7 @@ function _cropKpiPanel(key){
     var ks=Object.keys(T.byCrop).filter(function(k){return k!=='\u2014';}).sort(function(a,b){return T.byCrop[b].area-T.byCrop[a].area;});
     var tot=ks.reduce(function(s,k){return s+T.byCrop[k].area;},0)||1;
     var rows=ks.map(function(k){var o=T.byCrop[k]; return _lsBrow(o.icon||'\uD83C\uDF31', k, o.n+' land'+(o.n===1?'':'s'), (Math.round(o.area*10)/10)+' ha', {bar:o.area/tot*100, col:'#40916C'});}).join('');
-    return '<div class="ls-kpih">\uD83C\uDF31 Your '+T.plantedArea+' ha by crop</div>'+rows+'<div class="ls-kpimean"><b>'+T.plantedArea+' ha planted across '+T.cropCount+' crop'+(T.cropCount===1?'':'s')+'.</b> Tap a crop band below to jump to its lands.</div>';
+    return '<div class="ls-kpih">\uD83C\uDF31 Your '+T.plantedArea+' ha by crop</div>'+rows+'<div class="ls-kpimean"><b>'+T.plantedArea+' ha planted across '+T.cropCount+' crop'+(T.cropCount===1?'':'s')+'.</b> Tap a crop band below to jump to its fields.</div>';
   }
   if(key==='value'){
     var la=(ST_CROP.lands||[]).filter(cropPlanted).map(function(l){return {l:l, v:cropLandIncomePerHa(l)*(l.area||0)};}).sort(function(a,b){return b.v-a.v;});
@@ -12634,14 +12634,14 @@ function _cropKpiPanel(key){
     var safex='';
     if(cand){ var be=Math.round(((cand.inputPerHa||0)+cropOtherPerHa(cand))/cropLandYield(cand));
       safex='<div class="ls-kpimean" style="background:var(--gb);border:1px solid #cfe9d8"><b>At today\u2019s AHDB '+_curSym()+_grpInt(cropPrice(cand.crop))+'/t, '+esc(cand.name)+' clears '+cropFmtR(Math.round(cropLandGMperHa(cand)))+'/ha</b> \u2014 your break-even is about '+_curSym()+_grpInt(be)+'/t.</div>'; }
-    var verdict = (T.marginPct==null)?'<div class="ls-kpimean">Add a price to each land to see your margin.</div>':
-      ('<div class="ls-kpimean"><b>'+(g>=0?('Your lands are set to pay back '+_lsCompactRand(g)+' over what you put in.'):('Right now your lands are forecast to lose '+_lsCompactRand(Math.abs(g))+'.'))+'</b></div>');
+    var verdict = (T.marginPct==null)?'<div class="ls-kpimean">Add a price to each field to see your margin.</div>':
+      ('<div class="ls-kpimean"><b>'+(g>=0?('Your fields are set to pay back '+_lsCompactRand(g)+' over what you put in.'):('Right now your fields are forecast to lose '+_lsCompactRand(Math.abs(g))+'.'))+'</b></div>');
     return '<div class="ls-kpih">\uD83D\uDCCA Where your margin comes from</div>'+rows3+gauge+safex+verdict+'<div class="ls-kpigo" onclick="openCropGMReport()">Open the Gross Margin report \u2192</div>';
   }
   if(key==='paying'){
     var lands=(ST_CROP.lands||[]).filter(function(l){return l.crop && cropEffStage(l)!=='planned';});
     var rows4=lands.map(function(l){var gg=cropLandGMperHa(l); return _lsBrow(gg>=0?'\u2705':'\u26A0\uFE0F', l.name, l.crop||'', cropFmtR(gg)+'/ha', {pos:gg>=0,neg:gg<0});}).join('');
-    return '<div class="ls-kpih">\u2696\uFE0F Which lands pay their way</div>'+rows4+'<div class="ls-kpimean"><b>'+T.paying+' of '+T.payTotal+' lands</b> cover their growing costs at your target prices.</div>';
+    return '<div class="ls-kpih">\u2696\uFE0F Which fields pay their way</div>'+rows4+'<div class="ls-kpimean"><b>'+T.paying+' of '+T.payTotal+' fields</b> cover their growing costs at your target prices.</div>';
   }
   return '';
 }
@@ -12655,7 +12655,7 @@ function _cropRollupHTML(T){
       '<div class="v'+(o.value<0?' neg':'')+'">'+cropFmtR(o.value)+'</div>'+
       '<div class="s">'+(Math.round(o.area*10)/10)+' ha \u00b7 '+o.n+' land'+(o.n===1?'':'s')+' \u00b7 '+cropFmtR(perha)+'/ha</div></div>';
   }).join('');
-  return '<div class="cr-sech"><span class="t">Money by crop</span><span class="r">tap a crop to jump to its lands</span></div><div class="cr-band">'+cards+'</div>';
+  return '<div class="cr-sech"><span class="t">Money by crop</span><span class="r">tap a crop to jump to its fields</span></div><div class="cr-band">'+cards+'</div>';
 }
 function cropScrollToCrop(el){
   var k=el&&el.getAttribute('data-crop'); if(!k) return;
@@ -12697,9 +12697,9 @@ function _cropLandCardBody(l){
   } else {
     s1=_cropLandRow('🌱','Planted',cropDispDate(l.planted))+_cropLandRow('🌾','Est. harvest',(est==='harvest'?'now':(est==='harvested'?'done':cropDispDate(l.harvest))))+_cropLandRow((l.actualYield!=null?'✅':'🎯'),(l.actualYield!=null?'Actual yield':'Expected yield'),(cropLandYield(l)||0)+' t/ha')+_cropLandRow('💧','Input cost',cropFmtR(l.inputPerHa)+'/ha')+_cropLandRow('🔄','Previous crop',esc(l.prevCrop||'—'));
   }
-  var col1='<div><div class="cr-bh">This season on this land</div>'+s1+(cropForecastable(l)?'<div class="cr-xlink" onclick="event.stopPropagation();cropViewInPlanning('+l.id+')">🗓 View in Planning →</div>':'')+'</div>';
+  var col1='<div><div class="cr-bh">This season on this field</div>'+s1+(cropForecastable(l)?'<div class="cr-xlink" onclick="event.stopPropagation();cropViewInPlanning('+l.id+')">🗓 View in Planning →</div>':'')+'</div>';
   var hbox = phi ? '<div class="ls-hbox warn"><span class="hl">Spray waiting period</span>Do not harvest before '+lsFmtDate(phi.safe)+'.</div>'
-                 : '<div class="ls-hbox okk"><span class="hl">Clear to harvest</span>No active spray waiting period on this land.</div>';
+                 : '<div class="ls-hbox okk"><span class="hl">Clear to harvest</span>No active spray waiting period on this field.</div>';
   var evs=(ST_CROP.events||[]).filter(function(e){return e.land===l.id;}).slice(0,3).map(function(e){
     var ic={planted:'🌱',harvested:'🌾',delivered:'🚚'}[e.kind]||'•';
     return '<div class="cr-ev"><span>'+ic+'</span><span>'+esc(e.kind.charAt(0).toUpperCase()+e.kind.slice(1))+(e.note?' · '+esc(e.note):'')+'</span><span class="d">'+cropDispDate(e.date)+'</span></div>';
@@ -12754,7 +12754,7 @@ function cropRenderOverview(){
   var el=$('crop-view-overview'); if(!el) return;
   var lands=ST_CROP.lands||[];
   if(!lands.length){
-    el.innerHTML='<div style="text-align:center;padding:40px 20px;background:#fff;border:1px dashed var(--br);border-radius:var(--rl)"><div style="font-size:30px">\uD83C\uDF31</div><div style="font-weight:800;margin:8px 0 4px">Nothing planted yet</div><div style="font-size:13px;color:var(--t3);margin-bottom:14px">Plant your first land and this page shows what it costs, yields and earns.</div><button class="btn-pri" onclick="cropSetTab(\'add\')">\uFF0B Plant a land</button></div>';
+    el.innerHTML='<div style="text-align:center;padding:40px 20px;background:#fff;border:1px dashed var(--br);border-radius:var(--rl)"><div style="font-size:30px">\uD83C\uDF31</div><div style="font-weight:800;margin:8px 0 4px">Nothing planted yet</div><div style="font-size:13px;color:var(--t3);margin-bottom:14px">Plant your first land and this page shows what it costs, yields and earns.</div><button class="btn-pri" onclick="cropSetTab(\'add\')">\uFF0B Plant a field</button></div>';
     return;
   }
   var T=_cropOverviewTotals();
@@ -12771,7 +12771,7 @@ function cropRenderOverview(){
     '<div class="cr-sech"><span class="t">What\u2019s growing where</span><span class="r" style="display:flex;align-items:center;gap:8px">'+T.landCount+' land'+(T.landCount===1?'':'s')+' \u00b7 '+T.plantedArea+' ha'+_seg+'</span></div>'+
     _grow+
     '<div class="crop-sec-h">Reports</div>'+
-    cropCta('gm-r','\uD83D\uDCCA','Gross Margin per Hectare Report','Income less direct inputs, per land and per hectare \u2014 your most important crop number.','openCropGMReport()')+
+    cropCta('gm-r','\uD83D\uDCCA','Gross Margin per Hectare Report','Income less direct inputs, per field and per hectare \u2014 your most important crop number.','openCropGMReport()')+
     cropCta('spray','\uD83E\uDDEA','Spray programme & harvest dates','Every spray, with the date each field is safe to harvest \u2014 for buyers, export and GlobalG.A.P.','openCropSprayReport()')+
     cropCta('cost','\uD83E\uDDFE','Crop Input Cost Report (HMRC)','Seed, fertiliser, chemicals & fuel \u2014 allowable business expenses and red diesel litres.','openCropInputCostReport()')+
     cropCta('water','\uD83D\uDCA7','Abstraction return','Licensed vs metered abstraction \u2014 for your annual return to the Environment Agency, NRW, SEPA or NIEA.','openCropWaterReport()');
@@ -12787,7 +12787,7 @@ function _cropTableExtras(){
   }).join('')||'<div style="font-size:11.5px;color:var(--t4)">No field events yet.</div>';
   var rot=(ST_CROP.lands||[]).filter(function(l){return l.crop||l.prevCrop;}).map(function(l){
     return '<div class="cr-ev"><span>'+(l.crop?cropIcon(l.crop):'🌱')+'</span><span><b>'+esc(l.name)+'</b> · '+esc(l.crop||'fallow')+(l.prevCrop?(' <span style="color:var(--t4)">after '+esc(l.prevCrop)+'</span>'):'')+'</span></div>';
-  }).join('')||'<div style="font-size:11.5px;color:var(--t4)">No lands yet.</div>';
+  }).join('')||'<div style="font-size:11.5px;color:var(--t4)">No fields yet.</div>';
   return '<div class="duo2"><div class="cr-panel"><div class="cr-bh">Field events — season '+esc(cropSeasonStr())+'</div>'+evs+'</div>'+
     '<div class="cr-panel"><div class="cr-bh">Rotation history</div>'+rot+'</div></div>';
 }
@@ -12814,7 +12814,7 @@ function _cropLandTable(sorted){
       '<td class="r"'+(gmNeg?' style="color:var(--rd)"':'')+'>'+gm+'</td>'+
       '<td class="r">'+val+'</td></tr>';
   }).join('');
-  return '<div style="overflow-x:auto;border:1px solid var(--br);border-radius:13px;background:#fff"><table class="crop-tbl" style="min-width:'+((typeof rnOn==='function'&&rnOn())?920:660)+'px"><thead><tr><th>Land</th><th class="r">Area</th><th>Crop / cultivar</th><th>Status</th>'+((typeof rnOn==='function'&&rnOn())?'<th>Ground</th>':'')+'<th class="r">Yield</th><th class="r">Margin/ha</th><th class="r">Expected value</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+  return '<div style="overflow-x:auto;border:1px solid var(--br);border-radius:13px;background:#fff"><table class="crop-tbl" style="min-width:'+((typeof rnOn==='function'&&rnOn())?920:660)+'px"><thead><tr><th>Field</th><th class="r">Area</th><th>Crop / cultivar</th><th>Status</th>'+((typeof rnOn==='function'&&rnOn())?'<th>Ground</th>':'')+'<th class="r">Yield</th><th class="r">Margin/ha</th><th class="r">Expected value</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
 }
 function cropKpi(l,v,acc,id){ return '<div class="crop-kpi'+(acc?' acc':'')+(id?' kpi-tap':'')+'"'+(id?' onclick="kpiOpen(\''+id+'\')" style="position:relative"':'')+'>'+(id?'<span class="kpi-i">\u24D8</span>':'')+'<div class="l">'+l+'</div><div class="v">'+v+'</div></div>'; }
 function cropCta(cls,ic,t,s,onclick){ return '<button class="crop-rpt-cta '+cls+'" onclick="'+onclick+'"><span class="ic">'+ic+'</span><span class="tx"><span class="t">'+t+'</span><span class="s">'+s+'</span></span><span class="ar">\u203a</span></button>'; }
@@ -12834,12 +12834,12 @@ function cropRenderLands(){
   }).join('') || '<tr><td colspan="2" style="color:var(--t3)">No field events yet.</td></tr>';
   el.innerHTML=''+
     '<div class="crop-sec-h">Land register \u2014 what\u2019s planted where</div>'+
-    '<table class="crop-tbl"><thead><tr><th>Land</th><th class="r">Area</th><th>Crop / cultivar</th><th>Stage</th><th>Last season</th><th class="r">Yield t/ha</th></tr></thead><tbody>'+rows+'</tbody>'+
+    '<table class="crop-tbl"><thead><tr><th>Field</th><th class="r">Area</th><th>Crop / cultivar</th><th>Stage</th><th>Last season</th><th class="r">Yield t/ha</th></tr></thead><tbody>'+rows+'</tbody>'+
       '<tfoot><tr><td>Total</td><td class="r">'+totArea+' ha</td><td colspan="4"></td></tr></tfoot></table>'+
-    '<div class="crop-row-actions"><button class="btn-sec" onclick="cropQuickPlant()">+ Record planting</button><button class="btn-sec" onclick="cropQuickHarvest()">\uD83C\uDF3E Record harvest</button><button class="btn-sec" onclick="cropSetTab(\'add\')">+ Add land</button></div>'+
+    '<div class="crop-row-actions"><button class="btn-sec" onclick="cropQuickPlant()">+ Record planting</button><button class="btn-sec" onclick="cropQuickHarvest()">\uD83C\uDF3E Record harvest</button><button class="btn-sec" onclick="cropSetTab(\'add\')">+ Add field</button></div>'+
     '<div class="crop-sec-h">Recent field events</div>'+
     '<table class="crop-tbl"><tbody>'+evRows+'</tbody></table>'+
-    '<div class="crop-infonote">Each land keeps a season-by-season history so rotation, yield trends and gross margin build up over time. Harvest entries capture tonnes, grade and the merchant/silo delivery certificate.</div>';
+    '<div class="crop-infonote">Each field keeps a season-by-season history so rotation, yield trends and gross margin build up over time. Harvest entries capture tonnes, grade and the merchant/silo delivery certificate.</div>';
 }
 
 /* ===================== Correcting and removing a spray or input =====================
@@ -13088,8 +13088,8 @@ function cropInputEditFill(id){
   Array.prototype.forEach.call(document.querySelectorAll('.ci-land-cb'), function(cb){
     cb.checked=(String(cb.value)===String(x.land)); cb.disabled=true; });
   var lh=$('ci-lands'); if(lh && lh.nextElementSibling) lh.nextElementSibling.textContent=
-    fixT('One record per land. To move it, remove it as “wrong block or field” and log it again.',
-         'Een rekord per land. Om dit te skuif, verwyder dit as “verkeerde blok of land” en teken dit weer aan.');
+    fixT('One record per field. To move it, remove it as “wrong block or field” and log it again.',
+         'Een rekord per field. Om dit te skuif, verwyder dit as “verkeerde blok of land” en teken dit weer aan.');
   set('ci-product',x.product); set('ci-reg',x.reg); set('ci-kind',x.kind); set('ci-rate',x.rate); set('ci-batch',x.batch);
   set('ci-by',x.by); set('ci-cert',x.operatorCert); set('ci-for',x.targetFor); set('ci-phi',x.phi);
   set('ci-date',x.date); set('ci-time',x.time); set('ci-act',x.act); set('ci-water',x.water); set('ci-wind',x.wind);
@@ -13195,7 +13195,7 @@ function cropRenderInputs(){
   el.innerHTML=''+ stripHtml + kpis +
     '<div class="crop-chips">'+chip('all','All')+chip('phi','Waiting to harvest')+chip('seed','Seed')+chip('fertiliser','Fertiliser')+chip('herbicide','Herbicide')+chip('fungicide','Fungicide')+chip('insecticide','Insecticide')+
       '<button class="crop-logbtn" onclick="cropLogInput()">+ Log application</button><button class="cr-repeatbtn" onclick="cropRepeatLastInput()">\u21BA Repeat last</button></div>'+
-    '<div style="overflow-x:auto;border:1px solid var(--br);border-radius:13px;background:#fff"><table class="crop-tbl" style="min-width:820px"><thead><tr><th>Date</th><th>Land</th><th>Product \u00b7 reg</th><th>Type</th><th>Rate</th><th>Batch</th><th>By</th><th>Harvest wait</th><th>Safe to harvest</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
+    '<div style="overflow-x:auto;border:1px solid var(--br);border-radius:13px;background:#fff"><table class="crop-tbl" style="min-width:820px"><thead><tr><th>Date</th><th>Field</th><th>Product \u00b7 reg</th><th>Type</th><th>Rate</th><th>Batch</th><th>By</th><th>Harvest wait</th><th>Safe to harvest</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
     '<div class="crop-infonote">Each line is both the <b>cost</b> (a business expense) <b>and</b> the spray record: product, rate, batch, who sprayed it and the harvest interval. The safe-to-harvest date, buyers’ residue checks and your Red Tractor record all come from this one entry.</div>'+
     '<div class="crop-divider"></div><div class="crop-rpt-label">Reports for this tab</div>'+
     cropCta('spray','\uD83E\uDDEA','Spray programme & harvest dates','Every spray, with the date each field is safe to harvest \u2014 for buyers, export and GlobalG.A.P.','openCropSprayReport()')+
@@ -13341,7 +13341,7 @@ function ukProdAttach(inputId, fill){
   el.addEventListener('blur', function(){ setTimeout(close,180); });
 }
 
-/* Pre-fill the log modal from the most recent application \u2014 most spray programs repeat the
+/* Pre-fill the log modal from the most recent application \u2014 most spray programmes repeat the
    same product/rate a few weeks apart. Land, batch and date stay fresh for the farmer to set. */
 function cropRepeatLastInput(){
   var inputs=(ST_CROP.inputs||[]).slice().sort(function(a,b){return a.date<b.date?1:-1;});
@@ -13355,7 +13355,7 @@ function cropRepeatLastInput(){
   set('ci-for', last.targetFor); set('ci-phi', last.phi); set('ci-cost', last.costPerHa);
   Array.prototype.forEach.call(document.querySelectorAll('.ci-land-cb'), function(c){ c.checked=false; });
   var cb=document.querySelector('.ci-land-cb[value="'+last.land+'"]'); if(cb) cb.checked=true;
-  toast('Repeating your last application \u2014 check the lands, batch & date','info');
+  toast('Repeating your last application \u2014 check the fields, batch & date','info');
 }
 function cropSetFilter(f){ ST_CROP.filter=f; cropRenderInputs(); }
 
@@ -13604,12 +13604,12 @@ function cropCloseModal(){ var ov=$('crop-comply-overlay'); if(ov) ov.style.disp
 
 function cropRenderAddForm(){
   var el=$('crop-view-add'); if(!el) return;
-  var landOpts=ST_CROP.lands.map(function(l){return '<option value="'+l.id+'">'+esc(l.name)+' ('+(l.area||0)+' ha)</option>';}).join('')+'<option value="new">+ Add a new land\u2026</option>';
+  var landOpts=ST_CROP.lands.map(function(l){return '<option value="'+l.id+'">'+esc(l.name)+' ('+(l.area||0)+' ha)</option>';}).join('')+'<option value="new">+ Add a new field\u2026</option>';
   var cropOpts=ST_CROP.cropTypes.map(function(c){return '<option value="'+esc(c.t)+'">'+c.i+' '+esc(c.t)+'</option>';}).join('');
   el.innerHTML=''+
-    '<div class="crop-sec-h">Plant a land</div>'+
-    '<div class="crop-field"><label>Which land?</label><select id="crop-f-land">'+landOpts+'</select></div>'+
-    '<div id="crop-f-newland-wrap" style="display:none"><div class="crop-field"><label>New land name</label><input id="crop-f-newname" placeholder="e.g. Noordkamp"></div></div>'+
+    '<div class="crop-sec-h">Plant a field</div>'+
+    '<div class="crop-field"><label>Which field?</label><select id="crop-f-land">'+landOpts+'</select></div>'+
+    '<div id="crop-f-newland-wrap" style="display:none"><div class="crop-field"><label>New field name</label><input id="crop-f-newname" placeholder="e.g. Noordkamp"></div></div>'+
     '<div class="crop-two"><div class="crop-field"><label>Crop</label><select id="crop-f-crop">'+cropOpts+'</select></div>'+
       '<div class="crop-field"><label>Cultivar (optional)</label><input id="crop-f-cultivar" placeholder="e.g. Skyfall"></div></div>'+
     '<div class="crop-two"><div class="crop-field"><label>Area planted (ha)</label><input id="crop-f-area" type="number" placeholder="120"></div>'+
@@ -13625,7 +13625,7 @@ function cropRenderAddForm(){
     '<div class="crop-field"><label>Other cost (£/ha) <span style="font-weight:400;color:var(--t4);font-size:11px">contract work, drying, haulage, levy</span></label><input id="crop-f-other" type="number" placeholder="e.g. 260"></div>'+
     '<div class="crop-field"><label>Price (£ per tonne)</label><input id="crop-f-price" type="number" inputmode="decimal" placeholder="e.g. 4180" oninput="cropPriceTouched=true"><div id="crop-f-price-chip"></div></div>'+
     '<div class="crop-field"><label>Irrigated?</label><select id="crop-f-irr"><option value="no">Dryland (rain-fed)</option><option value="yes">Irrigated \u2014 links to water-use tracking</option></select></div>'+
-    '<button class="crop-formbtn" onclick="cropSaveLand()">Plant this land</button>'+
+    '<button class="crop-formbtn" onclick="cropSaveLand()">Plant this field</button>'+
     '<div class="crop-infonote">Answering \u201cIrrigated\u201d here is what switches on the matching Compliance items \u2014 ask once, use everywhere.</div>';
   var sel=$('crop-f-land'); if(sel) sel.onchange=function(){ var w=$('crop-f-newland-wrap'); if(w) w.style.display=(this.value==='new'?'block':'none'); };
   // Initialise the new-land name field visibility for the current selection. With no
@@ -13685,7 +13685,7 @@ var gmo=false;
   if(area<=0){ toast('Please enter the area in hectares','error'); return; }
   var land;
   if(landSel==='new'){
-    var nm=($('crop-f-newname').value||'').trim(); if(!nm){ toast('Name the new land','error'); return; }
+    var nm=($('crop-f-newname').value||'').trim(); if(!nm){ toast('Name the new field','error'); return; }
     land={id:cropNextId(ST_CROP.lands), name:nm, area:area, prevCrop:''};
     ST_CROP.lands.push(land);
   } else {
@@ -13716,7 +13716,7 @@ var CROP_HARV_LAND=null;
    with the chosen land's fields. */
 function cropHarvestPick(){
   var cands=ST_CROP.lands.filter(function(l){var e=cropEffStage(l);return e==='growing'||e==='harvest';});
-  if(!cands.length){ toast('No lands ready to harvest','info'); return; }
+  if(!cands.length){ toast('No fields ready to harvest','info'); return; }
   CROP_HARV_LAND = (cands.length===1) ? cands[0].id : null;
   cropHarvestModal();
 }
@@ -13732,7 +13732,7 @@ function cropHarvestModal(){
       '<div style="flex:1;min-width:0"><div style="font-weight:800;font-size:13.5px">'+esc(l.name)+'</div><div style="font-size:11px;color:var(--t3)">'+(l.area||0)+' ha'+(l.crop?(' · '+esc(l.crop)):'')+'</div></div>'+
       (on?'<span style="color:var(--gd);font-weight:800;font-size:16px">✓</span>':(e==='harvest'?'<span class="crop-stage s-harv">Ready</span>':'<span class="crop-stage s-grow">Growing</span>'))+'</div>';
   }).join('');
-  var body='<div style="'+lblCss+'">Which land did you harvest?</div>'+picker;
+  var body='<div style="'+lblCss+'">Which field did you harvest?</div>'+picker;
   if(sel){
     var estMoney=Math.round((sel.targetYield||0)*(sel.area||0)*(cropLandPrice(sel)||0));
     body+='<div style="margin-top:14px"><label style="'+lblCss+'">How much came off? (t/ha)</label>'+
@@ -13774,7 +13774,7 @@ function cropHarvestYieldChg(){
   h.textContent='≈ '+tons+' t off '+sel.name+cmp;
 }
 function cropHarvestSave(){
-  var l=(CROP_HARV_LAND!=null)?cropLandById(CROP_HARV_LAND):null; if(!l){ toast('Pick a land','error'); return; }
+  var l=(CROP_HARV_LAND!=null)?cropLandById(CROP_HARV_LAND):null; if(!l){ toast('Pick a field','error'); return; }
   var y=parseFloat(($('ch-yield')||{}).value); if(isNaN(y)||y<0){ toast('Enter a valid yield','error'); return; }
   var mr=($('ch-money')||{}).value;
   var money=(mr==null||String(mr).trim()==='')?0:(parseFloat(String(mr).replace(/[^0-9.]/g,''))||0);
@@ -14267,7 +14267,7 @@ function aiSprayCsvFile(from, to){
 function cropLogInput(editId){
   CROP_INPUT_EDIT = editId || null;
   var planted=ST_CROP.lands.filter(cropPlanted);
-  if(!planted.length){ toast('Plant a land first','info'); return; }
+  if(!planted.length){ toast('Plant a field first','info'); return; }
   var landBoxes=planted.map(function(l,ix){return '<label style="display:flex;align-items:center;gap:9px;padding:8px 10px;border:1px solid var(--br);border-radius:9px;margin-bottom:6px;cursor:pointer;font-size:13px"><input type="checkbox" class="ci-land-cb" value="'+l.id+'"'+(ix===0?' checked':'')+' style="width:17px;height:17px;flex:none">'+esc(l.name)+' <span style="color:var(--t4)">'+(l.area||0)+' ha</span></label>';}).join('');
   var kinds=[['herbicide','Herbicide'],['fungicide','Fungicide'],['insecticide','Insecticide'],['fertiliser','Fertiliser'],['seed','Seed']];
   var kindOpts=kinds.map(function(k){return '<option value="'+k[0]+'">'+k[1]+'</option>';}).join('');
@@ -14275,7 +14275,7 @@ function cropLogInput(editId){
   function lbl(t,opt){ return '<label style="display:block;font-size:11px;font-weight:800;color:var(--gm);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px">'+t+(opt?' <span style="color:var(--t4);font-weight:600;text-transform:none;letter-spacing:0">optional</span>':'')+'</label>'; }
   var inpCss='width:100%;height:38px;border:1px solid var(--br);border-radius:9px;background:#fff;padding:0 11px;font-size:13.5px;font-family:inherit;box-sizing:border-box';
   var body=''+
-    '<div style="margin-bottom:12px">'+lbl('Which lands? — tick all it went on')+'<div id="ci-lands">'+landBoxes+'</div><div style="font-size:11px;color:var(--t4);margin-top:2px">Cost is per hectare — one record per land, each with the same batch, operator &amp; wait period.</div></div>'+
+    '<div style="margin-bottom:12px">'+lbl('Which fields? — tick all it went on')+'<div id="ci-lands">'+landBoxes+'</div><div style="font-size:11px;color:var(--t4);margin-top:2px">Cost is per hectare — one record per field, each with the same batch, operator &amp; wait period.</div></div>'+
     '<div style="margin-bottom:12px">'+lbl('What did you apply?')+'<input id="ci-product" placeholder="start typing a product name" style="'+inpCss+'"></div>'+
     '<div style="display:flex;gap:10px;margin-bottom:12px"><div style="flex:1">'+lbl('MAPP number',true)+'<input id="ci-reg" placeholder="on the label, e.g. 12629" style="'+inpCss+'"></div>'+
       '<div style="flex:1">'+lbl('Type')+'<select id="ci-kind" style="'+inpCss+'">'+kindOpts+'</select></div></div>'+
@@ -14315,7 +14315,7 @@ function cropLogInput(editId){
 function cropInputFormSave(){
   if(CROP_INPUT_EDIT){ cropInputEditSave(CROP_INPUT_EDIT); return; }
   var landIds=Array.prototype.slice.call(document.querySelectorAll('.ci-land-cb:checked')).map(function(c){return parseInt(c.value,10);}).filter(function(x){return !isNaN(x);});
-  if(!landIds.length){ toast('Tick at least one land','error'); return; }
+  if(!landIds.length){ toast('Tick at least one field','error'); return; }
   var product=(($('ci-product')||{}).value||'').trim(); if(!product){ toast('What did you apply?','error'); return; }
   var kind=(($('ci-kind')||{}).value||'herbicide');
   var phi=parseInt(($('ci-phi')||{}).value,10)||0;
@@ -14419,7 +14419,7 @@ function cropRenderLandModal(){
       '</div>') : '';
 
     var inputsForLand=ST_CROP.inputs.filter(function(i){return i.land===l.id;});
-    var inpNote = inputsForLand.length ? ('<div style="font-size:11.5px;color:var(--t3);margin:14px 20px 0">'+inputsForLand.length+' input/spray record'+(inputsForLand.length>1?'s':'')+' on this land. See Inputs &amp; Spray for detail.</div>') : '';
+    var inpNote = inputsForLand.length ? ('<div style="font-size:11.5px;color:var(--t3);margin:14px 20px 0">'+inputsForLand.length+' input/spray record'+(inputsForLand.length>1?'s':'')+' on this field. See Inputs &amp; Spray for detail.</div>') : '';
 
     var actions='<div style="display:flex;gap:8px;padding:14px 20px;border-top:1px solid var(--br2)">';
     actions+='<button onclick="cropEditLand()" style="flex:1;padding:10px;border-radius:9px;font-weight:700;font-size:13px;border:none;background:var(--gd);color:#fff;cursor:pointer">Edit</button>';
@@ -14438,7 +14438,7 @@ function cropRenderLandModal(){
   var cropOpts=ST_CROP.cropTypes.map(function(c){return '<option value="'+esc(c.t)+'"'+(c.t===l.crop?' selected':'')+'>'+c.i+' '+esc(c.t)+'</option>';}).join('');
   function F(label,inner){ return '<div class="crop-field" style="margin-bottom:11px"><label>'+label+'</label>'+inner+'</div>'; }
   var body='<div style="padding:16px 20px">'+
-    F('Land name','<input id="cle-name" value="'+esc(l.name)+'">')+
+    F('Field name','<input id="cle-name" value="'+esc(l.name)+'">')+
     '<div class="crop-two">'+F('Crop','<select id="cle-crop"><option value="">\u2014 none (fallow)</option>'+cropOpts+'</select>')+F('Cultivar','<input id="cle-cultivar" value="'+esc(l.cultivar||'')+'">')+'</div>'+
     '<div class="crop-two">'+F('Area (ha)','<input id="cle-area" type="number" value="'+(l.area||0)+'">')+F('Field number <span style="font-weight:500;color:var(--t4)">optional</span>','<input id="cle-fref" placeholder="DAERA field no. or RPA parcel" value="'+esc(l.fieldRef||'')+'">')+'</div>'+
     F('Crop code (EPPO) <span style="font-weight:500;color:var(--t4)">worked out from the crop; change it if it is wrong</span>','<select id="cle-eppo">'+eppoOptions(eppoForLand(l))+'</select><div style="font-size:11px;color:var(--t4);margin-top:4px">Northern Ireland records the crop as an EPPO code. '+esc(EPPO_CREDIT)+'.</div>')+
@@ -14455,7 +14455,7 @@ function cropRenderLandModal(){
   cropEditPriceTouched=false;
   (function(){ var box=$('cle-price-chip'); if(!box) return; var ref=cropPrice(l.crop);
     if(ref>0){ box.innerHTML='<div onclick="cropEditUseMarket('+l.id+')" style="display:inline-flex;align-items:center;gap:7px;margin-top:8px;background:var(--gb);border:1px solid #cfe9d8;border-radius:99px;padding:5px 11px;font-size:11.5px;font-weight:700;color:var(--gd);cursor:pointer">\uD83D\uDCB9 AHDB \u2248 '+_curSym()+_grpInt(ref)+'/t<span style=\"background:var(--gd);color:#fff;border-radius:99px;padding:2px 8px;font-size:11px\">Use</span></div>'; }
-    else { box.innerHTML='<div style="margin-top:8px;display:flex;align-items:flex-start;gap:8px;font-size:11.5px;line-height:1.5;background:#FFF8E6;color:#7a4a10;border:1px solid #F3D9A6;border-radius:8px;padding:8px 11px">\ud83d\udca1<span>We have no market price for this crop. Yours is the only figure that can be right \u2014 without it we cannot work out what this land earns.</span></div>'; }
+    else { box.innerHTML='<div style="margin-top:8px;display:flex;align-items:flex-start;gap:8px;font-size:11.5px;line-height:1.5;background:#FFF8E6;color:#7a4a10;border:1px solid #F3D9A6;border-radius:8px;padding:8px 11px">\ud83d\udca1<span>We have no market price for this crop. Yours is the only figure that can be right \u2014 without it we cannot work out what this field earns.</span></div>'; }
   })();
 }
 
@@ -14467,7 +14467,7 @@ async function cropSaveLandEdit(){
   var _pCrop=$('cle-crop').value, _pVal=parseFloat($('cle-price') && $('cle-price').value)||0;
   if(_pCrop && _pVal<=0 && (typeof cropPrice!=='function' || cropPrice(_pCrop)<=0)){
     var _ok=await appConfirm('Save without a price?',
-      {sub:_pCrop+' \u2014 we have no market price for it, so until you add one this land will not be counted in what your farm earns.',
+      {sub:_pCrop+' \u2014 we have no market price for it, so until you add one this field will not be counted in what your farm earns.',
        okLabel:'Save anyway', danger:false});
     if(!_ok) return;
   }
@@ -14529,11 +14529,11 @@ function openCropGMReport(){
   });
   var html='<h1>Gross Margin per Hectare</h1>'+
     '<div class="lsr-meta">'+escTxHtml(FARM.name||'Farm')+' \u00b7 season '+cropSeasonStr()+' \u00b7 figures to '+lsFmtDate(LS_TODAY)+'</div>'+
-    '<div class="lsr-lead">Income (yield \u00d7 AHDB/own price) less direct input cost, per land and per hectare. Yields are actual where harvested, otherwise expected.</div>'+
-    '<table><thead><tr><th>Land</th><th>Crop</th><th class="amt">Ha</th><th class="amt">t/ha</th><th class="amt">Price/t</th><th class="amt">Input/ha</th><th class="amt">GM/ha</th><th class="amt">Total GM</th></tr></thead><tbody>'+rows+'</tbody>'+
+    '<div class="lsr-lead">Income (yield \u00d7 AHDB/own price) less direct input cost, per field and per hectare. Yields are actual where harvested, otherwise expected.</div>'+
+    '<table><thead><tr><th>Field</th><th>Crop</th><th class="amt">Ha</th><th class="amt">t/ha</th><th class="amt">Price/t</th><th class="amt">Input/ha</th><th class="amt">GM/ha</th><th class="amt">Total GM</th></tr></thead><tbody>'+rows+'</tbody>'+
     '<tfoot><tr class="total"><td colspan="2">Total / weighted</td><td class="amt">'+T.area+'</td><td class="amt"></td><td class="amt"></td><td class="amt">'+cropRand(T.area?T.inp/T.area:0)+'</td><td class="amt">'+cropRand(T.area?T.gm/T.area:0)+'</td><td class="amt">'+cropRand(T.gm)+'</td></tr></tfoot></table>'+
-    '<div class="lsr-note">Gross margin excludes overheads (finance, salaries, depreciation). It is the best like-for-like comparison between crops and lands. Forecast gross margin across planted lands: <b>'+cropRand(T.gm)+'</b>.</div>';
-  var csv=lsCsvRow(['Gross Margin per Hectare',FARM.name||'Farm','Season',cropSeasonStr()])+lsCsvRow([])+lsCsvRow(['Land','Crop','Ha','t/ha','Price/t','Input/ha','GM/ha','Total GM']);
+    '<div class="lsr-note">Gross margin excludes overheads (finance, salaries, depreciation). It is the best like-for-like comparison between crops and fields. Forecast gross margin across planted lands: <b>'+cropRand(T.gm)+'</b>.</div>';
+  var csv=lsCsvRow(['Gross Margin per Hectare',FARM.name||'Farm','Season',cropSeasonStr()])+lsCsvRow([])+lsCsvRow(['Field','Crop','Ha','t/ha','Price/t','Input/ha','GM/ha','Total GM']);
   planted.forEach(function(l){ csv+=lsCsvRow([l.name,l.crop,l.area,cropLandYield(l),cropPrice(l.crop),l.inputPerHa,cropLandGMperHa(l),cropLandGMperHa(l)*l.area]); });
   csv+=lsCsvRow(['Total','',T.area,'','','','',T.gm]);
   lsShowReport('Gross margin per hectare','linear-gradient(135deg,#2D6A4F,#1B4332)',html,csv,'crop-gross-margin.csv');
@@ -14551,15 +14551,15 @@ function openCropSprayReport(){
     var status=cropInputActive(i)?'<span class="lsr-wd">\u23F3 still waiting</span>':'<span class="lsr-ok">\u2713 clear</span>';
     return '<tr><td>'+cropDispDate(i.date)+'</td><td>'+escTxHtml(l?l.name:'?')+'</td><td>'+escTxHtml(i.product)+'<br><span style="color:#9ca3af;font-size:11px">'+escTxHtml(ukRegLabel(i.reg))+'</span></td><td><span class="lsr-pill '+meta[1].replace('p-','lsr-')+'">'+meta[0]+'</span></td><td>'+escTxHtml(i.rate||'')+'</td><td>'+batch+'</td><td>'+escTxHtml(i.by||'')+(i.operatorCert?' ('+escTxHtml(i.operatorCert)+')':'')+'</td><td>'+(i.phi?i.phi+' d':'None')+'</td><td>'+safe+'</td><td>'+status+'</td></tr>';
   }).join('');
-  var banner=active.length?'<div class="lsr-banner warn"><b>\u23F3 '+active.length+' land(s) within a pre-harvest interval.</b> Do not harvest before the safe date (Section 1).'+(missing.length?(' '+missing.length+' record(s) missing a batch number.'):'')+'</div>':'<div class="lsr-banner ok"><b>\u2713 No active pre-harvest intervals.</b> All treated lands are safe to harvest.'+(missing.length?(' Note: '+missing.length+' record(s) missing a batch number.'):'')+'</div>';
+  var banner=active.length?'<div class="lsr-banner warn"><b>\u23F3 '+active.length+' field(s) within a pre-harvest interval.</b> Do not harvest before the safe date (Section 1).'+(missing.length?(' '+missing.length+' record(s) missing a batch number.'):'')+'</div>':'<div class="lsr-banner ok"><b>\u2713 No active pre-harvest intervals.</b> All treated fields are safe to harvest.'+(missing.length?(' Note: '+missing.length+' record(s) missing a batch number.'):'')+'</div>';
   var html='<h1>Spray programme &amp; harvest dates</h1>'+
     '<div class="lsr-meta">'+escTxHtml(FARM.name||'Farm')+' \u00b7 season '+cropSeasonStr()+' \u00b7 Plant protection product records \u00b7 figures to '+lsFmtDate(LS_TODAY)+'</div>'+banner+
     '<h2>1 \u00b7 Fields still inside a harvest interval</h2><table><thead><tr><th>Field</th><th>Product</th><th>Sprayed</th><th class="amt">Harvest interval</th><th>Safe from</th></tr></thead><tbody>'+awRows+'</tbody></table>'+
-    '<h2>2 \u00b7 Full application register</h2><table><thead><tr><th>Date</th><th>Land</th><th>Product \u00b7 reg</th><th>Type</th><th>Rate</th><th>Batch</th><th>By</th><th>Harvest interval</th><th>Safe from</th><th>Status</th></tr></thead><tbody>'+regRows+'</tbody></table>'+
+    '<h2>2 \u00b7 Full application register</h2><table><thead><tr><th>Date</th><th>Field</th><th>Product \u00b7 reg</th><th>Type</th><th>Rate</th><th>Batch</th><th>By</th><th>Harvest interval</th><th>Safe from</th><th>Status</th></tr></thead><tbody>'+regRows+'</tbody></table>'+
     '<div class="lsr-note">A line is flagged if it is missing a batch number or (for a scheduled product) the registration/applicator. Use of an unregistered product, or harvesting before the safe date, is a residue-compliance risk for export (MRL) and GlobalGAP.</div>'+
     '<h2>3 \u00b7 Records to keep</h2><ul class="lsr-keep"><li>Approved product (MAPP number) used at label rate.</li><li>Date, land, batch and applicator for every application.</li><li>Pre-harvest interval observed before harvest/delivery.</li><li>Operator training and PPE for restricted products.</li></ul>'+
     '<div class="lsr-disc"><b>Not agronomic or legal advice.</b> Confirm registration, rates and PHIs against the current product label. Final responsibility rests with the farm.</div>';
-  var csv=lsCsvRow(['Spray programme & harvest dates',FARM.name||'Farm','Season',cropSeasonStr()])+lsCsvRow([])+lsCsvRow(['Date','Land','Product','Reg','Type','Rate','Batch','By','Cert','Harvest interval (days)','Safe from','Status']);
+  var csv=lsCsvRow(['Spray programme & harvest dates',FARM.name||'Farm','Season',cropSeasonStr()])+lsCsvRow([])+lsCsvRow(['Date','Field','Product','Reg','Type','Rate','Batch','By','Cert','Harvest interval (days)','Safe from','Status']);
   all.forEach(function(i){var l=cropLandById(i.land);csv+=lsCsvRow([i.date,l?l.name:'',i.product,i.reg||'',cropInputKindMeta(i.kind)[0],i.rate||'',i.batch||'',i.by||'',i.operatorCert||'',i.phi||0,cropInputActive(i)?cropLocalISO(cropInputSafe(i)):'cleared',cropInputActive(i)?'within PHI':'clear']);});
   lsShowReport('Spray program & PHI audit','linear-gradient(135deg,#9a3d6e,#7C2D5A)',html,csv,'crop-spray-phi-audit.csv');
 }
@@ -14627,7 +14627,7 @@ function openCropInputCostReport(){
 function openCropWaterReport(){
   var c=ST_CROP.compliance;
   var irr=ST_CROP.lands.filter(function(l){return l.irrigated;});
-  var rows=irr.map(function(l){return '<tr><td>'+escTxHtml(l.name)+'</td><td>'+escTxHtml(l.crop||'\u2014')+'</td><td class="amt">'+l.area+' ha</td><td>Irrigated</td></tr>';}).join('') || '<tr><td colspan="4" style="color:#6b7280">No irrigated lands recorded.</td></tr>';
+  var rows=irr.map(function(l){return '<tr><td>'+escTxHtml(l.name)+'</td><td>'+escTxHtml(l.crop||'\u2014')+'</td><td class="amt">'+l.area+' ha</td><td>Irrigated</td></tr>';}).join('') || '<tr><td colspan="4" style="color:#6b7280">No irrigated fields recorded.</td></tr>';
   var pct=c.waterAuthorised?Math.round(c.waterUsed/c.waterAuthorised*100):0;
   var html='<h1>Water Abstraction Return</h1>'+
     '<div class="lsr-meta">'+escTxHtml(FARM.name||'Farm')+' \u00b7 Water Resources Act 1991 · abstraction licensing \u00b7 season '+cropSeasonStr()+'</div>'+
@@ -14637,7 +14637,7 @@ function openCropWaterReport(){
       '<tr><td>Abstracted this season</td><td class="amt">'+(c.waterUsed||0).toLocaleString('en-GB')+' m\u00b3</td></tr>'+
       '<tr class="total"><td>Used vs authorised</td><td class="amt">'+pct+'%</td></tr>'+
     '</tbody></table>'+
-    '<h2>2 \u00b7 Irrigated lands</h2><table><thead><tr><th>Land</th><th>Crop</th><th class="amt">Area</th><th>Use</th></tr></thead><tbody>'+rows+'</tbody></table>'+
+    '<h2>2 \u00b7 Irrigated fields</h2><table><thead><tr><th>Field</th><th>Crop</th><th class="amt">Area</th><th>Use</th></tr></thead><tbody>'+rows+'</tbody></table>'+
     '<div class="lsr-note">Keep monthly meter readings and stay within the authorised volume. Abstracting above the licensed volume, or without a licence where one is needed, is an offence under the Water Resources Act 1991.</div>'+
     '<div class="lsr-disc"><b>Not legal advice.</b> Confirm your authorisation conditions and reporting deadlines with the Department of Water and Sanitation / your Water User Association.</div>';
   var csv=lsCsvRow(['Water Abstraction Return',FARM.name||'Farm','Season',cropSeasonStr()])+lsCsvRow([])+lsCsvRow(['Abstraction licence',c.waterLicence||''])+lsCsvRow(['Authorised m3/yr',c.waterAuthorised||0])+lsCsvRow(['Used m3',c.waterUsed||0])+lsCsvRow(['% used',pct])+lsCsvRow([])+lsCsvRow(['Irrigated land','Crop','Ha']);
@@ -17670,7 +17670,7 @@ function _txStuckWatch(){
      and a cover that silently fails to engage is exactly the bug this fixes. A passive
      scroll listener + rAF throttle is boring and works everywhere. */
   /* Two speeds. The class toggle is six rect reads and MUST run on every scroll event:
-     Chrome fires 'scroll' before that frame paints, so an unthrottled toggle lands in the
+     Chrome fires 'scroll' before that frame paints, so an unthrottled toggle fields in the
      same frame — throttling it (as shipped in v181/182) let rows flash above the bar for
      up to ~100ms on real scrolls. The height measurement is heavier and heights do not
      change mid-scroll, so it stays throttled. */
@@ -19253,12 +19253,12 @@ setEl('dash-budget-period', month);
   // ── Metric cards (legacy IDs — elements removed from DOM, setEl no-ops gracefully) ──
   setEl('dash-income',   fmt(cur.income));
   setEl('dash-expenses', fmt(cur.expenses));
-  setEl('dash-profit',   fmt(Math.abs(profit)));
+  setEl('dash-profit',   (profit<0?'\u2212':'')+fmt(Math.abs(profit)));
 
   // ── Cashflow grid (Option A — single panel with deltas, margin & footer) ──
   setEl('dash-cf-in',  fmt(cur.income));
   setEl('dash-cf-out', fmt(cur.expenses));
-  setEl('dash-cf-net', fmt(Math.abs(profit)));
+  setEl('dash-cf-net', (profit<0?'\u2212':'')+fmt(Math.abs(profit)));
   /* Which month, and on what basis - the same two words the Reports header uses. */
   if(typeof setTags==='function') setTags('dash-cf-net-tags','actual',month,'actual','Cash');
 
@@ -19328,7 +19328,7 @@ var txCount = ST.txns.filter(function(t){
   // ── Cashflow page ──
   setEl('cashflow-in',  fmt(cur.income));
   setEl('cashflow-out', fmt(cur.expenses));
-  setEl('cashflow-net', fmt(Math.abs(profit)));
+  setEl('cashflow-net', (profit<0?'\u2212':'')+fmt(Math.abs(profit)));
   setEl('cashflow-badge', (profit>=0?'↑':'↓') + ' ' + margin + '% margin');
   setEl('cashflow-sub', (profit>=0?'Yes, you have enough':'Watch your cash — expenses exceed income') + ' this month.');
   setEl('cashflow-detail', 'You earned ' + (profit>=0 ? fmt(Math.abs(profit)) + ' more' : fmt(Math.abs(profit)) + ' less') + ' than you spent in ' + month + '.');
@@ -19376,7 +19376,10 @@ function renderSeasonKpis() {
 
 setEl('season-ytd-income',   fmt(ytd.income));
   setEl('season-ytd-expenses', fmt(ytd.expenses));
-  setEl('season-ytd-profit',   fmt(Math.abs(profit)));
+  /* A loss keeps its minus sign and says "Loss": the red colour alone read as a profit. */
+  setEl('season-ytd-profit',   (profit<0?'\u2212':'')+fmt(Math.abs(profit)));
+  (function(){ var v=$('season-ytd-profit'), l=v&&v.previousElementSibling; if(!l) return;
+    var tn=l.firstChild; if(tn && tn.nodeType===3) tn.nodeValue=(profit<0?'Loss':'Profit')+' Year-to-date'; })();
   /* No income, no margin. The dashboard's main card already said so; this tile said 0.0%. */
   setEl('season-margin', ytd.income > 0 ? margin + '%' : '\u2014');
   (function(){ var v = $('season-margin'); if (!v) return;
@@ -21625,7 +21628,7 @@ function saveExpense() {
 // ============================================================
 var ST_ASSETS = {
   assets: [
-    {id:1,  name:'Oakvale Farm — 480 ha',          cat:'Land & Buildings',      date:'2005-06-01', price:4560000, deprType:'none', life:0,  subtype:'land', notes:'Title deed: T4521/2005 · Herefordshire'},
+    {id:1,  name:'Oakvale Farm — 480 ha',          cat:'Land & Buildings',      date:'2005-06-01', price:4560000, deprType:'none', life:0,  subtype:'land', notes:'Land Registry title HE184420 · Herefordshire'},
     {id:2,  name:'Farmhouse (5-bedroom)',              cat:'Land & Buildings',      date:'2005-06-01', price:640000, deprType:'none', life:0,  insuredValue:720000, insurer:'NFU Mutual', renewalDate:'2027-03-31', notes:'280m2 main residence'},
     {id:3,  name:'Grain store & general purpose barn',       cat:'Land & Buildings',      date:'2010-03-12', price:185000,  deprType:'none', life:0, subtype:'building', insuredValue:210000, insurer:'NFU Mutual', renewalDate:'2027-03-31', notes:'Brick construction · built before 29 Oct 2018 — no Structures and Buildings Allowance'},
     {id:4,  name:'John Deere 6140M Tractor',           cat:'Vehicles & Tractors',   date:'2022-03-15', price:118000, deprType:'aia', life:5,  notes:'Reg: JD6140-NW · 4WD, 140HP', financed:true, lender:'John Deere Financial', outstanding:52000, instalment:990, rate:6.9, insuredValue:98000, insurer:'NFU Mutual', renewalDate:'2027-06-25', docs:[{name:'Invoice-JD6140.pdf',kind:'doc',data:''},{name:'Vehicle-registration.pdf',kind:'doc',data:''}]},
@@ -21651,10 +21654,10 @@ var ST_ASSETS = {
 /* ===================== LOANS & DEBT MODULE ===================== */
 var ST_LOANS = {
   loans: [
-    {id:'comb', icon:'\uD83D\uDE9C', name:'Combine loan', lender:'Barclays', type:'Machine loan', assetId:9, borrowed:1400000, balance:78000, rate:7.4, payment:1490, next:'1 Jun'},
-    {id:'seas', icon:'\uD83C\uDF31', name:'Season loan', lender:'Oxbury Bank', type:'Season loan', assetId:null, borrowed:1500000, balance:145000, rate:8.1, payment:2650, next:'1 Jun'},
-    {id:'bak',  icon:'\uD83D\uDEFB', name:'Pickup loan', lender:'Barclays', type:'Vehicle loan', assetId:6, borrowed:720000, balance:24500, rate:6.9, payment:610, next:'1 Jun'},
-    {id:'trac', icon:'\uD83D\uDE9C', name:'Tractor loan', lender:'John Deere Financial', type:'Machine loan', assetId:4, borrowed:1050000, balance:52000, rate:6.9, payment:990, next:'1 Jun'}
+    {id:'comb', icon:'\uD83D\uDE9C', name:'Combine loan', lender:'Barclays', type:'Machine loan', assetId:9, borrowed:90000, balance:78000, rate:7.4, payment:1490, next:'1 Jun'},
+    {id:'seas', icon:'\uD83C\uDF31', name:'Season loan', lender:'Oxbury Bank', type:'Season loan', assetId:null, borrowed:180000, balance:145000, rate:8.1, payment:2650, next:'1 Jun'},
+    {id:'bak',  icon:'\uD83D\uDEFB', name:'Pickup loan', lender:'Barclays', type:'Vehicle loan', assetId:6, borrowed:32000, balance:24500, rate:6.9, payment:610, next:'1 Jun'},
+    {id:'trac', icon:'\uD83D\uDE9C', name:'Tractor loan', lender:'John Deere Financial', type:'Machine loan', assetId:4, borrowed:95000, balance:52000, rate:6.9, payment:990, next:'1 Jun'}
   ],
   overdrafts: [
     {id:'od1', icon:'\uD83C\uDFE6', name:'Production overdraft', lender:'Oxbury Bank', limit:150000, used:34000, rateMode:'prime', prime:4.0, margin:2, flatRate:12.25}
@@ -22188,7 +22191,7 @@ function laRenderCheckFigures(){
       '<div class="la-cf-item"><div class="la-cf-lbl">Land &amp; water rights <span class="la-cf-opt">a lender always asks for this</span></div><div class="la-cf-sub">The app can\'t verify title deeds or water licenses — this is what you tell your lender directly. Leave blank to skip this section in the report.</div>'+
         '<div class="la-cf-row2"><div><div class="cl" style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.03em;color:var(--t4);margin-bottom:4px">Land you own (ha)</div><div class="la-cf-in"><input id="la-cf-ownedha" inputmode="numeric" value="'+v(lw.ownedHa!=null?lw.ownedHa:((typeof FARM!=='undefined'&&FARM.ha>0)?FARM.ha:''))+'" placeholder="0" onblur="laCFGrp(this);laCFLWCheck()"></div></div>'+
         '<div><div class="cl" style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.03em;color:var(--t4);margin-bottom:4px">Land you lease (ha)</div><div class="la-cf-in"><input id="la-cf-leasedha" inputmode="numeric" value="'+v(lw.leasedHa||'')+'" placeholder="0" onblur="laCFGrp(this);laCFLWCheck()"></div></div></div>'+
-        '<div style="margin-bottom:9px"><div class="cl" style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.03em;color:var(--t4);margin-bottom:4px">Tenure details</div><textarea class="la-cf-ta" id="la-cf-tenure" oninput="laCFLWCheck()" placeholder="Title deed number, portions, district...">'+esc(lw.tenure||'')+'</textarea></div>'+
+        '<div style="margin-bottom:9px"><div class="cl" style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.03em;color:var(--t4);margin-bottom:4px">Tenure details</div><textarea class="la-cf-ta" id="la-cf-tenure" oninput="laCFLWCheck()" placeholder="Land Registry title number, or tenancy type (AHA / FBT) and landlord...">'+esc(lw.tenure||'')+'</textarea></div>'+
         '<div><div class="cl" style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.03em;color:var(--t4);margin-bottom:4px">Water rights</div><textarea class="la-cf-ta" id="la-cf-water" oninput="laCFLWCheck()" placeholder="e.g. Registered - 480 000 m\u00b3/yr under abstraction licence AN/033/0021/012, or &#39;Rain-fed, no abstraction licence&#39;">'+esc(lw.water||'')+'</textarea></div>'+
         '<div class="la-cf-warn" id="la-cf-lw-warn" style="display:'+((lw.ownedHa||lw.leasedHa||lw.tenure||lw.water)?'none':'flex')+'"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#B45309" stroke-width="2.3" stroke-linecap="round"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9"/></svg><span>Left blank — <b>this section will be missing from your report</b>. That\'s fine if you\'d rather add it later, but a lender will likely ask for it.</span></div>'+
       '</div>'+
@@ -22500,7 +22503,7 @@ function laReportHTML(withLoan){
       '<div class="lar-docrow"><span class="lar-doccb"></span>HMRC tax clearance certificate or TCS PIN</div>'+
       '<div class="lar-docrow"><span class="lar-doccb"></span>ITC (credit bureau) clearance certificate</div></div>'+
     '<div class="lar-docgrp"><div class="lar-docgrp-h">Land &amp; security</div>'+
-      '<div class="lar-docrow"><span class="lar-doccb"></span>Title deed or lease agreement</div>'+
+      '<div class="lar-docrow"><span class="lar-doccb"></span>Land Registry title or tenancy agreement</div>'+
       '<div class="lar-docrow"><span class="lar-doccb"></span>Water use licence / rights documentation</div>'+
       '<div class="lar-docrow"><span class="lar-doccb"></span>Insurance quotations for assets to be financed</div></div>'+
     '<div class="lar-docgrp"><div class="lar-docgrp-h">Personal &amp; other</div>'+
@@ -22877,7 +22880,7 @@ function lnOdRateInput(id){
   var eff=LN_odRate(o), u=lnOdUI(id);
   LN_setTxt('od-'+id+'-eff', eff.toFixed(2)+'%');
   LN_setTxt('od-'+id+'-intmo', LN_R(LN_odIntM(o)));
-  LN_setTxt('od-'+id+'-ratebdg', eff.toFixed(2)+'% '+(o.rateMode==='flat'?'(flat)':'(prime + '+o.margin+')'));
+  LN_setTxt('od-'+id+'-ratebdg', eff.toFixed(2)+'% '+(o.rateMode==='flat'?'(flat)':'(base + '+o.margin+')'));
   var base = u.mode==='repay' ? Math.max(0,(o.used||0)-(u.amt||0)) : (u.amt||0);
   LN_setTxt('od-'+id+'-simint', LN_R(Math.round(base*eff/100/12)));
 }
@@ -22927,14 +22930,14 @@ function lnOdCommit(id){
 
 function lnOdRateEditor(o){
   var eff=LN_odRate(o).toFixed(2)+'%', id=o.id;
-  var modes='<div class="od-re-toggle"><button class="od-re-mode'+(o.rateMode!=='flat'?' on':'')+'" onclick="lnOdRateMode(\''+id+'\',\'prime\')">Prime-linked</button><button class="od-re-mode'+(o.rateMode==='flat'?' on':'')+'" onclick="lnOdRateMode(\''+id+'\',\'flat\')">Flat rate</button></div>';
+  var modes='<div class="od-re-toggle"><button class="od-re-mode'+(o.rateMode!=='flat'?' on':'')+'" onclick="lnOdRateMode(\''+id+'\',\'prime\')">Base-rate linked</button><button class="od-re-mode'+(o.rateMode==='flat'?' on':'')+'" onclick="lnOdRateMode(\''+id+'\',\'flat\')">Flat rate</button></div>';
   var body;
   if(o.rateMode==='flat'){
     body='<div class="od-re-row"><div class="od-re-f"><label>Rate (% per year)</label><div class="od-re-inp"><input id="od-'+id+'-flat" type="number" step="0.25" value="'+(o.flatRate||0)+'" oninput="lnOdRateInput(\''+id+'\')"><span>%</span></div><div class="od-re-hint">you set this \u2014 won\u2019t move with prime</div></div>'+
       '<div class="od-re-op">=</div><div class="od-re-effbox"><div class="od-re-effv" id="od-'+id+'-eff">'+eff+'</div><div class="od-re-effl">effective rate</div></div></div>';
   } else {
-    body='<div class="od-re-row"><div class="od-re-f"><label>Base rate</label><div class="od-re-inp"><input id="od-'+id+'-prime" type="number" step="0.25" value="'+(o.prime||0)+'" oninput="lnOdRateInput(\''+id+'\')"><span>%</span></div><div class="od-re-hint">Current base rate \u00b7 10.25%</div></div>'+
-      '<div class="od-re-op">+</div><div class="od-re-f"><label>Bank adds</label><div class="od-re-inp"><input id="od-'+id+'-margin" type="number" step="0.25" value="'+(o.margin||0)+'" oninput="lnOdRateInput(\''+id+'\')"><span>%</span></div><div class="od-re-hint">your bank\u2019s mark-up over prime</div></div>'+
+    body='<div class="od-re-row"><div class="od-re-f"><label>Base rate</label><div class="od-re-inp"><input id="od-'+id+'-prime" type="number" step="0.25" value="'+(o.prime||0)+'" oninput="lnOdRateInput(\''+id+'\')"><span>%</span></div><div class="od-re-hint">Bank of England base rate \u00b7 '+laPrime()+'%</div></div>'+
+      '<div class="od-re-op">+</div><div class="od-re-f"><label>Bank adds</label><div class="od-re-inp"><input id="od-'+id+'-margin" type="number" step="0.25" value="'+(o.margin||0)+'" oninput="lnOdRateInput(\''+id+'\')"><span>%</span></div><div class="od-re-hint">your bank\u2019s margin over base rate</div></div>'+
       '<div class="od-re-op">=</div><div class="od-re-effbox"><div class="od-re-effv" id="od-'+id+'-eff">'+eff+'</div><div class="od-re-effl">effective rate</div></div></div>';
   }
   return '<div class="od-re-ed"><div class="od-re-h"><span>Interest rate \u2014 you set this</span>'+modes+'</div>'+body+'</div>';
@@ -23023,7 +23026,7 @@ function lnOverdraftsHTML(){
     var availShow=Math.max(0,o.limit-usedPrev), pct=o.limit?Math.round(usedPrev/o.limit*100):0;
     h+='<div class="od-card">'+
       '<div class="od-c-top"><div><div class="od-c-nm">'+o.icon+' '+esc(o.name)+'</div>'+
-        '<div class="od-c-badges"><span class="od-c-bdg fac">Overdraft \u00b7 use as needed</span><span class="od-c-bdg lender">'+esc(o.lender)+'</span><span class="od-c-bdg rate" id="od-'+o.id+'-ratebdg">'+eff.toFixed(2)+'% '+(o.rateMode==='flat'?'(flat)':'(prime + '+o.margin+')')+'</span></div></div>'+
+        '<div class="od-c-badges"><span class="od-c-bdg fac">Overdraft \u00b7 use as needed</span><span class="od-c-bdg lender">'+esc(o.lender)+'</span><span class="od-c-bdg rate" id="od-'+o.id+'-ratebdg">'+eff.toFixed(2)+'% '+(o.rateMode==='flat'?'(flat)':'(base + '+o.margin+')')+'</span></div></div>'+
         '<div class="od-c-avail"><div class="v" id="od-'+o.id+'-availbig">'+LN_Rk(availShow)+'</div><div class="l">'+(preview?(u.mode==='draw'?'after this draw':'after repay'):'still available')+'</div></div></div>'+
       '<div class="od-c-gauge"><div class="row"><span id="od-'+o.id+'-gaugerow">'+(preview?(u.mode==='draw'?'After drawing '+LN_Rk(u.amt):'After repaying '+LN_Rk(u.amt)):'Used '+LN_Rk(usedNow))+'</span><span>Limit '+LN_Rk(o.limit)+'</span></div>'+
         '<div class="tk"><div class="fill" id="od-'+o.id+'-gaugefill" style="width:'+Math.min(100,pct)+'%">'+pct+'%</div></div>'+
@@ -23055,15 +23058,15 @@ function lnAddOdEdit(id){ var o=LN_od(id); LN_OD_EDIT_ID=id; LN_LOAN_EDIT_ID=nul
 function lnOdFormMode(m){ LN_OD_FORM_MODE=m; var w=$('odf-rate-wrap'); if(w) w.innerHTML=lnOdFormRateWrap(LN_OD_EDIT_ID?LN_od(LN_OD_EDIT_ID):null); }
 function lnOdFormRateWrap(o){
   var toggle='<div class="ln-frow"><label>How is the rate set?</label><div class="od-re-toggle">'+
-    '<button type="button" class="od-re-mode'+(LN_OD_FORM_MODE!=='flat'?' on':'')+'" onclick="lnOdFormMode(\'prime\')">Prime-linked</button>'+
+    '<button type="button" class="od-re-mode'+(LN_OD_FORM_MODE!=='flat'?' on':'')+'" onclick="lnOdFormMode(\'prime\')">Base-rate linked</button>'+
     '<button type="button" class="od-re-mode'+(LN_OD_FORM_MODE==='flat'?' on':'')+'" onclick="lnOdFormMode(\'flat\')">Flat rate</button></div></div>';
   var inputs;
   if(LN_OD_FORM_MODE==='flat'){
     inputs='<div class="ln-frow"><label>Rate (% a year)</label><input id="odf-flat" class="ln-inp" inputmode="decimal" placeholder="e.g. 12.25" value="'+((o&&o.rateMode==='flat')?(o.flatRate||''):'')+'"></div>';
   } else {
-    inputs='<div class="ln-two"><div class="ln-frow"><label>Prime rate (%)</label><input id="odf-prime" class="ln-inp" inputmode="decimal" value="'+((o&&o.prime!=null)?o.prime:'10.25')+'"></div>'+
+    inputs='<div class="ln-two"><div class="ln-frow"><label>Base rate (%)</label><input id="odf-prime" class="ln-inp" inputmode="decimal" value="'+((o&&o.prime!=null)?o.prime:laPrime())+'"></div>'+
       '<div class="ln-frow"><label>Bank adds (%)</label><input id="odf-margin" class="ln-inp" inputmode="decimal" placeholder="e.g. 2" value="'+((o&&o.margin!=null)?o.margin:'')+'"></div></div>'+
-      '<div class="ln-hint">Your bank\u2019s margin over base rate \u2014 the extra the bank charges. The Bank of England base rate is about 4.0%.</div>';
+      '<div class="ln-hint">Your bank\u2019s margin over base rate \u2014 the extra the bank charges. The Bank of England base rate is '+laPrime()+'%.</div>';
   }
   return toggle+inputs;
 }
@@ -23093,7 +23096,7 @@ function lnSaveOverdraft(){
   var limit=lnNum('odf-limit'), used=lnNum('odf-used');
   if(used>limit) used=limit;
   var mode=LN_OD_FORM_MODE;
-  var prime=mode==='prime'?(parseFloat(($('odf-prime')||{}).value)||0):10.25;
+  var prime=mode==='prime'?(parseFloat(($('odf-prime')||{}).value)||0):laPrime();
   var margin=mode==='prime'?(parseFloat(($('odf-margin')||{}).value)||0):0;
   var flatRate=mode==='flat'?(parseFloat(($('odf-flat')||{}).value)||0):(prime+margin);
   var o=LN_OD_EDIT_ID?LN_od(LN_OD_EDIT_ID):null;
@@ -23176,7 +23179,7 @@ function lnCoopAcctsHTML(){
     var availShow=Math.max(0,o.limit-usedPrev), pct=o.limit?Math.round(usedPrev/o.limit*100):0;
     h+='<div class="od-card">'+
       '<div class="od-c-top"><div><div class="od-c-nm">'+o.icon+' '+esc(o.name)+'</div>'+
-        '<div class="od-c-badges"><span class="od-c-bdg fac">Merchant account \u00b7 use as needed</span><span class="od-c-bdg lender">'+esc(o.coop||o.lender)+'</span><span class="od-c-bdg rate" id="od-'+o.id+'-ratebdg">'+eff.toFixed(2)+'% '+(o.rateMode==='flat'?'(flat)':'(prime + '+o.margin+')')+'</span></div></div>'+
+        '<div class="od-c-badges"><span class="od-c-bdg fac">Merchant account \u00b7 use as needed</span><span class="od-c-bdg lender">'+esc(o.coop||o.lender)+'</span><span class="od-c-bdg rate" id="od-'+o.id+'-ratebdg">'+eff.toFixed(2)+'% '+(o.rateMode==='flat'?'(flat)':'(base + '+o.margin+')')+'</span></div></div>'+
         '<div class="oc-owe"><div class="v" id="od-'+o.id+'-owebig">'+LN_Rk(usedPrev)+'</div><div class="l">'+(preview?(u.mode==='draw'?'after this':'after payment'):'what you owe')+'</div></div></div>'+
       '<div class="od-c-gauge"><div class="row"><span id="od-'+o.id+'-gaugerow">'+(preview?(u.mode==='draw'?'After buying '+LN_Rk(u.amt):'After paying '+LN_Rk(u.amt)):'Used '+LN_Rk(usedNow))+'</span><span>Limit '+LN_Rk(o.limit)+'</span></div>'+
         '<div class="tk"><div class="fill" id="od-'+o.id+'-gaugefill" style="width:'+Math.min(100,pct)+'%">'+pct+'%</div></div>'+
@@ -23211,9 +23214,9 @@ function lnAddCoHTML(){
   h+='<div class="ln-frow"><label>Which merchant?</label><select id="cof-coop" class="ln-inp">'+coops.map(function(x){return '<option'+(x===cv?' selected':'')+'>'+x+'</option>';}).join('')+'</select></div>';
   h+='<div class="ln-two"><div class="ln-frow"><label>What\u2019s your credit limit?</label><input id="cof-limit" class="ln-inp" inputmode="numeric" placeholder="£ 0" value="'+(o?o.limit:'')+'"></div>'+
      '<div class="ln-frow"><label>What do you owe so far?</label><input id="cof-used" class="ln-inp" inputmode="numeric" placeholder="£ 0" value="'+(o?o.used:'')+'"></div></div>';
-  h+='<div class="ln-two"><div class="ln-frow"><label>Prime rate (%)</label><input id="cof-prime" class="ln-inp" inputmode="decimal" value="'+((o&&o.prime!=null)?o.prime:'10.25')+'"></div>'+
+  h+='<div class="ln-two"><div class="ln-frow"><label>Base rate (%)</label><input id="cof-prime" class="ln-inp" inputmode="decimal" value="'+((o&&o.prime!=null)?o.prime:laPrime())+'"></div>'+
      '<div class="ln-frow"><label>Merchant adds (%)</label><input id="cof-margin" class="ln-inp" inputmode="decimal" placeholder="e.g. 2" value="'+((o&&o.margin!=null)?o.margin:'')+'"></div></div>';
-  h+='<div class="ln-hint">The merchant\u2019s margin over base rate \u2014 the extra they charge. The Bank of England base rate is about 4.0%. You can switch to a flat rate later on the account card.</div>';
+  h+='<div class="ln-hint">The merchant\u2019s margin over base rate \u2014 the extra they charge. The Bank of England base rate is '+laPrime()+'%. You can switch to a flat rate later on the account card.</div>';
   h+=lnFFFormRow('coop', o?o.id:null);
   h+='<button class="ln-addbtn" onclick="lnSaveCoopAcct()">'+(o?'Save changes':'Save merchant account')+'</button>';
   if(o) h+='<button class="ln-addbtn" style="background:#fff;color:var(--gd);border:1px solid var(--gm);margin-top:8px" onclick="lnArchive(\'coop\',\''+o.id+'\')">Archive (close account)</button>';
@@ -23227,7 +23230,7 @@ function lnSaveCoopAcct(){
   var coop=($('cof-coop')&&$('cof-coop').value)||'Other';
   if(!name) name=coop+' account';
   var limit=lnNum('cof-limit'), used=lnNum('cof-used'); if(used>limit) used=limit;
-  var prime=parseFloat(($('cof-prime')||{}).value)||10.25;
+  var prime=parseFloat(($('cof-prime')||{}).value)||laPrime();
   var margin=parseFloat(($('cof-margin')||{}).value)||0;
   var o=LN_CO_EDIT_ID?LN_coAcct(LN_CO_EDIT_ID):null;
   if(o){ o.name=name; o.coop=coop; o.lender=coop; o.limit=limit; o.used=used; if(o.rateMode!=='flat'){ o.prime=prime; o.margin=margin; } o.flatRate=(o.rateMode==='flat')?(o.flatRate||prime+margin):(prime+margin); toast('Merchant account updated','success'); }
@@ -26381,7 +26384,7 @@ function saveAsset() {
     entry._aiId = ST_ASSETS.assets[editIdx]._aiId;
     ST_ASSETS.assets[editIdx] = entry;
     /* No longer gated on _aiId: an asset whose first write failed has none, and the
-       write is keyed on the farm's own number for it, so the edit still lands (-330). */
+       write is keyed on the farm's own number for it, so the edit still fields (-330). */
     try { if (window.AI && AI.farm && AI.farm.active()) { AI.asset.update(entry._aiId || null, entry).then(function(row){ if(row && row.id) entry._aiId = row.id; }).catch(function(e){ console.error('Backend asset update failed:', e); }); } } catch(e){}
     astUploadDocs(entry);
     toast(name+' updated','success');
@@ -27689,7 +27692,7 @@ function wkContractBuilder(id){
     +'<div class="cb-sec open"><div class="cb-sech" onclick="cbSec(this)"><div class="ic">\ud83e\uddd1\u200d\ud83c\udf3e</div><div><div class="t">The job &amp; the person</div><div class="st">Role, duties, place, type, probation</div></div><div class="cv">\u25be</div></div><div class="cb-secb">'
       +'<div class="cb-fld first"><label>Their job title</label><input type="text" id="cb-title" value="'+wkE(title)+'"></div>'
       +'<div class="cb-fld"><label>What they do (duties)</label><textarea id="cb-duties">Day-to-day work the farm needs \u2014 crops, livestock and general work \u2014 and other reasonable tasks asked of them.</textarea><div class="cb-hint">Write it how it really is.</div></div>'
-      +'<div class="cb-fld"><label>Where they work</label><input type="text" id="cb-place" value="'+wkE(farm)+', and the lands &amp; yards that go with it"></div>'
+      +'<div class="cb-fld"><label>Where they work</label><input type="text" id="cb-place" value="'+wkE(farm)+', and the fields &amp; yards that go with it"></div>'
       +'<div class="cb-fld"><label>Type of work</label><div class="cb-seg" id="cb-type"><button data-v="Permanent"'+(typev==='Permanent'?' class="on"':'')+' onclick="cbSeg(this)">Permanent</button><button data-v="Seasonal"'+(typev==='Seasonal'?' class="on"':'')+' onclick="cbSeg(this)">Seasonal</button><button data-v="Fixed-term"'+(typev==='Fixed-term'?' class="on"':'')+' onclick="cbSeg(this)">Fixed-term</button></div></div>'
       +'<div class="cb-row2"><div class="cb-fld"><label>Start date</label><input type="date" id="cb-start" value="'+(w.start||'')+'"></div><div class="cb-fld"><label>Probation</label><input type="text" id="cb-prob" value="'+wkE(prob)+'"></div></div>'
     +'</div></div>'
@@ -33266,8 +33269,8 @@ function calcROI() {
   var cost=qty*(buy+(feed+vet)*mo), rev=qty*sel, net=rev-cost;
   var roi=cost>0?((net/cost)*100).toFixed(1):0;
   var ri=$('ls-roi'); if(ri){ri.value=roi+'%';ri.style.color=parseFloat(roi)>=0?'#1B4332':'#E74C3C';}
-  var ps=$('ls-purchase-sum'); if(ps) ps.innerHTML='Purchase: R '+(qty*buy/1000).toFixed(1)+'k &middot; Monthly care: R '+(qty*(feed+vet)/1000).toFixed(1)+'k/mo';
-  var ss=$('ls-sell-sum'); if(ss) ss.innerHTML='Sale: R '+(rev/1000).toFixed(1)+'k &middot; Cost: R '+(cost/1000).toFixed(1)+'k &middot; Net: <strong style="color:'+(net>=0?'#1B4332':'#E74C3C')+'">£'+(net/1000).toFixed(1)+'k</strong>';
+  var ps=$('ls-purchase-sum'); if(ps) ps.innerHTML='Purchase: '+_curSym()+(qty*buy/1000).toFixed(1)+'k &middot; Monthly care: '+_curSym()+(qty*(feed+vet)/1000).toFixed(1)+'k/mo';
+  var ss=$('ls-sell-sum'); if(ss) ss.innerHTML='Sale: '+_curSym()+(rev/1000).toFixed(1)+'k &middot; Cost: '+_curSym()+(cost/1000).toFixed(1)+'k &middot; Net: <strong style="color:'+(net>=0?'#1B4332':'#E74C3C')+'">£'+(net/1000).toFixed(1)+'k</strong>';
   var type=$('roi-type')&&$('roi-type').value;
   var mp=MARKET_PRICES[animalBase(type)], hint=$('roi-market-hint');
   if(hint&&mp){
@@ -36116,7 +36119,7 @@ function saveRegEntry() {
   var sold=parseInt($('reg-sold')&&$('reg-sold').value)||0;
   var sarv=parseFloat($('reg-hmrc-val')&&$('reg-hmrc-val').value)||0;
   var closing=open+inf-out-sold;
-  toast(type+' register saved. Closing: '+closing+' head, R '+((closing*sarv)/1000).toFixed(1)+'k','success');
+  toast(type+' register saved. Closing: '+closing+' head, '+_curSym()+((closing*sarv)/1000).toFixed(1)+'k','success');
 }
 
 function renderHealthLog() {
@@ -38150,13 +38153,13 @@ function plnTags(c){
     if(plnCushion(c)<0.20) t.push('<span class="pln-tag tight">tight cushion</span>');
     /* C4 — real logged spend has passed the budget this crop was planned on. */
     var _sp=plnSpendPct(c);
-    if(_sp!=null && _sp>1) t.push('<span class="pln-tag tight" title="Logged sprays and fertiliser have passed the input budget for this land">'+
+    if(_sp!=null && _sp>1) t.push('<span class="pln-tag tight" title="Logged sprays and fertiliser have passed the input budget for this field">'+
       Math.round(_sp*100)+'% of input budget</span>');
     /* C7 — a legal blocker outranks everything else on the row. */
     if(plnHarvestBlocked(c)) t.push('<span class="pln-tag tight" title="A spray withholding period runs past the planned harvest month">cannot harvest yet</span>');
     /* C6 — two crops on this land. */
     if(plnC2(c)) t.push('<span class="pln-tag'+(plnCycleClash(c)?' tight':' ann')+'" title="'+
-      (plnCycleClash(c)?'The two crops overlap in time':'This land carries two crops this season')+'">'+
+      (plnCycleClash(c)?'The two crops overlap in time':'This field carries two crops this season')+'">'+
       (plnCycleClash(c)?'crops overlap':'two crops')+'</span>');
     /* C2 — oversold is the one thing on this row a farmer must not miss. */
     var _hb=plnHedgeBlend(c.crop);
@@ -38323,9 +38326,9 @@ function plnMathsHTML(c, idx){
     var _cl=plnCycleClash(c);
     if(_cl) note('<b>These two crops overlap.</b> '+esc(_cys[1].crop)+' goes in during <b>'+
       esc(String(_cl.secondIn).split(' ')[0])+'</b> but the '+esc(String(_cys[0].crop).toLowerCase())+
-      ' is not off until <b>'+esc(String(_cl.firstOff).split(' ')[0])+'</b>. One land cannot carry '+
+      ' is not off until <b>'+esc(String(_cl.firstOff).split(' ')[0])+'</b>. One field cannot carry '+
       'both — move the planting month, or the second crop is counting hectares still under the first.', true);
-    else note('<b>'+(c.ha||0)+' ha counted once.</b> Margin per hectare is this land working twice '+
+    else note('<b>'+(c.ha||0)+' ha counted once.</b> Margin per hectare is this field working twice '+
       'in a season, which is the whole reason for doing it.');
   }
 
@@ -38380,7 +38383,7 @@ function plnMathsHTML(c, idx){
   /* C7b — rotation. A note, never a warning. */
   var _same=plnSameAsLast(c);
   if(_same) note('Second season of <b>'+esc(String(c.crop).toLowerCase())+
-    '</b> on this land — last season was '+esc(_same)+' too. Back-to-back is a choice, not a '+
+    '</b> on this field — last season was '+esc(_same)+' too. Back-to-back is a choice, not a '+
     'mistake, but it is worth knowing before the seed order.');
 
   /* C4 — only when there is real logged spend to compare against. */
@@ -38400,7 +38403,7 @@ function plnMathsHTML(c, idx){
   /* Own history, where there is any — most lands have none. */
   if(land && land.actualYield>0){
     var hi=(c.yield||0) > land.actualYield*1.15;
-    note('Last season this land did <b>'+land.actualYield+' t/ha</b>.'+
+    note('Last season this field did <b>'+land.actualYield+' t/ha</b>.'+
       (hi?'<span class="pln-warnb">'+Math.round(((c.yield||0)/land.actualYield-1)*100)+
           '% above your own history</span>':''));
   }
@@ -38416,7 +38419,7 @@ function plnMathsHTML(c, idx){
       : (idx>=0 ? ' <button class="pln-use" type="button" onclick="event.stopPropagation();plnUseMarketPrice('+idx+')">use this price</button>' : '')));
 
   var sentence = plnMissing(c)
-    ? 'Set the planting and harvest months — until they are set this land is not counted in your forecast.'
+    ? 'Set the planting and harvest months — until they are set this field is not counted in your forecast.'
     : 'To cover growing costs you need <b>'+be.toFixed(1)+' t/ha</b> at this price. Your plan of <b>'+
       (c.yield||0)+' t/ha</b> leaves a <b>'+Math.round(cu*100)+'% cushion</b>.'+
       (tight?' A poor season eats that — worth checking hail cover or a firmer price.':'');
@@ -38471,7 +38474,7 @@ function plnEditHTML(c, idx){
           '<div class="pln-f"><label>Other cost (£/ha)</label><input type="number" step="100" min="0" value="'+
             (plnC2(c).otherCost||0)+'" data-pln2="otherCost" data-idx="'+idx+'"></div>'
         : '<button type="button" class="pln-addc2" onclick="event.stopPropagation();plnAddC2('+idx+')">'+
-          '+ Add a second crop on this land</button>')+
+          '+ Add a second crop on this field</button>')+
       '<div class="pln-sect">What it costs</div>'+
       '<div class="pln-f"><label>Input cost (£/ha)</label><input type="number" step="100" min="0" value="'+(c.inputCost||0)+'" data-pln="inputCost" data-idx="'+idx+'"></div>'+
       '<div class="pln-f"><label>Other cost (£/ha)</label><input type="number" step="100" min="0" value="'+(c.otherCost||0)+'" data-pln="otherCost" data-idx="'+idx+'"></div>'+
@@ -38491,7 +38494,7 @@ function plnEditHTML(c, idx){
             '</div>'
         : '')+
       /* C2 — held per crop, so it shows the same figure on every land of it. */
-      '<div class="pln-f"><label>Sold forward (%)<span class="pln-fhint">all lands</span></label><input type="number" min="0" max="100" step="5" value="'+
+      '<div class="pln-f"><label>Sold forward (%)<span class="pln-fhint">all fields</span></label><input type="number" min="0" max="100" step="5" value="'+
         (((ST_PLAN.hedge||{})[c.crop]||{}).pct||0)+'" data-plnh="pct" data-crop="'+planEscAttr(c.crop)+'">'+
         '</div>'+
       (plnHedge(c.crop)
@@ -38578,7 +38581,7 @@ function renderCalGrid() {
   el.innerHTML=
     '<div class="pln-wrap">'+
       '<div class="pln-lh"><div><div class="t">Crop planning</div>'+
-        '<div class="s">Tap a land to change its months, yield or price — the maths updates as you type</div></div>'+
+        '<div class="s">Tap a field to change its months, yield or price — the maths updates as you type</div></div>'+
         '<div class="pln-legend">'+
           '<span><i style="background:var(--gl)"></i>Plant</span>'+
           '<span><i style="background:var(--gp)"></i>Growing</span>'+
@@ -39419,7 +39422,7 @@ function orpTags(r){
   /* O1 — say how many crops a year this land turns, since every figure on the
      row is now the whole year rather than one cycle. */
   if(b.cat==='veg' && orpVegCycles(b)>1)
-    t.push('<span class="orp-tag exp" title="This land is planned for '+orpVegCycles(b)+
+    t.push('<span class="orp-tag exp" title="This field is planned for '+orpVegCycles(b)+
       ' crops a year — every figure on this row is the year, not one cycle">'+
       orpVegCycles(b)+' crops a year</span>');
   if(b.cat!=='veg' && (typeof orChanPct==='function') && orChanPct(b)>0)
@@ -39567,7 +39570,7 @@ function orpMoneyPanel(r){
           'this row are both multiplied by '+_cy+'. Picking around '+
           esc(_pm.map(function(i){ return _MS[i]||('m'+i); }).join(', '))+'.'
         : 'Planned as <b>one crop</b> this year'+(b.days?' at about <b>'+b.days+' days</b>':'')+
-          '. If this land turns more than one crop, set the cycle on the block and the plan follows.')+
+          '. If this field turns more than one crop, set the cycle on the block and the plan follows.')+
       '</div>';
   }
   var extra=[];
@@ -40312,7 +40315,7 @@ function bgtRenderHero(c) {
     if (c.annualIn > 0 && c.annualOut > 0) headline += ' <small>goal: ' + bgtFmt(c.annualNet) + '</small>';
     if (status === 'green')      sub = 'Income and costs are running where you planned. Keep doing what you’re doing.';
     else if (over >= behind) sub = status === 'amber'
-      ? 'Spending is running over pace. Rein it in over the next month or two and the year still lands on plan.'
+      ? 'Spending is running over pace. Rein it in over the next month or two and the year still fields on plan.'
       : 'Costs are well over your plan. Look at your biggest cost lines before they set the year’s outcome.';
     else sub = status === 'amber'
       ? 'Income is behind the season curve. A strong month or two brings it back.'
@@ -40432,7 +40435,7 @@ function bgtRenderMountain() {
          view was for. The point is the SLOPE — Runway already gives you the level. */
       cap.innerHTML = '<b>How to read it:</b> the line is the gap itself, not your money. Above the grey line you are ' +
         (mode === 'in' ? 'ahead of' : 'under') + ' plan, below it you are ' + (mode === 'in' ? 'behind' : 'over') +
-        '. What matters is which way it <b>slopes</b> — rising means the gap is closing, falling means it is opening. The dotted part is where this pace lands by year-end.';
+        '. What matters is which way it <b>slopes</b> — rising means the gap is closing, falling means it is opening. The dotted part is where this pace fields by year-end.';
     } else {
       cap.innerHTML = mode === 'in'
         ? '<b>How to read it:</b> the green mountain is money that has come in, growing through the year. Stay on top of the grey dashed line and you are ahead of your plan. The flag is your year goal.'
@@ -42972,7 +42975,7 @@ function stGanttHTML(V, M){
     +rows
     +'<div class="stg-hov" id="stg-hov" style="left:230px">'+hov+'</div>'
     +'<div class="stg-tip" id="stg-tip"></div></div>'
-    +'<div class="stg-foot"><span>Click a row to open the blocks, lands and herds inside it '
+    +'<div class="stg-foot"><span>Click a row to open the blocks, fields and herds inside it '
     +'· <b>'+M.rows+' in total</b></span>'
     +'<span class="stg-key"><span><u class="a"></u>money due</span>'
     +'<span><u class="b"></u>not in yet</span><span><u class="c"></u>nothing due</span></span></div>'
@@ -46875,7 +46878,7 @@ function renderMyFarm() {
   h+='<div class="mkr-note"><span>ℹ️</span><span data-t="mkt.readBar"><b>Reading the bar.</b> '+
      'Grey is what it cost you, green is what the market adds on top. When a line turns orange the price '+
      'does not cover the cost — the solid part is how far short. <b>Margin, not profit:</b> this is what '+
-     'each land, block or herd clears after its own growing costs, before farm overheads. Full price lists '+
+     'each field, block or herd clears after its own growing costs, before farm overheads. Full price lists '+
      'and alerts are in the tabs below.</span></div>';
 
   el.innerHTML=h;
@@ -49923,7 +49926,7 @@ function renderRecentIncome() {
 
 
 // Key-based dictionary — elements tagged data-t translate exactly and reversibly
-var I18N = {"nav.group.daily":{"en":"Daily"},"nav.dashboard":{"en":"Dashboard"},"nav.transactions":{"en":"Transactions"},"nav.group.money":{"en":"Money"},"nav.income":{"en":"Income"},"nav.expenses":{"en":"Expenses"},"nav.cashflow":{"en":"Money Flow"},"nav.budgets":{"en":"Budgets"},"nav.loans":{"en":"Loans & Debt"},"nav.tax":{"en":"Tax & HMRC"},"tax.title":{"en":"Tax & HMRC"},"tax.sub":{"en":"What to set aside, what’s due and when — in plain words."},"nav.reports":{"en":"Reports"},"nav.group.farm":{"en":"My Farm"},"nav.planning":{"en":"Planning"},"nav.crop":{"en":"Crops"},"nav.orchards":{"en":"Orchards, Fruit & Veg"},"nav.livestock":{"en":"Livestock"},"nav.profit":{"en":"Profit"},"nav.assets":{"en":"Assets"},"nav.workers":{"en":"Workers"},"nav.group.market":{"en":"Market"},"nav.market":{"en":"Market Prices"},"nav.settings":{"en":"Settings"},"offline.sub":{"en":"Working offline. Data syncs when online."},"or.title":{"en":"Orchards, Fruit & Veg"},"or.sub":{"en":"Trees, vines, berries and veg — what each block costs, yields and earns"},"or.tab.overview":{"en":"Overview"},"or.tab.blocks":{"en":"Blocks"},"or.tab.spray":{"en":"Spray & Safety"},"or.tab.harvest":{"en":"Harvest & Pack"},"or.tab.comply":{"en":"Compliance"},"or.tab.add":{"en":"＋ Add block"},"or.add.btn":{"en":"＋ Add block"},"or.view.cards":{"en":"Cards"},"or.view.compare":{"en":"Compare"},"or.spray.safe":{"en":"Safe to pick"},"or.spray.safesub":{"en":"Green = clear to pick · amber = a harvest interval is still running"},"or.local":{"en":"Local"},"or.spray.diary":{"en":"Spray diary"},"or.spray.log":{"en":"＋ Log spray"},"or.harvest.calc":{"en":"What one packed unit pays you"},"or.harvest.calcsub":{"en":"Edit any number — your money-back updates live"},"or.harvest.block":{"en":"Block"},"or.harvest.recent":{"en":"Recent picks"},"or.harvest.log":{"en":"＋ Log pick"},"or.arch.all":{"en":"🗂️ All records"},"or.cmp.certs":{"en":"Certificates & audits"},"or.cmp.pests":{"en":"Pests & diseases watched"},"or.cmp.other":{"en":"Other records on file"},"or.add.title":{"en":"Add a block"},"or.add.sub":{"en":"Tell us what you're growing — we set up the rest"},"or.add.tree":{"en":"Tree / vine"},"or.add.treesub":{"en":"top fruit, avo, apple…"},"or.add.berry":{"en":"Berry"},"or.add.berrysub":{"en":"blueberry, rasp…"},"or.add.veg":{"en":"Vegetable"},"or.add.vegsub":{"en":"replanted each season"},"or.add.name":{"en":"Block name"},"or.add.crop":{"en":"What are you growing?"},"or.add.area":{"en":"Area (ha)"},"or.add.spacing":{"en":"Spacing"},"or.add.yield":{"en":"Target yield once mature"},"or.add.save":{"en":"Save block"},"or.add.spray":{"en":"Do you spray this block?"},"or.add.spray.y":{"en":"Yes — we spray"},"or.add.spray.n":{"en":"No — organic / no-spray"},"or.add.markets":{"en":"Where do you sell it?"},"or.add.markets.h":{"en":"pick all that apply"},"or.add.markets.note":{"en":"Sets the export share in your figures and which certificates apply. The harvest interval is the label’s, whoever buys it."},"hero.h":{"en":"Let's grow your profit this season."},"offline.title":{"en":"Offline Mode"},"or.add.root":{"en":"Rootstock"},"or.add.carton":{"en":"Carton size"},"or.add.estab":{"en":"What it cost to establish"},"sync.last":{"en":"Saved"},"crop.tab.inputs":{"en":"Inputs & Spray"},"crop.plant.btn":{"en":"＋ Plant a land"},"plan.spill.head":{"en":"crops finish after this season ends"},"plan.spill.head1":{"en":"crop finishes after this season ends"},"plan.spill.sub":{"en":"Normal for summer grain. The growing costs sit in this season; the sale lands in the next financial year, so plan the tax for it there."},"plan.miss.head":{"en":"lines have no month in this season"},"plan.miss.head1":{"en":"line has no month in this season"},"plan.miss.sub":{"en":"They are not counted anywhere. Give them a planting and harvest month, or step to the season they belong to."},"st.marginNote":{"en":"Margin is what each crop, block and herd earns after its own growing costs — before farm overheads like loans, insurance and admin."},"st.planIs":{"en":"Your plan is"},"st.marginFrom":{"en":"margin from crops, orchards and livestock"},"st.notStarted":{"en":"not started"},"st.notStartedCap":{"en":"Not started"},"st.nothingYet":{"en":"nothing harvested or sold yet"},"st.progNone":{"en":"Season progress — nothing harvested yet"},"st.progSome":{"en":"Season progress — money in so far"},"st.stillExpecting":{"en":"Still expecting"},"st.nothingThisOne":{"en":"nothing harvested from this one yet"},"st.marginPace":{"en":"margin at this pace"},"st.planIfSeason":{"en":"margin, if the season went to plan"},"st.plannedToMake":{"en":"You planned to make"},"st.onTrackFor":{"en":"Now on track for"},"plan.title":{"en":"My Plan"},"plan.sub":{"en":"Crops, orchards, livestock and your year ahead."},"plan.thisYear":{"en":"This year"},"plan.addCrop":{"en":"+ Add a crop"},"plan.addEvent":{"en":"+ Add livestock event"},"plan.totalProfit":{"en":"Planned margin"},"plan.orchPulled":{"en":"Pulled from your Orchards module."},"plan.thisSeason":{"en":"This season"},"plan.expExceed":{"en":"Expenses exceed income"},"plan.realData":{"en":"Real data from transactions"},"plan.inMoney":{"en":"Your plan, in money"},"plan.stress":{"en":"Stress-test your crop plan"},"plan.drag":{"en":"Drag a lever to see how your year changes"},"plan.needsAttn":{"en":"Needs your attention"},"plan.lever.grain":{"en":"Grain prices"},"plan.lever.input":{"en":"Input costs"},"plan.lever.sale":{"en":"Sale prices"},"plan.lever.run":{"en":"Running & buy costs"},"plan.helps":{"en":"helps your profit"},"plan.hurts":{"en":"costs you profit"}};
+var I18N = {"nav.group.daily":{"en":"Daily"},"nav.dashboard":{"en":"Dashboard"},"nav.transactions":{"en":"Transactions"},"nav.group.money":{"en":"Money"},"nav.income":{"en":"Income"},"nav.expenses":{"en":"Expenses"},"nav.cashflow":{"en":"Money Flow"},"nav.budgets":{"en":"Budgets"},"nav.loans":{"en":"Loans & Debt"},"nav.tax":{"en":"Tax & HMRC"},"tax.title":{"en":"Tax & HMRC"},"tax.sub":{"en":"What to set aside, what’s due and when — in plain words."},"nav.reports":{"en":"Reports"},"nav.group.farm":{"en":"My Farm"},"nav.planning":{"en":"Planning"},"nav.crop":{"en":"Crops"},"nav.orchards":{"en":"Orchards, Fruit & Veg"},"nav.livestock":{"en":"Livestock"},"nav.profit":{"en":"Profit"},"nav.assets":{"en":"Assets"},"nav.workers":{"en":"Workers"},"nav.group.market":{"en":"Market"},"nav.market":{"en":"Market Prices"},"nav.settings":{"en":"Settings"},"offline.sub":{"en":"Working offline. Data syncs when online."},"or.title":{"en":"Orchards, Fruit & Veg"},"or.sub":{"en":"Trees, vines, berries and veg — what each block costs, yields and earns"},"or.tab.overview":{"en":"Overview"},"or.tab.blocks":{"en":"Blocks"},"or.tab.spray":{"en":"Spray & Safety"},"or.tab.harvest":{"en":"Harvest & Pack"},"or.tab.comply":{"en":"Compliance"},"or.tab.add":{"en":"＋ Add block"},"or.add.btn":{"en":"＋ Add block"},"or.view.cards":{"en":"Cards"},"or.view.compare":{"en":"Compare"},"or.spray.safe":{"en":"Safe to pick"},"or.spray.safesub":{"en":"Green = clear to pick · amber = a harvest interval is still running"},"or.local":{"en":"Local"},"or.spray.diary":{"en":"Spray diary"},"or.spray.log":{"en":"＋ Log spray"},"or.harvest.calc":{"en":"What one packed unit pays you"},"or.harvest.calcsub":{"en":"Edit any number — your money-back updates live"},"or.harvest.block":{"en":"Block"},"or.harvest.recent":{"en":"Recent picks"},"or.harvest.log":{"en":"＋ Log pick"},"or.arch.all":{"en":"🗂️ All records"},"or.cmp.certs":{"en":"Certificates & audits"},"or.cmp.pests":{"en":"Pests & diseases watched"},"or.cmp.other":{"en":"Other records on file"},"or.add.title":{"en":"Add a block"},"or.add.sub":{"en":"Tell us what you're growing — we set up the rest"},"or.add.tree":{"en":"Tree / vine"},"or.add.treesub":{"en":"top fruit, avo, apple…"},"or.add.berry":{"en":"Berry"},"or.add.berrysub":{"en":"blueberry, rasp…"},"or.add.veg":{"en":"Vegetable"},"or.add.vegsub":{"en":"replanted each season"},"or.add.name":{"en":"Block name"},"or.add.crop":{"en":"What are you growing?"},"or.add.area":{"en":"Area (ha)"},"or.add.spacing":{"en":"Spacing"},"or.add.yield":{"en":"Target yield once mature"},"or.add.save":{"en":"Save block"},"or.add.spray":{"en":"Do you spray this block?"},"or.add.spray.y":{"en":"Yes — we spray"},"or.add.spray.n":{"en":"No — organic / no-spray"},"or.add.markets":{"en":"Where do you sell it?"},"or.add.markets.h":{"en":"pick all that apply"},"or.add.markets.note":{"en":"Sets the export share in your figures and which certificates apply. The harvest interval is the label’s, whoever buys it."},"hero.h":{"en":"Let's grow your profit this season."},"offline.title":{"en":"Offline Mode"},"or.add.root":{"en":"Rootstock"},"or.add.carton":{"en":"Carton size"},"or.add.estab":{"en":"What it cost to establish"},"sync.last":{"en":"Saved"},"crop.tab.inputs":{"en":"Inputs & Spray"},"crop.plant.btn":{"en":"＋ Plant a field"},"plan.spill.head":{"en":"crops finish after this season ends"},"plan.spill.head1":{"en":"crop finishes after this season ends"},"plan.spill.sub":{"en":"Normal for summer grain. The growing costs sit in this season; the sale lands in the next financial year, so plan the tax for it there."},"plan.miss.head":{"en":"lines have no month in this season"},"plan.miss.head1":{"en":"line has no month in this season"},"plan.miss.sub":{"en":"They are not counted anywhere. Give them a planting and harvest month, or step to the season they belong to."},"st.marginNote":{"en":"Margin is what each crop, block and herd earns after its own growing costs — before farm overheads like loans, insurance and admin."},"st.planIs":{"en":"Your plan is"},"st.marginFrom":{"en":"margin from crops, orchards and livestock"},"st.notStarted":{"en":"not started"},"st.notStartedCap":{"en":"Not started"},"st.nothingYet":{"en":"nothing harvested or sold yet"},"st.progNone":{"en":"Season progress — nothing harvested yet"},"st.progSome":{"en":"Season progress — money in so far"},"st.stillExpecting":{"en":"Still expecting"},"st.nothingThisOne":{"en":"nothing harvested from this one yet"},"st.marginPace":{"en":"margin at this pace"},"st.planIfSeason":{"en":"margin, if the season went to plan"},"st.plannedToMake":{"en":"You planned to make"},"st.onTrackFor":{"en":"Now on track for"},"plan.title":{"en":"My Plan"},"plan.sub":{"en":"Crops, orchards, livestock and your year ahead."},"plan.thisYear":{"en":"This year"},"plan.addCrop":{"en":"+ Add a crop"},"plan.addEvent":{"en":"+ Add livestock event"},"plan.totalProfit":{"en":"Planned margin"},"plan.orchPulled":{"en":"Pulled from your Orchards module."},"plan.thisSeason":{"en":"This season"},"plan.expExceed":{"en":"Expenses exceed income"},"plan.realData":{"en":"Real data from transactions"},"plan.inMoney":{"en":"Your plan, in money"},"plan.stress":{"en":"Stress-test your crop plan"},"plan.drag":{"en":"Drag a lever to see how your year changes"},"plan.needsAttn":{"en":"Needs your attention"},"plan.lever.grain":{"en":"Grain prices"},"plan.lever.input":{"en":"Input costs"},"plan.lever.sale":{"en":"Sale prices"},"plan.lever.run":{"en":"Running & buy costs"},"plan.helps":{"en":"helps your profit"},"plan.hurts":{"en":"costs you profit"}};
 I18N['demo.ribbon']={en:"You’re exploring a sample farm — nothing here is saved to an account."};
 I18N['demo.watch']={en:"▶ Watch demo"};
 I18N['demo.restart']={en:"↺ Restart demo"};
@@ -52176,7 +52179,7 @@ function IE_buildDoc(forPrint){
 
   var html = '<style>' + IE_CSS + '</style><div class="ie-doc">' +
     '<div class="ie-ttl"><div class="t">Statement of Income &amp; Expenses</div><div class="p">' + lbl + ' \u00b7 compared with ' + prevLbl + '</div></div>' +
-    '<div class="ie-basis">' + (vatInfo ? 'Amounts shown <b>excluding VAT</b> (net)' : 'Amounts shown as recorded') + ', in pounds sterling \u00b7 cash basis' + (vatInfo ? ' \u00b7 VAT summarised separately below per HMRC' : '') + '</div>' +
+    '<div class="ie-basis">' + (vatInfo ? 'Amounts shown <b>excluding VAT</b> (net)' : 'Amounts shown as recorded') + ', in pounds sterling \u00b7 ' + ((window.ST && ST.cashBasis) ? 'cash basis' : 'money in and out as recorded (your tax figures use the accruals basis)') + (vatInfo ? ' \u00b7 VAT summarised separately below per HMRC' : '') + '</div>' +
 
     (function(){
       /* Only meaningful for a VAT-registered farm; IE_split short-circuits to 'none' otherwise. */
@@ -56861,7 +56864,7 @@ function ukSchemeScheduleHTML(fy){
   var warn=(cliff&&cliff.ending&&cliff.ending.length)
     ? '<div style="font-size:11px;color:var(--rd);font-weight:700;margin-top:9px">\u26a0 '+esc(cliff.ending.map(function(e){return e.scheme+' ends after '+e.lastYear;}).join(' \u00b7 '))+'. Scheme income drops to '+money(cliff.afterCliff)+' once it stops.</div>' : '';
   return '<div class="wk-card" style="margin-top:14px"><div class="wk-ct">When your support money arrives</div>'+
-    '<p class="wk-cw">Delinked lands as one payment; SFI and Stewardship pay quarterly. Spreading both evenly across the year hides your worst cash month.</p>'+
+    '<p class="wk-cw">Delinked fields as one payment; SFI and Stewardship pay quarterly. Spreading both evenly across the year hides your worst cash month.</p>'+
     '<div style="overflow-x:auto"><table class="wk-ptbl" style="width:100%"><thead><tr><th>Month</th><th>Scheme</th><th style="text-align:right">Amount</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+warn+'</div>';
 }
 window.ukSchemeScheduleHTML=ukSchemeScheduleHTML;
@@ -57913,7 +57916,7 @@ function taxReportsHTML(){
         desc:'Per hectare and per head', per:'This season', go:'gm'})+
       taxRepRow({ic:'&#128202;', bg:'#E0F2F1', name:'Farm Business Income',
         desc:'Defra benchmark format', per:'Full year', go:'fbi'})+
-      taxRepRow({ic:'&#128011;', bg:'#FDECD2', name:'Livestock valuation',
+      taxRepRow({ic:'&#128004;', bg:'#FDECD2', name:'Livestock valuation',
         desc:'Year-end stock count and trading result', per:'Year end', go:'ls'})+
       ((ukEntityType(ST.entityType)==='partnership')
         ? '<div class="txr-sub">Because you are a partnership</div>'+
@@ -58021,7 +58024,15 @@ function _txRptSnap(){ return {type:RPT_STATE.type,monthIdx:RPT_STATE.monthIdx,y
 function _txRptPut(s){ RPT_STATE.type=s.type;RPT_STATE.monthIdx=s.monthIdx;RPT_STATE.year=s.year;RPT_STATE.quarterIdx=s.quarterIdx;RPT_STATE.customFrom=s.customFrom;RPT_STATE.customTo=s.customTo; }
 function _txRptApply(scope){
   if(scope==='vat'){ var b=_txResolveVatp(); RPT_STATE.type='custom'; RPT_STATE.customFrom=b.from; RPT_STATE.customTo=b.to; }
-  else { var fy=_txResolveFy(); RPT_STATE.type='custom'; RPT_STATE.customFrom=fy+'-03-01'; var ld=new Date(fy+1,2,0).getDate(); RPT_STATE.customTo=(fy+1)+'-02-'+('0'+ld).slice(-2); }
+  else {
+    /* The farm's own year - 6 April to 5 April for the income tax year, or a company's
+       accounting year. It was 1 March to 28 February, the South African tax year, so the
+       statement opened from Tax & HMRC covered the wrong eleven months and one. */
+    var fy=_txResolveFy(), sm=fyStartMonth(), sd=fyStartDay();
+    var st=new Date(fy, sm-1, sd), en=new Date(fy+1, sm-1, sd); en.setDate(en.getDate()-1);
+    var iso=function(d){ return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); };
+    RPT_STATE.type='custom'; RPT_STATE.customFrom=iso(st); RPT_STATE.customTo=iso(en);
+  }
 }
 function taxOpenIE(mode,scope){
   if(typeof RPT_STATE==='undefined'){
@@ -59027,7 +59038,7 @@ ST.farmName      = farmName;
 
   if (OB_MODE === 'fresh') {
     /* The wizard's own clears missed loans, assets, workers, fields and crop
-       lands — a farmer choosing "Start with my own data" kept the demo farm's
+       fields — a farmer choosing "Start with my own data" kept the demo farm's
        19 assets, 4 loans and 7 workers. Run the one tested wipe, then restore
        the identity the farmer has just typed in (clearAllToFresh blanks it). */
     if (typeof clearAllToFresh === 'function') {
@@ -59217,7 +59228,7 @@ var TOUR_STEPS = [
   {
     page:'loans', tab:'glance', target:'ln-hero', icon:'\uD83C\uDFE6', iconBg:'#D8F3DC',
     title:'How much of this farm is actually mine?',
-    desc:'Every loan, instrument and production credit in one place, with what you still owe against what you own \u2014 and what the repayments do to your cash.',
+    desc:'Every loan, overdraft and merchant account in one place, with what you still owe against what you own \u2014 and what the repayments do to your cash.',
     tip:'Thinking of borrowing? It works out what the repayment would do before you sign.',
     pos:'smart'
   },
@@ -59225,7 +59236,7 @@ var TOUR_STEPS = [
     page:'tax', tab:'glance', target:'tax-hero-card', icon:'\uD83C\uDFDB', iconBg:'#D8F3DC',
     title:'What will I owe HMRC \u2014 and what can I claim back?',
     desc:'Your estimated tax as the year goes, not a shock in June. Red diesel records, capital allowances, and farming allowances are worked out from what you already captured.',
-    tip:'The red diesel records alone pays for a lot of farms\u2019 bookkeeping.',
+    tip:'Keeping red diesel records straight is one of the first things an inspection checks.',
     pos:'smart'
   },
   {
@@ -59244,8 +59255,8 @@ var TOUR_STEPS = [
   },
   {
     page:'crop', tab:'overview', target:'crop-hero', icon:'\uD83C\uDF3E', iconBg:'#D8F3DC',
-    title:'Which lands are paying their way?',
-    desc:'Each land costed on its own \u2014 seed, fertiliser, chemicals and fuel against what it yields. A farm can be profitable overall and still carry a land that loses on every tonne.',
+    title:'Which fields are paying their way?',
+    desc:'Each field costed on its own \u2014 seed, fertiliser, chemicals and fuel against what it yields. A farm can be profitable overall and still carry a field that loses on every tonne.',
     tip:'Spray records here also produce your pre-harvest interval audit.',
     pos:'smart'
   },
@@ -59274,20 +59285,20 @@ var TOUR_STEPS = [
     page:'assets', tab:'register', target:'ast-summary', icon:'\uD83D\uDE9C', iconBg:'#D8F3DC',
     title:'What do I own, and what can I write off?',
     desc:'Every implement, vehicle and improvement with its tax value and yearly write-off already worked out \u2014 the register your accountant asks for every year.',
-    tip:'It feeds the capital allowances allowance in Tax & HMRC automatically.',
+    tip:'It feeds the capital allowances in Tax & HMRC automatically.',
     pos:'smart'
   },
   {
     page:'workers', tab:'ov', target:'wk-ov-kpis', icon:'\uD83D\uDC77', iconBg:'#D8F3DC',
     title:'What does labour cost me, and am I compliant?',
-    desc:'Permanent and seasonal wages, NI and the sectoral minimum in one place \u2014 the bill and the paperwork that comes with it.',
+    desc:'Permanent and seasonal wages, NI and the minimum wage (or your Agricultural Wages Order) in one place \u2014 the bill and the paperwork that comes with it.',
     tip:'Payslips print from the same figures that feed your expenses.',
     pos:'smart'
   },
   {
     page:'market', tab:'crops', target:'mkr-hero', icon:'\uD83D\uDCB0', iconBg:'#D8F3DC',
     title:'Is it worth selling today?',
-    desc:'Today\u2019s market against what each land or herd cost you to produce. Not the market price on its own \u2014 the market price next to your own cost.',
+    desc:'Today\u2019s market against what each field or herd cost you to produce. Not the market price on its own \u2014 the market price next to your own cost.',
     tip:'Any line under its cost of production is flagged before you sell it.',
     pos:'smart'
   }
@@ -60237,7 +60248,7 @@ var AIJ = [
       the attention; the relief is the part that gets remembered. */
    payoff:{kicker:'Because he found it in August',n:'{lossFull}',good:true,
      line:'Still Jaco’s.',
-     sub:'Same farm, same records, same morning. The only difference is that the app costed each land on its own — and said so.',
+     sub:'Same farm, same records, same morning. The only difference is that the app costed each field on its own — and said so.',
      cta:'Explore the farm →', hold:5400},
    /* ONE story, not a tour of tabs. Research is blunt about this: a feature
       walkthrough is the worst way to demo an app, and the flows that finish are
@@ -60290,7 +60301,7 @@ var AIJ = [
      {page:'expenses', target:'exp-metric-ratio', icon:'💸', title:'And what it cost to get it', act:{k:'count'},
       text:'And what it cost. <b>6.9c of every rand in goes straight back out.</b>'},
      {page:'profit', target:'pf-tabbtn-glance', icon:'📊', title:'Which part of the farm earns it',
-      text:'Now the one that matters. <b>Every land, herd and block costed on its own.</b>',
+      text:'Now the one that matters. <b>Every field, herd and block costed on its own.</b>',
       you:'Open any land, herd or block to see its own costing.'}
    ]},
 
@@ -60349,7 +60360,7 @@ var AIJ = [
      {page:'planning', tab:'tracker', target:'st-attn', icon:'📈', title:'Then watch it happen', act:{k:'run',fn:'aijExpandOrchards'},
       text:'Plan against reality, all season. <b>It names which part is behind.</b>',
       onEnter:'aijOpenTracker', hold:8000,
-      you:'Open a group to see which land or block is dragging, or switch between bars and a line.'}
+      you:'Open a group to see which field or block is dragging, or switch between bars and a line.'}
    ]},
 
  { t:'HMRC, and the paperwork', ic:'🧾', sub:'What to set aside, what you claim back, and the forms', mins:'~60s',
@@ -61264,7 +61275,7 @@ function aiDataDomains(){
     {key:'animals',      label:'Animals',                 rows:arr(L,'animals')},
     {key:'herds',        label:'Herds',                   rows:arr(L,'herd')},
     {key:'workers',      label:'Workers & payroll',       rows:arr(W,'workers')},
-    {key:'lands',        label:'Lands & crop records',    rows:arr(C,'lands')},
+    {key:'lands',        label:'Fields & crop records',    rows:arr(C,'lands')},
     {key:'blocks',       label:'Orchard blocks',          rows:arr(F,'blocks')},
     {key:'loans',        label:'Loans & debt',            rows:arr(N,'loans')},
     {key:'assets',       label:'Assets',                  rows:arr(A,'assets')},
@@ -61570,7 +61581,7 @@ var PAGE_TOURS = {
     { target:'incomeChart', title:'Income chart', icon:'📊',
       text:'Bar chart of monthly income over your selected period. Taller bars = bigger income months. Hover over any bar for the exact amount.', pos:'smart' },
     { target:'incSourceDonut', title:'Income by source', icon:'🥧',
-      text:'The donut chart breaks your income into categories — Crop Sales, Fruit Sales, Livestock, Grants, Agritourism, Rental and more. The legend shows the rand value and percentage for each.',
+      text:'The donut chart breaks your income into categories — Crop Sales, Fruit Sales, Livestock, Grants, Agritourism, Rental and more. The legend shows the value in pounds and the percentage for each.',
       tip:'A healthy farm should have income from at least 2-3 sources. Heavy reliance on one crop adds seasonal risk.', pos:'smart' },
     { target:'inc-seg-wrap', title:'By enterprise', icon:'🌾',
       text:'Switch "Whole farm" to "By enterprise" and the same chart splits your income by crop, herd or orchard block instead of by category — so you can see which part of the farm actually earned it. Anything not tagged yet shows as a nudge with a one-tap "Sort ›" to link it.',
@@ -61676,7 +61687,7 @@ var PAGE_TOURS = {
     { target:'plan-tab-live', title:'Livestock plan', icon:'🐄', tab:'livestock', ent:'livestock',
       text:'The Livestock tab plans herd events through the year — purchases, births, sales and recurring costs like feed and dosing.', pos:'smart' },
     { target:'plan-live-grid', title:'Livestock events', icon:'📋', tab:'livestock', ent:'livestock',
-      text:'Each event shows its month, type and rand value and feeds the same 12-month forecast as your crops and orchards. Recurring events — like monthly feed — repeat automatically.', tip:'Tap + Add livestock event to schedule a purchase, sale or cost.', pos:'smart' },
+      text:'Each event shows its month, type and value in pounds and feeds the same 12-month forecast as your crops and orchards. Recurring events — like monthly feed — repeat automatically.', tip:'Tap + Add livestock event to schedule a purchase, sale or cost.', pos:'smart' },
     { target:'plan-fin', title:'Your plan in money + what-if', icon:'💰',
       text:'Your whole plan as income, costs and profit for the year — crops, orchards and livestock combined. Drag the sliders underneath to stress-test it: each tab has its own levers (grain prices, fruit prices, growing costs, herd numbers) and the profit moves live.', tip:'“Actual so far” shows how your real numbers are tracking against the plan.', pos:'smart' },
     { target:'plan-tab-track', title:'Season Tracker — plan vs actual', icon:'📊', tab:'tracker',
@@ -61690,9 +61701,9 @@ var PAGE_TOURS = {
     { target:'or-ov-attn', title:'What needs you today', icon:'⚠️', tab:'overview',
       text:'Below the numbers, a “needs your attention” list surfaces what’s time-sensitive — blocks slipping behind where they should be, certificates about to expire, or fruit inside a spray waiting-period. Clear this list and your season is on track.', pos:'smart' },
     { target:'or-bl-blocks', title:'Your blocks, at a glance', icon:'🌳', tab:'blocks', onEnter:'orTourShowCards',
-      text:'Each block is a clean card — its money back as the headline, rand-per-hectare underneath — grouped by fruit type. Tap a card to open its tonnage, export %, carton size and pricing. Use the chips up top to filter to top fruit, fruit, berries or veg.', tip:'Change a price and the money back updates everywhere — the same number on every page.', pos:'smart' },
+      text:'Each block is a clean card — its money back as the headline, pounds per hectare underneath — grouped by fruit type. Tap a card to open its tonnage, export %, carton size and pricing. Use the chips up top to filter to top fruit, fruit, berries or veg.', tip:'Change a price and the money back updates everywhere — the same number on every page.', pos:'smart' },
     { target:'or-bl-compare', title:'Compare & benchmark', icon:'📈', tab:'blocks', onEnter:'orTourShowCompare',
-      text:'Switch to Compare and every block lines up in one table — money back, rand-per-hectare and yield side by side — so you can see which blocks are carrying the season and which are lagging the pack.', pos:'smart' },
+      text:'Switch to Compare and every block lines up in one table — money back, pounds per hectare and yield side by side — so you can see which blocks are carrying the season and which are lagging the pack.', pos:'smart' },
     { target:'or-phi-list', title:'Safe to pick', icon:'🚦', tab:'spray',
       text:'A traffic-light for each block: green means clear to pick, amber means a harvest interval from a spray is still running, with the date it clears. Log every spray in the diary below — it feeds this grid and doubles as your spray record.', tip:'The harvest interval is the one on the product label. It’s the same whoever buys the fruit: buyers test for residues, they don’t set their own wait.', pos:'smart' },
     { target:'or-estvact', title:'How the harvest is tracking', icon:'📦', tab:'harvest',
@@ -61706,7 +61717,7 @@ var PAGE_TOURS = {
     { target:'ls-camps-list', title:'Your animals at a glance', icon:'🐄', tab:'camps',
       text:'The three cards up top show your total head, herd value at today’s market prices, and ROI on what you’ve spent. Tap any card to break it down — by species, by group, or invested-vs-expected.', tip:'Herd value updates automatically off AMT market prices.', pos:'smart' },
     { target:'ls-hsub-nav', title:'Three views under one Herd tab', icon:'🗂️', tab:'camps',
-      text:'The Herd tab holds three sub-views — a camps-and-animals view, Productivity (calving, weaning and off-take rates) and Records (the HMRC-style movement register). Tap between them up here; the rest of this tour opens each one in turn.', pos:'smart' },
+      text:'The Herd tab holds three sub-views — a fields-and-animals view, Productivity (calving, weaning and off-take rates) and Records (the HMRC-style movement register). Tap between them up here; the rest of this tour opens each one in turn.', pos:'smart' },
     { target:'ls-camps-list', title:'Each field, broken down', icon:'📊', tab:'camps',
       text:'Every field shows what’s grazing there and what it’s worth. Tap a make-up bar to open the class breakdown — cows, heifers, bulls, calves — each with its value. A red flag warns when animals are under a medicine withdrawal and not safe to sell.', pos:'smart' },
     { target:'ls-tab-health', title:'Health & treatments', icon:'💉', tab:'health',
@@ -61755,7 +61766,7 @@ settings: [
       text:'Everything you have to sell this season, priced at today\u2019s market \u2014 and split between what a live feed priced and what is still your own estimate.',
       tip:'The two lines under the total are the ones worth acting on: what is losing money, and what is close to it.', pos:'smart' },
     { target:'mkr-loss', title:'The line that is losing money', icon:'\u26A0\uFE0F', tab:'crops',
-      text:'Every land, block and herd costed against what it actually cost you to grow. A farm can be profitable overall and still carry a line that loses on every tonne.',
+      text:'Every field, block and herd costed against what it actually cost you to grow. A farm can be profitable overall and still carry a line that loses on every tonne.',
       tip:'Margin here is today\u2019s price minus YOUR cost of production \u2014 not a market price on its own.', pos:'smart' },
     { target:'mkr-tbl', title:'Cost versus price, side by side', icon:'\uD83D\uDCCA', tab:'crops',
       text:'The bar shows where today\u2019s price sits against your cost. Long and green means room; short or amber means a small move in the market takes it away.',
@@ -61798,7 +61809,7 @@ settings: [
   ],
   transactions: [
     { intro:true, title:'All your transactions', icon:'📝',
-      text:'Every sale and expense in one searchable list, newest first. Whatever you record from the + button or any other screen lands here.', pos:'center' },
+      text:'Every sale and expense in one searchable list, newest first. Whatever you record from the + button or any other screen fields here.', pos:'center' },
     { target:'tx-summary-strip', title:'Your month at a glance', icon:'📊',
       text:'A running total of income, expenses and profit for the period — the quick read before you dive into the list. Up in the header you can also import a bank or merchant statement, and select rows to re-categorise several at once.', pos:'smart' },
     { target:'tx-filter-bar', title:'Filter & search', icon:'🔍',
@@ -61809,11 +61820,11 @@ settings: [
   ],
   crop: [
     { intro:true, title:'Crops — everything you grow', icon:'🌾', tab:'overview',
-      text:'Everything for your crops in one place. The Overview lists each land with its crop, area, growth stage and the expected gross margin for the season.', pos:'center' },
+      text:'Everything for your crops in one place. The Overview lists each field with its crop, area, growth stage and the expected gross margin for the season.', pos:'center' },
     { target:'crop-hero', title:'Margins at a glance', icon:'📈', tab:'overview',
-      text:'Each land card shows expected income, input cost and gross margin per hectare — so you can see which fields are pulling their weight long before the season ends.', pos:'smart' },
-    { target:'crop-view-overview', title:'Lands register', icon:'🗺️', tab:'lands',
-      text:'Switch the Overview to ☰ Table for your register of every field — area, crop, status, yield and margin. Tap any row to record a planting or harvest, or to link it to your plan.', tip:'The Cards view is for a quick glance; the Table view is the full register — same lands, one toggle.', pos:'smart' },
+      text:'Each field card shows expected income, input cost and gross margin per hectare — so you can see which fields are pulling their weight long before the season ends.', pos:'smart' },
+    { target:'crop-view-overview', title:'Field register', icon:'🗺️', tab:'lands',
+      text:'Switch the Overview to ☰ Table for your register of every field — area, crop, status, yield and margin. Tap any row to record a planting or harvest, or to link it to your plan.', tip:'The Cards view is for a quick glance; the Table view is the full register — same fields, one toggle.', pos:'smart' },
     { target:'crop-tab-inputs', title:'Inputs & spray log', icon:'🧪', tab:'inputs',
       text:'Log every spray and input — product, rate, batch number, operator and pre-harvest interval. Each entry feeds your cost per hectare and doubles as your Red Tractor spray record.', tip:'Recording the pre-harvest interval lets the app warn you if a harvest is logged too soon after a spray.', pos:'smart' },
     { target:'crop-tab-comply', title:'Compliance tracker', icon:'✅', tab:'comply', onEnter:'tourComplyTracker',
@@ -64844,7 +64855,7 @@ function attnItems(){
       if(_hdue.length){
         var _h0=_hdue[0], _hd=cropHarvestDueDays(_h0); if(_hd==null) _hd=0;
         out.push({tier:'house', sev:(_hd>14?58:44),
-          nm:(_hdue.length===1 ? ('Did you harvest '+_h0.name+'?') : (_hdue.length+' lands past their harvest date')),
+          nm:(_hdue.length===1 ? ('Did you harvest '+_h0.name+'?') : (_hdue.length+' fields past their harvest date')),
           lead:(_hdue.length===1 ? ('It was due '+cropDispDate(_h0.harvest)) : ('Oldest was due '+cropDispDate(_h0.harvest))),
           sub:'Nothing is recorded until you say so',
           st:(_hd<=0?'today':(_hd+' day'+(_hd===1?'':'s')+' ago')),
@@ -68120,7 +68131,7 @@ function coopUpdateSummary(){
            '<div style="color:var(--t4)">\u2192</div>'+
            coopWfCol('Hits your bank',fmtMoney(toBank),'var(--gd)')+
          '</div>';
-      h+='<div style="font-size:11px;color:var(--t4);margin-top:5px">'+esc(acct.coop)+' takes what you owe off the payout first \u2014 only the rest lands in your bank.</div>';
+      h+='<div style="font-size:11px;color:var(--t4);margin-top:5px">'+esc(acct.coop)+' takes what you owe off the payout first \u2014 only the rest fields in your bank.</div>';
     }
     h+='</div>';
   }
@@ -68337,16 +68348,16 @@ var ST_FRUIT = {
   },
   comply: {
     gap:{ic:'\uD83C\uDF0D',title:'GLOBALG.A.P. (food safety)',what:'Proves your fruit is safe and traceable. Required for EU & UK markets. Renewed by a yearly audit.',type:'cert',status:'Expires 12 Jul 2026',statusTag:'amber',expiry:'2026-07-12',docs:[{name:'GLOBALGAP-certificate-2024.pdf',kind:'pdf',added:'12 Jul 2024'}]},
-    siza:{ic:'\uD83E\uDD1D',title:'Red Tractor — fair-labour & environment',what:'The UK farm assurance standard for labour, welfare and environment. One audit covers most buyers.',type:'cert',status:'Valid · Aug 2026',statusTag:'green',expiry:'2026-08-20',docs:[]},
+    siza:{ic:'\uD83D\uDE9C',title:'Red Tractor (farm assurance)',what:'The UK farm assurance standard most buyers ask for \u2014 food safety, traceability, environment and worker welfare. Renewed by an annual audit.',type:'cert',status:'Valid · Aug 2026',statusTag:'green',expiry:'2026-08-20',docs:[]},
     ppecb:{ic:'\uD83D\uDEA2',title:'Phytosanitary certificate (APHA)',what:'Issued by the Plant Health and Seeds Inspectorate for consignments that need one on export.',type:'cert',status:'Active',statusTag:'green',expiry:'2026-12-31',docs:[]},
-    phytclean:{ic:'\uD83D\uDEC2',title:'Plant passport registration',what:'Registration with APHA to issue plant passports, and the traceability code for each block.',type:'cert',status:'Registered',statusTag:'green',expiry:'',docs:[]},
+    phytclean:{ic:'\uD83D\uDEC2',title:'APHA registration (plant health)',what:'Registered with APHA as a professional operator \u2014 needed before you can get phytosanitary certificates to export fruit.',type:'cert',status:'Registered',statusTag:'green',expiry:'',docs:[]},
     water:{ic:'\uD83D\uDCA7',title:'Water use licence',what:'Your legal right to use water. Read the meter monthly and keep within your authorised volume.',type:'record',status:'Valid',statusTag:'green',expiry:'2027-06-30',docs:[],log:'312,000 of 480,000 m\u00b3 used this year',readings:[]},
     operators:{ic:'\uD83E\uDDEA',title:'Spray operators trained',what:'Anyone applying chemicals needs a valid operator certificate.',type:'record',status:'Trained',statusTag:'green',expiry:'2027-05-01',docs:[]},
     diesel:{ic:'\u26FD',title:'Red diesel logbook',what:'Evidences qualifying farm use, so the duty already rebated at the pump stands up.',type:'record',status:'Up to date',statusTag:'green',expiry:'',docs:[],log:'18,400 \u2113 logged this year'},
     fcm:{ic:'\uD83E\uDD9F',title:'Codling moth (top fruit)',what:'The main apple and pear pest. Trap counts tell you when to spray.',type:'pest',cropcat:'topfruit',status:'Action needed',statusTag:'red',docs:[],checks:[],log:'Long Orchard traps over the threshold in week 21 — spray timed from the count'},
     cbs:{ic:'\uD83C\uDF42',title:'Apple scab',what:'The main fungal disease of apples and pears. Sprays follow wet spells in spring.',type:'pest',cropcat:'topfruit',status:'Clear',statusTag:'green',docs:[],checks:[],log:'Spray programme on track'},
     codling:{ic:'\uD83D\uDC1B',title:'Codling moth (apples)',what:'Key pome-fruit pest — managed with mating disruption and monitored on traps.',type:'pest',cropcat:'fruit',status:'Clear',statusTag:'green',docs:[],checks:[],log:'Mating disruption in · traps below threshold'},
-    swd:{ic:'\uD83E\uDEBF',title:'Spotted Wing Drosophila (berries)',what:'A berry pest monitored with tunnel traps.',type:'pest',cropcat:'berry',status:'Clear',statusTag:'green',docs:[],checks:[],log:'Below the limit'}
+    swd:{ic:'\uD83E\uDEB0',title:'Spotted Wing Drosophila (berries)',what:'A berry pest monitored with tunnel traps.',type:'pest',cropcat:'berry',status:'Clear',statusTag:'green',docs:[],checks:[],log:'Below the limit'}
   },
   /* Illustrative demo sprays: every product is on the GB register (MAPP checked 23 Sep 2026)
      and every record carries the full set of particulars. Brook Orchard's plum spray is
@@ -69149,7 +69160,7 @@ function orRenderWf(id){
   if(chan!=='loc'){
     h+='<div class="hp-colhd"><span>Per '+orWfShort(b)+'</span><span>'+_curSym()+'</span></div>';
     h+=orInLine('Packed price','what you\u2019re paid, before costs','or-price',p.price,true,per,false);
-    h+='<div class="hp-row minus"><span class="hp-lbl">Agent / exporter commission</span><span class="hp-dual"><span class="hp-pct"><input id="or-comm" value="'+p.comm+'" inputmode="decimal" oninput="orRecalcWf()"><span class="s">%</span></span><span class="hp-calc">\u2212R\u00a0<span id="or-commR">0</span></span></span></div>';
+    h+='<div class="hp-row minus"><span class="hp-lbl">Agent / exporter commission</span><span class="hp-dual"><span class="hp-pct"><input id="or-comm" value="'+p.comm+'" inputmode="decimal" oninput="orRecalcWf()"><span class="s">%</span></span><span class="hp-calc">\u2212<span id="or-commR">0</span></span></span></div>';
     h+=orInLine('Packing &amp; cold storage','','or-pack',p.pack,true,per,false,true);
     h+=orInLine('Shipping &amp; logistics','','or-ship',p.ship,true,per,false,true);
     h+=p.others.map(function(o,j){return orOthRow(o,j,orWfShort(b));}).join('');
@@ -69159,7 +69170,7 @@ function orRenderWf(id){
   if(showLoc){
     h+='<div class="or-secsub">\uD83C\uDFEA Local / juice \u2014 '+(chan==='mix'?'the rest of the crop':'the whole crop')+', per tonne</div>';
     h+=orInLine('Price','what the market or juicer pays','or-lprice',p.local.price,true,'/ tonne',false);
-    h+='<div class="hp-row minus"><span class="hp-lbl">Market commission</span><span class="hp-dual"><span class="hp-pct"><input id="or-lcomm" value="'+p.local.comm+'" inputmode="decimal" oninput="orRecalcWf()"><span class="s">%</span></span><span class="hp-calc">\u2212R\u00a0<span id="or-lcommR">0</span></span></span></div>';
+    h+='<div class="hp-row minus"><span class="hp-lbl">Market commission</span><span class="hp-dual"><span class="hp-pct"><input id="or-lcomm" value="'+p.local.comm+'" inputmode="decimal" oninput="orRecalcWf()"><span class="s">%</span></span><span class="hp-calc">\u2212<span id="or-lcommR">0</span></span></span></div>';
     h+=orInLine('Transport','','or-ltrans',p.local.trans,true,'/ tonne',false,true);
     h+=orInLine('Other costs','','or-lother',p.local.other,true,'/ tonne',false,true);
     h+='<div class="hp-net"><span class="l">In your pocket \u2014 local</span><span class="v">£ <span id="or-lnet">0</span> <small>/ tonne</small></span></div>';
@@ -69202,7 +69213,7 @@ function orRecalcWf(){
   if($('or-lnet')) $('or-lnet').textContent=orR2(lnet);
   // Verdict + hero + break-even (colour driven off the season total)
   var loss = total < 0;
-  var signedR = function(n){ return (n<0?'\u2212R\u00a0':_curSym())+_grpInt(n); };
+  var signedR = function(n){ return (n<0?'\u2212':'')+_curSym()+_grpInt(Math.abs(n)); };
   var _res=$('or-res'); if(_res) _res.className='or-wfres '+(loss?'loss':'profit');
   var _vd=$('or-vdot'); if(_vd) _vd.textContent=loss?'\u2193':'\u2191';
   var _vt=$('or-vtext'); if(_vt) _vt.textContent=loss?'This block is losing money':'This block is making money';
@@ -69225,8 +69236,8 @@ function orRecalcWf(){
       else beEl.innerHTML='You\u2019re getting \u00a3'+orR2(lprice)+' a tonne. To break even you need \u00a3'+orR2(lbe)+' \u2014 <b'+_red+'>you\u2019re \u00a3'+orR2(lbe-lprice)+' short</b> a tonne.';
     } else {
       var fixed=pack+ship+others+levy; var be=comm<100?fixed/(1-comm/100):0;
-      if(net>=0) beEl.innerHTML='You\u2019re getting R '+orR2(price)+' a '+u+' \u2014 R '+orR2(price-be)+' above your R '+orR2(be)+' break-even.';
-      else beEl.innerHTML='You\u2019re getting R '+orR2(price)+' a '+u+'. To break even you need R '+orR2(be)+' \u2014 <b'+_red+'>you\u2019re R '+orR2(be-price)+' short</b> on every '+u+'.';
+      if(net>=0) beEl.innerHTML='You\u2019re getting '+orR2(price)+' a '+u+' \u2014 '+orR2(price-be)+' above your '+orR2(be)+' break-even.';
+      else beEl.innerHTML='You\u2019re getting '+orR2(price)+' a '+u+'. To break even you need '+orR2(be)+' \u2014 <b'+_red+'>you\u2019re '+orR2(be-price)+' short</b> on every '+u+'.';
     }
   }
   orSave();
@@ -69317,12 +69328,12 @@ function orHasExport(){ return ST_FRUIT.blocks.some(function(b){ return (b.cat!=
 function orActiveCats(){ var s={}; ST_FRUIT.blocks.forEach(function(b){ s[b.cat]=true; }); return s; }
 /* ===== Phase 3: compliance — readiness meter, crop driver, export controls, buyer schemes ===== */
 var OR_EXPORT_CONTROLS=[
-  {key:'ctrl_fcm', cat:'topfruit', ic:'🦋', title:'Codling moth monitoring', market:'EU', tag:'green', status:'Registered', ext:'Red Tractor', desc:'Registered monitoring & control programme — EU quarantine pest'},
-  {key:'ctrl_cbs', cat:'topfruit', ic:'🍂', title:'Plant passport registration', market:'EU', tag:'green', status:'Registered', ext:'APHA', desc:'Orchards registered for plant passporting with APHA'},
-  {key:'ctrl_cold', cat:'topfruit', ic:'❄️', title:'Cold-treatment records', market:'EU · USA', tag:'amber', status:'1 log due', ext:'APHA', desc:'Shipping temperature regime, logged per consignment'},
+  {key:'ctrl_fcm', cat:'topfruit', ic:'🧪', title:'Residue test results', market:'Buyers \u00b7 EU', tag:'green', status:'Booked', ext:'Buyer spec', desc:'Pre-harvest residue tests against your buyer\u2019s limits and the importing country\u2019s MRLs'},
+  {key:'ctrl_cbs', cat:'topfruit', ic:'🛃', title:'Export pre-notification & inspection', market:'EU', tag:'green', status:'Arranged', ext:'APHA', desc:'Each consignment to the EU is pre-notified and inspected; keep the inspection record with its phytosanitary certificate'},
+  {key:'ctrl_cold', cat:'topfruit', ic:'❄️', title:'Cold-store records', market:'Buyers', tag:'amber', status:'1 log due', ext:'Buyer spec', desc:'Store temperatures and controlled-atmosphere logs, per store and consignment'},
   {key:'ctrl_cod', cat:'fruit', ic:'🐛', title:'Codling moth monitoring', market:'Export', tag:'green', status:'On track', ext:'', desc:'Mating disruption + trap monitoring for pome export'},
   {key:'ctrl_coldb', cat:'berry', ic:'❄️', title:'Cold-chain / airfreight records', market:'EU · UK', tag:'green', status:'Logged', ext:'', desc:'Cold-chain temperature logs for air-freighted berries'},
-  {key:'ctrl_puc', cat:'*', ic:'🏷️', title:'Plant passport codes', market:'All export', tag:'green', status:'per block', ext:'', desc:'Every block carries its plant passport traceability code'}
+  {key:'ctrl_puc', cat:'*', ic:'🏷️', title:'Block traceability codes', market:'All', tag:'green', status:'per block', ext:'', desc:'Every block carries a code that follows its fruit onto each bin and consignment'}
 ];
 var OR_BUYER_SCHEMES=[
   {k:'grasp', nm:'GLOBALG.A.P. GRASP', d:'Labour add-on many EU supermarkets require', mk:'EU retail'},
@@ -69893,7 +69904,7 @@ function orOpenPickForm(){
     '<div class="or-frow"><label class="or-flbl">Which block?</label><select class="or-finp" id="or-pk-block">'+orBlockOptions(function(b){return !b.plan;})+'</select></div>'+
     '<div class="or-fg2"><div class="or-frow"><label class="or-flbl">How much picked (tonnes)</label><input class="or-finp" id="or-pk-tons" inputmode="decimal" placeholder="38"></div><div class="or-frow"><label class="or-flbl">Cartons packed <span class="or-fh">optional</span></label><input class="or-finp" id="or-pk-cartons" inputmode="decimal" placeholder="2540"></div></div>'+
     '<div class="or-fg2"><div class="or-frow"><label class="or-flbl">Date</label><input class="or-finp" id="or-pk-date" type="date"></div><div class="or-frow"><label class="or-flbl">Picking labour cost <span class="or-fh">optional — to Workers</span></label><input class="or-finp" id="or-pk-labour" inputmode="decimal" placeholder="£ 0"></div></div>'+
-    '<div class="or-fg2"><div class="or-frow"><label class="or-flbl">How many pickers? <span class="or-fh">optional</span></label><input class="or-finp" id="or-pk-pickers" inputmode="numeric" placeholder="e.g. 12"></div><div class="or-frow"><label class="or-flbl">Sold to / packhouse <span class="or-fh">optional</span></label><input class="or-finp" id="or-pk-to" placeholder="e.g. SRCC packhouse"></div></div>'+
+    '<div class="or-fg2"><div class="or-frow"><label class="or-flbl">How many pickers? <span class="or-fh">optional</span></label><input class="or-finp" id="or-pk-pickers" inputmode="numeric" placeholder="e.g. 12"></div><div class="or-frow"><label class="or-flbl">Sold to / packhouse <span class="or-fh">optional</span></label><input class="or-finp" id="or-pk-to" placeholder="e.g. your packhouse or co-op"></div></div>'+
     orAttachField('pk','weighbridge slip or delivery note')+
     '<div style="display:flex;gap:10px;margin-top:8px"><button class="btn-pri" onclick="orSavePick()">Save pick</button><button class="btn-sec" onclick="orCloseModal()">Cancel</button></div></div>';
   orModalHTML(h);
@@ -70919,7 +70930,7 @@ var AI_REG={
        gap:'dot'  - one of Article 67(1)'s five: product, time, dose, area, crop.
        gap:'dash' - a Red Tractor condition, or something neither standard requires. */
     cols:[{k:'date',label:'Date',w:16,gap:'dot'},{k:'time',label:'Time',w:8,gap:'dot'},
-          {k:'land',label:'Land',w:18,gap:'dot'},{k:'variety',label:'Crop / variety',w:22,gap:'dot'},
+          {k:'land',label:'Field',w:18,gap:'dot'},{k:'variety',label:'Crop / variety',w:22,gap:'dot'},
           {k:'stage',label:'BBCH',w:7},
           {k:'ha',label:'Ha',w:6,gap:'dot'},{k:'product',label:'Product',w:22,gap:'dot'},
           {k:'target',label:'Target',w:16,gap:'dash'},{k:'rate',label:'Rate',w:11,gap:'dot'},
@@ -70931,7 +70942,7 @@ var AI_REG={
   diesel:{
     title:{en:'Diesel Logbook'},
     law:'Hydrocarbon Oil Duties Act 1979 \u00b7 rebated fuel',
-    foot:{en:'Keep for five years from the date of use or the refund return, whichever is later, and produce on request.'},
+    foot:{en:'Keep with your fuel invoices and produce to HMRC on request. Business records are kept for at least five years after the 31 January filing deadline (six years for a company).'},
     sig:{en:'Certified correct \u2014 responsible person'},
     cols:[{k:'date',label:'Date',w:16},{k:'machine',label:'Machine',w:38},
           {k:'reg',label:'Reg / ID',w:20,opt:true},{k:'litres',label:'Litres',w:14},
@@ -71114,9 +71125,8 @@ function aiRegBuild(kind, opts){
       });
       var _rate=aiDieselRate()*aiDieselShare();
       _tot=rows.length+' entr'+(rows.length===1?'y':'ies')+'  \u00b7  '+
-           Math.round(_q).toLocaleString('en-GB')+' \u2113 claimable at '+(aiDieselRate()*100).toFixed(1)+
-           ' c/\u2113  \u00b7  refund '+aiDieselMoney(_q*_rate)+
-           (_n?('  \u00b7  '+Math.round(_n).toLocaleString('en-GB')+' \u2113 road/private, excluded'):'');
+           Math.round(_q).toLocaleString('en-GB')+' \u2113 red diesel on qualifying farm work'+
+           (_n?('  \u00b7  '+Math.round(_n).toLocaleString('en-GB')+' \u2113 road or private use (white diesel)'):'');
     }
     else if(kind==='spray'){
       var _ha=rows.reduce(function(a,r){ return a+(parseFloat(r.ha)||0); },0);
@@ -72391,7 +72401,7 @@ function _lsRegCertsCard(){
   </div>
   <div class="tours-menu-item ent-crops" onclick="toggleToursMenu();startPageTour('crop')">
     <span class="tours-menu-icon">🌾</span>
-    <div><div class="tours-menu-label">Crops</div><div class="tours-menu-sub">Lands, inputs & compliance</div></div>
+    <div><div class="tours-menu-label">Crops</div><div class="tours-menu-sub">Fields, inputs & compliance</div></div>
   </div>
   <div class="tours-menu-item ent-orchards" onclick="toggleToursMenu();startPageTour('orchards')">
     <span class="tours-menu-icon">🍎</span>
@@ -72865,9 +72875,9 @@ function _lsRegCertsCard(){
     return {
       label:'Lands planted', value:String(planted.length), chip:'This season',
       verdict:{tone:'info',head:planted.length+' land'+(planted.length!==1?'s':'')+' in the ground',text:'You\u2019ve got '+planted.length+' land'+(planted.length!==1?'s':'')+' planted this season, covering '+area+' ha.'},
-      mean:'How many of your lands are planted and growing a crop this season.',
-      breakdown: planted.length?{title:'Your planted lands', rows:rows, note:'Tap below to open the full land register.'}:null,
-      jump:{label:'Open land register', tone:'', go:function(){ if(typeof cropSetTab==='function') cropSetTab('lands'); }, back:function(){ if(typeof cropSetTab==='function') cropSetTab('overview'); kpiOpen('cropLands'); }, trail:'\u2039 Back to crops overview', show:'Showing your lands'}
+      mean:'How many of your fields are planted and growing a crop this season.',
+      breakdown: planted.length?{title:'Your planted fields', rows:rows, note:'Tap below to open the full land register.'}:null,
+      jump:{label:'Open field register', tone:'', go:function(){ if(typeof cropSetTab==='function') cropSetTab('lands'); }, back:function(){ if(typeof cropSetTab==='function') cropSetTab('overview'); kpiOpen('cropLands'); }, trail:'\u2039 Back to crops overview', show:'Showing your fields'}
     };
   };
   REG.cropArea=function(){
@@ -72875,10 +72885,10 @@ function _lsRegCertsCard(){
     var rows=planted.slice(0,6).map(function(l){return {nm:(l.name||l.crop||'Land'), amt:((l.ha||l.area||0)+' ha'), pct:0};});
     return {
       label:'Total area planted', value:area+' ha', chip:'This season',
-      verdict:{tone:'info',head:area+' ha under crop',text:'Your planted lands add up to '+area+' hectares this season.'},
-      mean:'The total hectares you have planted across all your lands this season.',
-      breakdown: planted.length?{title:'Area by land', rows:rows, tot:{nm:'Total', amt:area+' ha'}, note:'Only counts lands with a crop in the ground.'}:null,
-      jump:{label:'Open land register', tone:'', go:function(){ if(typeof cropSetTab==='function') cropSetTab('lands'); }, back:function(){ if(typeof cropSetTab==='function') cropSetTab('overview'); kpiOpen('cropArea'); }, trail:'\u2039 Back to crops overview', show:'Showing your lands'}
+      verdict:{tone:'info',head:area+' ha under crop',text:'Your planted fields add up to '+area+' hectares this season.'},
+      mean:'The total hectares you have planted across all your fields this season.',
+      breakdown: planted.length?{title:'Area by land', rows:rows, tot:{nm:'Total', amt:area+' ha'}, note:'Only counts fields with a crop in the ground.'}:null,
+      jump:{label:'Open field register', tone:'', go:function(){ if(typeof cropSetTab==='function') cropSetTab('lands'); }, back:function(){ if(typeof cropSetTab==='function') cropSetTab('overview'); kpiOpen('cropArea'); }, trail:'\u2039 Back to crops overview', show:'Showing your fields'}
     };
   };
   REG.cropYield=function(){
@@ -72886,15 +72896,15 @@ function _lsRegCertsCard(){
     return {
       label:'Expected yield', value:Math.round(tons).toLocaleString('en-GB')+' t', chip:'Forecast',
       verdict:{tone:'info',head:'About '+Math.round(tons).toLocaleString('en-GB')+' tonnes expected',text:'Based on your lands\u2019 expected yields per hectare this season.'},
-      mean:'The total harvest you\u2019re on track to bring in this season, across all lands.',
-      jump:{label:'Open land register', tone:'', go:function(){ if(typeof cropSetTab==='function') cropSetTab('lands'); }, back:function(){ if(typeof cropSetTab==='function') cropSetTab('overview'); kpiOpen('cropYield'); }, trail:'\u2039 Back to crops overview', show:'Showing your lands'}
+      mean:'The total harvest you\u2019re on track to bring in this season, across all fields.',
+      jump:{label:'Open field register', tone:'', go:function(){ if(typeof cropSetTab==='function') cropSetTab('lands'); }, back:function(){ if(typeof cropSetTab==='function') cropSetTab('overview'); kpiOpen('cropYield'); }, trail:'\u2039 Back to crops overview', show:'Showing your fields'}
     };
   };
   REG.cropMargin=function(){
     var gm=cropForecastGM(), area=cropAreaPlanted();
     return {
       label:'Forecast gross margin', value:cropFmtR(gm), warn:gm<0, chip:'Forecast',
-      verdict: gm>=0?{tone:'good',head:'Crops set to pay their way',text:'Your lands are forecast to leave '+cropFmtR(gm)+' after growing costs this season.'}:{tone:'watch',head:'Forecast to run at a loss',text:'Right now your lands are forecast to lose '+cropFmtR(Math.abs(gm))+' after growing costs.'},
+      verdict: gm>=0?{tone:'good',head:'Crops set to pay their way',text:'Your fields are forecast to leave '+cropFmtR(gm)+' after growing costs this season.'}:{tone:'watch',head:'Forecast to run at a loss',text:'Right now your fields are forecast to lose '+cropFmtR(Math.abs(gm))+' after growing costs.'},
       mean:'What your crops are expected to leave after the costs of growing them \u2014 before farm-wide overheads.',
       jump:{label:'See input costs', tone:(gm<0?'gold':''), go:function(){ if(typeof cropSetTab==='function') cropSetTab('inputs'); }, back:function(){ if(typeof cropSetTab==='function') cropSetTab('overview'); kpiOpen('cropMargin'); }, trail:'\u2039 Back to crops overview', show:'Showing input costs'}
     };
