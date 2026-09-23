@@ -397,6 +397,11 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
      tables, and the crop saved with each field application. */
   let CAN_INPUT_NI2    = false;   /* crop_inputs:    situation/time_end/weather/crop_at/eppo_at */
   let CAN_ORCH_NI2     = false;   /* orchard_sprays: situation/time_end/weather */
+  /* uk-workers-pay-fields.sql. The tax code, age, Wages Order grade, apprentice and visa
+     flags - and now the pension opt-out - were captured on the worker form and never
+     sent, so a signed-in farm's workers came back from the cloud on 1257L and the
+     national minimum wage. */
+  let CAN_WKR_PAY      = false;   /* workers: tax_code/age/awo_grade/apprentice/visa_worker/pension_out */
   /* ---- what this database actually has, asked once ------------------------
      Ported from SA -438, same reasoning. Every late-added column is gated on a
      CAN_* flag, and each flag cost its own round trip in series on every
@@ -460,7 +465,8 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     ['orchard_sprays','att'], ['crop_inputs','act'], ['orchard_sprays','act'],
     ['orchard_sprays','removed_at'], ['crop_inputs','removed_at'],
     ['crop_inputs','bbch'], ['orchard_sprays','bbch'], ['crop_lands','field_ref'], ['orchard_blocks','field_ref'],
-    ['crop_inputs','situation'], ['orchard_sprays','situation']
+    ['crop_inputs','situation'], ['orchard_sprays','situation'],
+    ['workers','tax_code']
   ];
 
   async function probeCaps(farmId){
@@ -518,6 +524,7 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     CAN_BLOCK_NI      = keep(CAN_BLOCK_NI,      'orchard_blocks','field_ref');
     CAN_INPUT_NI2     = keep(CAN_INPUT_NI2,     'crop_inputs','situation');
     CAN_ORCH_NI2      = keep(CAN_ORCH_NI2,      'orchard_sprays','situation');
+    CAN_WKR_PAY       = keep(CAN_WKR_PAY,       'workers','tax_code');
   }
   probeCaps.reset = function(){ _colCache = Object.create(null); _colRpcDead = false; };
   probeCaps.seen  = function(){ return _colCache; };
@@ -2479,11 +2486,23 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     fund_per_pay:(w.fund&&w.fund.perPay!=null)?Number(w.fund.perPay):null,
     fund_balance:(w.fund&&w.fund.balance!=null)?Number(w.fund.balance):null,
     fund_consent:(w.fund&&w.fund.consent!=null)?!!w.fund.consent:null }; }
+  function wkrToDbFull(w, fid){ var r=wkrToDb(w, fid);
+    if(CAN_WKR_PAY){
+      r.tax_code=(w.taxCode||null); r.age=(w.age!=null&&w.age!=='')?parseInt(w.age,10):null;
+      r.awo_grade=(w.awoGrade!=null&&w.awoGrade!=='')?String(w.awoGrade):null;
+      r.apprentice=!!w.apprentice; r.visa_worker=!!w.visaWorker; r.pension_out=!!w.pensionOut;
+    }
+    return r; }
   function wkrFromDb(r){ var w={ id:r.local_id, name:r.name||'', role:r.role||'', type:r.worker_type||'',
     start:r.start_date||'', onFarm:!!r.on_farm, niNo:r.ni_no||'', basis:r.basis||'month',
     amt:Number(r.amt)||0, hoursWeek:(r.hours_week!=null)?Number(r.hours_week):45,
     hoursDay:(r.hours_day!=null)?Number(r.hours_day):8, niReg:(r.ni_registered!=null)?!!r.ni_registered:true,
     niNo:r.ni_no||'', niExempt:!!r.ni_exempt, worksSundays:!!r.works_sundays, contract:r.contract_status||'missing', activity:r.activity||'' };
+    if(r.tax_code!==undefined){
+      w.taxCode=r.tax_code||'1257L'; w.age=(r.age!=null)?Number(r.age):null;
+      w.awoGrade=(r.awo_grade!=null&&r.awo_grade!=='')?(isNaN(r.awo_grade)?r.awo_grade:parseInt(r.awo_grade,10)):null;
+      w.apprentice=!!r.apprentice; w.visaWorker=!!r.visa_worker; w.pensionOut=!!r.pension_out;
+    }
     if(r.leave_annual!=null||r.leave_sick!=null||r.leave_family!=null){ w.leave={annual:Number(r.leave_annual)||0,sick:Number(r.leave_sick)||0,family:(r.leave_family!=null)?Number(r.leave_family):3}; }
     if(r.housing_deduction!=null) w.housing={deduction:Number(r.housing_deduction)};
     if(r.adv_owing!=null||r.adv_per_pay!=null||r.adv_reason||r.adv_consent!=null){ w.adv={owing:Number(r.adv_owing)||0,perPay:Number(r.adv_per_pay)||0,reason:r.adv_reason||'',consent:!!r.adv_consent}; } else { w.adv=null; }
@@ -2569,7 +2588,7 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
       if(snap===_wkSnap) return;
       { const e=(await client().from('worker_settings').upsert(wkSettToDb(stw,fid),{onConflict:'farm_id'})).error; if(e) throw e; }
       var ws=(stw.workers||[]);
-      if(ws.length){ const e=(await client().from('workers').upsert(ws.map(function(w){return wkrToDb(w,fid);}),{onConflict:'farm_id,local_id'})).error; if(e) throw e; }
+      if(ws.length){ const e=(await client().from('workers').upsert(ws.map(function(w){return wkrToDbFull(w,fid);}),{onConflict:'farm_id,local_id'})).error; if(e) throw e; }
       var lgR=wkLedgerRows(stw,fid); await replaceAllRows('worker_ledger', fid, lgR);
       var lvR=wkLeaveRows(stw,fid); await replaceAllRows('worker_leave_log', fid, lvR);
       var dcR=wkDocRows(stw,fid); await replaceAllRows('worker_docs', fid, dcR);
