@@ -526,7 +526,7 @@
       // currentMonth is a local "trailing window" anchor the backend doesn't persist — financeCore returns it as null,
       // which blanked the boot-time anchor on every sign-in (money views then fell back to a computed default). Re-anchor
       // it to the real current month here. Only sets the label; never shifts transaction dates, so real data is untouched.
-      try { if (window.ST && ST.budgets && !ST.budgets.currentMonth) { var _d=(window.APP_TODAY?new Date(window.APP_TODAY):new Date()); var _ml=(window.MONTH_LABELS_SHORT)||['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']; ST.budgets.currentMonth=_ml[_d.getMonth()]+' '+_d.getFullYear(); } } catch (e) {}
+      try { if (window.ST && ST.budgets) { var _d=(window.APP_TODAY?new Date(window.APP_TODAY):new Date());   /* ALWAYS today (-369): the cloud keeps the month the budget was last saved in */ var _ml=(window.MONTH_LABELS_SHORT)||['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']; ST.budgets.currentMonth=_ml[_d.getMonth()]+' '+_d.getFullYear(); } } catch (e) {}
       // Brand-new pilot farm: wipe any in-memory demo defaults across ALL modules
       // so the user starts on a clean slate and can begin entering data straight away.
       if (isNewFarm && typeof window.clearAllToFresh === 'function') {

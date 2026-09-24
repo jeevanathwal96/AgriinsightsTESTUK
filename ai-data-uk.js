@@ -2805,12 +2805,19 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     if(!p || !prefs || typeof prefs!=='object') return p;
     if(prefs.poa   && typeof prefs.poa==='object')   p.poaHmrc     = prefs.poa;
     if(prefs.stock && typeof prefs.stock==='object') p.stockCounts = prefs.stock;
+    /* -369: the year end (sign-off D3) and the cash/accruals basis. The basis was set in
+       Settings and never saved anywhere but this browser, so two devices could work out
+       different tax for the same farm. */
+    if(prefs.yearEnd==='31mar' || prefs.yearEnd==='5apr') p.fyYearEnd = prefs.yearEnd;
+    if(typeof prefs.cashBasis==='boolean') p.cashBasis = prefs.cashBasis;
     return p;
   }
   function _profPrefsNext(prev, st){
     var has=false, next=Object.assign({}, (prev && typeof prev==='object') ? prev : {});
     if(st && st.poaHmrc     && typeof st.poaHmrc==='object'){     next.poa   = st.poaHmrc;     has=true; }
     if(st && st.stockCounts && typeof st.stockCounts==='object'){ next.stock = st.stockCounts; has=true; }
+    if(st && (st.fyYearEnd==='31mar' || st.fyYearEnd==='5apr')){ next.yearEnd = st.fyYearEnd; has=true; }
+    if(st && typeof st.cashBasis==='boolean'){ next.cashBasis = st.cashBasis; has=true; }
     return has ? next : null;
   }
 

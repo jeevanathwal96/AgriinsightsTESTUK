@@ -33,8 +33,8 @@
 <script defer src="vendor/chart.umd.js"></script>
 <!-- AgriInsights backend: Supabase client + data service (load order matters) -->
 <script src="vendor/supabase.js"></script>
-<script src="ai-data-uk.js?v=uk124"></script>
-<script src="ai-auth-uk.js?v=uk106"></script>
+<script src="ai-data-uk.js?v=uk125"></script>
+<script src="ai-auth-uk.js?v=uk107"></script>
 <link rel="stylesheet" href="fonts.css"/>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -10200,7 +10200,14 @@ button.rn-gchip{border:0;font-family:inherit;cursor:pointer}
               <option value="7">July</option>
               <option value="10">October</option>
             </select>
-            <div id="set-fylock" style="display:none;font-size:11px;color:var(--t4);line-height:1.45;margin-top:6px">HMRC sets this one. You are taxed on the year to 5 April even if you draw your accounts to a different date &mdash; your accountant fits them into it. Change your business type to Limited company to pick a year end.</div>
+            <div id="set-fylock" style="display:none;font-size:11px;color:var(--t4);line-height:1.45;margin-top:6px">
+              <label for="set-yearend" style="display:block;font-size:11px;font-weight:700;color:var(--t2);margin-bottom:4px">Your accounts run to</label>
+              <select id="set-yearend" style="width:100%">
+                <option value="31mar">31 March (most farms) &mdash; year 1 April to 31 March</option>
+                <option value="5apr">5 April &mdash; year 6 April to 5 April</option>
+              </select>
+              <div style="margin-top:5px">Either one is your tax year: HMRC treats a year end from 31 March to 4 April as 5 April. Your quarterly Making Tax Digital updates follow it (calendar quarters for 31 March). Change your business type to Limited company to pick a different year end.</div>
+            </div>
           </div>
           <div><label>Season starts <span class="set-ihint"><button type="button" class="set-i" onclick="setPop(this,event)" aria-label="Why we ask">i</button><span class="set-pop"><b>Your growing year</b>, which is not your tax year. It sets the twelve months the Planning and Season Tracker screens run over. Combinable crops usually start with autumn drilling in September; a spring-cropping or livestock farm may start somewhere else. Your tax year is unaffected.</span></span></label>
             <select id="set-season">
@@ -17334,7 +17341,16 @@ function txDispDate(s) {
   return ('0' + d.d).slice(-2) + ' ' + MO[d.m] + ' ' + d.y;
 }
 
-function currentPeriodLabel() { return ST.budgets.currentMonth || (function(){ var MO=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']; var d=(typeof APP_TODAY!=='undefined'&&APP_TODAY)?new Date(APP_TODAY):new Date(); return MO[d.getMonth()]+' '+d.getFullYear(); })(); }
+/* ONE clock (-369, port of SA -449). ST.budgets.currentMonth is saved with the budget
+   (farms.budget_current_month) and put back by every load, after boot anchored it to today -
+   so a farm whose budget was last saved in July read "this month" as July in September. */
+function currentPeriodLabel() {
+  var MO=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  var d=(typeof APP_TODAY!=='undefined'&&APP_TODAY)?new Date(APP_TODAY):new Date();
+  var L=MO[d.getMonth()]+' '+d.getFullYear();
+  try{ if(typeof ST!=='undefined' && ST.budgets && ST.budgets.currentMonth!==L) ST.budgets.currentMonth=L; }catch(e){}
+  return L;
+}
 
 function prevMonthLabel(monthLabel) {
   var MO = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -19554,7 +19570,17 @@ var FARM_CATS = [
   {n:'Income tax'                 , t:'exp'  , vat:'none' , ec:'#DC2626'  , ic:''         , tag:'tr'   , tc:'#FEF2F2:#B91C1C'    , ss:'not reported · personal tax, not a business expense'       , sd:'', bor:19, ded:0},
   {n:'HMRC penalties & interest'      , t:'exp'  , vat:'none' , ec:'#B91C1C'  , ic:''         , tag:'tr'   , tc:'#FEF2F2:#B91C1C'    , ss:'not reported · penalties are not deductible'       , sd:'', bor:19.2, ded:0},
   {n:'PAYE & National Insurance'                 , t:'exp'  , vat:'none' , ec:'#EF4444'  , ic:''         , tag:'tr'   , tc:'#FEF2F2:#B91C1C'    , ss:'not reported · already inside wages (box 19)'       , sd:'', bor:19.4},
-  {n:'Rates & licences'           , t:'exp'  , vat:'exmt' , ec:'#F87171'  , ic:''         , tag:'tr'   , tc:'#FEF2F2:#B91C1C'    , ss:'SA103F box 21'       , sd:'', bor:19.6}
+  {n:'Rates & licences'           , t:'exp'  , vat:'exmt' , ec:'#F87171'  , ic:''         , tag:'tr'   , tc:'#FEF2F2:#B91C1C'    , ss:'SA103F box 21'       , sd:'', bor:19.6},
+  /* ── Batch 5 step 1 (-369): money that is not farming at all ──────────────────────────
+     With no category of their own these were filed as Other Expenses / Machinery & Repairs
+     and counted as running costs. None of the first three is on the return ("not reported"):
+     the owner's drawings, settling the VAT return, and a VAT repayment (which is not
+     business income either - notax:1). Buying a tractor is capital: relieved through the
+     asset register (AIA, box 49), never as a running cost - the same class as Fencing. */
+  {n:'Drawings'                   , t:'exp'  , vat:'none' , ec:'#94A3B8'  , ic:''         , tag:'tgr'  , tc:'#F1F5F9:#475569'    , ss:'not reported · money the owner takes out, not a business expense', sd:'', bor:19.8, ded:0, nonop:1},
+  {n:'VAT paid to HMRC'           , t:'exp'  , vat:'none' , ec:'#F59E0B'  , ic:''         , tag:'to'   , tc:'#FEF3C7:#92400E'    , ss:'not reported · settling the VAT return, not a business expense', sd:'', bor:19.9, ded:0, nonop:1},
+  {n:'VAT repayment from HMRC'    , t:'inc'  , vat:'none' , ec:''         , ic:'#F59E0B'  , tag:'to'   , tc:''                   , ss:'not reported · a VAT repayment is not business income', sd:'', bor:6.5, notax:1, nonop:1},
+  {n:'Machinery & equipment purchases', t:'exp', vat:'std', ec:'#C2410C'  , ic:''         , tag:'to'   , tc:'#F5F3FF:#5B21B6'    , ss:'SA103F box 49 (AIA, 100%)', sd:'Buying machinery or equipment is capital: it is claimed through capital allowances on the asset register, not as a running cost.', bor:14.5, cap:1, capx:1}
 ];
 
 /* Derivations. Membership is driven strictly by whether a field is set, so each generated
@@ -20022,14 +20048,18 @@ function getCurrentFY() {
   /* Honour the farmer's own year-end. This used to hardcode March, so a farmer on (say) a July
      year-end got Budgets/Reports on Mar–Feb while Income/Expenses and VAT ran Jul–Jun — every
      "this financial year" total disagreed with every other one. ST.fyStartMonth is 1-12. */
-  var sm = (window.ST && ST.fyStartMonth) ? (ST.fyStartMonth - 1) : 2;   // 0-based; SA farming default = March
+  /* One year function (-369): the day-aware fyOf() on today's date. This took the month
+     from the period label and a RAW ST.fyStartMonth (falling back to March), so on 1-5
+     April, or for any farm whose stored month was stale, it disagreed with fyOf(). */
+  if (typeof fyOf === 'function') { var _fy = fyOf(); if (isFinite(_fy)) return _fy; }
+  var sm = (typeof fyStartMonth==='function') ? (fyStartMonth() - 1) : 3;
   return m >= sm ? y : y - 1;
 }
 function getFYMonths(fy) {
 
   var months = [];
   var MO = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  var sm = (window.ST && ST.fyStartMonth) ? (ST.fyStartMonth - 1) : 2;   // same anchor as getCurrentFY
+  var sm = (typeof fyStartMonth==='function') ? (fyStartMonth() - 1) : 3;   // same anchor as fyOf (-369)
   for (var i=0; i<12; i++) {
     var k  = sm + i;
     var yr = k < 12 ? fy : fy + 1;
@@ -20239,7 +20269,8 @@ if (name)  { ST.farmName = name;  FARM.name  = name; }
   /* The UK tax year opens on the 6th. A company year-end is a month end, so its
      period opens on the 1st. Keyed off the business type rather than the month,
      which is now only free to move for a company anyway. */
-  ST.fyStartDay = (ST.entityType === 'company') ? 1 : _cDef('fy.startDay',6);
+  ST.fyStartDay = (ST.entityType === 'company') ? 1 : _cDef('fy.startDay',6);   // legacy field; fyStartDay() reads ST.fyYearEnd (-369)
+  var _ye = document.getElementById('set-yearend'); if (_ye && ST.entityType !== 'company') ST.fyYearEnd = (_ye.value === '5apr') ? '5apr' : '31mar';
   var taxno = document.getElementById('set-taxno'); if(taxno && taxno.value.trim()) { ST.taxNumber = taxno.value.trim(); FARM.taxNo = ST.taxNumber; }
   var vatno = document.getElementById('set-vatno'); if(vatno && vatno.value.trim()) { ST.vatNumber = vatno.value.trim(); FARM.vatNo = ST.vatNumber; }
   var vcat = document.getElementById('set-vatcat'); if(vcat && vcat.value) ST.vatCategory = vcat.value;
@@ -20702,6 +20733,7 @@ function nav(id) {
     var scph=$('set-cph'); if(scph) scph.value = ST.cphNumber || '';
   var scap=$('set-capmin'); if(scap) scap.value = (ST.capThreshold!=null? ST.capThreshold : CAP_MIN_DEFAULT);
     var sbas=$('set-basis'); if(sbas) sbas.value = ST.cashBasis ? 'cash' : 'accruals';
+    var sye=$('set-yearend'); if(sye) sye.value = (ST.fyYearEnd==='5apr') ? '5apr' : '31mar';
     var sres=$('set-taxres'); if(sres) sres.value = ST.taxResidence || '';
     if (typeof syncSettingsHeader==='function') syncSettingsHeader();
   }
@@ -36591,10 +36623,15 @@ function fyStartDay(){
      rather than anything the farmer chose - and honouring it would silently defeat this
      for every existing farm. If a day control is ever added, revisit the order. */
   if (typeof ukIsCompany==='function' && ukIsCompany()) return 1;
-  /* Everyone else is on the HMRC year, which opens on the 6th. A stored 1 is the
-     leftover of a July or October year end that can no longer be chosen, and honouring
-     it would put the boundary five days out from the month fyStartMonth() returns. */
-  return _cDef('fy.startDay', 6);
+  /* A sole trader or partnership: the farm's YEAR END decides (-369, sign-off D3). Since
+     basis-period reform an accounting date from 31 March to 4 April is treated as 5 April,
+     so a 1 April - 31 March year IS the tax year and whole months stay whole in every
+     budget, chart and statement. 31 March is the default (most farm accounts); a farm that
+     draws its accounts to 5 April picks that in Settings and gets 6 April - 5 April.
+     ST.fyStartDay is NOT read: it was seeded to 6 on every farm and could never be told
+     apart from a choice - the choice lives in ST.fyYearEnd. Payroll (wkTaxYear) and the
+     PAYE year keep 6 April whatever this says. */
+  return (typeof ST!=='undefined' && ST && ST.fyYearEnd==='5apr') ? 6 : 1;
 }
 function seasonStartDay(){
   var d=(typeof ST!=='undefined' && ST && ST.seasonStartDay)|0;
@@ -37535,10 +37572,11 @@ function recomputePlan() {
   // ── Step 3: Load actuals from recorded transactions ───────
   var MON_IDX = {Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
   ST.txns.forEach(function(t){
-    var parts = t.date.trim().split(' ');
-    if(parts.length < 3) return;
-    var mn = parts[1], yr = parseInt(parts[2],10);
-    var label = mn + ' ' + yr;
+    /* parseDate, not split(' '): bank imports and the demo store ISO dates, which split into
+       one part and were skipped - "Actual so far" read 0 on any farm that imports (-369). */
+    var _d = (t && t.date && typeof parseDate === 'function') ? parseDate(t.date) : null;
+    if(!_d) return;
+    var label = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][_d.m] + ' ' + _d.y;
     var mi = ST_PLAN.months.findIndex(function(m){return m.label===label;});
     if(mi < 0) return;
     if(t.type === 'income')  ST_PLAN.months[mi].actIncome   += t.amt;
@@ -37721,11 +37759,18 @@ function recomputePlan() {
   }
 
   // ── Step 4: Push plan to budgets ─────────────────────────
-  ST_PLAN.months.forEach(function(m){
-    if(!m.label) return;
-    if(m.income   > 0 && !(ST.budgets.monthlyIncome[m.label]   > 0)) ST.budgets.monthlyIncome[m.label]   = m.income;
-    if(m.expenses > 0 && !(ST.budgets.monthlyExpenses[m.label] > 0)) ST.budgets.monthlyExpenses[m.label] = m.expenses;
-  });
+  /* Only into THIS financial year's empty months, and never into a locked year (-369). The
+     plan window is a season (Sep-Aug), so it also covered next year's Apr-Aug; and this runs
+     on every recompute - including while Budgets draws - so it must not touch a year the
+     farmer has locked with the bank (bgtIsLocked, switched on in step 3). */
+  var _s4fy=(typeof getCurrentFY==='function')?getCurrentFY():null, _s4m=(_s4fy!=null&&typeof getFYMonths==='function')?getFYMonths(_s4fy):null;
+  if(_s4m && !(typeof bgtIsLocked==='function' && bgtIsLocked(_s4fy))){
+    ST_PLAN.months.forEach(function(m){
+      if(!m.label || _s4m.indexOf(m.label)<0) return;
+      if(m.income   > 0 && !(ST.budgets.monthlyIncome[m.label]   > 0)) ST.budgets.monthlyIncome[m.label]   = m.income;
+      if(m.expenses > 0 && !(ST.budgets.monthlyExpenses[m.label] > 0)) ST.budgets.monthlyExpenses[m.label] = m.expenses;
+    });
+  }
 
   /* Rendered from HERE, not from updatePlanPeriod: the header is also written by
      renderCalGrid, so hooking the notice to one caller meant it never appeared.
@@ -40378,9 +40423,10 @@ function bgtCompute() {
   for (i = 0; i < 12; i++) { aIn[fyMonths[i]] = 0; aOut[fyMonths[i]] = 0; }
   ST.txns.forEach(function(t) {
     var d = parseDate(t.date); if (!d) return;
-    /* 6 April, not 1 April: a row dated 1-5 Apr belongs to the previous tax year. It
-       used to land in this year's April bucket and move the whole projection. */
-    if (typeof fyOf === 'function' && fyOf(t.date) !== fy) return;
+    /* Budgets are MONTHS. This filtered by fyOf() (6 April) and then bucketed by month label
+       (1 April), so a row dated 1-5 April matched neither year and was lost from both (-369).
+       With the year set by the farm's year end (D3) the two agree for a 31 March farm; for
+       a 5 April farm the month is the unit a budget can hold. */
     var lbl = MONTH_LABELS_SHORT[d.m] + ' ' + d.y;
     if (aIn[lbl] === undefined) return;
     if (t.type === 'income') aIn[lbl] += (t.amt||0); else aOut[lbl] += (t.amt||0);
@@ -40888,24 +40934,41 @@ function bgtRenderDrift(c) {
   box.style.display = hide ? 'none' : 'flex';
 }
 
+/* Has the farmer locked this financial year's budget as the bank copy? Always false until
+   budget versions arrive (batch 5 step 3); every writer asks it now so none is missed then. */
+function bgtIsLocked(fy){ try{ return !!(ST.budgets && ST.budgets.locked && ST.budgets.locked[String(fy)]); }catch(e){ return false; } }
+/* The plan into this financial year's budget, one side or both (-369). Months the plan
+   covers take the plan figure; months it does not cover KEEP what the farmer had. Both
+   buttons zeroed the whole year first - the plan window is a Sep-Aug season, so Apr-Aug of
+   the tax year ended at 0 (the demo read an 80k budget against a 753k plan) - and "Pull from
+   plan" then ran recomputePlan, whose step 4 refilled the zeroed months, before adding the
+   plan again: every planned month came out DOUBLE. Returns the labels left as they were. */
+function bgtPlanIntoMonths(sides){
+  try { if (typeof recomputePlan === 'function') recomputePlan(); } catch(e) {}
+  var fyMonths = getFYMonths(getCurrentFY()), byLbl = {}, kept = [];
+  ((typeof ST_PLAN!=='undefined' && ST_PLAN && ST_PLAN.months) || []).forEach(function(pm){ if (pm && pm.label) byLbl[pm.label] = pm; });
+  fyMonths.forEach(function(m){
+    var pm = byLbl[m];
+    if (!pm) { kept.push(m); return; }
+    if (sides.indexOf('in')  >= 0) ST.budgets.monthlyIncome[m]   = Math.round(pm.income   || 0);
+    if (sides.indexOf('out') >= 0) ST.budgets.monthlyExpenses[m] = Math.round(pm.expenses || 0);
+  });
+  return kept;
+}
+function _bgtKeptNote(kept){ if (!kept.length) return ''; var a=kept[0].split(' ')[0], b=kept[kept.length-1].split(' ')[0]; return ' ' + (kept.length===1 ? a : a + '–' + b) + ' ' + (kept.length===1?'is':'are') + ' outside this season’s plan, so your figures there were kept.'; }
 async function bgtApplyPlan(skipConfirm) {
   var c = BGT_LAST || bgtCompute();
   if (skipConfirm !== true && (c.annualIn > 0 || c.annualOut > 0)) {
     var ok = await appConfirm('This will replace your income target and spending budget with the figures from your Planning page.\n\nMonth-by-month tweaks you have made will be lost.\n\nContinue?');
     if (!ok) return;
   }
-  try { if (typeof recomputePlan === 'function') recomputePlan(); } catch(e) {}
   if (typeof ST_PLAN === 'undefined' || !ST_PLAN || !ST_PLAN.months) return;
-  c.fyMonths.forEach(function(m) { ST.budgets.monthlyIncome[m] = 0; ST.budgets.monthlyExpenses[m] = 0; });
-  ST_PLAN.months.forEach(function(pm) {
-    if (c.fyMonths.indexOf(pm.label) < 0) return;
-    ST.budgets.monthlyIncome[pm.label]   += Math.round(pm.income   || 0);
-    ST.budgets.monthlyExpenses[pm.label] += Math.round(pm.expenses || 0);
-  });
+  if (bgtIsLocked(getCurrentFY())) { toast('This year’s budget is locked — make a new version to change it.', 'info'); return; }
+  var kept = bgtPlanIntoMonths(['in','out']);
   ST.budgets.incomePattern = 'custom'; ST.budgets.expensePattern = 'custom';
   delete ST.budgets.driftDismissSig;
   dataChanged('budget');
-  toast('Targets updated from your plan', 'success');
+  toast('Targets updated from your plan.' + _bgtKeptNote(kept), 'success');
 }
 
 function bgtDismissDrift() {
@@ -42183,25 +42246,15 @@ async function pullPlanToBudgets(side) {
     if (!ok) return;
   }
 
-  fyMonths.forEach(function(m){ target[m] = 0; });
-  if (typeof recomputePlan === 'function') recomputePlan();
-
-  ST_PLAN.months.forEach(function(planMonth) {
-    var match = fyMonths.indexOf(planMonth.label);
-    if (match < 0) return;
-    if (side === 'in') {
-      target[planMonth.label] = (target[planMonth.label] || 0) + (planMonth.income   || 0);
-    } else {
-      target[planMonth.label] = (target[planMonth.label] || 0) + (planMonth.expenses || 0);
-    }
-  });
+  if (bgtIsLocked(fy)) { toast('This year’s budget is locked — make a new version to change it.', 'info'); return; }
+  var kept = bgtPlanIntoMonths([side === 'in' ? 'in' : 'out']);
 
   var sum = fyMonths.reduce(function(s,m){ return s + (target[m] || 0); }, 0);
   var inp = side === 'in' ? $('bgt-annual-input') : $('bgt-annual-exp-input');
   if (inp) inp.value = sum;
 
   dataChanged('budget');
-  toast('Pulled '+_curSym()+ Math.round(sum/1000) + 'k from your plan into ' + (side === 'in' ? 'income target' : 'spending budget'), 'success');
+  toast('Pulled '+_curSym()+ Math.round(sum/1000) + 'k from your plan into ' + (side === 'in' ? 'income target' : 'spending budget') + '.' + _bgtKeptNote(kept), 'success');
 }
 
 function updateAnnualBudget() {
@@ -46068,14 +46121,14 @@ async function pushPlanToBudgets() {
     if (!ok) return;
   }
 
-  ST_PLAN.months.forEach(function(m){
-    if (m.income   > 0) ST.budgets.monthlyIncome[m.label]   = m.income;
-    if (m.expenses > 0) ST.budgets.monthlyExpenses[m.label] = m.expenses;
-  });
+  if (typeof bgtIsLocked === 'function' && bgtIsLocked(getCurrentFY())) { toast('This year’s budget is locked — make a new version to change it.', 'info'); return; }
+  /* This financial year only, and the shared rule (-369): it wrote every plan month, so the
+     season's tail landed in next year's budget. */
+  var kept = bgtPlanIntoMonths(['in','out']);
   // Keep the legacy single-figure budget in sync for places still referencing it
   ST.budgetExpenseTarget = Math.round(ST_PLAN.months.reduce(function(s,x){return s+x.expenses;},0)/12);
   dataChanged('budget');
-  toast('Plan pushed to Budgets and Money Flow forecast','success');
+  toast('Plan pushed to Budgets and Money Flow forecast.' + _bgtKeptNote(kept),'success');
 }
 
 // ============================================================
@@ -50578,6 +50631,9 @@ var MONTH_LABELS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct',
 function rptParseISO(s){ var p=(''+s).split('-'); return new Date(+p[0], (+p[1])-1, +p[2]); }
 function rptISO(dt){ var m=dt.getMonth()+1, d=dt.getDate(); return dt.getFullYear()+'-'+(m<10?'0'+m:m)+'-'+(d<10?'0'+d:d); }
 function rptMonthsBetween(f, to){ var out=[], y=f.getFullYear(), m=f.getMonth(), ey=to.getFullYear(), em=to.getMonth(); while (y<ey || (y===ey && m<=em)){ out.push(MONTH_LABELS[m]+' '+y); m++; if(m>11){m=0;y++;} } return out; }
+/* The financial year the yearly view shows (-369). It always used getCurrentFY(), so Prev/Next
+   did nothing in yearly mode and the "prior period" column repeated the current year. */
+function rptFY(){ return (RPT_STATE.fy != null) ? RPT_STATE.fy : getCurrentFY(); }
 function rptPeriodInfo(){
   var t = RPT_STATE.type;
   if (t === 'custom' && RPT_STATE.customFrom && RPT_STATE.customTo){
@@ -50587,7 +50643,7 @@ function rptPeriodInfo(){
   var months = [];
   if (t === 'monthly') months = [MONTH_LABELS[RPT_STATE.monthIdx] + ' ' + RPT_STATE.year];
   else if (t === 'quarterly'){ var q = RPT_STATE.quarterIdx*3; for (var i=0;i<3;i++){ var mi=(q+i)%12, yr=RPT_STATE.year+(q+i>=12?1:0); months.push(MONTH_LABELS[mi]+' '+yr); } }
-  else { var fy=getCurrentFY(); months=getFYMonths(fy); }
+  else { months=getFYMonths(rptFY()); }
   return {months: months, from: null, to: null};
 }
 function rptInPeriod(d, info){
@@ -50719,7 +50775,7 @@ function getPeriodLabel() {
     var qNames=['Q1','Q2','Q3','Q4'];
     return qNames[q]+' '+RPT_STATE.year;
   }
-  var fy = getCurrentFY();
+  var fy = rptFY();
   return 'FY '+fy+'/'+(fy+1).toString().slice(-2);
 }
 
@@ -50807,9 +50863,9 @@ function ukLoanCapitalPart(t){
 }
 function computePrevRPT() {
   var old = JSON.parse(JSON.stringify(RPT_STATE));
-  if (RPT_STATE.type==='monthly')   RPT_STATE.monthIdx   = (RPT_STATE.monthIdx+11)%12;
-  if (RPT_STATE.type==='quarterly') RPT_STATE.quarterIdx = (RPT_STATE.quarterIdx+3)%4;
-  if (RPT_STATE.type==='yearly')    RPT_STATE.year--;
+  if (RPT_STATE.type==='monthly')   { if (RPT_STATE.monthIdx===0) RPT_STATE.year--; RPT_STATE.monthIdx = (RPT_STATE.monthIdx+11)%12; }
+  if (RPT_STATE.type==='quarterly') { if (RPT_STATE.quarterIdx===0) RPT_STATE.year--; RPT_STATE.quarterIdx = (RPT_STATE.quarterIdx+3)%4; }
+  if (RPT_STATE.type==='yearly')    RPT_STATE.fy = rptFY() - 1;
   if (RPT_STATE.type==='custom' && RPT_STATE.customFrom && RPT_STATE.customTo){
     var _f=rptParseISO(RPT_STATE.customFrom), _day=86400000, _span=(rptParseISO(RPT_STATE.customTo)-_f)+_day;
     RPT_STATE.customTo  =rptISO(new Date(_f.getTime()-_day));
@@ -50850,7 +50906,7 @@ function rptPrev() {
     RPT_STATE.quarterIdx--;
     if (RPT_STATE.quarterIdx < 0) { RPT_STATE.quarterIdx=3; RPT_STATE.year--; }
   } else {
-    RPT_STATE.year--;
+    RPT_STATE.fy = rptFY() - 1;
   }
   updateRptDisplay();
 }
@@ -50864,7 +50920,7 @@ function rptNext() {
     RPT_STATE.quarterIdx++;
     if (RPT_STATE.quarterIdx > 3) { RPT_STATE.quarterIdx=0; RPT_STATE.year++; }
   } else {
-    RPT_STATE.year++;
+    RPT_STATE.fy = rptFY() + 1;
   }
   updateRptDisplay();
 }
@@ -51107,7 +51163,10 @@ var UK_COST_CLASS = {
   'Water supply & irrigation works':'c', 'Fencing':'c', 'Farm buildings':'c',
   'Orchard & vineyard planting':'c', 'Roads & bridges':'c', 'Power & utility connection':'c',
   /* excluded from the trading result entirely */
-  'Income tax':'x', 'HMRC penalties & interest':'x', 'PAYE & National Insurance':'x'
+  'Income tax':'x', 'HMRC penalties & interest':'x', 'PAYE & National Insurance':'x',
+  'Drawings':'x', 'VAT paid to HMRC':'x', 'VAT repayment from HMRC':'x',
+  /* capital, added -369 */
+  'Machinery & equipment purchases':'c'
 };
 /* Unknown categories default to FIXED rather than variable. Getting this wrong in the
    variable direction silently flatters every gross margin; in the fixed direction it
@@ -53639,7 +53698,7 @@ function _taxFYProfit(offset){
   var _p=(currentPeriodLabel()).split(' '), MN={Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
   var now={m:MN[_p[0]]!==undefined?MN[_p[0]]:4,y:parseInt(_p[1],10)||2024}, fyStart=(ST.fyStartMonth||3)-1;
   var curFY=((typeof getCurrentFY==='function')?getCurrentFY():(now.m>=fyStart?now.y:now.y-1))+(offset||0), inc=0,exp=0,byCat={};
-  (ST.txns||[]).forEach(function(t){ var d=parseDate(t.date); if(!d) return; if(_fyOfParts(d)!==curFY) return; if(t.type==='income') inc+=ukExVat(t); else if(t.type==='expense'){ var _a=(typeof ukAllowableExpense==='function')?ukAllowableExpense(t):t.amt; exp+=_a; byCat[_catOf(t)]=(byCat[_catOf(t)]||0)+_a; } });
+  (ST.txns||[]).forEach(function(t){ var d=parseDate(t.date); if(!d) return; if(_fyOfParts(d)!==curFY) return; if(t.type==='income'){ if(taxIncomeCounts(t.cat)) inc+=ukExVat(t); } else if(t.type==='expense'){ var _a=(typeof ukAllowableExpense==='function')?ukAllowableExpense(t):t.amt; exp+=_a; byCat[_catOf(t)]=(byCat[_catOf(t)]||0)+_a; } });
   /* -347 Closing stock increases the year's TAXABLE profit, and last year's closing
      comes back out as this year's opening, so only the MOVEMENT is added. Accruals only
      - on the cash basis ukStockAdj() returns 0, because HS232's rules do not apply to it.
@@ -55186,11 +55245,12 @@ function assetLinkedTxn(asset){ var a = assetLinkedTxns(asset); return a.length 
    a thing under both would deduct it twice, so the two never read the same source. */
 function _taxDedSets(){
   if(_taxDedSets._c) return _taxDedSets._c;
-  var nonDed={}, capital={}, capAny={};
+  var nonDed={}, capital={}, capAny={}, notax={};
   FARM_CATS.forEach(function(c){
     if(c.ded===0) nonDed[c.n]=1;
     else if(c.cap) capital[c.n]=1;    // capital spend — never a running-cost deduction
     if(c.cap) capAny[c.n]=1;
+    if(c.notax) notax[c.n]=1;
   });
   /* `capLim` is gone. It held the heads South Africa's First Schedule para 12(3)
      allowed at FULL COST in the build year, capped at farming income with the excess
@@ -55199,7 +55259,12 @@ function _taxDedSets(){
      year (SBA), fixed plant and fencing at 100% (AIA), and land, drainage and orchard
      establishment not at all. Left in place it deducted a 200,000 grain store in one
      year and cut the bill by 90,000 where the true first-year relief is 6,000. */
-  return (_taxDedSets._c={nonDed:nonDed, capital:capital, capAny:capAny});
+  return (_taxDedSets._c={nonDed:nonDed, capital:capital, capAny:capAny, notax:notax});
+}
+/* Income that is not business income (a VAT repayment) - never turnover (-369). */
+function taxIncomeCounts(cat){
+  var c=cat; try{ if(typeof normalizeCat==='function') c=normalizeCat(cat); }catch(e){}
+  return !_taxDedSets().notax[c];
 }
 /* Is this category a First Schedule para 12 head at all? Used to decide whether an
    asset's purchase is already being claimed as capital development, which is a wider
@@ -55230,7 +55295,7 @@ function _taxFySplit(fy){
        capital repaid was deducted as a running cost. Gross totals are kept so the estimate
        can take the same VAT out of the planned rest of the year. */
     var g=Number(t.amt)||0, a=ukExVat(t);
-    if(t.type==='income'){ o.income+=a; o.incomeGross=(o.incomeGross||0)+g; return; }
+    if(t.type==='income'){ if(!taxIncomeCounts(t.cat)) return; o.income+=a; o.incomeGross=(o.incomeGross||0)+g; return; }
     if(t.type!=='expense') return;              // account payments are cash, not a P&L line
     o.expenses+=a; o.expensesGross=(o.expensesGross||0)+g;
     if(t.cat==='Loan Repayments'){ var _ia=ukAllowableExpense(t); o.loanCapital=(o.loanCapital||0)+Math.max(0,a-_ia); a=_ia; }
@@ -62903,6 +62968,7 @@ function ukSa103f(fy){
     var d=parseDate(x.date); if(!d||_fyOfParts(d)!==fy) return;
     var cat=(typeof _catOf==='function')?_catOf(x):(x.cat||'Other');
     if(x.type==='income'){
+      if(!taxIncomeCounts(cat)) return;          // a VAT repayment is not turnover (-369)
       var n=ukExVat(x); incByCat[cat]=(incByCat[cat]||0)+n;
       if(SUPPORT[cat]) box16+=n; else box15+=n;
       return;
@@ -66298,6 +66364,7 @@ function inferCategory(desc, isIncome, _skipRules){
   if(/payment on account|self assessment payment|income tax/.test(d)) return 'Income tax';
   if(/\bpaye\b|\bnic\b|national insurance|\bp32\b|\brti\b|\bfps\b/.test(d)) return 'PAYE & National Insurance';
   if(/business rates|council tax|\bnndr\b|property rates|\bdvla\b|vehicle (licen[cs]e|tax)|road tax|\bmot\b test|operator licen[cs]e|\bo.licence\b/.test(d)) return 'Rates & licences';
+  if(/\bvat\b.*hmrc|hmrc.*\bvat\b|vat return payment|vat payment/.test(d)) return 'VAT paid to HMRC';
   if(/hmrc|gov\.uk|self assessment/.test(d)) return '';
   /* Water and power. Abstraction is the farm-specific one and sits first. */
   if(/abstraction licen[cs]e|environment agency|\bnrw\b|\bsepa\b|severn trent|anglian water|yorkshire water|united utilities|wessex water|south west water|northumbrian|scottish water|\bwater\b|borehole|irrigation|\bpump\b|octopus energy|british gas|\be\.?on\b|\bedf\b|scottish power|\bovo\b|\bsse\b|\bnpower\b|electricity|\bpower\b|munic/.test(d)) return 'Irrigation & Water';
