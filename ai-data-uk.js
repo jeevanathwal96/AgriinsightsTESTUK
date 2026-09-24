@@ -586,7 +586,7 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
   /* Called from every load with rows exactly as the server returned them.
      Replaces the table's memory outright: a fresh load is fresh truth. */
   function _srvNote(table,rows){
-    var t={ rows:Object.create(null), ids:[], maxUa:null };
+    var t={ rows:Object.create(null), ids:[], maxUa:null, loaded:true };   // loaded: a real load filled this (-448)
     (rows||[]).forEach(function(r){
       if(!r || typeof r!=='object') return;
       var k=_srvKey(table,r); if(k!=null) t.rows[k]=r;
@@ -603,6 +603,39 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
       if(r.id!=null) t.ids.push(r.id);
     });
     _SRV[table]=t;
+    /* Every id is noted above, so the next save deletes all of them; what the app
+       works with from here is the set with the repeats taken out. */
+    if(_REPLACE_ALL[table] && Array.isArray(rows)){ var _n0=rows.length; _collapseRepeats(rows); if(rows.length<_n0) _HEALED[table]=_n0-rows.length; }
+    return rows;
+  }
+  /* Tables saved by replaceAllRows (insert the new set, then delete the old ids). Until
+     -368 a save that ran before its table had loaded - the start-up catch-up does exactly
+     that - inserted a full copy on top of the server's, and the farm reloaded with
+     everything twice. Found on the SA test farm (SA -448): 64 copies of every plan line and
+     85,328 of one orchard document. The UK code is the same port. */
+  var _HEALED=Object.create(null);   // table -> copies dropped on load, for the one clean-up save
+  var _REPLACE_ALL={ plan_crops:1, plan_events:1, crop_compliance_docs:1, crop_compliance_log_photos:1,
+    crop_compliance_logs:1, crop_compliance_readings:1, orchard_block_docs:1, orchard_compliance_checks:1,
+    orchard_compliance_docs:1, orchard_compliance_readings:1, orchard_pricing_others:1, pay_run_applied:1,
+    worker_docs:1, worker_leave_log:1, worker_ledger:1 };
+  /* A row's content, without the server's bookkeeping or its position; numeric strings
+     compared as numbers. cols limits it to the columns one side actually sends. */
+  function _rowKey(r, cols){ var o={}; (cols || Object.keys(r)).slice().sort().forEach(function(k){ if(_SRV_SKIP[k] || k==='sort_idx') return; var v=r[k]; if(v===undefined) v=null; o[k]=(typeof v==='string' && /^-?\d+(\.\d+)?$/.test(v)) ? Number(v) : v; }); return JSON.stringify(o); }
+  /* Takes out WHOLE-SET repeats, in place. Rows identical apart from id / timestamps /
+     position are grouped; each group keeps its size divided by the highest common factor
+     of all the group sizes. A set copied 64 times goes back to one copy, and a farmer's
+     two genuinely identical entries survive (in an uncopied set the factor is 1 and
+     nothing is touched; in a copied one they come back as two). */
+  function _collapseRepeats(rows){
+    if(!rows || rows.length<2) return rows;
+    var n=Object.create(null), keys=rows.map(function(r){ return _rowKey(r); });
+    keys.forEach(function(k){ n[k]=(n[k]||0)+1; });
+    var g=0; Object.keys(n).forEach(function(k){ var a=g, b=n[k]; while(b){ var t=a%b; a=b; b=t; } g=a; });
+    if(g<2) return rows;
+    var seen=Object.create(null), out=[];
+    rows.forEach(function(r,i){ var k=keys[i]; seen[k]=(seen[k]||0)+1; if(seen[k]<=n[k]/g) out.push(r); });
+    try{ console.warn('AgriInsights: '+rows.length+' rows loaded were the same '+out.length+' repeated '+g+' times - using one copy; the next save clears the rest.'); }catch(e){}
+    rows.length=0; Array.prototype.push.apply(rows,out);
     return rows;
   }
   /* Sign-out, or a switch to another farm. Another farm's rows are not ours. */
@@ -1625,23 +1658,28 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
        loaded (or last wrote); anything added since - another tab, another device,
        the phone - was never ours to delete. Reading the table's ids here instead,
        as this used to, quietly swept up exactly those rows.
-       A table this device never loaded falls back to the old read-now behaviour:
-       still a whole-table replace, but no worse than before the change. */
-    let oldIds = _srvIds(table);
+       A table this device never loaded is MERGED (-368): only the rows the server does
+       not already hold are added, and nothing is deleted. */
+    /* Only a LOAD entitles a prune. The write watcher (_srvSettled) also creates a memory
+       for a table it sees a reply from - with no ids - and that read as "loaded, and
+       empty": the next save inserted everything and deleted nothing (-368). */
+    let oldIds = (_SRV[table] && _SRV[table].loaded) ? _srvIds(table) : null;
     if (oldIds === null){
-      /* Never loaded here, so there is nothing this device is entitled to remove.
-         Reading the table's ids NOW and deleting them - which this did until a
-         harness caught it - destroys rows another device wrote, which is the whole
-         hazard the row memory exists to prevent. Prune nothing and insert anyway:
-         a visible duplicate is recoverable, a silent deletion is not. The
-         _srvSetIds below then gives the next save a proper scope, so at worst this
-         doubles once and corrects itself. */
-      if (!_pruneWarned[table]){
-        _pruneWarned[table] = 1;
-        console.warn('AgriInsights: ' + table + ' was never loaded on this device - '
-          + 'leaving its rows alone rather than replacing what it cannot see.');
-      }
-      oldIds = [];
+      /* Never loaded here, so there is nothing this device is entitled to remove:
+         deleting ids read NOW destroys rows another device wrote. This used to insert
+         the whole set anyway ("at worst it doubles once and corrects itself") - but the
+         start-up catch-up runs before the load on every open that follows an unsent
+         save, the doubled set loads, and the next save writes it back. So: add only
+         what the server lacks, compared on the columns this device sends (the server
+         row carries others) and counted, so two identical entries stay two. */
+      const cur = await selectAll(() => client().from(table).select('*').eq('farm_id', fid));
+      if (cur.error) throw cur.error;
+      const cm = Object.create(null); (rows||[]).forEach(function(r){ Object.keys(r).forEach(function(k){ cm[k]=1; }); });
+      const cols = Object.keys(cm), have = Object.create(null);
+      (cur.data || []).forEach(function(r){ const k=_rowKey(r, cols); have[k]=(have[k]||0)+1; });
+      const add = (rows||[]).filter(function(r){ const k=_rowKey(r, cols); if(have[k]>0){ have[k]--; return false; } return true; });
+      if (add.length){ const ins0 = await client().from(table).insert(add); if (ins0.error) throw ins0.error; }
+      return;
     }
     /* Insert BEFORE deleting, so a failed write leaves the previous state intact -
        the 6 Sep 2026 behaviour this function was written for, kept exactly. */
@@ -2417,6 +2455,9 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
   function planCropFromDb(r){ var c={ crop:r.crop||'', field:r.field||'', ha:Number(r.ha)||0, plant:r.plant||'', harvest:r.harvest||'', yield:Number(r.yield_val)||0, price:Number(r.price)||0, inputCost:Number(r.input_cost)||0, otherCost:Number(r.other_cost)||0, repeat:r.repeat||'none' }; if(r.link_id) c.linkId=r.link_id; if(r.in_forecast===false) c.inForecast=false; return c; }
   function planEvtToDb(e,fid,i){ return { farm_id:fid, herd_local_id:(e.herdId!=null)?String(e.herdId):null, species:e.species||null, animal:e.animal||null, icon:e.icon||null, descr:e.desc||null, type:e.type||null, month:e.month||null, qty:(e.qty!=null&&e.qty!=='')?Number(e.qty):null, unit:e.unit||null, price:(e.price!=null&&e.price!=='')?Number(e.price):null, recur:e.recur||null, notes:e.notes||null, use_market:!!e.useMarket, done:!!e.done, sort_idx:i }; }
   function planEvtFromDb(r){ return { herdId:_numIf(r.herd_local_id), species:r.species||'', animal:r.animal||'', icon:r.icon||'', desc:r.descr||'', type:r.type||'sell', month:r.month||'', qty:Number(r.qty)||0, unit:r.unit||'head', price:Number(r.price)||0, recur:r.recur||'annual', notes:r.notes||'', useMarket:!!r.use_market, done:!!r.done }; }
+  /* Tables whose load dropped repeated copies: the caller saves once after the first
+     load so the server loses them too, instead of waiting for the farmer's next edit. */
+  load.healed = function(){ var o={}; Object.keys(_HEALED).forEach(function(k){ o[k]=_HEALED[k]; }); return o; };
   load.plan = async function(farmId){
     farmId = farmId || farm.active();
     const [pc,pe] = await Promise.all([
@@ -2428,7 +2469,11 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     var cropRows=(pc&&pc.data)||[], evtRows=(pe&&pe.data)||[];
     // null when the farm has never saved a plan — caller drops the demo + seeds from lands.
     if(!cropRows.length && !evtRows.length) return null;
-    return { crops:cropRows.map(planCropFromDb), events:evtRows.map(planEvtFromDb) };
+    /* A line tied to a crop field is ONE line per field: cropFindPlanLine only updates
+       the first, so a later copy sits in the forecast unedited and counted twice. */
+    var seenLink=Object.create(null), crops=cropRows.map(planCropFromDb).filter(function(c){
+      if(!c.linkId) return true; if(seenLink[c.linkId]) return false; seenLink[c.linkId]=1; return true; });
+    return { crops:crops, events:evtRows.map(planEvtFromDb) };
   };
   var _planSnap=null;
   var _planGate=Promise.resolve();   // serializes plan saveAll (plan_crops/plan_events are delete-all+insert)
@@ -3345,7 +3390,7 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
   try{ global.addEventListener('online', function(){ sync.retryAll(); }); }catch(e){}
 
   // ---- EXPORT --------------------------------------------------------------
-  global.AI = { __probeCaps: probeCaps, __client: client,
+  global.AI = { __probeCaps: probeCaps, __client: client, __collapseRepeats: _collapseRepeats, __rowKey: _rowKey,
                 rain: rain, init: client, projectRef: PROJECT_REF, auth, farm, sync: sync, load, txn, account, budget, recurring, asset, loans,
                 coopSettlement: coopSettlement, livestock: livestock, crop: crop, orchard: orchard, plan: plan, workers: workersSave, profile: profile,
                 documents: documents, fuel: fuel,
