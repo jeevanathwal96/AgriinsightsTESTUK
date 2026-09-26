@@ -33,8 +33,8 @@
 <script defer src="vendor/chart.umd.js"></script>
 <!-- AgriInsights backend: Supabase client + data service (load order matters) -->
 <script src="vendor/supabase.js"></script>
-<script src="ai-data-uk.js?v=uk125"></script>
-<script src="ai-auth-uk.js?v=uk107"></script>
+<script src="ai-data-uk.js?v=uk126"></script>
+<script src="ai-auth-uk.js?v=uk108"></script>
 <link rel="stylesheet" href="fonts.css"/>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -2184,6 +2184,77 @@ small{font-size:11px}
 .bgt-hero-headline small{font-size:15px;font-weight:700;opacity:.85;letter-spacing:0}
 .bgt-hero-sub{font-size:13px;opacity:.92;margin-top:7px;line-height:1.5;max-width:62ch}
 .bgt-hero-deltas{display:flex;gap:8px;flex-wrap:wrap;margin-top:13px;padding-top:12px;border-top:1px solid rgba(255,255,255,.2)}
+/* ══ -452 status card (research 25 Sep: Shopify Polaris tints, Vercel Geist colour steps, Linear
+   health states, Stripe number rows, WCAG 1.4.1/1.4.11, GOV.UK one-banner rule) ══
+   A pale wash and a 1px border in the state's colour - never a stripe or a strong fill. The
+   state is an icon + a word; the figures are ink; colour only marks the cell that is off pace. */
+.bgt-hero.calm{background:#fff !important;color:var(--t1);border:1px solid #E6E8E4;border-radius:12px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+.bgt-hero.calm.green{background:#F7FBF8 !important;border-color:#DCEBE1}
+.bgt-hero.calm.amber{background:#FFF8E6 !important;border-color:#F2DFA8}
+.bgt-hero.calm.red{background:#FEF1F1 !important;border-color:#F5CFCF}
+.bgt-hero.calm .bgt-hero-top{position:relative;padding:22px 24px 20px}
+.bgt-hero.calm .bgt-hero-eyebrow{display:inline-flex;align-items:center;gap:6px;opacity:1;text-transform:none;letter-spacing:0;font-size:12.5px;font-weight:600;padding:4px 10px 4px 8px;border-radius:99px;background:#DDF1E3;color:#0B5B3E;margin-bottom:12px}
+.bgt-hero.calm.amber .bgt-hero-eyebrow{background:#FCEBB6;color:#6B4A00}
+.bgt-hero.calm.red .bgt-hero-eyebrow{background:#FAD9D9;color:#8A1C1C}
+.bgt-hero.calm .bgt-hero-dot{width:14px;height:14px;border-radius:0;box-shadow:none;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230B5B3E' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E") center/14px no-repeat}
+.bgt-hero.calm.amber .bgt-hero-dot{background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236B4A00' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpolyline points='12 7 12 12 15 14'/%3E%3C/svg%3E") center/14px no-repeat}
+.bgt-hero.calm.red .bgt-hero-dot{background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238A1C1C' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cline x1='12' y1='5' x2='12' y2='19'/%3E%3Cpolyline points='19 12 12 19 5 12'/%3E%3C/svg%3E") center/14px no-repeat}
+.bgt-hero.calm.info .bgt-hero-dot,.bgt-hero.calm.grey .bgt-hero-dot{display:none}
+.bgt-hero.calm .bgt-hero-headline{font-size:27px;font-weight:500;letter-spacing:-.01em;color:#16241C;font-variant-numeric:tabular-nums}
+.bgt-hero.calm .bgt-hero-headline b{font-weight:800}
+.bgt-hero.calm .bgt-hero-sub{color:#5F6368;opacity:1;font-size:14px;margin-top:6px}
+.bgt-hero.calm .bgt-hero-deltas{display:none}
+.bgt-hero.calm .bgt-hero-fix{background:#fff;border:1px solid rgba(0,0,0,.14);box-shadow:none;color:var(--t1);font-weight:700;padding:10px 16px}
+.bgt-hero.calm .bgt-hero-fix:hover{border-color:rgba(0,0,0,.3);transform:none;box-shadow:none}
+.bgt-hero.calm.merged #bgt-kpis{grid-template-columns:repeat(3,1fr);gap:0;background:transparent;border-top:1px solid rgba(0,0,0,.08)}
+.bgt-hero.calm #bgt-kpi-card-cash{display:none}   /* three cells; the budget's cash-left total is in the Net cash explainer */
+.bgt-hero.calm.merged .bgt-kpi{background:transparent !important;padding:18px 24px 20px}
+.bgt-hero.calm.merged .bgt-kpi + .bgt-kpi{border-left:1px solid rgba(0,0,0,.08)}
+.bgt-hero.calm .bgt-kpi::before{display:none}
+.bgt-hero.calm.merged .bgt-kpi.selv::after{height:2px;background:#16241C}
+.bgt-hero.calm .bgt-kpi-l span[id$="-chip"],.bgt-hero.calm .bgt-trackfoot{display:none}
+.bgt-hero.calm .bgt-kpi-l{font-size:12px;color:#5F6368;font-weight:600}
+.bgt-hero.calm .bgt-kpi-v{font-size:21px;font-weight:700;letter-spacing:-.01em;font-variant-numeric:tabular-nums}
+.bgt-hero.calm .bgt-kpi-t{font-size:12px;color:#5F6368;margin-top:2px}
+.bgt-hero.calm .bgt-kpi-t b{color:var(--t1)}
+.bgt-hero.calm .bgt-track{height:4px;margin-top:12px;background:#ECECE8}
+.bgt-hero.calm .bgt-fill{background:var(--fillc,#16241C) !important}
+.bgt-hero.calm .bgt-tick{top:-3px;bottom:-3px;width:2px;background:#16241C}
+.bgt-hero-profit{display:none}
+.bgt-hero.calm .bgt-hero-profit{display:block;position:absolute;top:24px;right:24px;font-size:13px;color:#5F6368}
+.bgt-hero.calm .bgt-hero-profit a{color:#0B5B3E;font-weight:700;text-decoration:underline;text-underline-offset:2px}
+/* -452: once a target is set, its section folds to one line; "Change" opens it again. */
+.bgt-sum{display:none}
+.bgt-section-card.collapsed > :not(.bgt-sum){display:none !important}
+.bgt-section-card.collapsed{padding-top:14px;padding-bottom:14px}
+.bgt-section-card.collapsed .bgt-sum{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.bgt-sum .k{font-size:13.5px;font-weight:700;color:var(--t1);min-width:150px}
+.bgt-sum .v{font-size:18px;font-weight:800;color:var(--t1);font-variant-numeric:tabular-nums}
+.bgt-sum .p{font-size:12.5px;color:var(--t3)}
+.bgt-sum .sp{flex:1}
+.bgt-plan-helper.collapsed{display:none !important}
+/* -452 figure row (signed off 25 Sep, option B1): colour by type - money in green, money out
+   orange, net cash ink - with a matching dot on each label, on a white strip inside the tinted
+   card so the colours stay crisp. Being behind or over pace is a small amber pill. */
+.bgt-hero.calm.merged .bgt-kpi{overflow:visible}
+.bgt-hero.calm.merged #bgt-kpis{background:#fff;border-top:1px solid rgba(0,0,0,.08);border-radius:0 0 12px 12px;overflow:hidden}
+.bgt-hero.calm.merged .bgt-kpi{padding:20px 24px 22px}
+.bgt-hero.calm .bgt-kpi-l{justify-content:flex-start;align-items:center;gap:8px;color:#16241C;font-size:12.5px;font-weight:600}
+.bgt-hero.calm #bgt-kpi-card-in .bgt-kpi-l::before,.bgt-hero.calm #bgt-kpi-card-out .bgt-kpi-l::before,.bgt-hero.calm #bgt-kpi-card-net .bgt-kpi-l::before{content:'';width:9px;height:9px;border-radius:50%;flex:0 0 auto}
+.bgt-hero.calm #bgt-kpi-card-in .bgt-kpi-l::before{background:#2E8B57}
+.bgt-hero.calm #bgt-kpi-card-out .bgt-kpi-l::before{background:#E07B39}
+.bgt-hero.calm #bgt-kpi-card-net .bgt-kpi-l::before{background:#16241C}
+.bgt-hero.calm .bgt-kpi-v{font-size:25px;font-weight:800;margin-top:6px}
+.bgt-hero.calm #bgt-kpi-card-in .bgt-kpi-v{color:#1B7A4A}
+.bgt-hero.calm #bgt-kpi-card-out .bgt-kpi-v{color:#C2410C}
+.bgt-hero.calm #bgt-kpi-card-net .bgt-kpi-v{color:#16241C}
+.bgt-hero.calm #bgt-kpi-card-in .bgt-fill{background:#2E8B57 !important}
+.bgt-hero.calm #bgt-kpi-card-out .bgt-fill{background:#E07B39 !important}
+.bgt-hero.calm .bgt-track{height:6px;margin-top:12px}
+.bgt-hero.calm .pace-note{display:inline-block;margin-left:6px;font-size:11px;font-weight:700;color:#8A5200;background:#FCEBB6;border-radius:99px;padding:1px 8px;vertical-align:1px}
+.bgt-hero.calm .kpi-i{opacity:.45}
+.bgt-hero.calm.merged #bgt-kpi-card-in.selv::after{height:3px;background:#2E8B57}
+.bgt-hero.calm.merged #bgt-kpi-card-out.selv::after{height:3px;background:#E07B39}
 
 /* Status chips — always icon/word + colour, never colour alone */
 .bgt-chip{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:800;border-radius:99px;padding:3px 10px;white-space:nowrap}
@@ -2194,7 +2265,7 @@ small{font-size:11px}
 .bgt-chip.inv{background:rgba(255,255,255,.16);color:#fff}
 
 /* KPI strip with pacing ticks */
-.bgt-kpi-strip{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px}
+.bgt-kpi-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px}
 .bgt-kpi{background:#fff;border:1px solid var(--br);border-radius:var(--rl);padding:14px 16px;box-shadow:var(--sh);position:relative;overflow:hidden;cursor:pointer}
 .bgt-kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--stripe,var(--gl))}
 .bgt-kpi-l{font-size:11.5px;font-weight:800;color:var(--t2);display:flex;justify-content:space-between;align-items:center;gap:6px;flex-wrap:wrap;padding-right:14px}
@@ -2355,10 +2426,10 @@ small{font-size:11px}
 .bgt-grph .why{font-size:11px;color:var(--t3)}
 .bgt-grph .tot{margin-left:auto;font-size:11.5px;font-weight:700;color:var(--t3)}
 .bgt-grph .tot b{font-size:11.5px;color:var(--t2)}
-.bgt-colhead{display:grid;grid-template-columns:minmax(130px,1.1fr) 1.6fr 88px 88px 150px;gap:12px;padding:0 14px 6px;font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--t4)}
+.bgt-colhead{display:grid;grid-template-columns:minmax(170px,1.3fr) 1.4fr 84px 84px 84px 150px;gap:12px;padding:0 14px 6px;font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--t4)}
 .bgt-colhead .num{text-align:right}
 .bgt-rows{background:#fff;border:1px solid var(--br);border-radius:var(--rl);overflow:hidden}
-.bgt-row{display:grid;grid-template-columns:minmax(130px,1.1fr) 1.6fr 88px 88px 150px;gap:12px;align-items:center;padding:11px 14px;border-bottom:1px solid var(--br2);cursor:pointer}
+.bgt-row{display:grid;grid-template-columns:minmax(170px,1.3fr) 1.4fr 84px 84px 84px 150px;gap:12px;align-items:center;padding:11px 14px;border-bottom:1px solid var(--br2);cursor:pointer}
 .bgt-row:last-child{border-bottom:none}
 .bgt-row:hover{background:var(--bg)}
 .bgt-row-flash{animation:bgtRowFlash 1.8s ease-out}
@@ -2374,6 +2445,9 @@ small{font-size:11px}
 .bgt-cnum.strong{font-weight:800;color:var(--t1)}
 .bgt-cnum.tap{text-decoration:underline dotted;text-underline-offset:3px}
 .bgt-cleft{display:flex;flex-direction:column;align-items:flex-end;gap:3px}
+.bgt-cstat{display:flex;justify-content:flex-end}
+.bgt-cname{display:flex;align-items:center;gap:7px;min-width:0;flex-wrap:wrap}
+.bgt-rtag{font-size:10.5px;font-weight:700;color:var(--t3);background:var(--br2);border-radius:99px;padding:1px 8px;white-space:nowrap;cursor:help}
 .bgt-cleft .amt{font-size:12.5px;font-weight:800;color:var(--t1);font-variant-numeric:tabular-nums}
 .bgt-cats-empty{font-size:12.5px;color:var(--t3);padding:8px 2px}
 
@@ -3270,6 +3344,7 @@ small{font-size:11px}
   .bgt-row{grid-template-columns:1fr;gap:8px}
   .bgt-cnum{display:none}
   .bgt-cleft{align-items:flex-start}
+  .bgt-cstat{justify-content:flex-start}
 }
 
 .year-sum{background:#fff;border:1px solid var(--br);border-radius:var(--rl);padding:16px;box-shadow:var(--sh)}
@@ -7184,21 +7259,21 @@ button.rn-gchip{border:0;font-family:inherit;cursor:pointer}
 
     <div class="cf-grid" id="dash-cf-grid">
       <div class="cf-item kpi-tap" onclick="kpiOpen('dashMoneyIn')" style="position:relative"><span class="kpi-i">&#9432;</span>
-        <div class="cf-lbl"><div class="cf-dot g"><svg viewBox="0 0 24 24"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg></div>Money In</div>
+        <div class="cf-lbl"><div class="cf-dot g"><svg viewBox="0 0 24 24"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg></div>Money in this month</div>
         <div class="cf-val" id="dash-cf-in">—</div>
         <div class="cf-chg" id="dash-cf-in-chg"></div>
         <div class="cf-detail" id="cf-inc-detail"></div>
       </div>
       <div class="cf-op">−</div>
       <div class="cf-item kpi-tap" onclick="kpiOpen('dashMoneyOut')" style="position:relative"><span class="kpi-i">&#9432;</span>
-        <div class="cf-lbl"><div class="cf-dot r"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg></div>Money Out</div>
+        <div class="cf-lbl"><div class="cf-dot r"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg></div>Money out this month</div>
         <div class="cf-val o" id="dash-cf-out">—</div>
         <div class="cf-chg dn" id="dash-cf-out-chg"></div>
         <div class="cf-detail" id="cf-exp-detail"></div>
       </div>
       <div class="cf-op">=</div>
       <div class="cf-item kpi-tap" onclick="kpiOpen('dashNet')" style="position:relative"><span class="kpi-i">&#9432;</span>
-        <div class="cf-lbl"><div class="cf-dot p"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>Total Profit<span id="dash-cf-net-tags"></span></div>
+        <div class="cf-lbl"><div class="cf-dot p"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>Net cash this month<span id="dash-cf-net-tags"></span></div>
         <div class="cf-val g" id="dash-cf-net">—</div>
         <div class="cf-chg" id="dash-cf-net-chg"></div>
         <div class="cf-detail" id="cf-margin-detail" style="color:var(--gm);font-weight:600"></div>
@@ -7220,7 +7295,7 @@ button.rn-gchip{border:0;font-family:inherit;cursor:pointer}
       </div>
       <div class="bp-item"><div class="bp-top"><div class="bp-name">Total Income</div><div class="bp-right"><div class="bp-pct over" id="bp-income-pct">—</div><div id="bp-income-vals"></div></div></div><div class="bp-track"><div class="bp-fill over" id="bp-income-fill" style="width:100%"></div></div></div>
       <div class="bp-item"><div class="bp-top"><div class="bp-name">Total Expenses</div><div class="bp-right"><div class="bp-pct" id="bp-expense-pct">—</div><div id="bp-expense-vals"></div></div></div><div class="bp-track"><div class="bp-fill red" id="bp-expense-fill" style="width:95%"></div></div></div>
-      <div class="bp-item"><div class="bp-top"><div class="bp-name">Net Profit</div><div class="bp-right"><div class="bp-pct over" id="bp-profit-pct">—</div><div id="bp-profit-vals"></div></div></div><div class="bp-track"><div class="bp-fill" id="bp-profit-fill" style="width:100%"></div></div></div>
+      <div class="bp-item"><div class="bp-top"><div class="bp-name">Net cash</div><div class="bp-right"><div class="bp-pct over" id="bp-profit-pct">—</div><div id="bp-profit-vals"></div></div></div><div class="bp-track"><div class="bp-fill" id="bp-profit-fill" style="width:100%"></div></div></div>
       <div class="view-all" onclick="nav('budgets')">View full budget report <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
     </div>
     <!-- Was Quick Actions: Add Income / Add Expense / View Reports. Two of those are the
@@ -7252,24 +7327,24 @@ button.rn-gchip{border:0;font-family:inherit;cursor:pointer}
     <!-- 4 high-level YTD figures -->
     <div class="season-kpis" id="dash-season-kpis">
       <div class="skpi kpi-tap" onclick="kpiOpen('seasonIncome')" style="position:relative"><span class="kpi-i">&#9432;</span>
-        <div class="skpi-lbl">Year-to-date Income</div>
+        <div class="skpi-lbl">Income so far</div>
         <div class="skpi-val" id="season-ytd-income">£0</div>
         <div class="skpi-sub muted" id="season-ytd-income-sub">5 of 12 months in</div>
       </div>
       <div class="skpi kpi-tap" onclick="kpiOpen('seasonExpenses')" style="position:relative"><span class="kpi-i">&#9432;</span>
-        <div class="skpi-lbl">Year-to-date Expenses</div>
+        <div class="skpi-lbl">Costs so far</div>
         <div class="skpi-val" id="season-ytd-expenses">£0</div>
         <div class="skpi-sub muted" id="season-ytd-expenses-sub">Season costs so far</div>
       </div>
       <div class="skpi kpi-tap" onclick="kpiOpen('seasonProfit')" style="position:relative"><span class="kpi-i">&#9432;</span>
-        <div class="skpi-lbl">Profit Year-to-date<span class="ptags"><span class="ptag pt-act">Year so far</span></span></div>
+        <div class="skpi-lbl">Profit so far</div>
         <div class="skpi-val" id="season-ytd-profit">£0</div>
         <div class="skpi-sub" id="season-ytd-profit-sub">↑ vs last season</div>
       </div>
-      <div class="skpi kpi-tap" onclick="kpiOpen('seasonMargin')" style="position:relative"><span class="kpi-i">&#9432;</span>
-        <div class="skpi-lbl">Profit Margin</div>
-        <div class="skpi-val" id="season-margin">0%</div>
-        <div class="skpi-sub muted">Margin = profit ÷ income</div>
+      <div class="skpi kpi-tap" onclick="kpiOpen('seasonCash')" style="position:relative"><span class="kpi-i">&#9432;</span>
+        <div class="skpi-lbl">Cash in hand</div>
+        <div class="skpi-val" id="season-cash">£0</div>
+        <div class="skpi-sub muted" id="season-cash-sub"></div>
       </div>
     </div>
 
@@ -7281,7 +7356,7 @@ button.rn-gchip{border:0;font-family:inherit;cursor:pointer}
           <div class="chart-legend">
             <div class="leg-item"><div class="leg-dot" style="background:linear-gradient(180deg,#40916C,#2D6A4F)"></div>Money In</div>
             <div class="leg-item"><div class="leg-dot" style="background:linear-gradient(180deg,#ED6152,#CB3A2B)"></div>Money Out</div>
-            <div class="leg-item"><div class="leg-dot" style="background:var(--gd)"></div>Profit</div>
+            <div class="leg-item"><div class="leg-dot" style="background:var(--gd)"></div>Net cash</div>
           </div>
         </div>
         <div class="pills">
@@ -8195,34 +8270,43 @@ button.rn-gchip{border:0;font-family:inherit;cursor:pointer}
 
   <!-- In-season monitoring view -->
   <div id="bgt-main">
-    <div class="bgt-hero green" id="bgt-hero">
+    <div class="bgt-hero green calm" id="bgt-hero">
       <div class="bgt-hero-eyebrow"><span class="bgt-hero-dot"></span><span id="bgt-hero-eyebrow-text">On track</span></div>
       <div class="bgt-hero-headline" id="bgt-hero-headline"></div>
       <div class="bgt-hero-sub" id="bgt-hero-sub"></div>
+      <div class="bgt-hero-profit" id="bgt-hero-profit"></div>
       <div class="bgt-hero-deltas" id="bgt-hero-deltas"></div>
     </div>
 
     <div class="bgt-kpi-strip" id="bgt-kpis">
       <div class="bgt-kpi kpi-tap" id="bgt-kpi-card-in" style="--stripe:var(--gl);--selc:var(--gd)" onclick="setBudgetTab('in')"><span class="kpi-i" onclick="event.stopPropagation();kpiOpen('bgtIn')">&#9432;</span>
-        <div class="bgt-kpi-l"><span>Income</span><span id="bgt-kpi-in-chip"></span></div>
+        <div class="bgt-kpi-l"><span>Money in so far</span><span id="bgt-kpi-in-chip"></span></div>
         <div class="bgt-kpi-v" id="bgt-kpi-in-v">&#8212;</div>
         <div class="bgt-kpi-t" id="bgt-kpi-in-t"></div>
         <div class="bgt-track"><div class="bgt-fill" id="bgt-kpi-in-fill" style="--fillc:var(--gl);width:0%"></div><div class="bgt-tick" id="bgt-kpi-in-tick" style="display:none"></div></div>
         <div class="bgt-trackfoot"><span id="bgt-kpi-in-f1"></span><span id="bgt-kpi-in-f2"></span></div>
       </div>
       <div class="bgt-kpi kpi-tap" id="bgt-kpi-card-out" style="--stripe:var(--or);--selc:var(--or)" onclick="setBudgetTab('out')"><span class="kpi-i" onclick="event.stopPropagation();kpiOpen('bgtOut')">&#9432;</span>
-        <div class="bgt-kpi-l"><span>Spending</span><span id="bgt-kpi-out-chip"></span></div>
+        <div class="bgt-kpi-l"><span>Money out so far</span><span id="bgt-kpi-out-chip"></span></div>
         <div class="bgt-kpi-v" id="bgt-kpi-out-v">&#8212;</div>
         <div class="bgt-kpi-t" id="bgt-kpi-out-t"></div>
         <div class="bgt-track"><div class="bgt-fill" id="bgt-kpi-out-fill" style="--fillc:var(--or);width:0%"></div><div class="bgt-tick" id="bgt-kpi-out-tick" style="display:none"></div></div>
         <div class="bgt-trackfoot"><span id="bgt-kpi-out-f1"></span><span id="bgt-kpi-out-f2"></span></div>
       </div>
-      <div class="bgt-kpi kpi-tap" style="--stripe:var(--bl)" onclick="kpiOpen('bgtNet')"><span class="kpi-i">&#9432;</span>
-        <div class="bgt-kpi-l"><span>Profit goal<span id="bgt-kpi-net-tags"></span></span><span id="bgt-kpi-net-chip"></span></div>
+      <div class="bgt-kpi kpi-tap" id="bgt-kpi-card-net" style="--stripe:var(--bl)" onclick="kpiOpen('bgtCash')"><span class="kpi-i">&#9432;</span>
+        <div class="bgt-kpi-l"><span>Net cash so far</span><span id="bgt-kpi-net-chip"></span></div>
         <div class="bgt-kpi-v" id="bgt-kpi-net-v">&#8212;</div>
         <div class="bgt-kpi-t" id="bgt-kpi-net-t"></div>
         <div class="bgt-track"><div class="bgt-fill" id="bgt-kpi-net-fill" style="--fillc:var(--bl);width:0%"></div><div class="bgt-tick" id="bgt-kpi-net-tick" style="display:none"></div></div>
         <div class="bgt-trackfoot"><span id="bgt-kpi-net-f1"></span><span id="bgt-kpi-net-f2"></span></div>
+      </div>
+      <!-- -371 (SA -451/-452): the budget's second total; hidden in the calm card, read by the Net cash explainer -->
+      <div class="bgt-kpi kpi-tap" id="bgt-kpi-card-cash" style="--stripe:var(--t3)" onclick="kpiOpen('bgtCash')"><span class="kpi-i">&#9432;</span>
+        <div class="bgt-kpi-l"><span>Cash left after loans</span><span id="bgt-kpi-cash-chip"></span></div>
+        <div class="bgt-kpi-v" id="bgt-kpi-cash-v">&#8212;</div>
+        <div class="bgt-kpi-t" id="bgt-kpi-cash-t"></div>
+        <div class="bgt-track"><div class="bgt-fill" id="bgt-kpi-cash-fill" style="--fillc:var(--t3);width:0%"></div><div class="bgt-tick" id="bgt-kpi-cash-tick" style="display:none"></div></div>
+        <div class="bgt-trackfoot"><span>after loans &amp; machinery</span><span id="bgt-kpi-cash-f2"></span></div>
       </div>
     </div>
 
@@ -8289,7 +8373,8 @@ button.rn-gchip{border:0;font-family:inherit;cursor:pointer}
       <div class="bgt-plan-helper-text" id="bgt-plan-helper-in-text"></div>
       <button class="bgt-plan-helper-btn in" onclick="pullPlanToBudgets('in')">Pull from my plan</button>
     </div>
-    <div class="bgt-section-card">
+    <div class="bgt-section-card" id="bgt-sec-in">
+      <div class="bgt-sum" id="bgt-sum-in"></div>
       <div class="bgt-section-h">Set your income target</div>
       <div class="bgt-section-s" id="bgt-in-section-s">Type the total you expect to earn this year. Then choose how it spreads across the months.</div>
       <div class="bgt-target-row">
@@ -8314,7 +8399,8 @@ button.rn-gchip{border:0;font-family:inherit;cursor:pointer}
       <div class="bgt-plan-helper-text" id="bgt-plan-helper-out-text"></div>
       <button class="bgt-plan-helper-btn out" onclick="pullPlanToBudgets('out')">Pull from my plan</button>
     </div>
-    <div class="bgt-section-card">
+    <div class="bgt-section-card" id="bgt-sec-out">
+      <div class="bgt-sum" id="bgt-sum-out"></div>
       <div class="bgt-section-h">Set your spending budget</div>
       <div class="bgt-section-s" id="bgt-out-section-s">Type the total you expect to spend this year. Then choose when in the year you spend the most.</div>
       <div class="bgt-target-row">
@@ -8333,7 +8419,11 @@ button.rn-gchip{border:0;font-family:inherit;cursor:pointer}
       </div>
       <button class="bgt-btn pri" style="width:100%;margin-top:16px;padding:12px;font-size:13.5px;background:var(--or);border-color:var(--or)" onclick="bgtSaveTargetBox('out')">&#10003; Save spending budget</button>
     </div>
-    <div style="display:flex;justify-content:center;margin-bottom:14px"><button class="bgt-btn" style="background:transparent;border:none;color:var(--t3)" onclick="bgtToggleSetup()">Close without changing</button></div>
+    <!-- -452: locking is a budget setting, so it lives here, not in the page header -->
+    <div class="bgt-section-card collapsed" title="Once the bank has your budget, lock it. It stays exactly as it is; your plan keeps moving underneath.">
+      <div class="bgt-sum"><span class="k">Bank copy</span><span class="v" id="bgt-lock-v" style="font-size:15px">Not locked</span><span class="p" id="bgt-lock-state">· lock it once the bank has your budget</span><span class="sp"></span><button class="bgt-btn" id="bgt-lock-btn" onclick="bgtLockToggle()">🔒 Lock this budget</button></div>
+    </div>
+    <div style="display:flex;justify-content:center;margin-bottom:14px"><button class="bgt-btn" style="background:transparent;border:none;color:var(--t3)" onclick="bgtToggleSetup()">Close</button></div>
   </div>
 
   <!-- Month editor sheet -->
@@ -10554,7 +10644,7 @@ button.rn-gchip{border:0;font-family:inherit;cursor:pointer}
       <div class="cf3-c dn" id="cf-out-chg">—</div>
     </div>
     <div class="cf3-item">
-      <div class="cf3-l"><div class="dot net"></div><span id="cf-net-lbl">Profit</span></div>
+      <div class="cf3-l"><div class="dot net"></div><span id="cf-net-lbl">Net cash</span></div>
       <div class="cf3-v g" id="cf-net-val">—</div>
       <div class="cf3-c" id="cf-net-chg">—</div>
     </div>
@@ -10568,13 +10658,16 @@ button.rn-gchip{border:0;font-family:inherit;cursor:pointer}
         <div class="chart-legend">
           <div class="leg-item"><div class="leg-dot" style="background:linear-gradient(180deg,#40916C,#2D6A4F)"></div>Money In</div>
           <div class="leg-item"><div class="leg-dot" style="background:linear-gradient(180deg,#ED6152,#CB3A2B)"></div>Money Out</div>
-          <div class="leg-item"><div class="leg-dot" style="background:var(--gd)"></div>Profit</div>
+          <div class="leg-item"><div class="leg-dot" style="background:var(--gd)"></div>Net cash</div>
         </div>
       </div>
     </div>
     <div class="chart-wrap"><canvas id="cfHistChart"></canvas></div>
     <div class="chart-totals" id="cf-hist-totals"></div>
   </div>
+
+  <!-- -451 D5: profit to the bank, line by line (b5BridgeCash) -->
+  <div class="card" id="cf-bridge" style="display:none;margin-top:14px"></div>
 
   </div><!-- end mf-tab-now -->
 
@@ -10593,8 +10686,8 @@ button.rn-gchip{border:0;font-family:inherit;cursor:pointer}
     <div class="pills">
       <button class="pill fwd" id="cf-fpill-1"  onclick="setCfFwdPeriod('1')">1M</button>
       <button class="pill fwd" id="cf-fpill-3"  onclick="setCfFwdPeriod('3')">3M</button>
-      <button class="pill fwd on" id="cf-fpill-6"  onclick="setCfFwdPeriod('6')">6M</button>
-      <button class="pill fwd" id="cf-fpill-12" onclick="setCfFwdPeriod('12')">12M</button>
+      <button class="pill fwd" id="cf-fpill-6"  onclick="setCfFwdPeriod('6')">6M</button>
+      <button class="pill fwd on" id="cf-fpill-12" onclick="setCfFwdPeriod('12')">12M</button>
     </div>
   </div>
 
@@ -16281,8 +16374,12 @@ function renderProfit(){
       watch=_worst.name; watchSub=_pfK(_worst.gm)+' gross margin \u00b7 thinnest on the farm';
     }
   }
+  /* -371 (SA -451 D4): the headline is profit so far this financial year - the Dashboard's
+     figure - not the season's planned margins less shared costs. The lists below stay season
+     margins (D7), planned where nothing is recorded yet. */
+  var _b5fy=getCurrentFY(), _b5pf=b5Profit(_b5fy,{toYm:b5TodayYm()}), _b5pm=b5Margins({fy:_b5fy});
   html+='<div class="pf-kpis" id="pf-kpis">'+
-    '<div class="pf-kpi kpi-tap" onclick="kpiOpen(\'pfFarmProfit\')"><span class="kpi-i">\u24D8</span><div class="l">Farm profit, after recurring bills'+profitTags('proj', seasonShortLabel())+'</div><div class="v">'+_pfK(profit)+'</div><div class="s">expected this season, after '+_pfK(overheads)+' of shared costs. Cash left is on Money Flow.</div></div>'+
+    '<div class="pf-kpi kpi-tap" onclick="kpiOpen(\'pfFarmProfit\')"><span class="kpi-i">\u24D8</span><div class="l">Profit so far · financial year</div><div class="v">'+_pfK(_b5pf.profit)+'</div><div class="s">after '+_pfK(_b5pm.untagged.cost)+' shared costs, '+_pfK(_b5pf.interest)+' interest, '+_pfK(_b5pf.depr)+' write-off</div></div>'+
     '<div class="pf-kpi kpi-tap" onclick="kpiOpen(\'pfBestEarner\')"><span class="kpi-i">\u24D8</span><div class="l">Best earner</div><div class="v">'+(best?esc(best.crop||best.name):'\u2014')+'</div><div class="s">'+bestTxt+'</div></div>'+
     (watch?'<div class="pf-kpi warn kpi-tap" onclick="kpiOpen(\'pfThird\')"><span class="kpi-i">\u24D8</span><div class="l">Watch</div><div class="v">'+esc(watch)+'</div><div class="s">'+watchSub+'</div></div>':'<div class="pf-kpi kpi-tap" onclick="kpiOpen(\'pfThird\')"><span class="kpi-i">\u24D8</span><div class="l">Crops &amp; herds</div><div class="v">'+(scReal.length+sl.length)+'</div><div class="s">tracked this season</div></div>')+
   '</div>';
@@ -16294,12 +16391,13 @@ function renderProfit(){
      farm income by nature: tagging them to an enterprise would make a margin wrong, so they
      are not "missing" anything. And only this season, as entTaggedCost counts costs: the
      check summed the whole ledger, so 2024's income nagged in 2026. */
-  var _pfFY=(typeof planYear!=='undefined')?planYear:null;
+  /* -371 (SA -451): this financial year and without VAT - the footing of the profit on this
+     page. It counted the season, with VAT. */
   (ST.txns||[]).forEach(function(t){
     if(!t || t.type!=='income') return;
-    if(_pfFY!=null){ var _f=entTxnFY(t); if(_f!==null && _f!==_pfFY) return; }
+    var _d=parseDate(t.date||''); if(!_d || _fyOfParts(_d)!==_b5fy) return;
     var stale=t.ent && !_pfValid[t.ent], untagged=!t.ent && entKindForCat(t.cat);
-    if(stale||untagged){ _pfUnalloc+=t.amt||0; _pfUnN++; }
+    if(stale||untagged){ _pfUnalloc+=ukExVat(t); _pfUnN++; }
   });
   if(_pfUnalloc>0){
     html+='<div class="pf-card" style="border-color:#F1DBA6;background:#FEFBF2"><div style="display:flex;align-items:flex-start;gap:9px"><span style="font-size:18px">\uD83C\uDFF7\uFE0F</span><div style="flex:1"><div style="font-weight:800;color:var(--t1);font-size:13.5px">'+fmt(Math.round(_pfUnalloc))+' income not linked to an enterprise</div><div style="font-size:11.5px;color:var(--t3);margin-top:2px">'+_pfUnN+' transaction'+(_pfUnN===1?'':'s')+' aren\u2019t counted in the margins below. <span onclick="pfShowUnalloc()" style="color:var(--gm);font-weight:800;cursor:pointer;text-decoration:underline">Tag them \u2192</span></div></div></div></div>';
@@ -16454,9 +16552,17 @@ function renderProfit(){
     html+='<div class="pf-note">Gross margin is not profit — it leaves out the shared costs below. A positive margin does not mean an enterprise is paying its share of the farm.</div></div>';
   }
   var pct=totalGM>0?Math.round(overheads/totalGM*100):0;
-  html+='<div class="pf-card"><div class="pf-ct">From gross margin to farm profit</div><div class="pf-cw">Gross margins don\u2019t include shared costs. Here\u2019s the honest bottom line.</div>'+
-    '<div class="pf-flow"><div class="seg pf-gm"><div class="l">All gross margins</div><div class="v">'+_pfK(totalGM)+'</div></div><div class="op">\u2212</div><div class="seg pf-co"><div class="l">Shared costs</div><div class="v">'+_pfK(overheads)+'</div></div><div class="op">=</div><div class="seg pf-pr"><div class="l">Farm profit</div><div class="v">'+_pfK(profit)+'</div></div></div>'+
-    '<div class="pf-sw" style="margin-top:12px"><b>So what:</b> Your crops, orchards and herds made <b>'+_pfK(totalGM)+'</b> gross margin, but shared overheads take <b>'+pct+'p of every pound of margin</b>, leaving <b>'+_pfK(profit)+'</b> profit.</div><div class="pf-cw" style="margin-top:10px;font-size:11px;line-height:1.5">Loan payments count as <b>interest only</b> here \u2014 paying off a loan isn\u2019t a running cost, so it doesn\u2019t reduce your profit. You\u2019ll still see the full payment go out in <b>Money Flow</b>.</div>'+((typeof _pfTaggedLabourTotal==='function'&&_pfTaggedLabourTotal()>0)?'<div class="pf-cw" style="margin-top:10px;font-size:11px;line-height:1.5"><b>Tagged labour</b> ('+_pfK(_pfTaggedLabourTotal())+'/yr) is counted inside the crops and herds it\u2019s tagged to \u2014 already in their margins above and taken out of shared costs.</div>':'')+'</div>';
+  /* -371 (SA -451) D4/D7: from this year's actual margins down to the SAME profit as the Dashboard,
+     Budgets and Tax - exact, by the ledger rules (b5ProfitFromMargins) - with the timing
+     line that explains why the season's margins are a different number. */
+  var _b5seg=function(cls,l,v,st){ return '<div class="seg '+cls+'"'+(st?' style="'+st+'"':'')+'><div class="l">'+l+'</div><div class="v">'+v+'</div></div>'; }, _b5op=function(x){ return '<div class="op">'+x+'</div>'; };
+  html+='<div class="pf-card"><div class="pf-ct">From gross margin to farm profit</div><div class="pf-cw">What has actually happened this financial year ('+esc(fyLabel(_b5fy))+'), from your records. The lists above are the whole season, planned where nothing is recorded yet.</div>'+
+    '<div class="pf-flow" style="flex-wrap:wrap">'+_b5seg('pf-gm','Gross margins so far',_pfK(_b5pm.fyGm))+_b5op('+')+_b5seg('pf-gm','Other income',_pfK(_b5pm.untagged.income),'opacity:.85')+_b5op('\u2212')+
+      _b5seg('pf-co','Shared costs',_pfK(_b5pm.untagged.cost))+_b5op('\u2212')+_b5seg('pf-co','Loan interest',_pfK(_b5pf.interest))+_b5op('\u2212')+_b5seg('pf-co','Write-off',_pfK(_b5pf.depr))+_b5op('=')+_b5seg('pf-pr','Profit so far',_pfK(_b5pf.profit))+'</div>'+
+    '<div class="pf-sw" style="margin-top:12px"><b>Same profit everywhere:</b> this is the figure on your Dashboard, in Budgets and at the top of Tax &amp; HMRC.</div>'+
+    '<div class="pf-cw" style="margin-top:10px;font-size:11.5px;line-height:1.55"><b>Timing:</b> this season\u2019s margins so far are <b>'+_pfK(_b5pm.seasonGm)+'</b> and this financial year\u2019s are <b>'+_pfK(_b5pm.fyGm)+'</b>. They differ by <b>'+_pfK(Math.abs(_b5pm.timing))+'</b> because the season ('+esc(seasonLabel(_b5pm.season))+') and your financial year ('+esc(fyLabel(_b5fy))+') cover different months.</div>'+
+    '<div class="pf-cw" style="margin-top:8px;font-size:11px;line-height:1.5">Loan payments count as <b>interest only</b> \u2014 paying back what you borrowed isn\u2019t a cost. Machinery on your asset register is written off over its life instead of all at once. You still see every pound leave the bank in <b>Money Flow</b>.</div>'+
+    ((typeof _pfTaggedLabourTotal==='function'&&_pfTaggedLabourTotal()>0)?'<div class="pf-cw" style="margin-top:10px;font-size:11px;line-height:1.5"><b>Tagged labour</b> ('+_pfK(_pfTaggedLabourTotal())+'/yr) is counted inside the crops and herds it\u2019s tagged to \u2014 already in their margins above and taken out of shared costs.</div>':'')+'</div>';
   var ins=[];
   if(scReal.length>=2){ ins.push('<b>'+esc(scReal[0].crop)+'</b> earns the most per hectare ('+fmt(scReal[0].gmHa)+'/ha); <b>'+esc(scReal[scReal.length-1].crop)+'</b> the least ('+fmt(scReal[scReal.length-1].gmHa)+'/ha) \u2014 worth weighing when you plan next season\u2019s rotation.'); }
   var thin=null; scReal.forEach(function(c){ if(c.price>0){ var cu=c.price-c.cop; if(thin===null||cu<thin.cu) thin={c:c,cu:cu}; } });
@@ -16557,6 +16663,10 @@ function bootAgriInsights() {
   try { demoSeedPlanning(_seedDemo); } catch(e){}
   try { demoSeedFuel(_seedDemo); } catch(e){}
   try { demoSeedSeasonal(_seedDemo); } catch(e){}
+  /* -371 (decision, 26 Sep - as SA -451): a fresh demo farm's budget is its own plan, the way
+     a farmer's is after "Use my plan". The seeded figures never matched the plan (£1.35M in /
+     £1.08M out against £1.45M / £770k), so Budgets read "costs are well over your plan". */
+  try { if (_seedDemo && typeof bgtPlanIntoMonths === 'function' && ST.budgets) { bgtPlanIntoMonths(['in','out']); ST.budgets.incomePattern = 'custom'; ST.budgets.expensePattern = 'custom'; } } catch(e){}
   /* Stamp the weekly line in the sand AFTER the plan and demo seed have settled,
      so the snapshot records the farm the farmer is about to look at. */
   try { if(typeof recomputePlan==='function') recomputePlan(); stSnapTake(); } catch(e){}
@@ -17421,12 +17531,8 @@ function seasonShortLabel(){
     return 'Season '+String(y).slice(2)+'/'+String(y+1).slice(2);
   }catch(e){ return 'This season'; }
 }
-function profitLadder(){
-  var c=ytdSummary(), t=ytdSummary({taxBasis:true});
-  var cash=c.income-c.expenses, taxable=t.income-t.expenses;
-  return {income:c.income, expenses:c.expenses, cash:cash, adj:taxable-cash,
-          taxable:taxable, period:profitFyToDateLabel()};
-}
+/* -371: profitLadder() retired (decision 26 Sep) - it reached taxable profit its own way and
+   disagreed with the SA103F engine on the same page. Taxable so far comes from b5TaxEstimate. */
 function ytdSummary(opts) {
   /* Default is the CASH view - what actually left the account - because that is what the
      dashboard and Money Flow are asking. Pass {taxBasis:true} for anything feeding a tax
@@ -19287,7 +19393,8 @@ setEl('dash-budget-period', month);
   setEl('dash-cf-out', fmt(cur.expenses));
   setEl('dash-cf-net', (profit<0?'\u2212':'')+fmt(Math.abs(profit)));
   /* Which month, and on what basis - the same two words the Reports header uses. */
-  if(typeof setTags==='function') setTags('dash-cf-net-tags','actual',month,'actual','Cash');
+  /* -371 (SA -451): the label now says it ("Net cash this month"), so the Cash tag is gone. */
+  try { var _dcpt=$('dash-cf-net-tags'); if(_dcpt) _dcpt.innerHTML=''; } catch(e){}
 
 var prev       = txSummary(prevMonthLabel(month));
   var prevProfit = prev.income - prev.expenses;
@@ -19332,7 +19439,7 @@ var prev       = txSummary(prevMonthLabel(month));
 
 var marginEl = $('cf-margin-detail');
   if (marginEl) {
-    marginEl.innerHTML = (noData || noCosts) ? 'margin once costs are in' : (margin + '% margin');
+    marginEl.innerHTML = (noData || noCosts) ? 'shown once costs are in' : (margin + '% of money in kept');
     marginEl.style.color = (noData || noCosts) ? 'var(--t4)' : _mh.color;
   }
 
@@ -19385,6 +19492,7 @@ var txCount = ST.txns.filter(function(t){
   renderSeasonalCard();
   renderDashSummary();
   updateTrafficLights();
+  try { b5DashHero(); } catch (e) {}
   renderSeasonKpis();
   if (typeof updateFabAttention === 'function') updateFabAttention();
   /* Must live here, not in nav(): the dashboard renders at boot without a nav() call,
@@ -19397,57 +19505,53 @@ var txCount = ST.txns.filter(function(t){
 
 // ============================================================
 function renderSeasonKpis() {
+  /* -371 (SA -451; D4, D5, D11). Four boxes that add up on the screen: income so far (ex-VAT) less
+     costs so far (running costs, loan interest and the book write-off) is profit so far -
+     the same figure as Budgets, Profit and Tax. The fourth box is cash in hand, with the
+     lowest point in the 12 months ahead. It was cash in less cash out labelled "Profit",
+     and a margin tile that the hero above now carries. */
+  var _b5 = null;
+  try { _b5 = b5SeasonFigures(); } catch (e) { _b5 = null; }
   var ytd = ytdSummary();
-  var profit  = ytd.income - ytd.expenses;
-  var margin  = ytd.income > 0 ? (profit / ytd.income * 100).toFixed(1) : '0.0';
-
-setEl('season-ytd-income',   fmt(ytd.income));
-  setEl('season-ytd-expenses', fmt(ytd.expenses));
+  var profit = _b5 ? _b5.profit.profit : (ytd.income - ytd.expenses);
+  setEl('season-ytd-income',   fmt(_b5 ? _b5.profit.income : ytd.income));
+  setEl('season-ytd-expenses', fmt(_b5 ? _b5.costs : ytd.expenses));
+  setEl('season-ytd-expenses-sub', 'Running costs, interest and write-off');
   /* A loss keeps its minus sign and says "Loss": the red colour alone read as a profit. */
   setEl('season-ytd-profit',   (profit<0?'\u2212':'')+fmt(Math.abs(profit)));
   (function(){ var v=$('season-ytd-profit'), l=v&&v.previousElementSibling; if(!l) return;
-    var tn=l.firstChild; if(tn && tn.nodeType===3) tn.nodeValue=(profit<0?'Loss':'Profit')+' Year-to-date'; })();
-  /* No income, no margin. The dashboard's main card already said so; this tile said 0.0%. */
-  setEl('season-margin', ytd.income > 0 ? margin + '%' : '\u2014');
-  (function(){ var v = $('season-margin'); if (!v) return;
-    v.style.color = ytd.income > 0 ? '' : 'var(--t4)';
-    var sub = v.nextElementSibling; if (!sub) return;
-    sub.textContent = ytd.income > 0 ? 'Margin = profit \u00F7 income' : 'Shows once income is recorded'; })();
-
-var pEl = $('season-ytd-profit');
+    var tn=l.firstChild; if(tn && tn.nodeType===3) tn.nodeValue=(profit<0?'Loss':'Profit')+' so far'; })();
+  var pEl = $('season-ytd-profit');
   if (pEl) pEl.style.color = profit >= 0 ? 'var(--gd)' : 'var(--rd)';
-
-var pSub = $('season-ytd-profit-sub');
+  var pSub = $('season-ytd-profit-sub');
   if (pSub) {
-    /* This tile counts the TAX year, so it cannot say "season", and lastYearProfit()
-       never existed - the branch below it was the only one that ever ran. It now
-       compares with the same point last year, the way Income does. */
-    var _lp = (typeof _txFyToDatePrev === 'function') ? _txFyToDatePrev() : null;
-    if (_lp && Math.abs(_lp.profit) > 0) {
-      var diff = profit - _lp.profit;
-      var pct  = Math.round(diff / Math.abs(_lp.profit) * 100);
-      pSub.textContent = (diff >= 0 ? '↑ ' : '↓ ') + Math.abs(pct) + '% on the same point last year';
-      pSub.className = 'skpi-sub' + (diff >= 0 ? '' : ' dn');
-    } else {
-      pSub.textContent = profit >= 0 ? 'Profit so far this tax year' : 'Loss so far this tax year';
-      pSub.className = 'skpi-sub muted';
-    }
-    /* -345 Not an alert and not a badge: the same grey sub-line every tile already has,
-       carrying one word. The figure is not wrong, it is unfinished.
-       -346 In its OWN span. Appending to the text made it inherit .skpi-sub.dn, so on a
-       farm whose profit is down the word came out in red - the alert styling this was
-       chosen to avoid. It now matches the muted sub-lines whichever way the year is
-       going, because how the year is going is not what it is reporting. */
+    pSub.textContent = _b5 ? ('Heading for ' + (_b5.heading < 0 ? 'a loss of ' : '') + fmtK(Math.abs(_b5.heading)) + ' by ' + _b5.endMonth)
+                           : (profit >= 0 ? 'Profit so far this year' : 'Loss so far this year');
+    pSub.className = 'skpi-sub' + (_b5 && _b5.heading < 0 ? ' dn' : (profit >= 0 ? '' : ' dn'));
+    /* -431 ukProvisionalNote() in its OWN span, so an unfinished figure never borrows the
+       red of a falling one. */
     try{
-      var _pn = (typeof ukProvisionalNote === 'function') ? ukProvisionalNote() : '';
-      if(_pn){
-        var _ps = document.createElement('span');
-        _ps.textContent = ' \u00b7 ' + _pn;
-        _ps.style.color = 'var(--t4)';
-        _ps.style.fontWeight = '500';
-        pSub.appendChild(_ps);
+      var _sn = (typeof ukProvisionalNote === 'function') ? ukProvisionalNote() : '';
+      if(_sn){
+        var _ss = document.createElement('span');
+        _ss.textContent = ' \u00b7 ' + _sn;
+        _ss.style.color = 'var(--t4)';
+        _ss.style.fontWeight = '500';
+        pSub.appendChild(_ss);
       }
     }catch(e){}
+  }
+  if (_b5) {
+    setEl('season-cash', (_b5.cash.start.bal < 0 ? '\u2212' : '') + fmt(Math.abs(_b5.cash.start.bal)));
+    var _lo = _b5.cash.lowest, cSub = $('season-cash-sub');
+    if (cSub) {
+      /* -371: when today's balance is itself the low point, say so - the 12-month low looks
+         only at the months ahead, and "Lowest £163k" under £64,000 read as a contradiction. */
+      cSub.textContent = !_lo ? (_b5.cash.start.estimated ? 'Estimated from your records' : '')
+        : (_lo.balance < 0 ? 'Runs short in ' + _lo.label
+          : (_b5.cash.start.bal <= _lo.balance ? 'The lowest point in the next 12 months' : 'Lowest ' + fmtK(_lo.balance) + ' in ' + _lo.label));
+      cSub.className = 'skpi-sub' + (_lo && _lo.balance < 0 ? ' dn' : ' muted');
+    }
   }
 
 var _MN = {Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
@@ -36714,7 +36818,7 @@ function yrChip(basis, y){
    the same sentence twice. The chip exists to say what a screen otherwise
    leaves unsaid, not to repeat what it already says. */
 var YR_BASIS={
-  crop:'season', orchards:'season', livestock:'season', cashflow:'season',
+  crop:'season', orchards:'season', livestock:'season', cashflow:'fy',   /* -451 D2: the farm's year for every money headline */
   tax:'fy', profit:'fy'
 };
 /* Stamps the chip into a page header. Idempotent: nav() runs constantly, so the
@@ -40469,7 +40573,17 @@ function renderBudgetsPage() {
   var c = bgtCompute(); BGT_LAST = c;
 
   var p = $('bgt-period');
-  if (p) p.textContent = c.fyMonths[0] + ' – ' + c.fyMonths[11] + ' financial year';
+  if (p) {
+    /* -451 D1: the budget is the copy the bank has. -452: the lock is a button in the header,
+       not a sentence under the title - the line says the year and, once locked, when. */
+    var _lk = (ST.budgets && ST.budgets.locked && ST.budgets.locked[String(getCurrentFY())]) || null;
+    p.textContent = c.fyMonths[0] + ' – ' + c.fyMonths[11] + ' financial year' + (_lk ? ' · 🔒 bank copy locked' + (_lk.at ? ' ' + _lk.at : '') : '');
+    var _lb = $('bgt-lock-btn');
+    if (_lb) _lb.textContent = _lk ? 'Unlock' : '🔒 Lock this budget';
+    setEl('bgt-lock-v', _lk ? '🔒 Locked' + (_lk.at ? ' ' + _lk.at : '') : 'Not locked');
+    setEl('bgt-lock-state', _lk ? '· unlock to change your targets' : '· lock it once the bank has your budget');
+  }
+
 
   var first = $('bgt-first'), main = $('bgt-main');
   var isFirst = (c.annualIn <= 0 && c.annualOut <= 0);
@@ -40511,23 +40625,38 @@ function bgtRenderHero(c) {
     var behind = c.expIn  > 0 ? Math.max(0, -c.aheadIn  / c.expIn)  : 0;
     var over   = c.expOut > 0 ? Math.max(0, -c.aheadOut / c.expOut) : 0;
     eyebrow = status === 'green' ? 'On track' : status === 'amber' ? 'Running tight' : 'Falling behind';
-    headline = projNet >= 0
-      ? 'This tax year is heading for a cash surplus of ' + bgtFmt(projNet)
-      : 'This tax year is heading for a cash shortfall of ' + bgtFmt(Math.abs(projNet));
-    if (c.annualIn > 0 && c.annualOut > 0) headline += ' <small>goal: ' + bgtFmt(c.annualNet) + '</small>';
-    if (status === 'green')      sub = 'Income and costs are running where you planned. Keep doing what you’re doing.';
-    else if (over >= behind) sub = status === 'amber'
-      ? 'Spending is running over pace. Rein it in over the next month or two and the year still fields on plan.'
-      : 'Costs are well over your plan. Look at your biggest cost lines before they set the year’s outcome.';
-    else sub = status === 'amber'
-      ? 'Income is behind the season curve. A strong month or two brings it back.'
-      : 'Income is well behind your plan. Look at what’s still to come in and what can move sooner.';
+    /* -452: the Budgets page is money in and money out, top to bottom - what the bank
+       statement, the invoices and the bank's copy show - so the cards and the category lists
+       below add up to the same figures. Profit is one linked line; it is made on the Profit
+       page and the Dashboard. */
+    var _fyb = getCurrentFY(), _h = b5ProfitHeading(_fyb), _g = b5BudgetGoals(_fyb), _ch = b5CashHeading(_fyb);
+    /* "Net cash" - money in less money out - is the Dashboard's and Money Flow's name for this
+       figure. It is not the bank balance, which also holds what was there before the year. */
+    headline = _ch >= 0
+      ? 'Heading for <b>' + bgtFmt(_ch) + '</b> net cash this year'
+      : 'Heading for <b>' + bgtFmt(Math.abs(_ch)) + '</b> more out than in this year';
+    var _bl = (c.annualIn > 0 && c.annualOut > 0) ? 'Your budget: ' + (_g.cashLeft < 0 ? bgtFmt(-_g.cashLeft) + ' more out than in' : bgtFmt(_g.cashLeft) + ' net cash') + '. ' : '';
+    if (status === 'green')      sub = _bl + 'Income and costs are where you planned.';
+    else if (over >= behind) sub = _bl + (status === 'amber' ? 'Spending is running a little ahead of plan.' : 'Costs are well over your plan.');
+    else sub = _bl + (status === 'amber' ? 'Income is a little behind plan.' : 'Income is well behind your plan.');
   }
 
-  card.className = 'bgt-hero ' + status;
+  card.className = 'bgt-hero calm ' + status + (card.classList.contains('merged') ? ' merged' : '');
+  /* T2.3 — the rain line takes its income figure from this same `c`. */
+  try {
+    var rl = $('bgt-rainline');
+    if (rl) rl.innerHTML = (status === 'info' || typeof rnBudgetRainLine !== 'function')
+                             ? '' : rnBudgetRainLine(c);
+  } catch(e){}
   setEl('bgt-hero-eyebrow-text', eyebrow);
   var h = $('bgt-hero-headline'); if (h) h.innerHTML = headline;
   setEl('bgt-hero-sub', sub);
+  var hp = $('bgt-hero-profit');
+  if (hp) {
+    if (status === 'info') hp.innerHTML = '';
+    else { var _hh = b5ProfitHeading(getCurrentFY()).heading;
+      hp.innerHTML = 'Profit heading for <b>' + (_hh < 0 ? '−' : '') + bgtFmt(Math.abs(_hh)) + '</b> · <a href="javascript:void 0" onclick="nav(\'profit\')">how it’s made →</a>'; }
+  }
 
   var deltas = $('bgt-hero-deltas');
   if (deltas) {
@@ -40537,7 +40666,7 @@ function bgtRenderHero(c) {
       deltas.innerHTML =
         bgtChip('inv', (c.aheadIn  >= 0 ? '✓ Income ahead by '  : '▲ Income behind by ') + bgtFmt(Math.abs(c.aheadIn))) +
         bgtChip('inv', (c.aheadOut >= 0 ? '✓ Costs under by '   : '▲ Costs over by ')   + bgtFmt(Math.abs(c.aheadOut))) +
-        bgtChip('inv', 'Net so far ' + bgtFmt(c.ytdNet));
+        bgtChip('inv', 'Profit so far ' + bgtFmt(b5Profit(getCurrentFY(), {toYm: b5TodayYm()}).profit));
     }
   }
 }
@@ -40558,6 +40687,8 @@ function bgtRenderKpis(c) {
                       : bgtChip('warn','▲ ' + bgtFmt(-c.aheadIn) + ' behind pace'));
   var f1 = $('bgt-kpi-in-fill'); if (f1) f1.style.width = pctIn + '%';
   var k1 = $('bgt-kpi-in-tick'); if (k1) { k1.style.display = c.annualIn > 0 ? 'block' : 'none'; k1.style.left = tickIn + '%'; }
+  var _ti = $('bgt-kpi-in-t'); if (_ti && c.annualIn > 0) _ti.innerHTML = '<b>' + Math.round(pctIn) + '%</b> of ' + bgtFmt(c.annualIn) + ' this year';   /* -452 */
+  var _kk = $('bgt-kpi-in-tick'); if (_kk) _kk.title = 'Where your plan says you should be by now (' + Math.round(tickIn) + '%)';
   setEl('bgt-kpi-in-f1', Math.round(pctIn) + '% in');
   setEl('bgt-kpi-in-f2', c.annualIn > 0 ? 'plan says ' + Math.round(tickIn) + '% by now' : '');
 
@@ -40570,31 +40701,77 @@ function bgtRenderKpis(c) {
   var f2 = $('bgt-kpi-out-fill');
   if (f2) { f2.style.width = pctOut + '%'; f2.className = 'bgt-fill' + (c.ytdOut > c.annualOut && c.annualOut > 0 ? ' overb' : ''); }
   var k2 = $('bgt-kpi-out-tick'); if (k2) { k2.style.display = c.annualOut > 0 ? 'block' : 'none'; k2.style.left = tickOut + '%'; }
+  var _to = $('bgt-kpi-out-t'); if (_to && c.annualOut > 0) _to.innerHTML = '<b>' + Math.round(pctOut) + '%</b> of ' + bgtFmt(c.annualOut) + ' this year';   /* -452 */
+  var _ko = $('bgt-kpi-out-tick'); if (_ko) _ko.title = 'Where your plan says you should be by now (' + Math.round(tickOut) + '%)';
   setEl('bgt-kpi-out-f1', Math.round(pctOut) + '% spent');
   setEl('bgt-kpi-out-f2', c.annualOut > 0 ? 'plan says ' + Math.round(tickOut) + '% by now' : '');
 
-  var projNet = c.projIn - c.projOut;
+  /* -451 D1/D4/D11. Profit the year is heading for (actual so far + the working budget)
+     against the budget's own profit line. It was all money in less all money out, so loan
+     capital and machinery counted against "profit". Those now sit in the second total -
+     cash left after loans and machinery - on its own line under the cards. */
+  var _fy = getCurrentFY(), _h = b5ProfitHeading(_fy), _g = b5BudgetGoals(_fy), projNet = _h.heading, goal = _g.profit;
   var bothSet = c.annualIn > 0 && c.annualOut > 0;
-  setEl('bgt-kpi-net-v', bgtFmt(projNet));
-  /* Projected to the end of the tax year - the rung above 'year so far'. */
-  if(typeof setTags==='function') setTags('bgt-kpi-net-tags','proj','Projected to 5 Apr');
+  setEl('bgt-kpi-net-v', (projNet < 0 ? '−' : '') + bgtFmt(Math.abs(projNet)));
   var t3 = $('bgt-kpi-net-t');
-  if (t3) t3.innerHTML = bothSet ? 'projected year-end · goal <b>' + bgtFmt(c.annualNet) + '</b>' : 'set both targets to see your goal';
+  if (t3) t3.innerHTML = bothSet ? 'at year end · budget ' + (goal < 0 ? '−' : '') + bgtFmt(Math.abs(goal)) : 'set both targets to see your budget';
   var ch3 = $('bgt-kpi-net-chip');
   if (ch3) {
     if (!bothSet || noAct) ch3.innerHTML = bgtChip('mut','—');
     else {
-      var diff = projNet - c.annualNet;
-      if (Math.abs(diff) <= Math.abs(c.annualNet) * 0.02) ch3.innerHTML = bgtChip('mut','≈ on goal');
-      else if (diff > 0) ch3.innerHTML = bgtChip('good','✓ ' + bgtFmt(diff) + ' past goal');
-      else ch3.innerHTML = bgtChip('warn','▲ ' + bgtFmt(-diff) + ' shy of goal');
+      var diff = projNet - goal;
+      if (Math.abs(diff) <= Math.max(1, Math.abs(goal) * 0.02)) ch3.innerHTML = bgtChip('mut','≈ on budget');
+      else if (diff > 0) ch3.innerHTML = bgtChip('good','✓ ' + bgtFmt(diff) + ' ahead');
+      else ch3.innerHTML = bgtChip('warn','▲ ' + bgtFmt(-diff) + ' short');
     }
   }
-  var pctNet = bothSet && c.annualNet > 0 ? Math.min(100, Math.max(0, projNet / c.annualNet * 100)) : 0;
-  var f3 = $('bgt-kpi-net-fill'); if (f3) f3.style.width = pctNet + '%';
-  var k3 = $('bgt-kpi-net-tick'); if (k3) { k3.style.display = bothSet && c.annualNet > 0 ? 'block' : 'none'; k3.style.left = '100%'; }
-  setEl('bgt-kpi-net-f1', bothSet && c.annualNet > 0 ? Math.round(pctNet) + '% of goal' : '');
-  setEl('bgt-kpi-net-f2', bothSet ? 'if the rest of the year goes to plan' : '');
+  var pctNet = bothSet && goal > 0 ? Math.min(100, Math.max(0, projNet / goal * 100)) : (bothSet && goal <= 0 && projNet >= goal ? 100 : 0);
+  var f3 = $('bgt-kpi-net-fill'); if (f3) { f3.style.width = pctNet + '%'; f3.parentNode.style.visibility = (bothSet && goal > 0) ? '' : 'hidden'; }   /* no bar against a budget below zero */
+  var k3 = $('bgt-kpi-net-tick'); if (k3) { k3.style.display = bothSet && goal > 0 ? 'block' : 'none'; k3.style.left = '100%'; }
+  setEl('bgt-kpi-net-f1', bothSet && goal > 0 ? Math.round(pctNet) + '% of budget' : '');
+  setEl('bgt-kpi-net-f2', bothSet ? 'so far + your plan for ' + _h.rest.months + ' month' + (_h.rest.months === 1 ? '' : 's') : '');
+  /* -452: the three cards ADD UP - money in so far less money out so far is what is left so
+     far - on the same footing as the category lists underneath and the bank statement. Each is
+     set against the same line of the budget; the tick is where the plan says you should be. */
+  var _fin = c.annualIn > 0 ? c.expIn / c.annualIn : 0, _fout = c.annualOut > 0 ? c.expOut / c.annualOut : 0;
+  function _card(k, val, goal, frac){
+    setEl('bgt-kpi-' + k + '-v', (val < 0 ? '−' : '') + bgtFmt(Math.abs(val)));
+    var t = $('bgt-kpi-' + k + '-t'), pct = goal > 0 ? Math.min(100, Math.max(0, val / goal * 100)) : 0;
+    if (t) t.innerHTML = goal > 0 ? '<b>' + Math.round(val / goal * 100) + '%</b> of ' + bgtFmt(goal) + ' budgeted' : 'no budget set';
+    var tk = $('bgt-kpi-' + k + '-tick'); if (tk) { tk.style.display = goal > 0 ? 'block' : 'none'; tk.style.left = Math.min(100, frac * 100) + '%'; tk.title = 'Where your plan says you should be by now (' + Math.round(frac * 100) + '%)'; }
+  }
+  if (bothSet) {
+    _card('in', c.ytdIn, c.annualIn, _fin);
+    _card('out', c.ytdOut, c.annualOut, _fout);
+    /* Ink by default; the state colour only on the cell that is off pace (-452). */
+    var _bi = c.expIn > 0 ? -c.aheadIn / c.expIn : 0, _bo = c.expOut > 0 ? -c.aheadOut / c.expOut : 0;
+    var _fi = $('bgt-kpi-in-fill'), _fo = $('bgt-kpi-out-fill');
+    if (_fi) _fi.style.setProperty('--fillc', _bi > 0.15 ? '#C0392B' : (_bi > 0.05 ? '#D97706' : '#16241C'));
+    if (_fo) _fo.style.setProperty('--fillc', _bo > 0.15 ? '#C0392B' : (_bo > 0.05 ? '#D97706' : '#16241C'));
+    var _ti2 = $('bgt-kpi-in-t'), _to2 = $('bgt-kpi-out-t');
+    if (_ti2 && _bi > 0.05) _ti2.innerHTML += ' <span class="pace-note">behind pace</span>';
+    if (_to2 && _bo > 0.05) _to2.innerHTML += ' <span class="pace-note">over pace</span>';
+    var _left = c.ytdIn - c.ytdOut, _chh = b5CashHeading(_fy);
+    setEl('bgt-kpi-net-v', (_left < 0 ? '−' : '') + bgtFmt(Math.abs(_left)));
+    var t3b = $('bgt-kpi-net-t');
+    if (t3b) t3b.innerHTML = 'heading for <b>' + (_chh < 0 ? '−' : '') + bgtFmt(Math.abs(_chh)) + '</b> · budget ' + (_g.cashLeft < 0 ? '−' : '') + bgtFmt(Math.abs(_g.cashLeft));
+    var f3c = $('bgt-kpi-net-fill'); if (f3c) f3c.parentNode.style.visibility = 'hidden';
+  }
+  /* The second total - cash left after loans and machinery, every budget line (-452: a card). */
+  var ch = b5CashHeading(_fy), cg = _g.cashLeft;
+  setEl('bgt-kpi-cash-v', (ch < 0 ? '−' : '') + bgtFmt(Math.abs(ch)));
+  var tc = $('bgt-kpi-cash-t');
+  if (tc) tc.innerHTML = bothSet ? 'at year end · budget ' + (cg < 0 ? '−' : '') + bgtFmt(Math.abs(cg)) : 'set both targets to see your budget';
+  var chc = $('bgt-kpi-cash-chip');
+  if (chc) {
+    if (!bothSet || noAct) chc.innerHTML = bgtChip('mut','—');
+    else { var dc = ch - cg;
+      chc.innerHTML = Math.abs(dc) <= Math.max(1, Math.abs(cg) * 0.02) ? bgtChip('mut','≈ on budget') : (dc > 0 ? bgtChip('good','✓ ' + bgtFmt(dc) + ' ahead') : bgtChip('warn','▲ ' + bgtFmt(-dc) + ' short')); }
+  }
+  var pc = bothSet && cg > 0 ? Math.min(100, Math.max(0, ch / cg * 100)) : (bothSet && cg <= 0 && ch >= cg ? 100 : 0);
+  var fc = $('bgt-kpi-cash-fill'); if (fc) { fc.style.width = pc + '%'; fc.parentNode.style.visibility = (bothSet && cg > 0) ? '' : 'hidden'; }   /* no bar against a budget below zero */
+  var kc = $('bgt-kpi-cash-tick'); if (kc) { kc.style.display = bothSet && cg > 0 ? 'block' : 'none'; kc.style.left = '100%'; }
+  setEl('bgt-kpi-cash-f2', bothSet && cg > 0 ? Math.round(pc) + '% of budget' : '');
 }
 
 // ── The Money Mountain ──
@@ -40963,7 +41140,7 @@ async function bgtApplyPlan(skipConfirm) {
     if (!ok) return;
   }
   if (typeof ST_PLAN === 'undefined' || !ST_PLAN || !ST_PLAN.months) return;
-  if (bgtIsLocked(getCurrentFY())) { toast('This year’s budget is locked — make a new version to change it.', 'info'); return; }
+  if (bgtIsLocked(getCurrentFY())) { toast('This year’s budget is locked for the bank — unlock it on the Budgets page to change it.', 'info'); return; }
   var kept = bgtPlanIntoMonths(['in','out']);
   ST.budgets.incomePattern = 'custom'; ST.budgets.expensePattern = 'custom';
   delete ST.budgets.driftDismissSig;
@@ -41036,6 +41213,7 @@ function bgtToggleSetup(forceOpen) {
   var p = $('bgt-setup-panel'); if (!p) return;
   var open = (forceOpen === true) ? true : !p.classList.contains('open');
   p.classList.toggle('open', open);
+  if (!open) BGT_EDIT_OPEN = {in:false, out:false};
   if (open) {
     bgtFillEditor(BGT_LAST || bgtCompute());
     try { uiScrollTo(p,{block:'start'}); } catch(e) {}
@@ -41051,6 +41229,7 @@ function bgtSaveTargetBox(side) {
   var pat = side === 'in' ? (ST.budgets.incomePattern || 'harvest') : (ST.budgets.expensePattern || 'planting');
   if (val > 0 && pat !== 'custom') applyBudgetPattern(side);
   toast((side === 'in' ? 'Income target' : 'Spending budget') + ' saved', 'success');
+  BGT_EDIT_OPEN[side] = false;
   var p = $('bgt-setup-panel'); if (p) p.classList.remove('open');
   renderBudgetsPage();
 }
@@ -41070,6 +41249,29 @@ function bgtFillEditor(c) {
   if (ai && document.activeElement !== ai) ai.value = c.annualIn  > 0 ? Math.round(c.annualIn)  : '';
   var ao = $('bgt-annual-exp-input');
   if (ao && document.activeElement !== ao) ao.value = c.annualOut > 0 ? Math.round(c.annualOut) : '';
+  bgtFoldTargets(c);
+}
+/* -452: a target that is set folds to one line - amount, how it spreads, Change - so Edit
+   targets opens on what can be changed, not two full forms. Nothing set: the form shows. */
+var BGT_EDIT_OPEN = {in:false, out:false};
+function bgtFoldTargets(c){
+  ['in','out'].forEach(function(side){
+    var val = side === 'in' ? c.annualIn : c.annualOut, open = BGT_EDIT_OPEN[side] || !(val > 0);
+    var sec = $('bgt-sec-' + side), hlp = $('bgt-plan-helper-' + side), sum = $('bgt-sum-' + side);
+    if (sec) sec.classList.toggle('collapsed', !open);
+    if (hlp) hlp.classList.toggle('collapsed', !open);
+    if (sum && !open) {
+      var pat = side === 'in' ? ST.budgets.incomePattern : ST.budgets.expensePattern, pl = (BUDGET_PATTERN_LABELS[pat] || {}).label || '';
+      sum.innerHTML = '<span class="k">' + (side === 'in' ? 'Income target' : 'Spending budget') + '</span>' +
+        '<span class="v">' + bgtFmt(val) + '</span>' + (pl ? '<span class="p">· ' + esc(pl) + '</span>' : '') +
+        '<span class="sp"></span><button type="button" class="bgt-btn" onclick="bgtEditTarget(\'' + side + '\')">Change</button>';
+    }
+  });
+}
+function bgtEditTarget(side){
+  BGT_EDIT_OPEN[side] = true;
+  bgtFoldTargets(BGT_LAST || bgtCompute());
+  var inp = $(side === 'in' ? 'bgt-annual-input' : 'bgt-annual-exp-input'); if (inp) { try { inp.focus(); inp.select(); } catch(e){} }
 }
 
 // ── Month editor sheet ──
@@ -41438,7 +41640,7 @@ function bgtRenderCats() {
     var tp = 0, ta = 0;
     list.forEach(function(r){ tp += r.target; ta += r.act; });
     var h = '<div class="bgt-grph"><b>' + title + '</b><span class="why">' + why + '</span><span class="tot">' + bgtFmt(ta) + ' of <b>' + bgtFmt(tp) + '</b></span></div>';
-    h += '<div class="bgt-colhead"><span>Category</span><span>Season progress</span><span class="num">' + cols[0] + '</span><span class="num">' + cols[1] + '</span><span class="num">' + cols[2] + '</span></div>';
+    h += '<div class="bgt-colhead"><span>Category</span><span>Season progress</span><span class="num">' + cols[0] + '</span><span class="num">' + cols[1] + '</span><span class="num">' + cols[2] + '</span><span></span></div>';
     h += '<div class="bgt-rows">';
     list.forEach(function(r) {
       var pct = r.target > 0 ? Math.min(100, r.act / r.target * 100) : (r.act > 0 ? 100 : 0);
@@ -41448,12 +41650,13 @@ function bgtRenderCats() {
       var tgtCell = (r.resid && r.target <= 0) ? '—' : bgtFmt(r.target);
       var leftCell = (r.resid && r.target <= 0) ? '—' : bgtFmt(left);
       h += '<div class="bgt-row" onclick="bgtCatRowTap(\'' + side + '\',\'' + catEsc + '\')">' +
-        '<div class="bgt-cname"><div class="bgt-cnm">' + r.cat + '</div></div>' +
+        '<div class="bgt-cname"><div class="bgt-cnm">' + r.cat + '</div>' + (isIn ? '' : bgtRoleTag(r.cat)) + '</div>' +
         '<div class="bgt-cbar"><div class="bgt-cfill ' + (over ? 'over' : (isIn ? 'in' : 'out')) + '" style="width:' + (r.resid ? 0 : pct) + '%"></div>' +
           (r.tickPct > 0 ? '<div class="bgt-ctick" style="left:' + r.tickPct + '%"></div>' : '') + '</div>' +
         '<div class="bgt-cnum tap" onclick="event.stopPropagation();bgtEditCat(\'' + side + '\',\'' + catEsc + '\')">' + tgtCell + '</div>' +
         '<div class="bgt-cnum strong">' + bgtFmt(r.act) + '</div>' +
-        '<div class="bgt-cleft"><span class="amt">' + leftCell + '</span>' + bgtChip(r.v.cls, r.v.txt) + '</div>' +
+        '<div class="bgt-cnum strong">' + leftCell + '</div>' +
+        '<div class="bgt-cstat">' + bgtChip(r.v.cls, r.v.txt) + '</div>' +
       '</div>';
     });
     return h + '</div>';
@@ -42246,7 +42449,7 @@ async function pullPlanToBudgets(side) {
     if (!ok) return;
   }
 
-  if (bgtIsLocked(fy)) { toast('This year’s budget is locked — make a new version to change it.', 'info'); return; }
+  if (bgtIsLocked(fy)) { toast('This year’s budget is locked for the bank — unlock it on the Budgets page to change it.', 'info'); return; }
   var kept = bgtPlanIntoMonths([side === 'in' ? 'in' : 'out']);
 
   var sum = fyMonths.reduce(function(s,m){ return s + (target[m] || 0); }, 0);
@@ -46121,7 +46324,7 @@ async function pushPlanToBudgets() {
     if (!ok) return;
   }
 
-  if (typeof bgtIsLocked === 'function' && bgtIsLocked(getCurrentFY())) { toast('This year’s budget is locked — make a new version to change it.', 'info'); return; }
+  if (typeof bgtIsLocked === 'function' && bgtIsLocked(getCurrentFY())) { toast('This year’s budget is locked for the bank — unlock it on the Budgets page to change it.', 'info'); return; }
   /* This financial year only, and the shared rule (-369): it wrote every plan month, so the
      season's tail landed in next year's budget. */
   var kept = bgtPlanIntoMonths(['in','out']);
@@ -48209,7 +48412,7 @@ function chartRichTip(context){
     var L = (dp.dataset && dp.dataset.label) || '';
     var v = (dp.parsed && dp.parsed.y != null) ? dp.parsed.y : dp.raw;
     var rec = { label: L, val: v };
-    if(/profit/i.test(L)) profP = rec;
+    if(/profit|net cash/i.test(L)) profP = rec;
     else if(/out|expense/i.test(L)) outP = rec;
     else if(/income|money\s*in/i.test(L)) inP = rec;
     else others.push(rec);
@@ -48228,7 +48431,7 @@ function chartRichTip(context){
   others.forEach(function(o){ html += row(o.label, o.val, null, 'none'); });
   if(profP){
     html += '<div class="hr"></div>';
-    html += row('Profit', profP.val, (profP.val >= 0) ? '#8fd6ac' : '#f2776a', 'auto');
+    html += row(/net cash/i.test(profP.label) ? 'Net cash' : 'Profit', profP.val, (profP.val >= 0) ? '#8fd6ac' : '#f2776a', 'auto');
   }
   el.innerHTML = html;
   var r = context.chart.canvas.getBoundingClientRect();
@@ -48279,7 +48482,7 @@ function initDashChart() {
     type:'bar', data:{labels:x.labels, datasets:[
       {label:'Money In', data:x.d.i, backgroundColor:barGrad('#40916C','#2D6A4F'), hoverBackgroundColor:barGrad('#4CA37B','#357A5B'), borderRadius:6, borderSkipped:false, order:2, categoryPercentage:0.62, barPercentage:0.95, maxBarThickness:130},
       {label:'Money Out',data:x.d.o, backgroundColor:barGrad('#ED6152','#CB3A2B'), hoverBackgroundColor:barGrad('#F2776A','#D6493A'), borderRadius:6, borderSkipped:false, order:2, categoryPercentage:0.62, barPercentage:0.95, maxBarThickness:130},
-      {type:'line',label:'Profit',data:x.d.p,borderColor:'#1B4332',backgroundColor:'transparent',tension:0.4,pointRadius:4,pointBackgroundColor:'#1B4332',pointBorderColor:'#fff',pointBorderWidth:2,borderWidth:2.5,order:1}
+      {type:'line',label:'Net cash',data:x.d.p,borderColor:'#1B4332',backgroundColor:'transparent',tension:0.4,pointRadius:4,pointBackgroundColor:'#1B4332',pointBorderColor:'#fff',pointBorderWidth:2,borderWidth:2.5,order:1}
     ]}, options: baseOpts
   });
   // Tap a month bar -> drill straight to that month's transactions (dashboard has no drawer).
@@ -48296,7 +48499,7 @@ function initDashChart() {
   var to = x.d.o.reduce(function(a,b){return a+b;},0);
   var tp = x.d.p.reduce(function(a,b){return a+b;},0);
   var row = $('dash-totals');
-  if (row) row.innerHTML = '<div class="ct-lbl">Money In</div><div class="ct-val g">'+fmtK(ti)+'</div><div class="ct-lbl">Money Out</div><div class="ct-val" style="color:var(--rd)">'+fmtK(to)+'</div><div class="ct-lbl">Total Profit</div><div class="ct-val g">'+fmtK(tp)+'</div><div class="ct-lbl">Avg. Profit Margin</div><div class="ct-val">'+(ti>0?(tp/ti*100).toFixed(1):'0.0')+'%</div>';
+  if (row) row.innerHTML = '<div class="ct-lbl">Money In</div><div class="ct-val g">'+fmtK(ti)+'</div><div class="ct-lbl">Money Out</div><div class="ct-val" style="color:var(--rd)">'+fmtK(to)+'</div><div class="ct-lbl">Net cash</div><div class="ct-val g">'+fmtK(tp)+'</div><div class="ct-lbl">Kept of money in</div><div class="ct-val">'+(ti>0?(tp/ti*100).toFixed(1):'0.0')+'%</div>';
 }
 
 // ── Income charts ─────────────────────────────────────────────
@@ -48369,7 +48572,7 @@ var hp = ST.cfPeriod || '6';
     var b = $('cf-pill-'+x);
     if (b) b.className = 'pill' + (hp===x ? ' on' : '');
   });
-  var fp = ST.cfFwdPeriod || '6';
+  var fp = ST.cfFwdPeriod || '12';   /* -451 D5: one 12-month horizon */
   ['1','3','6','12'].forEach(function(x){
     var b = $('cf-fpill-'+x);
     if (b) b.className = 'pill fwd' + (fp===x ? ' on' : '');
@@ -48417,7 +48620,7 @@ setEl('cf-now-sub',    'Looking back over ' + lblL);
 
 setEl('cf-in-lbl',  'Money In · ' + (n === 1 ? titleLbl : _txPeriodTitle(n)));
   setEl('cf-out-lbl', 'Money Out · ' + (n === 1 ? titleLbl : _txPeriodTitle(n)));
-  setEl('cf-net-lbl', 'Profit · ' + (n === 1 ? titleLbl : _txPeriodTitle(n)));
+  setEl('cf-net-lbl', 'Net cash · ' + (n === 1 ? titleLbl : _txPeriodTitle(n)));
 
 setEl('cf-in-val',  fmt(R.income));
   setEl('cf-out-val', fmt(R.expenses));
@@ -48470,6 +48673,7 @@ var card   = $('cf-now-answer');
   }
 
 renderCfHistoricalBars(n);
+  try { b5RenderCashBridge(); } catch (e) {}
 }
 
 function renderCfHistoricalBars(numMonths) {
@@ -48514,7 +48718,7 @@ var labels = [], dataIn = [], dataOut = [], dataProf = [];
            and bar geometry as the Dashboard, Income and Expenses charts. */
         {label:'Money In',  data:dataIn,  backgroundColor:barGrad('#40916C','#2D6A4F'), hoverBackgroundColor:barGrad('#4CA37B','#357A5B'), borderRadius:6, borderSkipped:false, order:2, categoryPercentage:0.62, barPercentage:0.95, maxBarThickness:130},
         {label:'Money Out', data:dataOut, backgroundColor:barGrad('#ED6152','#CB3A2B'), hoverBackgroundColor:barGrad('#F2776A','#D6493A'), borderRadius:6, borderSkipped:false, order:2, categoryPercentage:0.62, barPercentage:0.95, maxBarThickness:130},
-        {type:'line', label:'Profit', data:dataProf,
+        {type:'line', label:'Net cash', data:dataProf,
           borderColor:'#1B4332', backgroundColor:'transparent', tension:0.4,
           pointRadius:4, pointBackgroundColor:'#1B4332', pointBorderColor:'#fff',
           pointBorderWidth:2, borderWidth:2.5, order:1}
@@ -48534,11 +48738,11 @@ var ti = dataIn.reduce(function(a,b){return a+b;},0);
       '<div class="ct-val g">'+fmtK(ti)+'</div>' +
       '<div class="ct-lbl">Money Out</div>' +
       '<div class="ct-val" style="color:var(--rd)">'+fmtK(to)+'</div>' +
-      '<div class="ct-lbl">Total Profit</div>' +
+      '<div class="ct-lbl">Net cash</div>' +
       /* The app's compact money, like the totals row above: millions to one decimal printed a
          R18 400 month as "R0.0M" and a small loss as "R-0.0M". A loss reads red, not green. */
       '<div class="ct-val'+(tp<0?'" style="color:var(--rd)':' g')+'">'+fmtK(tp)+'</div>' +
-      '<div class="ct-lbl">Avg. Profit Margin</div>' +
+      '<div class="ct-lbl">Kept of money in</div>' +
       '<div class="ct-val"'+(ti>0?'':' style="color:var(--t4)"')+'>'+(ti>0?marginPct+'%':'\u2014')+'</div>';
   }
 }
@@ -49092,8 +49296,9 @@ function cfLineHeadline(months, minIdx){
     } else {
       if(card) card.className='cf-answer ok';
       if(icon) icon.innerHTML=okIcon;
-      setEl('cf-fwd-answer-h','Cash stays positive all year');
-      _cfSetSub('Your leanest month is '+_cfMonthFull(m.name)+' at about '+fmtK(m.balance)+' — tight, but you don’t go under.'+nudge);
+      var _ly = String(m.label || '').split(' ')[1] || '';
+      setEl('cf-fwd-answer-h','Cash stays positive for the next '+months.length+' months');   /* -371 (SA -451) D5 */
+      _cfSetSub('Your lowest point is '+_cfMonthFull(m.name)+(_ly?' '+_ly:'')+' at about '+fmtK(m.balance)+' — tight, but you don’t go under.'+nudge);
       cfAnswerActs('');
     }
   }
@@ -49310,7 +49515,7 @@ if (fwdChart)   fwdChart.style.display   = '';
   renderCfBankBalance();
   renderCfOnBudget();
 
-  var p = ST.cfFwdPeriod || '6';
+  var p = ST.cfFwdPeriod || '12';
   var n = parseInt(p, 10);
   var months = buildCfForecast(n);
 
@@ -49812,15 +50017,18 @@ function renderCfOnBudget() {
   var c;
   try { c = bgtCompute(); } catch(e) { box.style.display = 'none'; box.innerHTML = ''; return; }
   if (c.annualIn <= 0 && c.annualOut <= 0) { box.style.display = 'none'; box.innerHTML = ''; return; }
-  var projNet = c.projIn - c.projOut;
-  var bad = (c.expIn > 0 && -c.aheadIn / c.expIn > 0.06) || (c.expOut > 0 && -c.aheadOut / c.expOut > 0.06);
+  /* -451 D11: the profit the year is heading for, against the profit in the budget. It
+     said "heading for" over all money in less all money out, on a CASH page. */
+  var _fy = getCurrentFY(), _h = b5ProfitHeading(_fy), _g = b5BudgetGoals(_fy), _gap = _h.heading - _g.profit;
+  var bad = _gap < -Math.max(1, Math.abs(_g.profit) * 0.02);
   box.className = 'cf-ob' + (bad ? ' warn' : '');
   box.innerHTML = '<div class="cf-ob-ic">🎯</div><div class="cf-ob-body">' +
-    '<div class="cf-ob-h">On budget? Cash left over this tax year is heading for ' + bgtFmt(projNet) + '.</div>' +
-    '<div class="cf-ob-s">' + (bad ? 'Worth a look — spending is running ahead of your budget.' : 'Income and spending are tracking your plan.') +
-    ' This is cash to 5 April, loan repayments included, from your monthly budget. Profit shows this season’s expected profit instead, so the two differ.</div>' +
+    '<div class="cf-ob-h">On budget? This financial year is heading for ' + (_h.heading < 0 ? 'a loss of ' + bgtFmt(-_h.heading) : 'a profit of ' + bgtFmt(_h.heading)) + '.</div>' +
+    '<div class="cf-ob-s">' + (bad ? bgtFmt(-_gap) + ' short of the ' + (_g.profit < 0 ? 'loss of ' + bgtFmt(-_g.profit) : bgtFmt(_g.profit) + ' profit') + ' in your budget — the cash above is a different number.'
+                                   : 'At or ahead of the ' + (_g.profit < 0 ? 'loss of ' + bgtFmt(-_g.profit) : bgtFmt(_g.profit) + ' profit') + ' in your budget.') + '</div>' +
     '</div><button class="cf-ob-cta" onclick="nav(\'budgets\')">Open your budget →</button>';
   box.style.display = 'flex';
+  try { if (typeof langSync === 'function') langSync(box); } catch(e) {}
 }
 
 // One-tap confirm of the estimated balance (shown only while it's an estimate).
@@ -50620,7 +50828,7 @@ function b5CashForecast(n){
   return { start:now, months:months, lowest:low };
 }
 /* ── The bridges ──────────────────────────────────────────────────────────────────── */
-/* Profit -> the money that moved through the bank in the same months. Exact: every rand in
+/* Profit -> the money that moved through the bank in the same months. Exact: every pound in
    the ledger lands in exactly one line. */
 function b5BridgeCash(fy, toYm){
   var p=b5Profit(fy, {toYm:toYm});
@@ -50632,8 +50840,8 @@ function b5BridgeCash(fy, toYm){
     ['VAT paid on purchases', -p.vatOut],
     ['Loan capital repaid', -p.loanCapital],
     ['Assets bought', -p.capitalLinked],
-    ['Drawings and VAT paid to SARS', -p.nonopOut],
-    ['VAT refunds from SARS', p.nonopIn],
+    ['Drawings and VAT paid to HMRC', -p.nonopOut],   /* -371: was SARS, left from the port */
+    ['VAT refunds from HMRC', p.nonopIn],
     ['Income tax paid', -p.tax],
     ['Account payments (overdraft, co-op)', -p.paydown]
   ];
@@ -50662,13 +50870,17 @@ function b5BridgeTax(fy){
 function b5Margins(opt){
   opt=opt||{};
   var season=(opt.season!=null)?opt.season:(typeof planYear!=='undefined'?planYear:seasonOf()), fy=(opt.fy!=null)?opt.fy:getCurrentFY();
-  var by={}, untag={income:0, cost:0};
+  var by={}, untag={income:0, cost:0}, valid=null;
+  /* -371 (SA -451): a tag whose enterprise no longer exists is untagged - the Profit page
+     counts it that way, so the two must agree. No enterprise list at all: trust every tag. */
+  try{ var _el=(typeof entList==='function')?entList():[]; if(_el.length){ valid={}; _el.forEach(function(e){ if(e&&e.code) valid[e.code]=1; }); } }catch(e){ valid=null; }
   ((typeof ST!=='undefined'&&ST.txns)||[]).forEach(function(t){
     if(!t || (t.type!=='income' && t.type!=='expense')) return;
     var d=parseDate(t.date||''); if(!d) return;
     var role=b5CatRole(t.cat); if(role!=='running') return;           // gross margin: farming income and running costs only
     var a=ukExVat(t), sz=(seasonOf(t.date)===season), fz=(_fyOfParts(d)===fy);
     var code=t.ent && !/^(loan|payrun|asset):/.test(t.ent) ? t.ent : null;
+    if(code && valid && !valid[code]) code=null;
     /* FBS: a gross margin is output less VARIABLE costs. A fixed cost tagged to an enterprise
        (fuel, repairs, labour) is an overhead, not part of its margin. */
     var variable=(t.type==='expense') ? (ukCostClass(t.cat)==='v') : true;
@@ -50704,6 +50916,115 @@ function b5ProfitFromMargins(fy){
            total:Math.round(total), profit:Math.round(p.profit), residual:Math.round(p.profit-total), timing:m.timing };
 }
 
+/* ── Batch 5 step 3a (UK -371, port of SA -451/-452): the screens' share of the engines ───────────────────────── */
+/* The Year-so-far figures, once per render: profit so far, what "costs" means on screen,
+   where the year is heading, and cash in hand with the 12-month low. */
+function b5SeasonFigures(){
+  var fy=getCurrentFY(), p=b5Profit(fy,{toYm:b5TodayYm()}), h=b5ProfitHeading(fy), c=b5CashForecast(12);
+  return { fy:fy, profit:p, costs:Math.round((p.running+p.interest+p.depr-p.gain)*100)/100, heading:h.heading, rest:h.rest,
+           endMonth:b5YmLabel(b5FyYms(fy)[11]).split(' ')[0], cash:c };
+}
+/* D1: the budget's two totals - profit (income less running costs, loan interest and the
+   write-off, ex-VAT) and cash left after loans and machinery (every line, as typed). */
+function b5BudgetGoals(fy){
+  var bl=b5BudgetLines(fy), g={income:0, running:0, loan:0, capital:0, other:0, cashIn:0, cashOut:0};
+  Object.keys(bl.months).forEach(function(ym){
+    var m=bl.months[ym], k;
+    g.cashIn+=m.totalIn; g.cashOut+=m.totalOut;
+    for(k in m.income) if(b5CatRole(k)!=='nonop') g.income+=IE_split(m.income[k],k).net;
+    for(k in m.expense){ var role=b5CatRole(k), net=IE_split(m.expense[k],k).net;
+      if(role==='running') g.running+=net; else if(role==='loan') g.loan+=m.expense[k];
+      else if(role==='capital') g.capital+=m.expense[k]; else g.other+=m.expense[k]; }
+  });
+  var interest=0; b5FyYms(fy).forEach(function(ym){ ((typeof ST_LOANS!=='undefined'&&ST_LOANS.loans)||[]).forEach(function(l){ if(l.payment>0){ try{ interest+=LN_intForMonth(l,ym)||0; }catch(e){} } }); });
+  g.interest=Math.min(g.loan, interest);
+  g.depr=b5BookDepr(fy).total;
+  g.profit=Math.round(g.income-g.running-g.interest-g.depr);
+  g.cashLeft=Math.round(g.cashIn-g.cashOut);
+  return g;
+}
+/* Cash left at the year end on the same working budget as "heading for". */
+function b5CashHeading(fy){
+  var h=b5ProfitHeading(fy), p=h.soFar, r=h.rest;
+  return Math.round((p.cashIn-p.cashOut)+r.income-r.running-r.interest-r.loanCapital);
+}
+/* Budgets spending rows: a line that is cash but not a cost says so. */
+function bgtRoleTag(cat){
+  /* -452: a small pill on the name's line, the explanation behind it (hover) - it was a
+     second line under the name that made every row look busy. */
+  var role=b5CatRole(cat); if(role==='running') return '';
+  var it=role==='loan' ? b5Profit(getCurrentFY(),{toYm:b5TodayYm()}).interest : 0;
+  var txt=role==='loan' ? fmtK(it)+' interest' : 'not a cost';
+  var tip=role==='loan' ? fmtK(it)+' of these repayments was interest — that part is a cost in your profit. The rest paid back what you borrowed, which is not a cost.'
+                        : 'Money out, but not a cost in your profit (machinery, drawings or tax). It still counts in "Cash left".';
+  return '<span class="bgt-rtag" title="'+esc(tip)+'">'+esc(txt)+'</span>';
+}
+/* D1: lock this financial year's budget as the copy the bank has. The plan keeps moving
+   underneath (the working budget); every budget writer already asks bgtIsLocked(). */
+async function bgtLockToggle(){
+  var fy=String(getCurrentFY()); ST.budgets.locked=ST.budgets.locked||{};
+  if(ST.budgets.locked[fy]){
+    var ok=await appConfirm('Unlock this year’s budget?\n\nYou can change it again, and Planning can update it. Lock it again once the bank has the new copy.');
+    if(!ok) return;
+    delete ST.budgets.locked[fy];
+  } else {
+    var ok2=await appConfirm('Lock this year’s budget as the copy the bank has?\n\nIt stays exactly as it is now. Your plan keeps moving, and Budgets shows where the year is heading against this copy.');
+    if(!ok2) return;
+    var t=(typeof APP_TODAY!=='undefined'&&APP_TODAY)?new Date(APP_TODAY):new Date();
+    ST.budgets.locked[fy]={at:t.getDate()+' '+['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][t.getMonth()]+' '+t.getFullYear()};
+  }
+  dataChanged('budget');
+  try{ renderBudgetsPage(); }catch(e){}
+}
+/* Dashboard hero (-451): "Is my farm profitable?" answered from profit so far this
+   financial year and where it is heading; the grid underneath stays this month's cash. */
+function b5DashHero(){
+  var f=b5SeasonFigures(), p=f.profit;
+  if(!(p.cashIn>0 || p.cashOut>0)) return;              // nothing recorded this year: keep the month's own wording
+  var q=document.querySelector('#pg-dashboard .combo-q');
+  if(q) q.innerHTML='Is my farm profitable? <span style="opacity:.72;font-weight:600">&middot; this financial year so far</span>';
+  var loss=p.profit<0, headLoss=f.heading<0;
+  var stripe=$('dash-combo-stripe'); if(stripe) stripe.className='combo-stripe'+(loss?' bad':'');
+  var badgeSvg=$('dash-combo-badge-svg');
+  if(badgeSvg) badgeSvg.innerHTML=!loss ? '<polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>'
+                                        : '<polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/>';
+  setEl('dash-combo-lbl', loss ? 'No — so far your farm has made a' : (headLoss ? 'So far, your farm is' : 'Yes, your farm is'));
+  setEl('dash-combo-val', loss ? 'Loss' : 'Profitable');
+  var dot=$('dash-combo-dot'); if(dot) dot.className='tl-dot '+(loss?'red':(headLoss?'amber':'green'));
+  setEl('dash-combo-sub', (loss ? fmtK(Math.abs(p.profit))+' lost so far' : fmtK(p.profit)+' profit so far')+
+    ' · heading for '+(headLoss?'a loss of '+fmtK(Math.abs(f.heading)):fmtK(f.heading))+' by '+f.endMonth);
+  var lbls=document.querySelectorAll('#pg-dashboard .combo-ps-lbl'); if(lbls[0]) lbls[0].textContent='Profit margin';
+  var m=p.income>0 ? p.profit/p.income*100 : 0, w=m>=15?['Healthy','#D8F3DC','#1B4332']:(m>=5?['Thin','#FEF3C7','#92400E']:['Low','#FEE2E2','#991B1B']);
+  var me=$('dash-combo-margin');
+  if(me) me.innerHTML=p.income>0 ? m.toFixed(1)+'% <span style="font-size:11px;font-weight:800;padding:2px 7px;border-radius:999px;margin-left:5px;vertical-align:middle;background:'+w[1]+';color:'+w[2]+'">'+w[0]+'</span>' : '—';
+  var mc=$('dash-combo-margin-chg'); if(mc){ mc.textContent='of income, this year'; mc.className='combo-ps-chg'; }
+}
+/* Money Flow (-451 D5): profit to the bank, every pound in one line. */
+function b5RenderCashBridge(){
+  var box=$('cf-bridge'); if(!box) return;
+  var fy=getCurrentFY(), br=b5BridgeCash(fy, b5TodayYm());
+  if(!(br.profit.cashIn>0 || br.profit.cashOut>0)){ box.style.display='none'; box.innerHTML=''; return; }
+  var plain={
+    'Profit':'Profit so far',
+    'Write-off of machinery and buildings (not money out)':'+ Write-off on machinery and buildings — a cost in profit, no money left the bank',
+    'Gain on selling an asset (not money in)':'− Gain on selling an asset',
+    'VAT collected on sales':'+ VAT you collected on sales',
+    'VAT paid on purchases':'− VAT you paid on purchases',
+    'Loan capital repaid':'− Loan capital paid back — money out, but not a cost',
+    'Assets bought':'− Machinery and assets bought — written off over their life',
+    'Drawings and VAT paid to HMRC':'− Drawings and VAT paid to HMRC',
+    'VAT refunds from HMRC':'+ VAT refunds from HMRC',
+    'Income tax paid':'− Income tax paid',
+    'Account payments (overdraft, co-op)':'− Account payments (overdraft, co-op)'
+  };
+  var rows=br.lines.filter(function(l,i){ return i===0 || Math.abs(l[1])>=1; });
+  var money=function(v){ return (v<0?'−':'')+fmt(Math.abs(Math.round(v))); };
+  box.innerHTML='<div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:4px"><div class="chart-title">From profit to cash</div><span style="font-size:11px;color:var(--t3)">'+esc(fyLabel(fy))+' · so far</span></div>'+
+    '<div style="font-size:12px;color:var(--t3);margin-bottom:12px">Why the bank moved by a different amount from your profit. Every pound is in one line.</div>'+
+    rows.map(function(l,i){ return '<div style="display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-top:'+(i?'1px solid var(--br2)':'0')+';font-size:13px"><span style="color:'+(i?'var(--t2)':'var(--t1)')+';font-weight:'+(i?500:700)+'">'+esc(plain[l[0]]||l[0])+'</span><span style="font-weight:700;font-variant-numeric:tabular-nums;color:'+(l[1]<0?'var(--rd)':'var(--t1)')+'">'+money(l[1])+'</span></div>'; }).join('')+
+    '<div style="display:flex;justify-content:space-between;gap:12px;padding:10px 12px;margin-top:6px;background:#2D6A4F;color:#fff;border-radius:10px;font-size:13.5px;font-weight:800"><span>= Net cash so far — money in less money out</span><span style="font-variant-numeric:tabular-nums">'+money(br.cash)+'</span></div>';
+  box.style.display='block';
+}
 function flushRelationalToBackend(){
   if(!(window.AI && AI.farm && AI.farm.active())) return;
   /* This runs on RECONNECT, which can happen before the sign-in load has put the
@@ -53895,6 +54216,20 @@ function taxProvEstimate(){
   var ringFence=_taxRingFence(annualIncome, annualOtherDed, annualCapital, 0);
   var taxableProfit=Math.round(ringFence.taxable - annualCapAllow + _bal);
   var annualTax=(typeof calcAnnualIncomeTax==='function')?calcAnnualIncomeTax(Math.max(0,taxableProfit),entity):0;
+  /* -371 (SA -451, D6 + D11): the estimate is the SA103F's own computation on actual so far +
+     the working budget for the months still to come (b5TaxEstimate) - the engine the return
+     uses - and a company's is corporation tax (calcAnnualIncomeTax charges it for one). The
+     projection above is kept only as preTax. The waterfall fields are re-derived so the
+     screen still adds up: income - costs - allowances + balancing charge = taxable profit. */
+  var _preTax=annualTax, _b5te=null, _b5s=null, working=false;
+  if(!tooNew){ try{ _b5te=b5TaxEstimate(fy); _b5s=ukSa103f(fy); }catch(e){ _b5te=null; } }
+  if(_b5te && _b5s){
+    working=true;
+    taxableProfit=_b5te.taxable; annualTax=_b5te.incomeTax;
+    annualIncome=Math.round(_sp.income+_b5te.rest.income);
+    annualCapAllow=Math.round((_b5s.ca&&_b5s.ca.total)||0);
+    annualOtherDed=annualIncome-annualCapAllow+_bal-taxableProfit;
+  }
   /* Payments on account come from the ONE schedule (ukPoaSchedule): half of LAST year's
      bill, never half of this year's estimate - that was the South African provisional-tax
      rule, and it quoted 10,022 where HMRC would ask for 122,417. This year's estimate
@@ -53910,6 +54245,7 @@ function taxProvEstimate(){
           taxableProfit:taxableProfit,nonDed:annualNonDed,nonDedByCat:_sp.nonDedByCat,
           otherDed:annualOtherDed,capital:annualCapital,capAllow:annualCapAllow,balancingCharge:_bal,balancingProceeds:_balGot,capLim:0,ringFence:ringFence,
           provPayment:next.amt,pay1:pay1,pay2:pay2,entity:entity,next:next,dts:dts,poa:poaSch,total:annualTax,basis:basis,planComplete:planComplete,
+          working:working, b5:_b5te, preTax:_preTax,
           monthsElapsed:me,monthsLedger:meLedger,tooNew:tooNew,
           nudge:nudge,daysAway:Math.ceil((next.d-now)/86400000),ok:(annualProfit>0&&annualIncome>0)};
 }
@@ -54023,6 +54359,35 @@ function _taxFYProfit(offset){
 /* -347 Four boxes and three worked-out lines, in the tab the pack is sent from. Not a
    separate module and not a walk round the shed with a wizard: the farmer meets it at the
    one moment in the year they are already gathering things for the accountant. */
+/* -371 (D3): the farm's year end as "31 Mar" / "5 Apr" - the tags said "Projected to 5 Apr" on a
+   farm whose year ends 31 March. */
+function ukFyEndShort(){
+  var sm=(typeof fyStartMonth==='function')?fyStartMonth():4, sd=(typeof fyStartDay==='function')?fyStartDay():1;
+  var fy=(typeof getCurrentFY==='function')?getCurrentFY():new Date().getFullYear();
+  var end=new Date(fy+1, sm-1, sd-1);
+  return end.getDate()+' '+['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][end.getMonth()];
+}
+/* -371 (SA -452): the year-end stock count as one line, for the months it is not due. */
+var UK_STOCK_OPEN = false;
+function ukStockStripHTML(fy){
+  var sm=(typeof fyStartMonth==='function')?fyStartMonth():4, sd=(typeof fyStartDay==='function')?fyStartDay():1;
+  var end=new Date(fy+1, sm-1, sd-1);
+  var M=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  return '<div class="tx-card" style="margin-bottom:12px;display:flex;align-items:center;gap:12px;padding:12px 16px">'+
+    '<span style="font-size:16px">📦</span>'+
+    '<div style="flex:1;min-width:0;font-size:13px"><b>Year-end stock count</b> <span style="color:var(--t3)">· opens in '+M[end.getMonth()]+', before your year end on '+end.getDate()+' '+M[end.getMonth()]+'</span></div>'+
+    '<button class="rc-btn" onclick="UK_STOCK_OPEN=true;renderTax()">Open now</button></div>';
+}
+/* Is it the time of year to count stock for financial year fy? From the start of its last
+   month until four months after it ends. */
+function ukStockWindowOpen(fy){
+  fy=parseInt(fy,10); if(!isFinite(fy)) return false;
+  var sm=(typeof fyStartMonth==='function')?fyStartMonth():4, sd=(typeof fyStartDay==='function')?fyStartDay():1;
+  var end=new Date(fy+1, sm-1, sd-1);
+  var from=new Date(end.getFullYear(), end.getMonth(), 1), to=new Date(end.getFullYear(), end.getMonth()+5, 0);
+  var now=(typeof _txNow==='function')?_txNow():((typeof APP_TODAY!=='undefined'&&APP_TODAY)?new Date(APP_TODAY):new Date());
+  return now>=from && now<=to;
+}
 function ukStockCardHTML(fy){
   /* A year, or nothing. Anything else is a caller's mistake and must not reach fyLabel()
      or the transaction filter, both of which fail quietly on an object. */
@@ -56301,11 +56666,11 @@ function taxGlanceHTML(){
   // total tax hero
   if(prov.ok){
     h+='<div id="tax-hero-card" style="background:linear-gradient(135deg,#1B4332,#2D6A4F);color:#fff;border-radius:16px;padding:18px 22px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px">'+
-      '<div><div style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;opacity:.75">Your estimated tax '+(prov.tooNew?'on what you have recorded':'to HMRC this year')+(prov.tooNew?profitTags('actual','Year so far','tax','Tax rules'):profitTags('proj','Projected to 5 Apr','tax','Tax rules'))+'</div>'+
+      '<div><div style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;opacity:.75">Your estimated tax '+(prov.tooNew?'on what you have recorded':'to HMRC this year')+(prov.tooNew?profitTags('actual','Year so far','tax','Tax rules'):profitTags('proj','Projected to '+ukFyEndShort(),'tax','Tax rules'))+'</div>'+
       '<div style="font-size:32px;font-weight:800">'+fmt(total)+'</div>'+
       (bank!=null&&prov.provPayment!=null?'<div style="font-size:12px;opacity:.85">after the next set-aside, <b>'+fmt(Math.max(0,Math.round(bank-prov.provPayment)))+'</b> of your balance is yours</div>':'<div style="font-size:12px;opacity:.85">income tax, '+(class4>0?'Class 4 NI, ':'')+'VAT and payroll combined</div>')+'</div>'+
       '<div style="display:flex;gap:8px;flex-wrap:wrap">'+
-        '<div class="tx-tile"><div class="k">Income tax</div><div class="v">'+fmt(incomeTax)+'</div></div>'+
+        '<div class="tx-tile"><div class="k">'+(ukIsCompany()?'Corporation tax':'Income tax')+'</div><div class="v">'+fmt(incomeTax)+'</div></div>'+
         (class4>0?'<div class="tx-tile"><div class="k">Class 4 NI</div><div class="v">'+fmt(class4)+'</div></div>':'')+
         '<div class="tx-tile"><div class="k">VAT</div><div class="v">'+fmt(vatComp)+'</div></div>'+
         '<div class="tx-tile"><div class="k">Payroll</div><div class="v">'+fmt(pay.total)+'</div></div>'+
@@ -56318,15 +56683,6 @@ function taxGlanceHTML(){
        is left is the one fact that belongs to the number: it is a projection. The
        comparison with Reports goes behind the same "what is this" disclosure the VAT
        card already uses, because it only matters to a farmer who has noticed the gap. */
-    /* The ladder's top rung, on the page that owns it: what the farm's taxable profit
-       actually IS so far, sitting next to where the year is heading. */
-    var _ladderHtml='';
-    try{ var _L=profitLadder();
-      _ladderHtml='<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;background:#fff;border:1px solid var(--br);border-radius:12px;padding:11px 14px;margin:0 0 12px">'+
-         '<div style="font-size:12.5px;color:var(--t3)">Taxable profit so far'+profitTags('actual','Year so far','tax','Tax rules')+
-         '<div style="font-size:11px;color:var(--t4);margin-top:2px">'+esc(_L.period)+' · cash profit '+fmt(_L.cash)+' plus '+fmt(_L.adj)+' of loan capital and costs HMRC doesn’t allow</div></div>'+
-         '<div style="font-size:20px;font-weight:800;color:var(--gd)">'+fmt(_L.taxable)+'</div></div>';
-    }catch(e){}
     /* The caption and its two questions were three loose blocks stacked under the hero:
        a grey sentence, then two bare green lines with no chevron and no container, which
        read as orphaned links rather than as things you can open. They are one card now -
@@ -56353,7 +56709,6 @@ function taxGlanceHTML(){
     h+='</div>';
     /* The caption above explains the PROJECTION in the tiles; this ladder is the year
        so far. Emitted after it so the sentence sits with the number it describes. */
-    h+=_ladderHtml;
     if(prov.nudge && prov.nudge.show) h+='<div class="tx-nudge" style="background:#FEF6E7;border-color:#F1DBA6"><b>A sharper number is waiting.</b> You haven\u2019t added your '+esc(prov.nudge.enterprise)+' to the season plan yet, so we spread your income evenly across the year. <span onclick="nav(\'planning\')" style="text-decoration:underline;cursor:pointer">Finish your plan \u2192</span></div>';
   }
 
@@ -56375,7 +56730,18 @@ function taxGlanceHTML(){
     var _nx=prov.next||{}, _mo=Math.max(1,Math.ceil((prov.daysAway||0)/30.44));
     var _saAmt=(_nx.amt!=null?_nx.amt:null), _saMo=(_saAmt!=null?Math.round(_saAmt/_mo):null);
     var _saNote=(_saAmt==null?'Payments on account are half of last year\u2019s bill':(_nx.per==='balancing'?'This year\u2019s estimated bill, less the instalments':(_nx.per==='ct'?'Corporation tax on this year\u2019s estimated profit':('Spread over '+_mo+' month'+(_mo===1?'':'s')+' \u00b7 '+((prov.poa&&prov.poa.source==='hmrc')?'HMRC\u2019s figure':'half of last year\u2019s bill')))));
-    h+='<div class="tx-card" style="display:flex;flex-direction:column"><div class="tx-h">Set aside each month</div><div style="flex:1;display:flex;flex-direction:column;justify-content:center;text-align:center"><div style="font-size:24px;font-weight:800">'+(_saMo!=null?fmt(_saMo):'\u2014')+'</div><div style="font-size:11px;color:var(--t3);margin-top:3px">'+(_saAmt!=null?('to cover '+fmt(_saAmt)+' due '+esc(_nx.lbl||'')):'add your payment on account from HMRC')+' \u00b7 '+(prov.daysAway>0?prov.daysAway+' days to go':'due now')+'</div><div style="font-size:11px;color:var(--t4);margin-top:3px">'+_saNote+'</div></div></div>';
+    /* -371 (SA -452): the monthly figure and three rows - next payment, when, and what it is
+       based on. It was the figure over two lines of small print. */
+    var _M3=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    var _saRow=function(k,v){ return '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:7px 0;border-top:1px solid var(--br2);font-size:12.5px"><span style="color:var(--t3)">'+k+'</span><span style="font-weight:700;font-variant-numeric:tabular-nums;text-align:right">'+v+'</span></div>'; };
+    var _PER={'1st':'1st payment on account','2nd':'2nd payment on account','balancing':'Balancing payment','ct':'Corporation tax'};
+    var _nd=_nx.d?new Date(_nx.d):null, _due=_nd?(_nd.getDate()+' '+_M3[_nd.getMonth()]+' '+_nd.getFullYear()):(_nx.lbl||'\u2014');
+    h+='<div class="tx-card" style="display:flex;flex-direction:column"><div class="tx-h" title="'+esc(_saNote)+'">Set aside each month</div>'+
+      '<div style="text-align:center;margin:4px 0 10px"><span style="font-size:26px;font-weight:800;font-variant-numeric:tabular-nums">'+(_saMo!=null?fmt(_saMo):'\u2014')+'</span><span style="font-size:12px;color:var(--t3);font-weight:600"> a month</span></div>'+
+      _saRow('Next payment', _saAmt!=null?(esc(_PER[_nx.per]||'Payment')+' \u00b7 '+fmt(_saAmt)):'<span style="color:#B45309">add the figure from HMRC</span>')+
+      _saRow('Due', esc(_due)+(prov.daysAway>0?' <span style="color:var(--t4);font-weight:600">\u00b7 '+prov.daysAway+' days</span>':''))+
+      _saRow('Based on', esc(_saNote))+
+      '</div>';
   } else { h+='<div class="tx-card"><div class="tx-h">Set aside for tax</div><div style="font-size:12.5px;color:var(--t3)">Once your tax year shows a profit, your payment-on-account set-aside appears here.</div></div>'; }
   if(trend.length){ var mx=Math.max.apply(null,trend.map(function(t){return Math.abs(t.net);}).concat(1));
     h+='<div class="tx-card" style="display:flex;flex-direction:column"><div class="tx-h">VAT — last 3 periods</div><div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;padding-bottom:4px"><div style="display:flex;align-items:flex-end;gap:10px;height:62px">'+trend.map(function(t,i){var pc=Math.max(6,Math.round(Math.abs(t.net)/mx*100));var owe=t.net>=0, cur=(i===trend.length-1); return '<div style="flex:1;text-align:center;min-width:0"><div style="font-size:10.5px;font-weight:700;color:'+(owe?'#B91C1C':'#2D6A4F')+';margin-bottom:2px;white-space:nowrap">'+(owe?'':'+')+fmt(Math.abs(t.net))+'</div><div style="height:'+Math.round(pc*0.44)+'px;background:'+(owe?(cur?'#DC2626':'#F87171'):(cur?'#2D6A4F':'#74A98A'))+';border-radius:4px 4px 0 0"></div><div style="font-size:10.5px;color:var(--t4);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+t.label+'</div></div>';}).join('')+'</div><div style="font-size:11px;color:var(--t4);margin-top:6px;text-align:center">Red: you pay HMRC · green (+): HMRC pays you</div></div></div>';
@@ -56384,14 +56750,27 @@ function taxGlanceHTML(){
 
   // waterfall + calendar
   h+='<div class="tx-g2">';
-  h+='<div class="tx-card" style="display:flex;flex-direction:column"><div class="tx-h">How your profit becomes tax'+(prov.tooNew?profitTags('actual','Year so far'):profitTags('proj','Projected to 5 Apr'))+'</div>';
+  h+='<div class="tx-card" style="display:flex;flex-direction:column"><div class="tx-h">How your profit becomes tax'+(prov.tooNew?profitTags('actual','Year so far'):profitTags('proj','Projected to '+ukFyEndShort()))+'</div>';
   var _rf=prov.ringFence||{allowed:0,carried:0,brought:0};
   if(prov.ok){
     /* The steps a farmer's money actually goes through, in HMRC's order — not a plain
        income-minus-costs sum. Rows that would be zero for most farms (the para 12
        improvement claim) only appear when there is something in them. */
     var _vx=(typeof FARM!=='undefined'&&FARM.vat);   // a VAT-registered farm is taxed on amounts without VAT
-    var wf=[[_vx?'Income without VAT':'Gross farming income',prov.annualIncome,'#40916C'],['− Running costs',-prov.otherDed,'#E86A5E']];
+    var wf;
+    if(prov.working && prov.b5){
+      /* -371 (SA -451 D6): from the same profit as the Dashboard and Profit page, the way the
+         SA103F gets there: our write-off out, capital allowances in, then the plan for the rest
+         of the year. A company's line is corporation tax; a sole trader's adds Class 4 NI. */
+      var _wp=b5Profit(getCurrentFY(),{toYm:b5TodayYm()}), _te=prov.b5;
+      var _adj=Math.round(_te.actualTaxable-(_wp.profit+_wp.depr-prov.capAllow)), _rest=Math.round(_te.rest.income-_te.rest.deductible-_te.rest.interest);
+      wf=[['Profit so far',_wp.profit,'#40916C',1],['+ Book write-off added back',_wp.depr,'#74A98A',0],['− Capital allowances',-prov.capAllow,'#C2703F',0]];
+      if(Math.abs(_adj)>=1) wf.push(['± Other tax adjustments',_adj,'#B45309',0]);
+      wf.push(['Taxable so far',_te.actualTaxable,'#7FB98F',1],['± Rest of the year, from your plan',_rest,'#E86A5E',0],['Taxable profit (estimate)',prov.taxableProfit,'#7FB98F',1],
+              [ukIsCompany()?'Corporation tax':'Income tax',-prov.annualTax,'#B45309',1]);
+      if(class4>0) wf.push(['Class 4 NI',-class4,'#B45309',1]);
+    } else {
+    wf=[[_vx?'Income without VAT':'Gross farming income',prov.annualIncome,'#40916C'],['− Running costs',-prov.otherDed,'#E86A5E']];
     /* Was "− Farm improvements", the para 12(3) claim, which took capital spend off at
        full cost. What comes off in the UK is the year's capital ALLOWANCES — AIA, the two
        writing-down pools and SBA — so the row has to name that instead, or the waterfall
@@ -56402,11 +56781,15 @@ function taxGlanceHTML(){
        farmer met it in the disposal screen, not "balancing charge". */
     if(prov.balancingCharge>0) wf.push(['+ Sold kit, taxable now',prov.balancingCharge,'#B45309']);
     wf.push(['Taxable profit',prov.taxableProfit,'#7FB98F'],['Income tax',-prov.annualTax,'#B45309']);
+    }
     var _wLast=wf.length-1, wmx=Math.max.apply(null,wf.map(function(r){return Math.abs(r[1]);}).concat(1));
-    h+='<div style="flex:1;display:flex;flex-direction:column;justify-content:space-between;padding:6px 0 2px">'+wf.map(function(r,i){ var bold=i===0||i===_wLast-1||i===_wLast, pc=Math.max(4,Math.round(Math.abs(r[1])/wmx*100)); return '<div style="display:flex;align-items:center;gap:9px"><div style="flex:1;font-size:11.5px;font-weight:'+(bold?'700':'600')+';color:'+(bold?'var(--t1)':'var(--t3)')+'">'+r[0]+'</div><div style="width:64px"><div class="tx-bar"><i style="width:'+pc+'%;background:'+r[2]+'"></i></div></div><div style="width:82px;text-align:right;font-size:11.5px;font-weight:800;color:'+(r[1]<0?'var(--rd)':'var(--t1)')+'">'+(r[1]<0?'−':'')+IE_R(Math.abs(r[1])).replace('−','')+'</div></div>'; }).join('')+'</div>';
+    h+='<div style="flex:1;display:flex;flex-direction:column;justify-content:space-between;padding:6px 0 2px">'+wf.map(function(r,i){ var bold=(r[3]!=null)?!!r[3]:(i===0||i===_wLast-1||i===_wLast), pc=Math.max(4,Math.round(Math.abs(r[1])/wmx*100)); return '<div style="display:flex;align-items:center;gap:9px'+(r[3]!=null?';padding:5px 0'+(r[3]&&i>0?';border-top:1px solid var(--br2)':''):'')+'"><div style="flex:1;font-size:11.5px;font-weight:'+(bold?'700':'600')+';color:'+(bold?'var(--t1)':'var(--t3)')+'">'+r[0]+'</div><div style="width:64px"><div class="tx-bar"><i style="width:'+pc+'%;background:'+r[2]+'"></i></div></div><div style="width:82px;text-align:right;font-size:11.5px;font-weight:800;color:'+(r[1]<0?'var(--rd)':'var(--t1)')+'">'+(r[1]<0?'−':'')+IE_R(Math.abs(r[1])).replace('−','')+'</div></div>'; }).join('')+'</div>';
     /* A farmer who sells a tractor and sees money ADDED to their taxable profit will
        assume a bug unless the reason is attached to it. It is not a new tax: they took
        the whole tractor off when they bought it, so what came back is taxable now. */
+    if(prov.working && prov.b5){
+      h+='<div style="font-size:11px;color:var(--t3);line-height:1.5;margin-top:9px;padding-top:9px;border-top:1px solid var(--br2)">Starts from the same <b>profit</b> as your Dashboard and Profit page. HMRC swaps our write-off for your capital allowances; the rest of the year ('+prov.b5.rest.months+' month'+(prov.b5.rest.months===1?'':'s')+') comes from your plan, including '+fmtK(prov.b5.rest.interest)+' of loan interest still to come.</div>';
+    }
     if(prov.balancingCharge>0){
       h+='<div style="font-size:11px;color:var(--t3);line-height:1.5;margin-top:9px;padding-top:9px;border-top:1px solid var(--br2)">'+
          'You got '+IE_R(prov.balancingProceeds).replace('−','')+' for kit that has gone, which is more than the past machinery spend you still had left to claim. The '+IE_R(prov.balancingCharge).replace('−','')+' difference is taxable now. It is not a new tax \u2014 you already took that much off in the year you bought the kit.'+
@@ -56452,7 +56835,7 @@ function taxGlanceHTML(){
     (_dc.length>3?' and '+(_dc.length-3)+' more':'')+
     ' is in your books twice — once as something you own, once as a cost. HMRC lets you count it one way or the other, not both — keep the right one and take out the other.</div>';
   h+='</div>';
-  h+='<div class="tx-card"><div class="tx-h">Your tax year — what’s ahead 📅</div>';
+  h+='<div class="tx-card" style="display:flex;flex-direction:column"><div class="tx-h">Your tax year — what’s ahead</div>';
   /* HMRC deadlines, not the SA provisional calendar this started life as. Payments on
      account fall 31 Jan and 31 Jul with the balancing payment the following 31 Jan; VAT
      is one calendar month and seven days after the period ends; PAYE and NIC are due the
@@ -56474,7 +56857,11 @@ function taxGlanceHTML(){
   if(wk) cal.push(['22nd','PAYE & NIC','paid over to HMRC','#2D6A4F',false]);
   if(!ukIsCompany()) cal.push(['31 Jan','Self Assessment','return + balancing payment','#2D6A4F',false]);
   if(wk) cal.push(['ongoing','Employers liability','cover must stay in force','#6B7280',false]);
-  h+=cal.map(function(c){ return '<div style="display:flex;gap:10px;align-items:center;padding:6px 0;border-bottom:1px solid var(--br2)"><div style="min-width:56px;text-align:center;font-size:11px;font-weight:800;color:#fff;background:'+c[3]+';border-radius:7px;padding:4px 6px">'+c[0]+'</div><div style="flex:1;font-size:12px;font-weight:600">'+c[1]+' <small style="color:#B9BFC4">'+c[2]+'</small></div>'+(c[4]?'<span style="font-size:11px;font-weight:800;background:#FEF3E0;color:#B45309;padding:1px 6px;border-radius:999px">next up</span>':'')+'</div>'; }).join('');
+  /* -371 (SA -452): rows spread over the card, every date box the same size, the note quiet. */
+  h+='<div style="flex:1;display:flex;flex-direction:column;justify-content:space-evenly">'+cal.map(function(c,i){ return '<div style="display:flex;gap:14px;align-items:center;padding:11px 0;'+(i<cal.length-1?'border-bottom:1px solid var(--br2)':'')+'">'+
+    '<div style="flex:0 0 78px;height:28px;display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:800;color:#fff;background:'+c[3]+';border-radius:8px">'+c[0]+'</div>'+
+    '<div style="flex:1;min-width:0;font-size:13px;font-weight:600;color:var(--t1)">'+c[1]+' <span style="font-size:11px;font-weight:600;color:var(--t4);margin-left:4px">'+c[2]+'</span></div>'+
+    (c[4]?'<span style="font-size:11px;font-weight:800;background:#FEF3E0;color:#B45309;padding:3px 9px;border-radius:999px">next up</span>':'')+'</div>'; }).join('')+'</div>';
   h+='</div></div>';
 
   // deductions breakdown + YoY
@@ -56489,11 +56876,18 @@ function taxGlanceHTML(){
   var dmx=Math.max.apply(null,ded.map(function(d){return d[1];}).concat(1));
   h+=(ded.length?ded.map(function(d){ var pc=Math.max(5,Math.round(d[1]/dmx*100)); return '<div style="margin-bottom:9px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px"><span style="font-weight:600">'+esc(_txCatLabel(d[0]))+'</span><b>'+IE_R(d[1])+'</b></div><div class="tx-bar"><i style="width:'+pc+'%;background:#40916C"></i></div></div>'; }).join(''):'<div style="font-size:12.5px;color:var(--t3)">Log costs and assets to see your deductions build up.</div>');
   h+='</div>';
-  h+='<div class="tx-card"><div class="tx-h">Income tax — this year vs last</div>';
+  /* -452: the bars sit in the middle of the card, on a baseline, instead of hugging the heading. */
+  h+='<div class="tx-card" style="display:flex;flex-direction:column"><div class="tx-h">'+(ukIsCompany()?'Corporation tax':'Income tax')+' — this year vs last</div>';
   if(prov.ok||priorTax){ var yv=Math.max(prov.annualTax,priorTax,1);
-    h+='<div style="display:flex;align-items:flex-end;gap:22px;height:92px;padding:6px 10px 0">'+
-      '<div style="flex:1;text-align:center"><div style="font-size:11px;font-weight:700;color:var(--t4)">'+IE_R(priorTax)+'</div><div style="height:'+Math.round(priorTax/yv*66)+'px;background:#74C69D;border-radius:5px 5px 0 0;margin-top:3px"></div><div style="font-size:11px;color:var(--t4);margin-top:3px">last FY</div></div>'+
-      '<div style="flex:1;text-align:center"><div style="font-size:11px;font-weight:700;color:var(--gd)">'+IE_R(prov.annualTax||0)+'</div><div style="height:'+Math.round((prov.annualTax||0)/yv*66)+'px;background:#1B4332;border-radius:5px 5px 0 0;margin-top:3px"></div><div style="font-size:11px;color:var(--gd);font-weight:700;margin-top:3px">this FY (est)</div></div></div>';
+    var _bar=function(v,lbl,col,strong){ return '<div style="flex:1;max-width:190px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end">'+
+      '<div style="font-size:12px;font-weight:800;color:'+(strong?'var(--gd)':'var(--t3)')+';margin-bottom:4px;font-variant-numeric:tabular-nums">'+IE_R(v)+'</div>'+
+      '<div style="width:100%;height:'+Math.max(4,Math.round(v/yv*96))+'px;background:'+col+';border-radius:6px 6px 0 0"></div></div>'; };
+    h+='<div style="flex:1;display:flex;flex-direction:column;justify-content:center;padding:8px 6px 0">'+
+      '<div style="display:flex;align-items:flex-end;justify-content:center;gap:28px;height:124px;border-bottom:1px solid var(--br)">'+
+        _bar(priorTax,'last',"#74C69D",false)+_bar(prov.annualTax||0,'this','#1B4332',true)+'</div>'+
+      '<div style="display:flex;justify-content:center;gap:28px;margin-top:6px">'+
+        '<div style="flex:1;max-width:190px;text-align:center;font-size:11.5px;color:var(--t4)">Last year</div>'+
+        '<div style="flex:1;max-width:190px;text-align:center;font-size:11.5px;color:var(--gd);font-weight:700">This year (estimate)</div></div></div>';
   } else h+='<div style="font-size:12.5px;color:var(--t3)">Builds up as your season progresses.</div>';
   h+='</div></div>';
 
@@ -56574,7 +56968,17 @@ function taxGlanceHTML(){
   try{
     var _sg = (typeof ukStockGap==='function') ? ukStockGap() : null;
     var _sfy = (_sg && _sg.fy != null) ? _sg.fy : ((typeof getCurrentFY==='function') ? getCurrentFY() : null);
-    h += ukStockCardHTML(_sfy);
+    /* -371 (SA -452): the count is a year-end job - the full card from the last month of the
+       year until four months after, for the year whose count is due; one line otherwise. A
+       farm on the cash basis gets no card at all (ukStockCardHTML says so), so no line either. */
+    var _cfy = (typeof getCurrentFY==='function') ? getCurrentFY() : _sfy;
+    var _wfy = ukStockWindowOpen(_cfy) ? _cfy : (ukStockWindowOpen(_cfy-1) ? _cfy-1 : null);
+    var _card = ukStockCardHTML(_wfy != null ? _wfy : _sfy);
+    if(_card){
+      if(_wfy != null) h += _card;
+      else if(window.UK_STOCK_OPEN) h += _card + '<div style="text-align:right;margin:-6px 0 12px"><a href="javascript:void 0" onclick="UK_STOCK_OPEN=false;renderTax()" style="font-size:12px;color:var(--t3)">Hide until the year end</a></div>';
+      else h += ukStockStripHTML(_cfy);
+    }
   }catch(e){}
   h+='<div class="tx-btn" onclick="taxAccountantPack()">📤 Share HMRC-ready pack with your accountant</div>';
   h+='<div class="tx-disc"><b>Everything here is a helper to plan with — not a filed return.</b> Figures are worked out from your records; rates are reviewed each Budget ('+esc((STATUTORY&&STATUTORY.tax&&STATUTORY.tax.yearLabel)||'2026/27')+' tables). These figures follow HMRC’s rules rather than just adding everything up. It’s still not tax advice — other money you earn, or farming on the side rather than as your main work, can change the answer. Confirm the final numbers with your accountant.'+(ukIsCompany()?' A company\u2019s losses follow the corporation tax rules (CTA 2010), not the five-year farming-loss restriction.':' And if the farm has been loss-making for several years running, ask them about the five-year farming-loss restriction (ITA 2007 s67\u201370), which can stop those losses being set against your other income.')+'</div>';
@@ -58353,7 +58757,7 @@ function taxDueStripHTML(fy, wk, hasVat){
        '<span class="txd-x"><span class="t">'+i.name+(i.pill||'')+'</span><span class="s">'+i.sub+'</span></span>'+
        '<span class="txd-go">Open →</span></div>';
   });
-  h+='<p class="txb-note" style="margin-top:4px">A report with a date appears here <em>and</em> in the library below &mdash; once as a deadline, once as a document. Payments are not here at all: the payment on account and the balancing payment with it are on <a href="#" onclick="taxTab(\'glance\');return false">At a glance</a>, where the set-aside is worked out.</p>';
+  /* -371 (SA -452): no explanatory paragraph between the sections. */
   return h+'</div>';
 }
 
@@ -58399,7 +58803,7 @@ function taxReportsHTML(){
      nine boxes, a full balance sheet) belonged to the year-end section 2,000px further
      down. Two of those five - the VAT boxes and the balance sheet - were already cards
      elsewhere on the same tab, so the page printed them twice. */
-  var h = '<p class="tx-rep-intro">Every HMRC report this app builds, in the order you file them. A section only appears if it applies to your farm &mdash; payroll shows when you have workers, VAT when you are registered.</p>';
+  var h = '';   /* -371 (SA -452): the section headings say what each group is; no preamble */
 
   /* Deadlines belong to the year the farm is IN. Stepping the year-end picker back to
      2025/26 emptied the strip and stripped the "Q1 overdue" pill off the quarterly row -
@@ -58508,7 +58912,7 @@ function taxReportsHTML(){
 
   h += taxExplainersHTML(selFY);
 
-  h+='<div class="tx-disc" style="margin-top:8px">Reports use the figures already in your app. The month, VAT period and financial-year pickers each scope only the reports beneath them. Livestock and crop reports reflect the current year-end and season. A planning guide &mdash; confirm with your accountant.</div>';
+  h+='<div class="tx-disc" style="margin-top:8px">Built from the figures in your app — a guide for you and your accountant.</div>';
   return h;
 }
 
@@ -60871,9 +61275,9 @@ var AIJ = [
       text:'One question, answered the moment you land. <b>From what you actually recorded.</b>',
       tip:'Everything below this line is the detail behind that sentence.'},
      {page:'income', target:'inc-metric-in', icon:'💵', title:'Where the money came from', act:{k:'count'},
-      text:'Every rand in, by source. Switch the pills for a season.'},
+      text:'Every pound in, by source. Switch the pills for a season.'},
      {page:'expenses', target:'exp-metric-ratio', icon:'💸', title:'And what it cost to get it', act:{k:'count'},
-      text:'And what it cost. <b>6.9c of every rand in goes straight back out.</b>'},
+      text:'And what it cost. <b>6.9p of every pound in goes straight back out.</b>'},
      {page:'profit', target:'pf-tabbtn-glance', icon:'📊', title:'Which part of the farm earns it',
       text:'Now the one that matters. <b>Every field, herd and block costed on its own.</b>',
       you:'Open any land, herd or block to see its own costing.'}
@@ -62177,7 +62581,7 @@ var PAGE_TOURS = {
     { target:'exp-metric-total', title:'Total expenses card', icon:'💰',
       text:'Your total outgoings for the selected period with a % comparison to the previous same-length period. Up arrows on expenses are bad news.', pos:'smart' },
     { target:'exp-metric-ratio', title:'Expense ratio', icon:'📐',
-      text:'This is expenses ÷ income as a percentage. A ratio above 80% means you are keeping less than 20 cents of every rand earned.',
+      text:'This is expenses ÷ income as a percentage. A ratio above 80% means you are keeping less than 20p of every pound earned.',
       tip:'UK combinable-crop farms typically target an expense ratio of 60–70%. Anything above 85% means your margins are dangerously thin.', pos:'smart' },
     { target:'exp-metric-ha', title:'Two more numbers worth knowing', icon:'📐',
       text:"Expenses per Hectare lets you compare your cost of farming against last season, or against a neighbour, on the same basis. The card beside it — Biggest Category — flags whatever's eating the most this period.",
@@ -64900,7 +65304,7 @@ function computeNotifications(){
   try {
     if(ST.bankBalance != null && typeof buildCfForecast==='function'){
       var _burn = (txSummaryPeriod(3).expenses/3) || 500000;
-      var _fc = buildCfForecast(parseInt(ST.cfFwdPeriod||'6',10)) || [];
+      var _fc = buildCfForecast(parseInt(ST.cfFwdPeriod||'12',10)) || [];
       var _risk=null, _fac=(typeof cfFacility==='function')?cfFacility():null, _floor=_fac?_fac.floor:0;
       for(var _i=0; _i<_fc.length && !_risk; _i++){
         if(_fc[_i].balance < _floor)                      _risk={m:_fc[_i], danger:true};
@@ -73177,20 +73581,16 @@ function _lsRegCertsCard(){
   function _pfE(){ var crops=_pfCropEnts(), live=_pfLiveEnts(); var ft=(typeof getFarmType==='function')?getFarmType():'mixed'; if(ft==='livestock') crops=[]; if(ft==='crops') live=[]; var orch=(typeof _pfOrchardEnts==='function')?_pfOrchardEnts():[]; return {crops:crops,live:live,orch:orch}; }
   function _pfGM(a){ var s=0; a.forEach(function(x){s+=x.gm;}); return s; }
   REG.pfFarmProfit=function(){
-    var e=_pfE(); var cg=_pfGM(e.crops), og=_pfGM(e.orch), lg=_pfGM(e.live);
-    var totalGM=cg+og+lg, oh=_pfOverheads(), profit=totalGM-oh;
-    var max=Math.max(cg,og,lg,1), rows=[];
-    if(e.crops.length) rows.push({nm:'Crops',amt:_pfK(cg),pct:Math.round(Math.max(0,cg)/max*100)});
-    if(e.orch.length) rows.push({nm:'Orchards, fruit \u0026 veg',amt:_pfK(og),pct:Math.round(Math.max(0,og)/max*100),cls:'gold'});
-    if(e.live.length) rows.push({nm:'Livestock',amt:_pfK(lg),pct:Math.round(Math.max(0,lg)/max*100),cls:'gold'});
-    rows.push({nm:'\u2212 Shared running costs',amt:'\u2212'+_pfK(oh),pct:totalGM>0?Math.round(oh/totalGM*100):0,neg:true});
-    var oc=totalGM>0?Math.round(oh/totalGM*100):0;
+    /* -371 (SA -451): profit so far this financial year, stepped down from actual margins. */
+    var fy=getCurrentFY(), pm=b5ProfitFromMargins(fy), p=b5Profit(fy,{toYm:b5TodayYm()}), m=b5Margins({fy:fy});
+    var rows=[{nm:'Gross margins so far',amt:_pfK(m.fyGm),pct:100},{nm:'+ Income not linked',amt:_pfK(m.untagged.income),pct:0,cls:'gold'},
+              {nm:'\u2212 Shared costs',amt:'\u2212'+_pfK(m.untagged.cost),pct:0,neg:true},{nm:'\u2212 Loan interest',amt:'\u2212'+_pfK(p.interest),pct:0,neg:true},{nm:'\u2212 Write-off',amt:'\u2212'+_pfK(p.depr),pct:0,neg:true}];
     return {
-      label:'Farm profit this season', value:_pfK(profit), warn:profit<0,
-      verdict: profit>0?{tone:'good',head:'Healthy season',text:'After every growing cost and the shared running costs, the farm should clear about '+_pfK(profit)+'.'}:{tone:'watch',head:'Running at a loss',text:'Shared costs are outweighing your margins this season \u2014 worth a close look.'},
-      mean:'What the whole farm makes after all growing costs and the running costs that keep it going (loan interest, salaries, wear \u0026 tear).',
-      breakdown:{title:'From margins down to profit', rows:rows, tot:{nm:'Farm profit', amt:_pfK(profit)}, note:'Shared running costs take about '+oc+'p of every pound of margin. Loan repayments count as interest only \u2014 paying off a loan isn\u2019t a running cost.'},
-      jump:{label:'See the full breakdown', tone:'', go:function(){ if(typeof pfTab==='function') pfTab('details'); }, back:function(){ if(typeof pfTab==='function') pfTab('glance'); kpiOpen('pfFarmProfit'); }, trail:'\u2039 Back to profit overview', show:'Showing the details tab'}
+      label:'Profit so far', value:_pfK(p.profit), warn:p.profit<0, chip:'This financial year',
+      verdict: p.profit>=0?{tone:'good',head:'In profit so far',text:'After every cost the farm has made '+_pfK(p.profit)+' this financial year.'}:{tone:'watch',head:'Running at a loss so far',text:'Costs are ahead of income by '+_pfK(Math.abs(p.profit))+' this financial year.'},
+      mean:'Income less running costs, loan interest and the write-off \u2014 the same profit as the Dashboard, Budgets and Tax & HMRC.',
+      breakdown:{title:'From margins down to profit', rows:rows, tot:{nm:'Profit so far', amt:_pfK(p.profit)}, note:'Loan repayments count as interest only. Season margins differ by '+_pfK(Math.abs(pm.timing))+' because the season and the financial year start on different days.'},
+      jump:{label:'See the full breakdown', tone:'', go:function(){ if(typeof pfTab==='function') pfTab('details'); }, back:function(){ if(typeof pfTab==='function') pfTab('glance'); kpiOpen('pfFarmProfit'); }, trail:'\u2039 Back to profit', show:'Showing details'}
     };
   };
   REG.pfBestEarner=function(){
@@ -73286,10 +73686,10 @@ function _lsRegCertsCard(){
     var profit=cur.profit, margin=cur.income>0?(profit/cur.income*100):0, prevProfit=prev.income-prev.expenses, diff=profit-prevProfit;
     var rows=[{nm:'Money in', amt:fmt(cur.income), pct:100},{nm:'\u2212 Money out', amt:'\u2212'+fmt(cur.expenses), pct:cur.income>0?Math.round(cur.expenses/cur.income*100):0, neg:true}];
     return {
-      label:'Profit this month', value:(profit<0?'\u2212':'')+fmt(Math.abs(profit)), warn:profit<0, chip:month,
+      label:'Net cash this month', value:(profit<0?'\u2212':'')+fmt(Math.abs(profit)), warn:profit<0, chip:month,
       verdict: profit>=0?{tone:(margin>=15?'good':'info'),head:(margin>=15?'Comfortably ahead':'In the black'),text:'You\u2019ve kept '+fmt(profit)+' this month \u2014 a '+margin.toFixed(0)+'% margin'+(prevProfit!==0?', '+(diff>=0?fmt(Math.abs(diff))+' more':fmt(Math.abs(diff))+' less')+' than last month.':'.')}:{tone:'watch',head:'Spent more than earned',text:'This month you\u2019re about '+fmt(Math.abs(profit))+' in the red so far.'},
-      mean:'What\u2019s left after this month\u2019s money out is taken off money in.',
-      breakdown:{title:'How it\u2019s worked out', rows:rows, tot:{nm:'Profit this month', amt:(profit<0?'\u2212':'')+fmt(Math.abs(profit))}, note:'Updates live as you capture income and costs.'},
+      mean:'Money in less money out this month. Not the same as profit: loan repayments and machinery count here, and VAT passes through.',
+      breakdown:{title:'How it\u2019s worked out', rows:rows, tot:{nm:'Net cash this month', amt:(profit<0?'\u2212':'')+fmt(Math.abs(profit))}, note:'Money in less money out \u2014 loan capital and machinery included. Your profit for the year is on the Dashboard above.'},
       jump:{label:'Open Money Flow', tone:(profit<0?'gold':''), go:function(){ nav('cashflow'); }, back:function(){ nav('dashboard'); kpiOpen('dashNet'); }, trail:'\u2039 Back to dashboard', show:'Showing Money Flow'}
     };
   };
@@ -73345,7 +73745,7 @@ function _lsRegCertsCard(){
               {nm:'Expected by '+a.curMonth, amt:bgtFmt(a.expectedIn), pct:a.annualIn>0?Math.round(a.expectedIn/a.annualIn*100):0, cls:'gold'},
               {nm:'Full-year target', amt:bgtFmt(a.annualIn), pct:100, cls:'gold'}];
     return {
-      label:'Income vs target', value:bgtFmt(a.ytdIn), chip:'Year to date',
+      label:'Money in so far', value:bgtFmt(a.ytdIn), chip:'Year to date',
       verdict: a.annualIn<=0?{tone:'info',head:'No income target yet',text:'Set an income target and this will show if you\u2019re on track.'}:(behind>0.05?{tone:'watch',head:(behind>0.15?'Income behind plan':'Running a little behind'),text:'You\u2019re about '+bgtFmt(Math.abs(a.aheadIn))+' behind where you planned to be by '+a.curMonth+'.'}:{tone:'good',head:'On track',text:'You\u2019ve earned '+bgtFmt(a.ytdIn)+' so far \u2014 '+(a.aheadIn>=0?bgtFmt(a.aheadIn)+' ahead of':bgtFmt(Math.abs(a.aheadIn))+' behind')+' plan.'}),
       mean:'How your income so far this year compares with the target you set \u2014 and with where you planned to be by now.',
       breakdown: a.annualIn>0?{title:'Income vs plan', rows:rows, note:'\u201cExpected by now\u201d is your month-by-month target added up to '+a.curMonth+'.'}:null,
@@ -73358,25 +73758,35 @@ function _lsRegCertsCard(){
               {nm:'Planned by '+a.curMonth, amt:bgtFmt(a.expectedOut), pct:a.annualOut>0?Math.round(a.expectedOut/a.annualOut*100):0, cls:'gold'},
               {nm:'Full-year budget', amt:bgtFmt(a.annualOut), pct:100, cls:'gold'}];
     return {
-      label:'Costs vs budget', value:bgtFmt(a.ytdOut), warn:over>0.15, chip:'Year to date',
+      label:'Money out so far', value:bgtFmt(a.ytdOut), warn:over>0.15, chip:'Year to date',
       verdict: a.annualOut<=0?{tone:'info',head:'No budget set yet',text:'Set a spending budget and this will show if costs are in line.'}:(over>0.05?{tone:'watch',head:(over>0.15?'Costs over budget':'Spending a bit high'),text:'You\u2019ve spent about '+bgtFmt(Math.abs(a.aheadOut))+' more than planned by '+a.curMonth+'.'}:{tone:'good',head:'Costs in line',text:'Spending is '+(a.aheadOut>=0?bgtFmt(a.aheadOut)+' under':bgtFmt(Math.abs(a.aheadOut))+' over')+' plan so far \u2014 nothing to worry about.'}),
-      mean:'How your spending so far this year compares with the budget you set \u2014 and with where you planned to be by now.',
+      mean:'Everything that has left the bank this year against your budget \u2014 loan repayments, machinery and drawings included, as on your bank statement. Your profit (which leaves some of these out) is on the Profit page.',
       breakdown: a.annualOut>0?{title:'Costs vs plan', rows:rows, note:'\u201cPlanned by now\u201d is your month-by-month budget added up to '+a.curMonth+'.'}:null,
       jump:{label:'See all expenses', tone:(over>0.15?'gold':''), go:function(){ nav('expenses'); }, back:function(){ nav('budgets'); kpiOpen('bgtOut'); }, trail:'\u2039 Back to budget', show:'Showing Expenses'}
     };
   };
   REG.bgtNet=function(){
-    var a=_bgt(); var bothSet=a.annualIn>0&&a.annualOut>0;
-    var behind=a.expectedIn>0?Math.max(0,-a.aheadIn/a.expectedIn):0, over=a.expectedOut>0?Math.max(0,-a.aheadOut/a.expectedOut):0;
-    var bad=Math.max(behind,over);
-    var rows=[{nm:'Income so far', amt:bgtFmt(a.ytdIn), pct:100},
-              {nm:'\u2212 Costs so far', amt:'\u2212'+bgtFmt(a.ytdOut), pct:a.ytdIn>0?Math.round(a.ytdOut/a.ytdIn*100):0, neg:true}];
+    /* -451: the Profit card - heading for against the budget's profit line. */
+    var fy=getCurrentFY(), h=b5ProfitHeading(fy), g=b5BudgetGoals(fy), diff=h.heading-g.profit;
+    var ch=b5CashHeading(fy);
+    var rows=[{nm:'Profit so far', amt:bgtFmt(h.soFar.profit), pct:100},{nm:'+ Your plan for the '+h.rest.months+' months left', amt:bgtFmt(h.heading-h.soFar.profit), pct:0, cls:'gold'}];
     return {
-      label:'Net vs target', value:(a.ytdNet<0?'\u2212':'')+bgtFmt(Math.abs(a.ytdNet)), warn:a.ytdNet<0, chip:'Year to date',
-      verdict: !bothSet?{tone:'info',head:'Set both targets',text:'Add an income target and a spending budget to see if you\u2019re on track for your profit goal.'}:(bad>0.15?{tone:'watch',head:'Behind your profit plan',text:'Income or costs are off plan enough to dent your target profit of '+bgtFmt(a.annualNet)+'.'}:(bad>0.05?{tone:'watch',head:'A little off plan',text:'Close to your plan, but worth watching \u2014 target profit is '+bgtFmt(a.annualNet)+'.'}:{tone:'good',head:'On track for '+bgtFmt(a.annualNet),text:'Income and costs are running where you expected \u2014 your profit goal is in reach.'})),
-      mean:'Your profit so far this year (income less costs), against the profit you were aiming for.',
-      breakdown:{title:'Net so far', rows:rows, tot:{nm:'Net so far', amt:(a.ytdNet<0?'\u2212':'')+bgtFmt(Math.abs(a.ytdNet))}, note:bothSet?('Heading for '+bgtFmt(a.annualNet)+' for the full year if you stay on plan.'):'Set both targets to see your full-year goal.'},
-      jump:{label:'Open Money Flow', tone:(a.ytdNet<0?'gold':''), go:function(){ nav('cashflow'); }, back:function(){ nav('budgets'); kpiOpen('bgtNet'); }, trail:'\u2039 Back to budget', show:'Showing Money Flow'}
+      label:'Profit this year', value:(h.heading<0?'\u2212':'')+bgtFmt(Math.abs(h.heading)), warn:diff<0, chip:'Heading for',
+      verdict: diff>=0?{tone:'good',head:'At or ahead of budget',text:'Heading for '+bgtFmt(h.heading)+' against '+bgtFmt(g.profit)+' in your budget.'}:{tone:'watch',head:'Short of budget',text:'Heading for '+bgtFmt(h.heading)+' \u2014 '+bgtFmt(-diff)+' short of the '+bgtFmt(g.profit)+' in your budget.'},
+      mean:'Profit so far plus your plan for the months still to come, against the profit in your budget. Loan capital, machinery and drawings are not in it \u2014 they are in "cash left after loans and machinery".',
+      breakdown:{title:'How it\u2019s worked out', rows:rows, tot:{nm:'Heading for', amt:bgtFmt(h.heading)}, note:'Cash left after loans and machinery at year end: '+(ch<0?'\u2212':'')+bgtFmt(Math.abs(ch))+' (budget '+(g.cashLeft<0?'\u2212':'')+bgtFmt(Math.abs(g.cashLeft))+'). Budget profit = budgeted income less running costs, loan interest and the write-off, all without VAT.'},
+      jump:{label:'Open the Profit page', tone:(diff<0?'gold':''), go:function(){ nav('profit'); }, back:function(){ nav('budgets'); kpiOpen('bgtNet'); }, trail:'\u2039 Back to budget', show:'Showing Profit'}
+    };
+  };
+
+  REG.bgtCash=function(){
+    /* -452: the Cash left card - every budget line, loan capital and machinery too. */
+    var fy=getCurrentFY(), g=b5BudgetGoals(fy), ch=b5CashHeading(fy), d=ch-g.cashLeft;
+    return {
+      label:'Net cash this year', value:(ch<0?'\u2212':'')+bgtFmt(Math.abs(ch)), warn:d<0, chip:'Heading for',
+      verdict: d>=0?{tone:'good',head:'At or ahead of budget',text:'Heading for '+bgtFmt(ch)+' left after loans and machinery, against '+bgtFmt(g.cashLeft)+' in your budget.'}:{tone:'watch',head:'Short of budget',text:'Heading for '+bgtFmt(ch)+' \u2014 '+bgtFmt(-d)+' short of the '+bgtFmt(g.cashLeft)+' in your budget.'},
+      mean:'Net cash = money in less money out for the year \u2014 so far, plus your plan for the months still to come. It is not your bank balance, which also holds what was there before the year started. Every budget line counts, loan repayments and machinery included. Your profit is a different measure: see the Profit page.',
+      jump:{label:'Open the cash forecast', tone:'', go:function(){ nav('cashflow'); mfTab('forecast'); }, back:function(){ nav('budgets'); kpiOpen('bgtCash'); }, trail:'\u2039 Back to budget', show:'Showing Money Flow'}
     };
   };
 
@@ -73390,48 +73800,45 @@ function _lsRegCertsCard(){
     return cats;
   }
   function _seasonRows(cats){ var keys=Object.keys(cats).sort(function(a,b){return cats[b]-cats[a];}); var max=keys.length?cats[keys[0]]:1; return {keys:keys, rows:keys.slice(0,5).map(function(k,i){return {nm:k, amt:fmt(cats[k]), pct:max?Math.round(cats[k]/max*100):0, cls:(i>0?'gold':'')};})}; }
+  /* -371 (SA -451): the four Year-so-far boxes, on the one engine (b5SeasonFigures). */
   REG.seasonIncome=function(){
-    var y=ytdSummary(); var r=_seasonRows(_seasonCats('income'));
+    var f=b5SeasonFigures(), p=f.profit;
     return {
-      label:'Income this season', value:fmt(y.income), chip:'Year to date',
-      verdict:{tone:'info',head:'Season income so far',text:'You\u2019ve brought in '+fmt(y.income)+' since the financial year started.'},
-      mean:'Everything you\u2019ve earned since the start of your '+fyLabel()+' farming year.',
-      breakdown: r.rows.length?{title:'Where it came from', rows:r.rows, tot:{nm:'Total in', amt:fmt(y.income)}, note:'All income booked this financial year.'}:null,
+      label:'Income so far', value:fmt(p.income), chip:'This financial year',
+      verdict:{tone:'info',head:'Farming income so far',text:'You\u2019ve earned '+fmt(p.income)+' since '+b5YmLabel(b5FyYms(getCurrentFY())[0])+', without VAT.'},
+      mean:'Everything the farm earned this financial year, without the VAT you collect for HMRC. Loans, VAT refunds and money you put in yourself are not income.',
       jump:{label:'See all income', tone:'', go:function(){ nav('income'); }, back:function(){ nav('dashboard'); kpiOpen('seasonIncome'); }, trail:'\u2039 Back to dashboard', show:'Showing Income'}
     };
   };
   REG.seasonExpenses=function(){
-    var y=ytdSummary(); var r=_seasonRows(_seasonCats('expense'));
+    var f=b5SeasonFigures(), p=f.profit;
+    var rows=[{nm:'Running costs', amt:fmt(p.running), pct:100},{nm:'Loan interest', amt:fmt(p.interest), pct:p.running>0?Math.round(p.interest/p.running*100):0, cls:'gold'},{nm:'Write-off on machinery and buildings', amt:fmt(p.depr), pct:p.running>0?Math.round(p.depr/p.running*100):0, cls:'gold'}];
     return {
-      label:'Costs this season', value:fmt(y.expenses), chip:'Year to date',
-      verdict:{tone:'info',head:'Season costs so far',text:'You\u2019ve spent '+fmt(y.expenses)+' since the financial year started.'},
-      mean:'Everything you\u2019ve spent since the start of your '+fyLabel()+' farming year.',
-      breakdown: r.rows.length?{title:'Where it went', rows:r.rows, tot:{nm:'Total out', amt:fmt(y.expenses)}, note:'All costs booked this financial year.'}:null,
+      label:'Costs so far', value:fmt(f.costs), chip:'This financial year',
+      verdict:{tone:'info',head:'What it cost to farm so far',text:'Running costs, loan interest and the write-off come to '+fmt(f.costs)+' this year.'},
+      mean:'The costs that set your profit. Paying back loan capital, buying machinery and drawings leave the bank too, but they are not costs \u2014 you see them in Money Flow.',
+      breakdown:{title:'What is in it', rows:rows, tot:{nm:'Costs so far', amt:fmt(f.costs)}, note:'All without VAT.'},
       jump:{label:'See all expenses', tone:'', go:function(){ nav('expenses'); }, back:function(){ nav('dashboard'); kpiOpen('seasonExpenses'); }, trail:'\u2039 Back to dashboard', show:'Showing Expenses'}
     };
   };
   REG.seasonProfit=function(){
-    /* THE PROFIT LADDER. This i is the one place that shows how the farm's several
-       "profits" relate: money in less money out is the cash figure on this tile and on
-       Income; add back the loan capital and the costs HMRC disallows and you have the
-       taxable profit, which is what Tax & HMRC works from. Same period throughout. */
-    var L=profitLadder();
-    var y=ytdSummary(); var profit=L.cash, margin=y.income>0?(profit/y.income*100):0;
-    var _pc=function(v){ return y.income>0?Math.max(0,Math.min(100,Math.round(Math.abs(v)/y.income*100))):0; };
-    var rows=[
-      {nm:'Money in', amt:fmt(L.income), pct:100},
-      {nm:'\u2212 Money out', amt:'\u2212'+fmt(L.expenses), pct:_pc(L.expenses), neg:true},
-      {nm:'Profit \u00b7 cash', amt:(L.cash<0?'\u2212':'')+fmt(Math.abs(L.cash)), pct:_pc(L.cash)},
-      {nm:'+ Loan capital and costs HMRC doesn\u2019t allow', amt:'+'+fmt(L.adj), pct:_pc(L.adj)}
-    ];
+    var f=b5SeasonFigures(), p=f.profit, profit=p.profit, margin=p.income>0?(profit/p.income*100):0;
+    var rows=[{nm:'Income so far', amt:fmt(p.income), pct:100},{nm:'\u2212 Costs so far', amt:'\u2212'+fmt(f.costs), pct:p.income>0?Math.round(f.costs/p.income*100):0, neg:true}];
     return {
-      label:'Profit this tax year', value:(profit<0?'\u2212':'')+fmt(Math.abs(profit)), warn:profit<0, chip:'Year so far \u00b7 cash',
-      verdict: profit>=0?{tone:(margin>=15?'good':'info'),head:(margin>=15?'Healthy year so far':'In profit this year'),text:'You\u2019ve kept '+fmt(profit)+' so far this tax year \u2014 a '+margin.toFixed(0)+'% margin.'}:{tone:'watch',head:'Behind so far this year',text:'Costs are ahead of income by '+fmt(Math.abs(profit))+' this tax year so far.'},
-      mean:'What\u2019s left this tax year after costs are taken off income.',
-      breakdown:{title:'How '+fmt(Math.abs(L.cash))+' is worked out \u00b7 '+L.period, rows:rows,
-        tot:{nm:'Taxable profit so far', amt:(L.taxable<0?'\u2212':'')+fmt(Math.abs(L.taxable))},
-        note:'The cash figure is what the Dashboard and Income show; the taxable one is what Tax &amp; HMRC works from. This month, the projected year and the season plan each carry their own tag.'},
-      jump:{label:'Open Money Flow', tone:(profit<0?'gold':''), go:function(){ nav('cashflow'); }, back:function(){ nav('dashboard'); kpiOpen('seasonProfit'); }, trail:'\u2039 Back to dashboard', show:'Showing Money Flow'}
+      label:'Profit so far', value:(profit<0?'\u2212':'')+fmt(Math.abs(profit)), warn:profit<0, chip:'This financial year',
+      verdict: profit>=0?{tone:(margin>=15?'good':'info'),head:(margin>=15?'Healthy year so far':'In profit so far'),text:'You\u2019ve made '+fmt(profit)+' so far \u2014 '+margin.toFixed(0)+'p of every pound of income \u2014 and are heading for '+(f.heading<0?'a loss of ':'')+fmt(Math.abs(f.heading))+' by '+f.endMonth+'.'}:{tone:'watch',head:'Behind so far this year',text:'Costs are ahead of income by '+fmt(Math.abs(profit))+' this year so far.'},
+      mean:'Income less running costs, loan interest and the write-off. The same profit is on Budgets, Profit and Tax & HMRC.',
+      breakdown:{title:'How it\u2019s worked out', rows:rows, tot:{nm:'Profit so far', amt:(profit<0?'\u2212':'')+fmt(Math.abs(profit))}, note:'Heading for figure = profit so far + your plan for the months still to come.'},
+      jump:{label:'See your profit picture', tone:(profit<0?'gold':''), go:function(){ nav('profit'); }, back:function(){ nav('dashboard'); kpiOpen('seasonProfit'); }, trail:'\u2039 Back to dashboard', show:'Showing Profit'}
+    };
+  };
+  REG.seasonCash=function(){
+    var f=b5SeasonFigures(), c=f.cash, lo=c.lowest;
+    return {
+      label:'Cash in hand', value:fmt(c.start.bal), warn:!!(lo&&lo.balance<0), chip:c.start.estimated?'Estimated':'From your bank balance',
+      verdict: !lo?{tone:'info',head:'Cash in hand',text:'Add your bank balance on Money Flow to see the months ahead.'}:(lo.balance<0?{tone:'watch',head:'Cash runs short',text:'On your plan you go below zero by '+lo.label+'. Line up cover before then.'}:{tone:'good',head:'Cash stays positive',text:(c.start.bal<=lo.balance?'Today is the lowest point in the next 12 months; your plan has it rising from here.':'The lowest point in the next 12 months is about '+fmt(lo.balance)+' in '+lo.label+'.')}),
+      mean:c.start.estimated?'Worked out from your records. Type the balance from your bank statement on Money Flow and this becomes exact.':'Your bank balance, plus everything recorded since you typed it.',
+      jump:{label:'Open the cash forecast', tone:'', go:function(){ nav('cashflow'); mfTab('forecast'); }, back:function(){ nav('dashboard'); kpiOpen('seasonCash'); }, trail:'\u2039 Back to dashboard', show:'Showing Money Flow'}
     };
   };
   REG.seasonMargin=function(){
@@ -73440,7 +73847,7 @@ function _lsRegCertsCard(){
     return {
       label:'Profit margin', value:margin.toFixed(0)+'%', warn:(margin<15&&y.income>0), chip:'Year to date',
       verdict: y.income<=0?{tone:'info',head:'No income yet this season',text:'Once income comes in, your margin will show here.'}:(margin>=15?{tone:'good',head:'Above the industry average',text:'You\u2019re keeping '+margin.toFixed(0)+'p in every pound \u2014 ahead of the ~15% farm average.'}:{tone:'watch',head:'Below the industry average',text:'You\u2019re keeping '+margin.toFixed(0)+'p in every pound. The typical farm keeps about 15%.'}),
-      mean:'How many cents of every rand of income you keep as profit, after costs.',
+      mean:'How many pence of every pound of income you keep as profit, after costs.',
       breakdown:{title:'How it\u2019s worked out', rows:rows, note:'Margin = profit \u00f7 income, for the year so far.'},
       jump:{label:'See your profit picture', tone:'', go:function(){ nav('profit'); }, back:function(){ nav('dashboard'); kpiOpen('seasonMargin'); }, trail:'\u2039 Back to dashboard', show:'Showing Profit'}
     };

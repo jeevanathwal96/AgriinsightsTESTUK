@@ -372,6 +372,7 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
   let CAN_ORCH_DOCFILE = false;
   let CAN_TXN_PARTY    = false;
   let CAN_BUDGET_CATTGT= false;   /* farms.budget_cat_targets */
+  let CAN_BUDGET_LOCK  = false;   /* farms.budget_locked - uk-batch5-step3.sql (UK -371): the bank copy lock */
   let CAN_UPDATED_AT   = false;   /* tools/uk-relational-sync.sql */
   let CAN_CAT_RULES    = false;   /* the category_rules table */
   let CAN_RULE_HITS    = false;
@@ -464,7 +465,7 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     ['transactions','cat_confirmed'], ['transactions','asset_id'], ['transactions','ded_confirmed'],
     ['transactions','receipt_path'], ['transactions','counterparty'], ['transactions','updated_at'],
     ['assets','no_payment'], ['assets','disposed_on'], ['assets','first_used'], ['assets','finance_kind'],
-    ['farms','consent_version'], ['farms','partners'], ['farms','rain_prefs'], ['farms','budget_cat_targets'],
+    ['farms','consent_version'], ['farms','partners'], ['farms','rain_prefs'], ['farms','budget_cat_targets'], ['farms','budget_locked'],
     ['orchard_block_docs','path'], ['transaction_assets','asset_id'], ['livestock_moves','txn_ref'],
     ['category_rules','match_text'], ['category_rules','hits'],
     ['orchard_sprays','att'], ['crop_inputs','act'], ['orchard_sprays','act'],
@@ -497,6 +498,7 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     CAN_ORCH_DOCFILE  = keep(CAN_ORCH_DOCFILE,  'orchard_block_docs','path');
     CAN_TXN_PARTY     = keep(CAN_TXN_PARTY,     'transactions','counterparty');
     CAN_BUDGET_CATTGT = keep(CAN_BUDGET_CATTGT, 'farms','budget_cat_targets');
+    CAN_BUDGET_LOCK   = keep(CAN_BUDGET_LOCK,   'farms','budget_locked');
     /* A table probe, not a column probe: selecting a column off a table that does not
        exist errors the same way a missing column does, which is all we need to know. */
     CAN_TXN_ASSETS    = keep(CAN_TXN_ASSETS,    'transaction_assets','asset_id');
@@ -981,7 +983,7 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
         selectAll(() => client().from('transactions').select('*').eq('farm_id', farmId).order('txn_date', { ascending: false })),
         client().from('budget_months').select('*').eq('farm_id', farmId),
         client().from('recurring').select('*').eq('farm_id', farmId).order('name'),
-        client().from('farms').select('budget_income_pattern,budget_expense_pattern,budget_current_month' + (CAN_BUDGET_CATTGT ? ',budget_cat_targets' : '')).eq('id', farmId).single()
+        client().from('farms').select('budget_income_pattern,budget_expense_pattern,budget_current_month' + (CAN_BUDGET_CATTGT ? ',budget_cat_targets' : '') + (CAN_BUDGET_LOCK ? ',budget_locked' : '')).eq('id', farmId).single()
       ]);
       for (const r of [acc, txn, bud, rec]) if (r.error) throw r.error;
       _srvNote('accounts', acc.data);      _srvNote('transactions', txn.data);
@@ -1001,6 +1003,11 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
                 ? JSON.parse(fst.data.budget_cat_targets)
                 : fst.data.budget_cat_targets; }
         catch (e) { bObj.catTargets = { income:{}, expense:{} }; }
+      }
+      /* -371: which financial years are locked as the bank copy. */
+      if (fst.data && fst.data.budget_locked != null) {
+        try { bObj.locked = (typeof fst.data.budget_locked === 'string') ? JSON.parse(fst.data.budget_locked) : fst.data.budget_locked; }
+        catch (e) { bObj.locked = {}; }
       }
       (bud.data || []).forEach(function (r) {
         var lbl = ymToLabel(r.period_year, r.period_month);
@@ -1259,6 +1266,12 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
           .update({ budget_cat_targets: b.catTargets }).eq('id', fid).select('budget_cat_targets,updated_at');
         try { if (!r3.error && (r3.data || []).length) _profNoteAck(r3.data[0]); } catch (e) {}
         if (r3.error) console.warn('Budgets: category targets not saved - add farms.budget_cat_targets. (' + (r3.error.message || r3.error) + ')');
+      }
+      /* -371 D1: which financial years are locked as the bank copy. */
+      if (CAN_BUDGET_LOCK && b.locked && typeof b.locked === 'object') {
+        var r5 = await client().from('farms').update({ budget_locked: b.locked }).eq('id', fid).select('budget_locked,updated_at');
+        try { if (!r5.error && (r5.data || []).length) _profNoteAck(r5.data[0]); } catch (e) {}
+        if (r5.error) console.warn('Budgets: lock not saved - add farms.budget_locked. (' + (r5.error.message || r5.error) + ')');
       }
       return true;
     }

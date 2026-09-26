@@ -510,9 +510,10 @@
              The server payload replaces ST.budgets wholesale, so without this the first
              load after the catTargets migration would wipe targets that had never had
              anywhere to sync to - losing them at the exact moment they became savable. */
-          var _localCT = (ST.budgets && ST.budgets.catTargets) || null;
+          var _localCT = (ST.budgets && ST.budgets.catTargets) || null, _localLk = (ST.budgets && ST.budgets.locked) || null;
           ST.budgets = core.budgets;
           if (!ST.budgets.catTargets && _localCT) ST.budgets.catTargets = _localCT;
+          if (!ST.budgets.locked && _localLk) ST.budgets.locked = _localLk;   /* -371 */
         } if (core.batches && !(window.AI && AI.sync && AI.sync.isUnsent('imports'))) ST.importBatches = core.batches;
         /* Has this farmer ever been through setup? A farm auto-created at first
            sign-in has no owner_name until obFinish saves one, so "no owner AND no
