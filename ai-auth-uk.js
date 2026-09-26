@@ -514,7 +514,7 @@
           ST.budgets = core.budgets;
           if (!ST.budgets.catTargets && _localCT) ST.budgets.catTargets = _localCT;
           if (!ST.budgets.locked && _localLk) ST.budgets.locked = _localLk;   /* -371 */
-        } if (core.batches && !(window.AI && AI.sync && AI.sync.isUnsent('imports'))) ST.importBatches = core.batches;
+        } if (core.taxPaid && typeof core.taxPaid === 'object') ST.taxPaid = core.taxPaid;   /* -373 */ if (core.batches && !(window.AI && AI.sync && AI.sync.isUnsent('imports'))) ST.importBatches = core.batches;
         /* Has this farmer ever been through setup? A farm auto-created at first
            sign-in has no owner_name until obFinish saves one, so "no owner AND no
            transactions" is an un-onboarded farm on any device. Requiring the empty

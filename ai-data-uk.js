@@ -373,6 +373,7 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
   let CAN_TXN_PARTY    = false;
   let CAN_BUDGET_CATTGT= false;   /* farms.budget_cat_targets */
   let CAN_BUDGET_LOCK  = false;   /* farms.budget_locked - uk-batch5-step3.sql (UK -371): the bank copy lock */
+  let CAN_TAX_PAID     = false;   /* farms.tax_paid - uk-tax-paid.sql (UK -373): HMRC payments marked paid on the Tax home */
   let CAN_UPDATED_AT   = false;   /* tools/uk-relational-sync.sql */
   let CAN_CAT_RULES    = false;   /* the category_rules table */
   let CAN_RULE_HITS    = false;
@@ -465,7 +466,7 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     ['transactions','cat_confirmed'], ['transactions','asset_id'], ['transactions','ded_confirmed'],
     ['transactions','receipt_path'], ['transactions','counterparty'], ['transactions','updated_at'],
     ['assets','no_payment'], ['assets','disposed_on'], ['assets','first_used'], ['assets','finance_kind'],
-    ['farms','consent_version'], ['farms','partners'], ['farms','rain_prefs'], ['farms','budget_cat_targets'], ['farms','budget_locked'],
+    ['farms','consent_version'], ['farms','partners'], ['farms','rain_prefs'], ['farms','budget_cat_targets'], ['farms','budget_locked'], ['farms','tax_paid'],
     ['orchard_block_docs','path'], ['transaction_assets','asset_id'], ['livestock_moves','txn_ref'],
     ['category_rules','match_text'], ['category_rules','hits'],
     ['orchard_sprays','att'], ['crop_inputs','act'], ['orchard_sprays','act'],
@@ -499,6 +500,7 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     CAN_TXN_PARTY     = keep(CAN_TXN_PARTY,     'transactions','counterparty');
     CAN_BUDGET_CATTGT = keep(CAN_BUDGET_CATTGT, 'farms','budget_cat_targets');
     CAN_BUDGET_LOCK   = keep(CAN_BUDGET_LOCK,   'farms','budget_locked');
+    CAN_TAX_PAID      = keep(CAN_TAX_PAID,      'farms','tax_paid');
     /* A table probe, not a column probe: selecting a column off a table that does not
        exist errors the same way a missing column does, which is all we need to know. */
     CAN_TXN_ASSETS    = keep(CAN_TXN_ASSETS,    'transaction_assets','asset_id');
@@ -983,7 +985,7 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
         selectAll(() => client().from('transactions').select('*').eq('farm_id', farmId).order('txn_date', { ascending: false })),
         client().from('budget_months').select('*').eq('farm_id', farmId),
         client().from('recurring').select('*').eq('farm_id', farmId).order('name'),
-        client().from('farms').select('budget_income_pattern,budget_expense_pattern,budget_current_month' + (CAN_BUDGET_CATTGT ? ',budget_cat_targets' : '') + (CAN_BUDGET_LOCK ? ',budget_locked' : '')).eq('id', farmId).single()
+        client().from('farms').select('budget_income_pattern,budget_expense_pattern,budget_current_month' + (CAN_BUDGET_CATTGT ? ',budget_cat_targets' : '') + (CAN_TAX_PAID ? ',tax_paid' : '') + (CAN_BUDGET_LOCK ? ',budget_locked' : '')).eq('id', farmId).single()
       ]);
       for (const r of [acc, txn, bud, rec]) if (r.error) throw r.error;
       _srvNote('accounts', acc.data);      _srvNote('transactions', txn.data);
@@ -1008,6 +1010,12 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
       if (fst.data && fst.data.budget_locked != null) {
         try { bObj.locked = (typeof fst.data.budget_locked === 'string') ? JSON.parse(fst.data.budget_locked) : fst.data.budget_locked; }
         catch (e) { bObj.locked = {}; }
+      }
+      /* -373: the HMRC payments marked paid on the Tax home. */
+      var taxPaid = null;
+      if (fst.data && fst.data.tax_paid != null) {
+        try { taxPaid = (typeof fst.data.tax_paid === 'string') ? JSON.parse(fst.data.tax_paid) : fst.data.tax_paid; }
+        catch (e) { taxPaid = null; }
       }
       (bud.data || []).forEach(function (r) {
         var lbl = ymToLabel(r.period_year, r.period_month);
@@ -1049,6 +1057,7 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
         batches:    impBatches,
         txns:       _txns,
         budgets:    bObj,
+        taxPaid:    taxPaid,
         recurring:  (rec.data || []).map(r => ({
           id: (r.local_id != null && r.local_id !== '') ? r.local_id : r.id,
           name: r.name, type: r.type, amt: Number(r.amount),
@@ -1272,6 +1281,12 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
         var r5 = await client().from('farms').update({ budget_locked: b.locked }).eq('id', fid).select('budget_locked,updated_at');
         try { if (!r5.error && (r5.data || []).length) _profNoteAck(r5.data[0]); } catch (e) {}
         if (r5.error) console.warn('Budgets: lock not saved - add farms.budget_locked. (' + (r5.error.message || r5.error) + ')');
+      }
+      /* -373: the HMRC payments the farmer has marked paid on the Tax home. */
+      if (CAN_TAX_PAID && global.ST && global.ST.taxPaid && typeof global.ST.taxPaid === 'object') {
+        var r6 = await client().from('farms').update({ tax_paid: global.ST.taxPaid }).eq('id', fid).select('tax_paid,updated_at');
+        try { if (!r6.error && (r6.data || []).length) _profNoteAck(r6.data[0]); } catch (e) {}
+        if (r6.error) console.warn('Tax: payments marked paid not saved - add farms.tax_paid. (' + (r6.error.message || r6.error) + ')');
       }
       return true;
     }

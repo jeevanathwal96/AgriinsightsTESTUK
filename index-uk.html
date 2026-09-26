@@ -33,8 +33,8 @@
 <script defer src="vendor/chart.umd.js"></script>
 <!-- AgriInsights backend: Supabase client + data service (load order matters) -->
 <script src="vendor/supabase.js"></script>
-<script src="ai-data-uk.js?v=uk126"></script>
-<script src="ai-auth-uk.js?v=uk108"></script>
+<script src="ai-data-uk.js?v=uk127"></script>
+<script src="ai-auth-uk.js?v=uk109"></script>
 <link rel="stylesheet" href="fonts.css"/>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -2208,6 +2208,170 @@ small{font-size:11px}
 .bgt-hero.calm .bgt-hero-fix:hover{border-color:rgba(0,0,0,.3);transform:none;box-shadow:none}
 .bgt-hero.calm.merged #bgt-kpis{grid-template-columns:repeat(3,1fr);gap:0;background:transparent;border-top:1px solid rgba(0,0,0,.08)}
 .bgt-hero.calm #bgt-kpi-card-cash{display:none}   /* three cells; the budget's cash-left total is in the Net cash explainer */
+/* Tax home (UK -373, port of SA -455/-456/-457): one answer at the top - what SARS gets next and when - then one card per tax. */
+#tax-tab-glance .txh-status{border:1px solid #DCEBE1;background:#F7FBF8;border-radius:12px;padding:22px 24px 8px;margin-bottom:12px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+#tax-tab-glance .txh-status.amber{background:#FFF8E6;border-color:#F2DFA8}
+#tax-tab-glance .txh-top{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap}
+#tax-tab-glance .txh-chip{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;padding:4px 10px 4px 8px;border-radius:99px;background:#DDF1E3;color:#0B5B3E;margin-bottom:12px}
+#tax-tab-glance .txh-status.amber .txh-chip{background:#FCEBB6;color:#6B4A00}
+#tax-tab-glance .txh-chip svg{width:14px;height:14px}
+#tax-tab-glance .txh-head{font-size:27px;font-weight:500;letter-spacing:-.01em;color:#16241C;font-variant-numeric:tabular-nums;line-height:1.25}
+#tax-tab-glance .txh-head b{font-weight:800}
+#tax-tab-glance .txh-sub{color:#5F6368;font-size:14px;margin-top:6px;line-height:1.5}
+#tax-tab-glance .txh-sub b{color:#16241C}
+#tax-tab-glance .txh-btn{background:#fff;border:1px solid rgba(0,0,0,.14);border-radius:10px;color:var(--t1);font:inherit;font-size:13px;font-weight:700;padding:9px 14px;cursor:pointer;white-space:nowrap}
+#tax-tab-glance .txh-btn:hover{border-color:rgba(0,0,0,.3)}
+#tax-tab-glance .txh-sort{background:#fff;border:1px solid #F2DFA8;border-radius:12px;padding:14px 18px 6px;margin-bottom:12px}
+#tax-tab-glance .txh-sort-h{display:flex;align-items:baseline;gap:10px;font-size:14px;font-weight:800;color:#16241C;margin-bottom:4px}
+#tax-tab-glance .txh-sort-h span{font-size:12px;font-weight:600;color:var(--t3)}
+#tax-tab-glance .txh-sr{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:10px 0;border-top:1px solid var(--br2);font-size:13px}
+#tax-tab-glance .txh-sr:first-of-type{border-top:0}
+#tax-tab-glance .txh-sr .t{min-width:0;color:#16241C}
+#tax-tab-glance .txh-sr .t div{font-size:11.5px;color:var(--t3);margin-top:2px}
+#tax-tab-glance .txh-sr .x{display:flex;gap:6px;flex-shrink:0;align-items:center}
+#tax-tab-glance .txh-sb{background:#fff;border:1px solid var(--br);border-radius:8px;padding:6px 11px;font:inherit;font-size:12px;font-weight:700;color:var(--t2);cursor:pointer}
+#tax-tab-glance .txh-sb.pri{background:var(--gb);border-color:var(--gp);color:var(--gd)}
+#tax-tab-glance .txh-sr input{width:120px;text-align:right;font:inherit;font-size:12.5px;font-weight:700;padding:6px 9px;border:1px solid #E3B25C;border-radius:8px;background:#FEF6E7}
+#tax-tab-glance .txh-g3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:16px;align-items:stretch}
+#tax-tab-glance .txh-c{background:#fff;border:1px solid var(--br);border-radius:12px;padding:18px 20px;display:flex;flex-direction:column}
+#tax-tab-glance .txh-c .l{display:flex;align-items:center;gap:9px;font-size:13px;font-weight:700;color:var(--t3)}
+#tax-tab-glance .txh-c .v{font-size:28px;font-weight:800;color:#16241C;font-variant-numeric:tabular-nums;margin-top:6px;letter-spacing:-.01em}
+#tax-tab-glance .txh-c .v.q{font-size:22px}
+#tax-tab-glance .txh-c .u{font-size:12.5px;color:var(--t3);margin-top:2px;line-height:1.45}
+#tax-tab-glance .txh-c .rows{margin-top:14px}
+#tax-tab-glance .txh-c .r{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-top:1px solid var(--br2);font-size:12.5px}
+#tax-tab-glance .txh-c .r span{color:var(--t3)}
+#tax-tab-glance .txh-c .r b{font-variant-numeric:tabular-nums;color:#16241C;text-align:right}
+#tax-tab-glance .txh-c .r b.in{color:#1B7A4A}
+#tax-tab-glance .txh-c .f{margin-top:auto;padding-top:12px;font-size:12px;color:var(--t3);line-height:1.5}
+#tax-tab-glance .txh-c .f a,#tax-tab-glance .txh-c a.lk{color:var(--gd);font-weight:700;text-decoration:none;cursor:pointer}
+#tax-tab-glance .txh-ok{color:#1B7A4A;font-weight:700}
+#tax-tab-glance .txh-warn{color:#B45309;font-weight:700}
+#tax-tab-glance .txh-sec{font-size:15px;font-weight:800;color:#16241C;margin:28px 2px 12px}
+#tax-tab-glance .txh-g2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;align-items:stretch}
+#tax-tab-glance .txh-g2>.tx-card{display:flex;flex-direction:column}   /* -456: side by side, the same height */
+#tax-tab-glance details.txh-chkd{display:block;padding:0}
+#tax-tab-glance details.txh-chkd.bad{border-color:#F2DFA8}
+#tax-tab-glance details.txh-chkd>summary{display:flex;align-items:center;gap:10px;padding:12px 20px;cursor:pointer;list-style:none;min-width:0}
+#tax-tab-glance details.txh-chkd>summary::-webkit-details-marker{display:none}
+#tax-tab-glance details.txh-chkd>summary .sm{color:var(--t3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:1}
+#tax-tab-glance details.txh-chkd>summary .cv{font-size:20px;line-height:1;color:var(--t4);transition:transform .15s}
+#tax-tab-glance details.txh-chkd[open]>summary .cv{transform:rotate(90deg)}
+#tax-tab-glance details.txh-chkd>summary:focus-visible{outline:2px solid #2D6A4F;outline-offset:-2px;border-radius:12px}
+#tax-tab-glance details.txh-chkd .ls{border-top:1px solid var(--br2);padding:4px 20px 8px}
+#tax-tab-glance details.txh-chkd .ck{display:grid;grid-template-columns:24px minmax(0,1fr) auto;gap:12px;align-items:start;padding:11px 0;border-top:1px solid #EEF1EE}
+#tax-tab-glance details.txh-chkd .ck:first-child{border-top:0}
+#tax-tab-glance details.txh-chkd .mk{width:22px;height:22px;border-radius:50%;background:#DDF1E3;color:#0B5B3E;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;margin-top:1px}
+#tax-tab-glance details.txh-chkd .ck.bad .mk{background:#FCEBB6;color:#6B4A00}
+#tax-tab-glance details.txh-chkd .tx{font-size:13px;color:var(--t3);line-height:1.5}
+#tax-tab-glance details.txh-chkd .tx b{display:block;color:#16241C;font-size:13.5px}
+#tax-tab-glance details.txh-chkd .tx .do{margin-top:6px;color:#6B4A00;background:#FFF8E6;border:1px solid #F2DFA8;border-radius:8px;padding:7px 10px}
+#tax-tab-glance .txh-g2 .tx-card{margin-bottom:0}
+#tax-tab-glance .txh-chk{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#fff;border:1px solid var(--br);border-radius:12px;padding:12px 18px;margin-bottom:12px;font-size:12.5px;color:var(--t3)}
+#tax-tab-glance .txh-chk b{color:#16241C}
+#tax-tab-glance .txh-disc{font-size:12px;color:var(--t3);line-height:1.55;margin:4px 2px 20px}
+#tax-tab-glance .txh-disc summary{cursor:pointer;color:var(--gd);font-weight:700;display:inline}
+#tax-tab-glance .txh-ic{width:28px;height:28px;border-radius:8px;background:#EEF5F0;color:#2D6A4F;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
+#tax-tab-glance .txh-ic svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+#tax-tab-glance .txh-g2 .tx-card{border-radius:12px;padding:18px 20px;border-color:var(--br)}
+#tax-tab-glance .txh-g2 .tx-h{font-size:13px;font-weight:700;color:var(--t3);margin-bottom:12px}
+#tax-tab-glance .txh-sort{padding:14px 20px 6px;margin-bottom:16px}
+#tax-tab-glance .txh-status{margin-bottom:16px}
+#tax-tab-glance .txh-chk{padding:12px 20px}
+#tax-tab-glance .txh-chk .txh-ic{width:24px;height:24px}
+/* D: tiles you can open */
+#tax-tab-glance .txh-tiles2{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:20px 0 6px}
+#tax-tab-glance .txh-t2{all:unset;box-sizing:border-box;cursor:pointer;background:#fff;border:1px solid rgba(0,0,0,.09);border-radius:12px;padding:14px 16px 13px;display:flex;flex-direction:column;transition:border-color .15s,box-shadow .15s,transform .15s}
+#tax-tab-glance .txh-t2:hover{border-color:#9DBFAA;box-shadow:0 4px 14px rgba(22,36,28,.08);transform:translateY(-1px)}
+#tax-tab-glance .txh-t2:focus-visible{outline:2px solid #2D6A4F;outline-offset:2px}
+#tax-tab-glance .txh-t2.next{border-color:#9DBFAA;box-shadow:0 0 0 1px #9DBFAA inset}
+#tax-tab-glance .txh-t2.paid{background:#FAFBFA}
+#tax-tab-glance .txh-t2 .t2-tp{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+#tax-tab-glance .txh-t2 .t2-pl{font-size:11.5px;font-weight:700;color:var(--t3);background:#F1F3F1;border-radius:99px;padding:3px 9px}
+#tax-tab-glance .txh-t2 .t2-pl.nx{background:#DDF1E3;color:#0B5B3E}
+#tax-tab-glance .txh-t2 .t2-pl.paid{background:#DDF1E3;color:#0B5B3E}
+#tax-tab-glance .txh-t2 .t2-cv{font-size:20px;line-height:1;color:var(--t4)}
+#tax-tab-glance .txh-t2 .t2-nm{font-size:15px;font-weight:800;color:#16241C}
+#tax-tab-glance .txh-t2 .t2-sb{font-size:12px;color:var(--t3);margin-top:1px}
+#tax-tab-glance .txh-t2 .t2-am{font-size:24px;font-weight:800;color:#16241C;font-variant-numeric:tabular-nums;margin-top:10px}
+#tax-tab-glance .txh-t2.paid .t2-am{color:var(--t3)}
+#tax-tab-glance .txh-t2 .t2-ft{font-size:12px;color:var(--t3);margin-top:2px}
+#tax-tab-glance .txh-allk{padding:10px 0 16px;font-size:13px}
+#tax-tab-glance .txh-allk a{color:var(--gd);font-weight:700;cursor:pointer;text-decoration:none}
+#tax-tab-glance .txh-allk a b{font-weight:600;color:var(--t3)}
+/* the full list: month cards */
+#tax-tab-glance .al-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:2px 0 18px}
+#tax-tab-glance .al-mc{background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:12px;padding:14px 16px 8px}
+#tax-tab-glance .al-mc.cur{border-color:#9DBFAA;box-shadow:0 0 0 1px #9DBFAA inset}
+#tax-tab-glance .al-mc.ye{background:transparent;border-style:dashed}
+#tax-tab-glance .al-mh{display:flex;justify-content:space-between;align-items:center;font-size:13px;font-weight:800;color:#5F6368}
+#tax-tab-glance .al-mh i{font-style:normal;font-weight:600;color:var(--t4)}
+#tax-tab-glance .al-mt{font-size:22px;font-weight:800;color:#16241C;font-variant-numeric:tabular-nums;margin:2px 0 8px;min-height:30px}
+#tax-tab-glance .al-mt small{font-size:12.5px;font-weight:600;color:var(--t3)}
+#tax-tab-glance .al-mr{display:grid;grid-template-columns:38px minmax(0,1fr) auto;gap:10px;align-items:center;padding:9px 6px;margin:0 -6px;border-top:1px solid #EEF1EE;border-radius:8px}
+#tax-tab-glance .al-mr.ck{cursor:pointer}
+#tax-tab-glance .al-day{width:38px;height:38px;border-radius:9px;background:#F1F4F1;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1}
+#tax-tab-glance .al-day b{font-size:14px;color:#16241C}
+#tax-tab-glance .al-day i{font-style:normal;font-size:10px;font-weight:700;color:var(--t3);margin-top:2px;text-transform:uppercase;letter-spacing:.04em}
+#tax-tab-glance .al-day.wide b{font-size:10.5px;text-align:center;line-height:1.15}
+#tax-tab-glance .al-nw{min-width:0;display:flex;flex-direction:column}
+#tax-tab-glance .al-nw b{font-size:13.5px;color:#16241C}
+#tax-tab-glance .al-nw small{font-size:11.5px;color:var(--t3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#tax-tab-glance .al-aa{font-size:13.5px;font-weight:800;color:#16241C;font-variant-numeric:tabular-nums;text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:3px;white-space:nowrap}
+#tax-tab-glance .al-aa.q{font-weight:600;color:var(--t4);font-size:12px}
+#tax-tab-glance .al-aa small{font-size:11px;font-weight:600;color:var(--t4)}
+#tax-tab-glance .al-p{display:inline-block;font-size:10.5px;font-weight:800;border-radius:99px;padding:2px 8px;background:#F1F3F1;color:#5F6368}
+#tax-tab-glance .al-p.nx,#tax-tab-glance .al-p.ok{background:#DDF1E3;color:#0B5B3E}
+/* the full list: one column on a timeline */
+@media (max-width:1100px){#tax-tab-glance .al-grid{grid-template-columns:1fr 1fr}}
+/* D6: this year against last */
+#tax-tab-glance .txh-yoy{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+#tax-tab-glance .txh-yoy .big{font-size:26px;font-weight:800;color:#16241C;font-variant-numeric:tabular-nums}
+#tax-tab-glance .txh-yoy .chg{font-size:13px;font-weight:700;color:var(--t3)}
+#tax-tab-glance .txh-pb{display:grid;grid-template-columns:90px 1fr 110px;align-items:center;gap:10px;font-size:12.5px;margin-top:10px}
+#tax-tab-glance .txh-pb .bar{height:8px;border-radius:99px;background:#EEF1EE;overflow:hidden}
+#tax-tab-glance .txh-pb .bar i{display:block;height:100%;border-radius:99px}
+#tax-tab-glance .txh-pb b{text-align:right;font-variant-numeric:tabular-nums}
+@media (max-width:1100px){#tax-tab-glance .txh-g3{grid-template-columns:1fr}#tax-tab-glance .txh-g2{grid-template-columns:1fr}}
+#tax-tab-glance .al-mr.ck:hover{background:#F4F8F5}
+#tax-tab-glance .al-mr.pd .al-aa{color:var(--t3)}
+/* the payment panel a tile opens (-455) */
+#txh-drawer{position:fixed;inset:0;z-index:100000;display:none}
+#txh-drawer.on{display:block}
+#txh-drawer .td-ov{position:absolute;inset:0;background:rgba(22,36,28,.30)}
+#txh-drawer .td-dr{position:absolute;top:0;right:0;bottom:0;width:460px;max-width:100%;background:#fff;box-shadow:-12px 0 40px rgba(22,36,28,.18);display:flex;flex-direction:column;font-family:inherit;animation:txhIn .22s ease-out}
+@keyframes txhIn{from{transform:translateX(24px);opacity:.4}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){#txh-drawer .td-dr{animation:none}}
+#txh-drawer .td-hd{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:22px 24px 0}
+#txh-drawer .td-ey{font-size:12.5px;font-weight:700;color:#5F6368}
+#txh-drawer h3{margin:2px 0 0;font-size:21px;font-weight:800;color:#16241C}
+#txh-drawer .td-x{all:unset;cursor:pointer;width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:20px;color:#5F6368}
+#txh-drawer .td-x:hover{background:#F1F3F1}
+#txh-drawer .td-bd{padding:14px 24px 20px;overflow:auto;flex:1}
+#txh-drawer .td-pl{display:inline-block;font-size:12px;font-weight:700;border-radius:99px;padding:3px 10px;background:#F1F3F1;color:#5F6368}
+#txh-drawer .td-pl.td-g{background:#DDF1E3;color:#0B5B3E}
+#txh-drawer .td-pl.td-a{background:#FCEBB6;color:#6B4A00}
+#txh-drawer .td-big{font-size:34px;font-weight:800;color:#16241C;font-variant-numeric:tabular-nums;margin-top:12px;letter-spacing:-.01em}
+#txh-drawer .td-bs{font-size:13.5px;color:#5F6368;margin-top:2px}
+#txh-drawer .td-sec{margin-top:22px}
+#txh-drawer .td-sh{font-size:12.5px;font-weight:800;color:#5F6368;margin-bottom:6px}
+#txh-drawer .td-r{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-top:1px solid #EDF0ED;font-size:13.5px;color:#3F4A44}
+#txh-drawer .td-r b{color:#16241C;font-variant-numeric:tabular-nums}
+#txh-drawer .td-r.td-t{border-top:1.5px solid #16241C;font-weight:800;color:#16241C}
+#txh-drawer .td-note{font-size:13px;line-height:1.55;color:#3F4A44;background:#F7FBF8;border:1px solid #DCEBE1;border-radius:10px;padding:10px 12px;margin-top:10px}
+#txh-drawer .td-note.td-a{background:#FFF8E6;border-color:#F2DFA8}
+#txh-drawer .td-p{font-size:13.5px;line-height:1.6;color:#3F4A44;margin:0}
+#txh-drawer .td-ft{display:flex;flex-wrap:nowrap;gap:8px;padding:16px 24px;border-top:1px solid #EDF0ED;background:#FAFBFA}
+#txh-drawer .td-b1{all:unset;cursor:pointer;background:#1B4332;color:#fff;font-weight:700;font-size:13.5px;border-radius:10px;padding:11px 16px}
+#txh-drawer .td-b1:hover{background:#2D6A4F}
+#txh-drawer .td-b2{all:unset;cursor:pointer;background:#fff;border:1px solid rgba(0,0,0,.16);color:#16241C;font-weight:700;font-size:13.5px;border-radius:10px;padding:10px 15px}
+#txh-drawer .td-b2:hover{border-color:rgba(0,0,0,.32)}
+#txh-drawer .td-b1:focus-visible,#txh-drawer .td-b2:focus-visible,#txh-drawer .td-x:focus-visible{outline:2px solid #2D6A4F;outline-offset:2px}
+#txh-drawer .td-lk{color:#1B4332;font-weight:700;cursor:pointer;text-decoration:underline}
+#txh-drawer label{display:block;font-size:12.5px;font-weight:700;color:#5F6368;margin:14px 0 5px}
+#txh-drawer input{box-sizing:border-box;width:100%;font:inherit;font-size:15px;font-weight:700;padding:10px 12px;border:1px solid #C9D3CC;border-radius:10px;color:#16241C}
+#txh-drawer input:focus{outline:2px solid #9DBFAA;border-color:#2D6A4F}
+#tax-tab-glance .txh-sub a.txh-lk{color:var(--gd);font-weight:700;cursor:pointer;text-decoration:underline}
 .bgt-hero.calm.merged .bgt-kpi{background:transparent !important;padding:18px 24px 20px}
 .bgt-hero.calm.merged .bgt-kpi + .bgt-kpi{border-left:1px solid rgba(0,0,0,.08)}
 .bgt-hero.calm .bgt-kpi::before{display:none}
@@ -56656,331 +56820,329 @@ function _txCatLabel(c){
   if(c==null || c==='' || c==='null' || c==='undefined') return 'Uncategorised';
   return (''+c).replace(/\s*&\s*/g,' & ').trim();
 }
+/* UK -373 (port of SA -455/-456/-457): the Tax & HMRC home's own state. TAX_ALL_DATES opens
+   the month cards; TAX_TXH is what the payment panel reads. What the farmer has marked paid is
+   ST.taxPaid: saved with the farm (farms.tax_paid) so it shows on every device, keyed
+   FORM:due-date. */
+var TAX_ALL_DATES=false, TAX_TXH=null;
+function taxSetPaid(key, rec){
+  ST.taxPaid=(ST.taxPaid&&typeof ST.taxPaid==='object')?ST.taxPaid:{};
+  if(rec) ST.taxPaid[key]={amt:Math.max(0,Math.round(Number(rec.amt)||0)), date:rec.date||''}; else delete ST.taxPaid[key];
+  try{ if(window.AI && AI.farm && AI.farm.active() && AI.budget && ST.budgets) AI.budget.save(ST.budgets).catch(function(){}); }catch(e){}   // saved with the budget settings, as budget_locked is
+  try{ if(typeof saveState==='function') saveState(); }catch(e){}
+  try{ if(typeof renderTax==='function') renderTax(); }catch(e){}
+}
+/* HMRC's own payment-on-account figure, typed in the payment panel. Same record the Reports
+   tab keeps (ST.poaHmrc), saved the same way. */
+function taxPoaFromPanel(fy, i){
+  var num=function(id){ var el=document.getElementById(id); var v=el?String(el.value||'').replace(/[£,\s]/g,''):''; return v===''?null:Number(v); };
+  var each=num('txh-poa-each'), pb=num('txh-poa-prev');
+  if(each==null || !isFinite(each) || each<0){ var a=document.getElementById('txh-poa-each'); if(a){ a.focus(); a.style.borderColor='#C2410C'; } return; }
+  ST.poaHmrc=(ST.poaHmrc && typeof ST.poaHmrc==='object') ? ST.poaHmrc : {};
+  ST.poaHmrc[String(fy)]={ each:Math.round(each), prevBal:(pb==null||!isFinite(pb)?null:Math.max(0,Math.round(pb))), at:new Date().toISOString() };
+  try{ _ukPoaPersist(); }catch(e){}
+  try{ renderTax(); }catch(e){}
+  try{ if(typeof toast==='function') toast('Saved — every tax screen now uses HMRC’s figure','success'); }catch(e){}
+  try{ if(TAX_TXH && TAX_TXH.items[i]) txhOpen(i); }catch(e){}
+}
 function taxGlanceHTML(){
+  /* UK -373: the Tax & HMRC home, the SA -455 design on UK rules. One answer first - what HMRC
+     gets next, when, and whether the cash covers it - then the next three payments as tiles
+     that open a panel, every date to the year end as a card per month, one card per tax, and
+     the working. Payable VAT is ink, not red. Payments on account are half of LAST year's
+     bill, so they fall due even in a loss year; where the app cannot know them it asks for
+     HMRC's figure instead of showing 0. A company pays corporation tax in one go. */
   var prov=taxProvEstimate(), ytd=ytdSummary(), vat=taxVatPosition(), wk=taxWorkerSnapshot();
-  var cap=taxCapitalAllowances(), pay=taxPayrollAnnual(), vatFY=_taxFYVat(), trend=taxVatTrend();
-  /* Last year on the same footing as this year: non-deductibles struck out and para
-     12(3) applied, or the year-on-year bars would compare two different measures. */
-  var prior=_taxFYProfit(-1);
+  var cap=taxCapitalAllowances(), pay=taxPayrollAnnual(), trend=taxVatTrend();
   var priorRF=taxRingFenceFY(((typeof getCurrentFY==='function')?getCurrentFY():2024)-1);
   var priorTax=(typeof calcAnnualIncomeTax==='function')?calcAnnualIncomeTax(Math.max(0,priorRF.taxable),(ST.entityType||'sole')):0;
-  var bank=(typeof ST!=='undefined')?ST.bankBalance:null, diesel=(typeof ST_CROP!=='undefined'&&ST_CROP.compliance&&ST_CROP.compliance.dieselLitres)||0;
-  var ft=(typeof getFarmType==='function')?getFarmType():'', h='';
-  /* Class 4 NI is part of what a sole trader or partner sends HMRC. Leaving it out
-     under-stated the year by £2,887 on the demo farm and flattered the effective rate,
-     while the payments-on-account schedule two cards below already counted it. */
-  var _glEnt=(typeof ukEntityType==='function')?ukEntityType(ST.entityType):'sole';
-  var class4=prov.ok ? Math.round(ukClass4Business(Math.max(0,prov.taxableProfit), _glEnt)) : 0;
-  var incomeTax=prov.ok?prov.annualTax:0, vatComp=Math.max(0,vatFY), total=incomeTax+class4+vatComp+pay.total;
+  var _dd=(typeof _dslC==='function')?_dslC():{logged:0,bought:0,unlogged:0};
+  var paperL=(typeof ST_CROP!=='undefined'&&ST_CROP.compliance&&ST_CROP.compliance.dieselLitres)||0;
+  var co=ukIsCompany(), _ent=(typeof ukEntityType==='function')?ukEntityType(ST.entityType):'sole';
+  var class4=prov.ok ? Math.round(ukClass4Business(Math.max(0,prov.taxableProfit), _ent)) : 0;
+  var poa=prov.poa||{};
+  var h='', now=_txNow(), _fyNow=(typeof getCurrentFY==='function')?getCurrentFY():0;
+  var MF=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  var _days=function(d){ return Math.ceil((d-now)/86400000); };
+  var _when=function(d){ var n=_days(d); if(n<=0) return 'today'; if(n<45) return 'in '+n+' day'+(n===1?'':'s'); var m=Math.round(n/30.4); return 'in '+m+' month'+(m===1?'':'s'); };
+  var _vp=function(v){ var M=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']; return M[v.from.getMonth()]+'–'+M[v.to.getMonth()]; };
+  var _mo=function(d){ return Math.max(1,Math.round(_days(d)/30.44)); };   /* the same count the tile's "in 4 months" uses */
 
-  // total tax hero
-  if(prov.ok){
-    h+='<div id="tax-hero-card" style="background:linear-gradient(135deg,#1B4332,#2D6A4F);color:#fff;border-radius:16px;padding:18px 22px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px">'+
-      '<div><div style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;opacity:.75">Your estimated tax '+(prov.tooNew?'on what you have recorded':'to HMRC this year')+(prov.tooNew?profitTags('actual','Year so far','tax','Tax rules'):profitTags('proj','Projected to '+ukFyEndShort(),'tax','Tax rules'))+'</div>'+
-      '<div style="font-size:32px;font-weight:800">'+fmt(total)+'</div>'+
-      (bank!=null&&prov.provPayment!=null?'<div style="font-size:12px;opacity:.85">after the next set-aside, <b>'+fmt(Math.max(0,Math.round(bank-prov.provPayment)))+'</b> of your balance is yours</div>':'<div style="font-size:12px;opacity:.85">income tax, '+(class4>0?'Class 4 NI, ':'')+'VAT and payroll combined</div>')+'</div>'+
-      '<div style="display:flex;gap:8px;flex-wrap:wrap">'+
-        '<div class="tx-tile"><div class="k">'+(ukIsCompany()?'Corporation tax':'Income tax')+'</div><div class="v">'+fmt(incomeTax)+'</div></div>'+
-        (class4>0?'<div class="tx-tile"><div class="k">Class 4 NI</div><div class="v">'+fmt(class4)+'</div></div>':'')+
-        '<div class="tx-tile"><div class="k">VAT</div><div class="v">'+fmt(vatComp)+'</div></div>'+
-        '<div class="tx-tile"><div class="k">Payroll</div><div class="v">'+fmt(pay.total)+'</div></div>'+
-      '</div></div>';
-    /* Was a four-sentence amber banner above every figure, on every visit, for every
-       farm. Amber means "you need to do something"; a permanent caption never does, and
-       two stacked banners pushed the farm's own numbers below the fold. Two of its four
-       sentences were duplicates as well — the payment dates are in the "what's ahead"
-       timeline further down, and "Try the What-if" is a tab button directly above. What
-       is left is the one fact that belongs to the number: it is a projection. The
-       comparison with Reports goes behind the same "what is this" disclosure the VAT
-       card already uses, because it only matters to a farmer who has noticed the gap. */
-    /* The caption and its two questions were three loose blocks stacked under the hero:
-       a grey sentence, then two bare green lines with no chevron and no container, which
-       read as orphaned links rather than as things you can open. They are one card now -
-       the sentence, a hairline, then the questions side by side. */
-    h+='<div class="tx-why">'+
-       '<div class="tx-why-t">'+
-       (prov.tooNew
-         ? 'Tax on what you have recorded so far — not a full-year figure. Your records start this month, so there is no rate yet to carry forward; the full-year projection appears once you have a month of trading behind you.'
-         : 'A projection for the full year — the '+prov.monthsElapsed+' month'+(prov.monthsElapsed===1?'':'s')+' banked so far, '+
-           (prov.basis==='plan'?'plus your plan for the rest of it':'carried on at the same rate to April')+'.')+
-       '</div>';
-    var _whyQ='';
-    if(!prov.tooNew) _whyQ+='<details class="tx-wi"><summary>Why is it bigger than my Reports profit?</summary>'+
-       '<div class="tx-wi-b">The Reports tab counts only what has actually happened. This one carries your banked months on to 5 April, to show what the whole year is heading for.</div></details>';
-    /* Income tax, VAT and employer NI are the farm's own. PAYE and employee NI are the
-       worker's tax: the farm withholds them from wages and passes them on, so they are
-       in the total HMRC receives but they are not a cost to the business. Reading the
-       whole number as money the farm loses overstates what it actually bears. */
-    if(pay.withheld>0) _whyQ+='<details class="tx-wi"><summary>How much of this does the farm actually bear?</summary>'+
-       '<div class="tx-wi-b">'+fmt(pay.withheld)+' of the payroll figure is PAYE and employee National Insurance. That comes out of your workers’ wages — you hold it back and pass it on, so HMRC receives it but it never was your money. What the farm itself pays on top of wages is the employer National Insurance, '+fmt(pay.farmBears)+'.'+
-       ((pay.paidSoFar>0) ? ' '+fmt(pay.paidSoFar)+' of the year’s payroll has already gone across in the runs you have posted.' : '')+
-       '</div></details>';
-    if(_whyQ) h+='<div class="tx-why-q">'+_whyQ+'</div>';
-    h+='</div>';
-    /* The caption above explains the PROJECTION in the tiles; this ladder is the year
-       so far. Emitted after it so the sentence sits with the number it describes. */
-    if(prov.nudge && prov.nudge.show) h+='<div class="tx-nudge" style="background:#FEF6E7;border-color:#F1DBA6"><b>A sharper number is waiting.</b> You haven\u2019t added your '+esc(prov.nudge.enterprise)+' to the season plan yet, so we spread your income evenly across the year. <span onclick="nav(\'planning\')" style="text-decoration:underline;cursor:pointer">Finish your plan \u2192</span></div>';
-  }
+  var IC={tax:'<path d="M3 22h18"/><path d="M6 18v-7"/><path d="M10 18v-7"/><path d="M14 18v-7"/><path d="M18 18v-7"/><path d="M12 2 20 7H4z"/>',
+          vat:'<path d="M4 2v20l3-2 3 2 3-2 3 2 3-2 3 2V2l-3 2-3-2-3 2-3-2-3 2z"/><path d="M15 9 9 15"/><path d="M9.5 9.5h.01"/><path d="M14.5 14.5h.01"/>',
+          wk:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+          box:'<path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="M3 8l9 5 9-5"/><path d="M12 13v8"/>',
+          ok:'<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/>'};
+  var _ic=function(k){ return '<span class="txh-ic"><svg viewBox="0 0 24 24">'+IC[k]+'</svg></span>'; };
+  var _nm={VAT:'VAT',PAYE:'PAYE & NI',SA:'Self Assessment',CT:'Corporation tax'};
 
-  /* Anything undecided goes above the figures, not below: the numbers underneath
-     depend on the answer, so asking after showing them would be back to front. */
+  /* ---- Every date HMRC is owed something, in date order ---- */
+  var items=[];
+  if(vat){ var vd=_ukVatDueDate(vat.to);
+    items.push({d:vd, code:'VAT', amt:vat.owe, pay:vat.owe>0, refund:vat.owe<0}); }
+  if(wk && pay.total>0){ var ed=new Date(now.getFullYear(),now.getMonth(),22); if(ed<=now) ed=new Date(now.getFullYear(),now.getMonth()+1,22);
+    var _wp={paye:Math.round((pay.paye||0)/12), ee:Math.round((pay.employeeNI||0)/12), er:Math.round((pay.employerNI||0)/12)};
+    items.push({d:ed, code:'PAYE', amt:_wp.paye+_wp.ee+_wp.er, parts:_wp, pay:true}); }
+  var today0=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+  (poa.dts||[]).forEach(function(p){
+    if(!p || !p.d || p.d<today0) return;
+    var code=(p.per==='ct')?'CT':'SA', unk=(p.amt==null);
+    items.push({d:p.d, code:code, per:p.per, amt:(unk?null:p.amt), unknown:unk, poaEach:p.poa, prevBal:p.prevBal, fyFor:(p.fyFor!=null?p.fyFor:_fyNow),
+                pay:!unk && p.amt>0, nil:!unk && !(p.amt>0)});
+  });
+  /* A company's LAST year is usually the next bill: a 31 March year end pays on 1 January,
+     nine months after. The schedule only carries this year's, so add last year's from last
+     year's records - and only when there are records, or it would be a guess. */
+  if(co){ try{ var _py=_fyNow-1, _pyDue=ukCtPaymentDue(ukFyPeriodEnd(_py));
+    if(_pyDue>=today0 && (typeof _ukFyHasRecords!=='function' || _ukFyHasRecords(_py)))
+      items.push({d:_pyDue, code:'CT', per:'ct', amt:priorTax, prior:true, fyFor:_py, pay:priorTax>0, nil:!(priorTax>0)});
+  }catch(e){} }
+  items.sort(function(x,y){ return x.d-y.d; });
+  var PAID=(ST.taxPaid&&typeof ST.taxPaid==='object')?ST.taxPaid:{};
+  var _iso=function(d){ return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); };
+  items.forEach(function(it){ it.key=it.code+':'+_iso(it.d); var pr=PAID[it.key];
+    it.paid=pr?{amt:+pr.amt||0, date:pr.date||'', label:(pr.date?_shortDate(new Date(pr.date+'T00:00:00')):'')}:null; if(it.paid){ it.pay=false; it.unknown=false; } });
+  var cash=null; try{ cash=b5CashForecast(12).start.bal; }catch(e){ cash=null; }
+  var sub=function(it){
+    if(it.code==='VAT') return _vp(vat)+' quarter';
+    if(it.code==='PAYE'){ var pm=new Date(it.d.getFullYear(),it.d.getMonth()-1,1); return MF[pm.getMonth()]+' pay'; }
+    if(it.code==='CT'){ var pe=ukFyPeriodEnd(it.fyFor!=null?it.fyFor:_fyNow); return 'for the year to '+_shortDate(pe)+' '+pe.getFullYear(); }
+    if(it.per==='1st') return '1st payment on account'+(it.prevBal>0?' + last year’s balance':'');
+    if(it.per==='2nd') return '2nd payment on account';
+    return 'balancing payment';
+  };
+
+  /* ---- 1. The answer ---- */
+  (function(){
+    var o='', due=items.filter(function(it){ return it.pay; }), f1=due[0]||null;
+    var same=function(a,b){ return a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth(); };
+    var mIt=f1?due.filter(function(it){ return same(it.d,f1.d); }):[], mTot=mIt.reduce(function(a,it){ return a+it.amt; },0);
+    /* Paid ahead of its date: in the headline's month it is "already paid this month"; a bill paid
+       for a month with nothing else due (so the headline has moved on) is named, or the farmer
+       would lose sight of the payment they just recorded. */
+    var paidUp=items.filter(function(it){ return it.paid && it.d>=new Date(now.getFullYear(),now.getMonth(),now.getDate()); });
+    var mPaid=paidUp.filter(function(it){ return f1 && same(it.d,f1.d); }).reduce(function(a,it){ return a+(+it.paid.amt||0); },0);
+    var oPaid=paidUp.filter(function(it){ return !(f1 && same(it.d,f1.d)); });
+    var sh=!!(f1 && cash!=null && cash<mTot), sn=!!(f1 && (_days(f1.d)<=7 || sh));
+    var ico=sn?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>'
+              :'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+    o+='<div class="txh-status'+(sn?' amber':'')+'" id="tax-hero-card"><div class="txh-top"><div style="min-width:0;flex:1">';
+    if(f1){
+      o+='<div class="txh-chip">'+ico+(sh?'Cash in hand won’t cover it':(sn?'Due '+_when(f1.d):'Next payment '+_when(f1.d)))+'</div>'+
+         '<div class="txh-head">Due to HMRC in '+MF[f1.d.getMonth()]+': <b>'+fmt(mTot)+'</b></div>';
+      var ps=mIt.slice().sort(function(x,y){ return y.amt-x.amt; }).map(function(it){ return _nm[it.code]+' '+fmt(it.amt)+' on '+_shortDate(it.d); });
+      var s1=ps.length>1?ps.slice(0,-1).join(', ')+' and '+ps[ps.length-1]:ps[0];
+      o+='<div class="txh-sub">'+s1+'. '+(cash==null?'':(sh?'Cash in hand is <b>'+(cash<0?'−':'')+fmt(Math.abs(cash))+'</b>, so you’re <b>'+fmt(mTot-cash)+'</b> short.':'Your cash in hand covers it.'))+'</div>';
+    } else {
+      o+='<div class="txh-chip">'+ico+'Nothing to pay right now</div><div class="txh-head">Nothing due to HMRC on what you’ve recorded</div>';
+    }
+    if(mPaid>0) o+='<div class="txh-sub"><span class="txh-ok">✓ Already paid this month: '+fmt(mPaid)+'</span></div>';
+    if(oPaid.length) o+='<div class="txh-sub"><span class="txh-ok">\u2713 Already paid: '+oPaid.map(function(it){ return _nm[it.code]+' '+fmt(+it.paid.amt)+' (due '+_shortDate(it.d)+')'; }).join(', ')+'</span></div>';
+    var rf=items.filter(function(it){ return it.refund && !it.paid; })[0];
+    if(rf) o+='<div class="txh-sub">HMRC owes you <b>'+fmt(-rf.amt)+'</b> of VAT for the '+_vp(vat)+' quarter \u2014 file the return by '+_shortDate(rf.d)+' to get it back.</div>';
+    /* the big one after this month: Self Assessment or corporation tax, with what to put aside */
+    var big=items.filter(function(it){ return (it.code==='SA'||it.code==='CT') && !it.paid && !(f1 && same(it.d,f1.d)); })[0];
+    if(big && big.unknown) o+='<div class="txh-sub">Your '+_shortDate(big.d)+' Self Assessment payment isn’t known yet — <a class="txh-lk" onclick="txhOpen('+items.indexOf(big)+')">add HMRC’s figure</a>.</div>';
+    else if(big && big.pay) o+='<div class="txh-sub">After that: '+(big.code==='CT'?'corporation tax':'Self Assessment')+' <b>'+fmt(big.amt)+'</b> on '+_shortDate(big.d)+'. Set aside <b>'+fmt(Math.round(big.amt/_mo(big.d)))+' a month</b> until then.</div>';
+    else if(big && big.nil) o+='<div class="txh-sub">Nothing more to pay on '+_shortDate(big.d)+' on this estimate — the return is still due.</div>';
+    o+='</div><button class="txh-btn" onclick="taxAccountantPack()">Share with your accountant</button></div>';
+
+    /* the tiles: the next three dates, paid ones included until their date passes */
+    var up=items.filter(function(it){ return it.d>=today0; }).slice(0,3);
+    var pill=function(it){ if(it.paid) return '<span class="t2-pl paid">✓ Paid '+it.paid.label+'</span>'; if(it.unknown) return '<span class="t2-pl">Add HMRC’s figure</span>'; if(it.nil) return '<span class="t2-pl">Nothing to pay</span>'; if(it.refund) return '<span class="t2-pl">HMRC pays you</span>'; return it===f1?'<span class="t2-pl nx">Next · '+_when(it.d)+'</span>':'<span class="t2-pl">'+_when(it.d).replace(/^in /,'In ')+'</span>'; };
+    var amt=function(it){ return it.paid?fmt(+it.paid.amt):(it.unknown?'—':(it.nil?fmt(0):(it.refund?'+':'')+fmt(Math.abs(it.amt)))); };
+    o+='<div class="txh-tiles2">'+up.map(function(it){ var ix=items.indexOf(it);
+      return '<button type="button" class="txh-t2'+(it===f1?' next':'')+(it.paid?' paid':'')+'" onclick="txhOpen('+ix+')">'+
+        '<div class="t2-tp">'+pill(it)+'<span class="t2-cv">›</span></div>'+
+        '<div class="t2-nm">'+_nm[it.code]+'</div><div class="t2-sb">'+sub(it)+'</div>'+
+        '<div class="t2-am">'+amt(it)+'</div>'+
+        '<div class="t2-ft">'+(it.refund?'Return due ':'Due ')+_shortDate(it.d)+'</div></button>'; }).join('')+'</div>';
+
+    /* every other date to the end of the tax year, a card per month */
+    var fyEnd=ukFyPeriodEnd(_fyNow);
+    var all=[]; items.forEach(function(it,ix){ if(it.d<=fyEnd) all.push({d:it.d,nm:_nm[it.code],code:it.code,sb:sub(it),amt:(it.unknown?null:(it.nil?0:it.amt)),unk:it.unknown,it:it,ix:ix}); });
+    var e0=items.filter(function(it){ return it.code==='PAYE'; })[0];
+    if(e0){ for(var k=1;k<13;k++){ var dk=new Date(e0.d.getFullYear(),e0.d.getMonth()+k,22); if(dk>fyEnd) break; var pm=new Date(dk.getFullYear(),dk.getMonth()-1,1); all.push({d:dk,nm:'PAYE & NI',code:'PAYE',sb:MF[pm.getMonth()]+' pay',amt:e0.amt,about:true}); } }
+    if(vat && typeof _txVatBlock==='function'){ for(var q=1;q<5;q++){ var b=_txVatBlock(q), bt=new Date(b.to+'T00:00:00'), bd=_ukVatDueDate(bt); if(bd>fyEnd) break;
+      all.push({d:bd,nm:'VAT',code:'VAT',sb:b.label.replace(/ \d{4}$/,'')+' quarter',amt:null,later:'after '+_shortDate(bt)}); } }
+    all.sort(function(x,y){ return x.d-y.d; });
+    var after=[];
+    items.forEach(function(it,ix){ if(it.d>fyEnd) after.push({dt:_shortDate(it.d),nm:_nm[it.code],sb:sub(it),amt:(it.unknown?null:(it.nil?0:it.amt)),ix:ix}); });
+    if(co) after.push({dt:_shortDate(ukCtReturnDue(ukFyPeriodEnd(_fyNow))),nm:'Company Tax Return',sb:'CT600 · 12 months after the year end'});
+    else after.push({dt:'31 Jan',nm:'Self Assessment return',sb:'for this tax year · online'});
+    var more=Math.max(0,all.length+after.length-up.length-(after.filter(function(a){ return a.ix!=null && up.indexOf(items[a.ix])>=0; }).length)), open=!!TAX_ALL_DATES;
+    o+='<div class="txh-allk"><a onclick="TAX_ALL_DATES='+(!open)+';renderTax()">'+(open?'Hide the full list':'See every date to the end of the tax year <b>('+more+' more)</b>')+'</a></div>';
+    if(open){
+      var MS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      var groups={}, order=[]; all.forEach(function(r){ var g=r.d.getFullYear()+'-'+r.d.getMonth(); if(!groups[g]){ groups[g]={d:r.d,rows:[]}; order.push(g); } groups[g].rows.push(r); });
+      var tot=function(G){ return G.rows.reduce(function(a,r){ return a+((r.it&&r.it.paid)?0:Math.max(0,r.amt||0)); },0); };   /* what you pay - a refund comes back, it isn't netted off */
+      var unk=function(G){ return G.rows.some(function(r){ return r.amt==null && !(r.it&&r.it.paid); }); };
+      var isCur=function(G){ return f1 && G.d.getFullYear()===f1.d.getFullYear() && G.d.getMonth()===f1.d.getMonth(); };
+      var amtTxt=function(r){ if(r.it&&r.it.paid) return fmt(+r.it.paid.amt); if(r.amt==null) return 'not known yet<small>'+(r.later||'add HMRC\u2019s figure')+'</small>'; if(r.amt<0) return '<span style="color:#1B7A4A">+'+fmt(-r.amt)+'</span><small>HMRC pays you</small>'; return (r.about?'about ':'')+fmt(r.amt); };
+      var rp=function(r){ if(!r.it) return ''; if(r.it.paid) return '<span class="al-p ok">✓ Paid</span>'; if(r.it===f1) return '<span class="al-p nx">Next</span>'; return ''; };
+      o+='<div class="al-grid">'+order.map(function(g){ var G=groups[g], t=tot(G), u=unk(G);
+          return '<div class="al-mc'+(isCur(G)?' cur':'')+'"><div class="al-mh"><span>'+MF[G.d.getMonth()]+' <i>'+G.d.getFullYear()+'</i></span>'+(isCur(G)?'<span class="al-p nx">This month</span>':'')+'</div>'+
+            '<div class="al-mt">'+(t?fmt(t):(u?'':fmt(0)))+(u?'<small>'+(t?' + more':'amount')+' to come</small>':'')+'</div>'+
+            G.rows.map(function(r){ var pd=r.it&&r.it.paid;
+              return '<div class="al-mr'+(r.it?' ck':'')+(pd?' pd':'')+'"'+(r.it?' onclick="txhOpen('+r.ix+')"':'')+'><span class="al-day"><b>'+r.d.getDate()+'</b><i>'+MS[r.d.getMonth()]+'</i></span>'+
+                '<span class="al-nw"><b>'+r.nm+'</b><small>'+r.sb+'</small></span><span class="al-aa'+(r.amt==null?' q':'')+'">'+amtTxt(r)+rp(r)+'</span></div>'; }).join('')+'</div>'; }).join('')+
+        '<div class="al-mc ye"><div class="al-mh"><span>After the year end</span></div><div class="al-mt"><small>'+fmt(after.reduce(function(a,x){ return a+(x.amt||0); },0))+' known so far</small></div>'+
+        after.map(function(x){ return '<div class="al-mr'+(x.ix!=null?' ck':'')+'"'+(x.ix!=null?' onclick="txhOpen('+x.ix+')"':'')+'><span class="al-day wide"><b>'+x.dt.replace(/^(\d+) /,'$1<br>')+'</b></span><span class="al-nw"><b>'+x.nm+'</b><small>'+x.sb+'</small></span><span class="al-aa'+(x.amt==null?' q':'')+'">'+(x.amt==null?(x.ix!=null?'not known yet':'—'):fmt(x.amt))+'</span></div>'; }).join('')+'</div></div>';
+    }
+    o+='</div>';
+    h+=o;
+  })();
+  TAX_TXH={items:items, vat:vat, prov:prov, poa:poa, pay:pay, fy:_fyNow, cash:cash, sub:sub, class4:class4, co:co, priorTaxable:priorRF.taxable};
+  if(prov.ok && prov.tooNew) h+='<div style="font-size:12px;color:var(--t3);margin:-4px 2px 12px">Tax on what you have recorded so far — not a full-year figure yet. The full-year estimate appears once you have a month of trading behind you.</div>';
+
+  /* ---- 2. To sort: each one changes a figure above ---- */
+  var sort=[];
+  var unkIt=items.filter(function(it){ return it.unknown; })[0];
+  if(unkIt) sort.push('<div class="txh-sr"><div class="t"><b>Add your payment on account from HMRC</b><div>With no bill for last year in the app, we can’t work out what HMRC will ask for on '+_shortDate(unkIt.d)+'. It’s in your HMRC online account.</div></div><div class="x"><button class="txh-sb pri" onclick="txhOpen('+items.indexOf(unkIt)+')">Add HMRC’s figure</button></div></div>');
+  if((prov.capital||0)>0) sort.push('<div class="txh-sr"><div class="t"><b>'+fmt(prov.capital)+' of capital spend</b> is in your books as costs<div>It only earns an allowance once it’s in Assets — machinery at 100% in year one, buildings at 3% a year.</div></div><div class="x"><button class="txh-sb" onclick="nav(\'assets\')">Open Assets</button></div></div>');
+  if(_dd.unlogged>0) sort.push('<div class="txh-sr"><div class="t"><b>'+_grpInt(Math.round(_dd.unlogged))+' L of red diesel</b> not logged to a machine<div>HMRC can ask you to show it was used for farming.</div></div><div class="x"><button class="txh-sb" onclick="nav(\'crop\')">Log it</button></div></div>');
+  if(prov.ok && prov.nudge && prov.nudge.show) sort.push('<div class="txh-sr"><div class="t"><b>Add your '+esc(prov.nudge.enterprise)+' to the season plan</b><div>Until then income is spread evenly, so the estimate is rougher.</div></div><div class="x"><button class="txh-sb" onclick="nav(\'planning\')">Open plan</button></div></div>');
+  if(sort.length) h+='<div class="txh-sort"><div class="txh-sort-h">'+sort.length+(sort.length===1?' thing':' things')+' to sort<span>each one changes the figures above</span></div>'+sort.join('')+'</div>';
   try{ h+=taxReconcileHTML(); }catch(e){}
   try{ h+=taxMisfiledHTML(); }catch(e){}
 
-  // 3-up: gauge / set-aside / VAT trend
-  h+='<div class="tx-g3">';
-  /* Against TAXABLE profit, not cash profit. Divided by cash profit this could read
-     over 100% on a farm with a big income-tax payment in its books — the effective
-     rate is a share of what HMRC actually charges tax on, and is bounded by the tables. */
-  if(prov.ok){ var eff=prov.taxableProfit>0?Math.round((prov.annualTax+class4)/prov.taxableProfit*100):0;
-    h+='<div class="tx-card"><div class="tx-h">Effective tax rate</div>'+_taxGauge(eff/45)+'<div style="text-align:center;font-size:20px;font-weight:800;margin-top:-6px">'+eff+'%</div><div style="text-align:center;font-size:11px;color:var(--t4)">'+(class4>0?'income tax and Class 4 NI on taxable profit':'of taxable profit')+' · '+esc(_entityTaxLabel(prov.entity))+'</div></div>';
-    /* Set aside for the NEXT payment, from the one schedule: that payment spread over the months
-       left before it is due. This divided THIS year's income tax by 12 and labelled it "to cover
-       31 Jan" - £1,670 a month against a £150,410 payment. */
-    var _nx=prov.next||{}, _mo=Math.max(1,Math.ceil((prov.daysAway||0)/30.44));
-    var _saAmt=(_nx.amt!=null?_nx.amt:null), _saMo=(_saAmt!=null?Math.round(_saAmt/_mo):null);
-    var _saNote=(_saAmt==null?'Payments on account are half of last year\u2019s bill':(_nx.per==='balancing'?'This year\u2019s estimated bill, less the instalments':(_nx.per==='ct'?'Corporation tax on this year\u2019s estimated profit':('Spread over '+_mo+' month'+(_mo===1?'':'s')+' \u00b7 '+((prov.poa&&prov.poa.source==='hmrc')?'HMRC\u2019s figure':'half of last year\u2019s bill')))));
-    /* -371 (SA -452): the monthly figure and three rows - next payment, when, and what it is
-       based on. It was the figure over two lines of small print. */
-    var _M3=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    var _saRow=function(k,v){ return '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:7px 0;border-top:1px solid var(--br2);font-size:12.5px"><span style="color:var(--t3)">'+k+'</span><span style="font-weight:700;font-variant-numeric:tabular-nums;text-align:right">'+v+'</span></div>'; };
-    var _PER={'1st':'1st payment on account','2nd':'2nd payment on account','balancing':'Balancing payment','ct':'Corporation tax'};
-    var _nd=_nx.d?new Date(_nx.d):null, _due=_nd?(_nd.getDate()+' '+_M3[_nd.getMonth()]+' '+_nd.getFullYear()):(_nx.lbl||'\u2014');
-    h+='<div class="tx-card" style="display:flex;flex-direction:column"><div class="tx-h" title="'+esc(_saNote)+'">Set aside each month</div>'+
-      '<div style="text-align:center;margin:4px 0 10px"><span style="font-size:26px;font-weight:800;font-variant-numeric:tabular-nums">'+(_saMo!=null?fmt(_saMo):'\u2014')+'</span><span style="font-size:12px;color:var(--t3);font-weight:600"> a month</span></div>'+
-      _saRow('Next payment', _saAmt!=null?(esc(_PER[_nx.per]||'Payment')+' \u00b7 '+fmt(_saAmt)):'<span style="color:#B45309">add the figure from HMRC</span>')+
-      _saRow('Due', esc(_due)+(prov.daysAway>0?' <span style="color:var(--t4);font-weight:600">\u00b7 '+prov.daysAway+' days</span>':''))+
-      _saRow('Based on', esc(_saNote))+
-      '</div>';
-  } else { h+='<div class="tx-card"><div class="tx-h">Set aside for tax</div><div style="font-size:12.5px;color:var(--t3)">Once your tax year shows a profit, your payment-on-account set-aside appears here.</div></div>'; }
-  if(trend.length){ var mx=Math.max.apply(null,trend.map(function(t){return Math.abs(t.net);}).concat(1));
-    h+='<div class="tx-card" style="display:flex;flex-direction:column"><div class="tx-h">VAT — last 3 periods</div><div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;padding-bottom:4px"><div style="display:flex;align-items:flex-end;gap:10px;height:62px">'+trend.map(function(t,i){var pc=Math.max(6,Math.round(Math.abs(t.net)/mx*100));var owe=t.net>=0, cur=(i===trend.length-1); return '<div style="flex:1;text-align:center;min-width:0"><div style="font-size:10.5px;font-weight:700;color:'+(owe?'#B91C1C':'#2D6A4F')+';margin-bottom:2px;white-space:nowrap">'+(owe?'':'+')+fmt(Math.abs(t.net))+'</div><div style="height:'+Math.round(pc*0.44)+'px;background:'+(owe?(cur?'#DC2626':'#F87171'):(cur?'#2D6A4F':'#74A98A'))+';border-radius:4px 4px 0 0"></div><div style="font-size:10.5px;color:var(--t4);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+t.label+'</div></div>';}).join('')+'</div><div style="font-size:11px;color:var(--t4);margin-top:6px;text-align:center">Red: you pay HMRC · green (+): HMRC pays you</div></div></div>';
-  } else { h+='<div class="tx-card"><div class="tx-h">VAT</div><div style="font-size:12.5px;color:var(--t3)">Not registered for VAT — no VAT to track.</div></div>'; }
+  /* ---- 3. One card per tax, same shape: what it is, the figure, three rows, one link ---- */
+  h+='<div class="txh-g3">';
+  var _fyL=(function(){ try{ return fyLabel(_fyNow); }catch(e){ return 'this tax year'; } })();
+  var poaRow='';
+  if(!co){ poaRow = poa.known ? '<div class="r"><span>Payments on account</span><b>'+fmt(poa.each||0)+' each</b></div>'
+                              : '<div class="r"><span>Payments on account</span><b class="txh-warn">add HMRC’s figure</b></div>'; }
+  if(prov.ok){ var itax=prov.annualTax+(co?0:class4), eff=prov.taxableProfit>0?Math.round(itax/prov.taxableProfit*100):0;
+    h+='<div class="txh-c"><div class="l">'+_ic('tax')+(co?'Corporation tax':'Income tax & Class 4 NI')+'</div><div class="v">'+fmt(itax)+'</div><div class="u">'+(prov.taxableProfit<0?'a taxable loss this year, so none on this estimate':'estimate for '+esc(_fyL))+'</div><div class="rows">'+
+      (prov.taxableProfit<0?'<div class="r"><span>Taxable loss</span><b>'+fmt(-prov.taxableProfit)+'</b></div>':'<div class="r"><span>Taxable profit</span><b>'+fmt(prov.taxableProfit)+'</b></div>')+
+      (co?'<div class="r"><span>Works out at</span><b>'+eff+'% of it</b></div>'
+         :'<div class="r"><span>Income tax · Class 4 NI</span><b>'+fmt(prov.annualTax)+' · '+fmt(class4)+'</b></div>')+
+      poaRow+
+      '</div><div class="f"><a onclick="document.getElementById(\'txh-how\').scrollIntoView({behavior:\'smooth\'})">How it’s worked out ↓</a> &nbsp;·&nbsp; <a onclick="taxTab(\'whatif\')">What if profit changes?</a></div></div>';
+  } else {
+    var _hd=0; try{ _hd=b5ProfitHeading(_fyNow).heading; }catch(e){}
+    h+='<div class="txh-c"><div class="l">'+_ic('tax')+(co?'Corporation tax':'Income tax & Class 4 NI')+'</div><div class="v">'+fmt(0)+'</div><div class="u">'+(_hd<0?'heading for a loss of '+fmt(Math.abs(_hd))+' this year, so none on this estimate':'no taxable profit on this estimate')+'</div><div class="rows">'+
+      poaRow+
+      '<div class="r"><span>Last year</span><b>'+fmt(priorTax)+'</b></div>'+
+      '</div><div class="f">'+(!co && poa.known && (poa.each||0)>0?'Payments on account are based on last year — you can ask HMRC to reduce them. ':'')+'<a onclick="taxTab(\'whatif\')">What if profit changes?</a></div></div>';
+  }
+  if(vat){
+    var prev=trend.slice(0,-1).reverse().map(function(t){ return t.label.replace(/ \d{4}$/,'')+' '+(t.net<0?'refund +'+fmt(-t.net):fmt(t.net)); }).join(' · ');
+    h+='<div class="txh-c"><div class="l">'+_ic('vat')+'VAT · '+_vp(vat)+'</div><div class="v'+(vat.owe<0?' in':'')+'">'+fmt(Math.abs(vat.owe))+'</div><div class="u">'+(vat.owe>=0?'to pay HMRC':'HMRC pays you')+' by '+_shortDate(_ukVatDueDate(vat.to))+(now<=vat.to?' · quarter still open':'')+'</div><div class="rows">'+
+      '<div class="r"><span>VAT on your sales</span><b>'+fmt(vat.out)+'</b></div>'+
+      '<div class="r"><span>VAT on your costs</span><b>'+(vat.inp>0?'−':'')+fmt(vat.inp)+'</b></div>'+
+      '</div><div class="f">'+(prev?'Before: '+prev+'<br>':'')+'<a onclick="nav(\'settings\')">VAT settings</a></div></div>';
+  } else {
+    var vatThr=(typeof vatRegThreshold==='function')?vatRegThreshold():90000, inc=ytd?ytd.income:0;
+    h+='<div class="txh-c"><div class="l">'+_ic('vat')+'VAT</div><div class="v q">Not registered</div><div class="u">'+(inc>=vatThr?'<span class="txh-warn">Income is over '+fmt(vatThr)+' — registration is compulsory. Check with your accountant.</span>':'no VAT to pay or claim')+'</div><div class="rows">'+
+      '<div class="r"><span>Income so far</span><b>'+fmt(inc)+'</b></div><div class="r"><span>Registration line</span><b>'+fmt(vatThr)+'</b></div></div></div>';
+  }
+  if(wk){
+    h+='<div class="txh-c"><div class="l">'+_ic('wk')+'Workers · PAYE & NI</div><div class="v">'+fmt(pay.total)+'</div><div class="u">this year · '+fmt(pay.withheld||0)+' of it comes out of wages</div><div class="rows">'+
+      '<div class="r"><span>PAYE</span><b>'+fmt(pay.paye||0)+'</b></div>'+
+      '<div class="r"><span>Employee NI</span><b>'+fmt(pay.employeeNI||0)+'</b></div>'+
+      '<div class="r"><span>Employer NI'+((pay.allowance||0)>0?' (after allowance)':'')+'</span><b>'+fmt(pay.employerNI||0)+'</b></div>'+
+      '</div><div class="f">'+(wk.allOk?'<span class="txh-ok">✓ All '+wk.count+' paid at least the minimum wage</span>':'<span class="txh-warn">▲ Someone is below the minimum wage</span>')+' &nbsp;·&nbsp; <a onclick="nav(\'workers\')">Workers</a></div></div>';
+  } else h+='<div class="txh-c"><div class="l">'+_ic('wk')+'Workers</div><div class="v q">None</div><div class="u">no PAYE, NI or employers’ liability insurance to manage</div></div>';
   h+='</div>';
 
-  // waterfall + calendar
-  h+='<div class="tx-g2">';
-  h+='<div class="tx-card" style="display:flex;flex-direction:column"><div class="tx-h">How your profit becomes tax'+(prov.tooNew?profitTags('actual','Year so far'):profitTags('proj','Projected to '+ukFyEndShort()))+'</div>';
-  var _rf=prov.ringFence||{allowed:0,carried:0,brought:0};
-  if(prov.ok){
-    /* The steps a farmer's money actually goes through, in HMRC's order — not a plain
-       income-minus-costs sum. Rows that would be zero for most farms (the para 12
-       improvement claim) only appear when there is something in them. */
-    var _vx=(typeof FARM!=='undefined'&&FARM.vat);   // a VAT-registered farm is taxed on amounts without VAT
+  /* ---- 4. How it's worked out ---- */
+  h+='<div class="txh-sec" id="txh-how">How it’s worked out</div><div class="txh-g2">';
+  h+='<div class="tx-card" style="display:flex;flex-direction:column"><div class="tx-h">How your profit becomes tax'+(prov.tooNew?' <span style="font-weight:600;color:var(--t4);text-transform:none;letter-spacing:0">· year so far</span>':'')+'</div>';
+  var _tl=0;
+  if(prov.ok || (prov.working && prov.b5)){   /* a loss still shows its working */
+    var _vx=(typeof FARM!=='undefined'&&FARM.vat);
     var wf;
     if(prov.working && prov.b5){
-      /* -371 (SA -451 D6): from the same profit as the Dashboard and Profit page, the way the
-         SA103F gets there: our write-off out, capital allowances in, then the plan for the rest
-         of the year. A company's line is corporation tax; a sole trader's adds Class 4 NI. */
-      var _wp=b5Profit(getCurrentFY(),{toYm:b5TodayYm()}), _te=prov.b5;
-      var _adj=Math.round(_te.actualTaxable-(_wp.profit+_wp.depr-prov.capAllow)), _rest=Math.round(_te.rest.income-_te.rest.deductible-_te.rest.interest);
-      wf=[['Profit so far',_wp.profit,'#40916C',1],['+ Book write-off added back',_wp.depr,'#74A98A',0],['− Capital allowances',-prov.capAllow,'#C2703F',0]];
-      if(Math.abs(_adj)>=1) wf.push(['± Other tax adjustments',_adj,'#B45309',0]);
-      wf.push(['Taxable so far',_te.actualTaxable,'#7FB98F',1],['± Rest of the year, from your plan',_rest,'#E86A5E',0],['Taxable profit (estimate)',prov.taxableProfit,'#7FB98F',1],
-              [ukIsCompany()?'Corporation tax':'Income tax',-prov.annualTax,'#B45309',1]);
-      if(class4>0) wf.push(['Class 4 NI',-class4,'#B45309',1]);
+      /* From the same profit as the Dashboard and Profit page, the way the SA103F gets there:
+         our write-off out, capital allowances in, then the plan for the rest of the year. */
+      var _wp2=b5Profit(getCurrentFY(),{toYm:b5TodayYm()}), _te=prov.b5;
+      var _adj=Math.round(_te.actualTaxable-(_wp2.profit+_wp2.depr-prov.capAllow)), _rest=Math.round(_te.rest.income-_te.rest.deductible-_te.rest.interest);
+      var _tv=Math.round(_te.actualTaxable+_rest); _tl=_tv<0?_tv:0;
+      wf=[['Profit so far',_wp2.profit,1],['+ Book write-off added back',_wp2.depr,0],['− Capital allowances',-prov.capAllow,0]];
+      if(Math.abs(_adj)>=1) wf.push(['± Other tax adjustments',_adj,0]);
+      wf.push(['Taxable so far',_te.actualTaxable,1],['± Rest of the year, from your plan',_rest,0],[(_tl<0?'Taxable loss (estimate)':'Taxable profit (estimate)'),(_tl<0?_tl:prov.taxableProfit),1],
+              [co?'Corporation tax':'Income tax',-(prov.ok?prov.annualTax:0),1]);
+      if(class4>0) wf.push(['Class 4 NI',-class4,1]);
     } else {
-    wf=[[_vx?'Income without VAT':'Gross farming income',prov.annualIncome,'#40916C'],['− Running costs',-prov.otherDed,'#E86A5E']];
-    /* Was "− Farm improvements", the para 12(3) claim, which took capital spend off at
-       full cost. What comes off in the UK is the year's capital ALLOWANCES — AIA, the two
-       writing-down pools and SBA — so the row has to name that instead, or the waterfall
-       stops adding up to the taxable profit underneath it. */
-    if(prov.capAllow>0) wf.push(['− Capital allowances',-prov.capAllow,'#C2703F']);
-    /* E5 - a balancing charge on kit that has gone. It ADDS, so it needs its own row or
-       the waterfall stops reaching the taxable profit underneath it. Named the way the
-       farmer met it in the disposal screen, not "balancing charge". */
-    if(prov.balancingCharge>0) wf.push(['+ Sold kit, taxable now',prov.balancingCharge,'#B45309']);
-    wf.push(['Taxable profit',prov.taxableProfit,'#7FB98F'],['Income tax',-prov.annualTax,'#B45309']);
+      wf=[[_vx?'Income without VAT':'Gross farming income',prov.annualIncome,1],['− Running costs',-prov.otherDed,0]];
+      if(prov.capAllow>0) wf.push(['− Capital allowances',-prov.capAllow,0]);
+      if(prov.balancingCharge>0) wf.push(['+ Sold kit, taxable now',prov.balancingCharge,0]);
+      wf.push(['Taxable profit',prov.taxableProfit,1],[co?'Corporation tax':'Income tax',-prov.annualTax,1]);
+      if(class4>0) wf.push(['Class 4 NI',-class4,1]);
     }
-    var _wLast=wf.length-1, wmx=Math.max.apply(null,wf.map(function(r){return Math.abs(r[1]);}).concat(1));
-    h+='<div style="flex:1;display:flex;flex-direction:column;justify-content:space-between;padding:6px 0 2px">'+wf.map(function(r,i){ var bold=(r[3]!=null)?!!r[3]:(i===0||i===_wLast-1||i===_wLast), pc=Math.max(4,Math.round(Math.abs(r[1])/wmx*100)); return '<div style="display:flex;align-items:center;gap:9px'+(r[3]!=null?';padding:5px 0'+(r[3]&&i>0?';border-top:1px solid var(--br2)':''):'')+'"><div style="flex:1;font-size:11.5px;font-weight:'+(bold?'700':'600')+';color:'+(bold?'var(--t1)':'var(--t3)')+'">'+r[0]+'</div><div style="width:64px"><div class="tx-bar"><i style="width:'+pc+'%;background:'+r[2]+'"></i></div></div><div style="width:82px;text-align:right;font-size:11.5px;font-weight:800;color:'+(r[1]<0?'var(--rd)':'var(--t1)')+'">'+(r[1]<0?'−':'')+IE_R(Math.abs(r[1])).replace('−','')+'</div></div>'; }).join('')+'</div>';
-    /* A farmer who sells a tractor and sees money ADDED to their taxable profit will
-       assume a bug unless the reason is attached to it. It is not a new tax: they took
-       the whole tractor off when they bought it, so what came back is taxable now. */
-    if(prov.working && prov.b5){
-      h+='<div style="font-size:11px;color:var(--t3);line-height:1.5;margin-top:9px;padding-top:9px;border-top:1px solid var(--br2)">Starts from the same <b>profit</b> as your Dashboard and Profit page. HMRC swaps our write-off for your capital allowances; the rest of the year ('+prov.b5.rest.months+' month'+(prov.b5.rest.months===1?'':'s')+') comes from your plan, including '+fmtK(prov.b5.rest.interest)+' of loan interest still to come.</div>';
-    }
-    if(prov.balancingCharge>0){
-      h+='<div style="font-size:11px;color:var(--t3);line-height:1.5;margin-top:9px;padding-top:9px;border-top:1px solid var(--br2)">'+
-         'You got '+IE_R(prov.balancingProceeds).replace('−','')+' for kit that has gone, which is more than the past machinery spend you still had left to claim. The '+IE_R(prov.balancingCharge).replace('−','')+' difference is taxable now. It is not a new tax \u2014 you already took that much off in the year you bought the kit.'+
-         '</div>'; }
-    /* Why the running-costs line is smaller than the farm's own expense total. Only
-       shown when something was actually struck out, so most farms never meet the idea. */
+    var wmx=Math.max.apply(null,wf.map(function(r){return Math.abs(r[1]);}).concat(1));
+    h+='<div style="flex:1;display:flex;flex-direction:column;justify-content:space-between;padding:6px 0 2px">'+wf.map(function(r,i){ var bold=!!r[2], pc=Math.max(4,Math.round(Math.abs(r[1])/wmx*100)); return '<div style="display:flex;align-items:center;gap:9px;padding:7px 0'+(bold&&i>0?';border-top:1px solid var(--br2)':'')+'"><div style="flex:1;font-size:13px;font-weight:'+(bold?'700':'600')+';color:'+(bold?'var(--t1)':'var(--t3)')+'">'+r[0]+'</div><div style="width:64px"><div class="tx-bar"><i style="width:'+pc+'%;background:'+(bold?'#2D6A4F':'#B7D3C1')+'"></i></div></div><div style="width:104px;text-align:right;font-size:13px;font-weight:800;color:var(--t1)">'+(r[1]<0?'−':'')+fmt(Math.abs(r[1]))+'</div></div>'; }).join('')+'</div>';
+    if(prov.working && prov.b5)
+      h+='<div style="font-size:12px;color:var(--t3);line-height:1.5;margin-top:9px;padding-top:9px;border-top:1px solid var(--br2)">Starts from the same <b>profit</b> as your Dashboard and Profit page. HMRC swaps our write-off for your capital allowances; the rest of the year ('+prov.b5.rest.months+' month'+(prov.b5.rest.months===1?'':'s')+') comes from your plan, including '+fmtK(prov.b5.rest.interest)+' of loan interest still to come.</div>';
+    if(prov.balancingCharge>0)
+      h+='<div style="font-size:12px;color:var(--t3);line-height:1.5;margin-top:9px;padding-top:9px;border-top:1px solid var(--br2)">You got '+fmt(prov.balancingProceeds)+' for kit that has gone, which is more than the machinery spend you still had left to claim. The '+fmt(prov.balancingCharge)+' difference is taxable now — it isn’t a new tax; you took that much off in the year you bought the kit.</div>';
     if(prov.nonDed>0){ var _ndp=_taxNonDedPhrase(prov.nonDedByCat);
-      h+='<div style="font-size:11px;color:var(--t3);line-height:1.5;margin-top:9px;padding-top:9px;border-top:1px solid var(--br2)">'+
-         /* Plain words: a farmer doesn't have "deductions", they have costs that come off
-            before tax. The whole tail switches on plurality, not just the verb — "it
-            doesn't come off" vs "they don't come off" — and each full variant is a
-            LANG_PAIR, because the substring engine matches contiguous runs. */
-         (_ndp
-            ? _ndp + (Object.keys(prov.nonDedByCat||{}).length>1
-                ? ' are in your books, but they don’t come off here — HMRC doesn’t let you take those off.'
-                : ' is in your books, but it doesn’t come off here — HMRC doesn’t let you take that off.')
-            : 'Some tax you paid is in your books, but it doesn’t come off here — HMRC doesn’t let you take that off.')+
-         '</div>'; }
-    /* The para 12(3) brought-forward note lived here. Nothing carries forward under UK
-       capital allowances, so there is nothing to tell the farmer about. What IS worth
-       saying is where the allowance comes from, because a cost with no asset behind it
-       earns nothing. */
-    /* Gated on capAllow being zero at first, which was wrong: the demo farm has other
-       assets earning allowances, so a 200,000 grain store with nothing behind it was
-       silently hidden. Capital spend recorded as a COST never earns relief by itself,
-       whatever else the farm owns, so the note keys off the spend alone. */
-    if(prov.capital>0) h+='<div style="font-size:11px;color:#7a4a10;background:#FEF6E7;border:1px solid #F1DBA6;border-radius:9px;padding:8px 10px;line-height:1.5;margin-top:7px"><b>'+IE_R(prov.capital)+'</b> of capital spend is in your books. It doesn\u2019t come off as a running cost \u2014 check each item is in <b>Assets</b>, where the allowance is worked out: buildings, roads and yards at 3% a year, fixed plant and fencing at 100% in year one, land and orchard planting not at all.</div>';
-  } else h+='<div style="flex:1;display:flex;align-items:center;font-size:12.5px;color:var(--t3)">Appears once there’s a profit to tax.</div>';
-  /* Deliberately OUTSIDE the profit branch. A farm that has just spent more on
-     improvements than it earned has no taxable profit — and is precisely the farm that
-     needs to be told the money is not lost. Gating this on a profit would go silent at
-     the one moment the message matters. */
-  /* Removed: a "Not lost — HMRC moves it to next year" banner for capital spend that
-     exceeded farming income. That is para 12(3); under UK capital allowances there is no
-     carry-forward, and telling a farmer their relief is safe when it is not would be the
-     worst kind of wrong. _rf.carried is pinned to 0, so this never fired anyway. */
-  /* Same spend in the books twice, under two regimes. Shown here because this is the
-     card where the improvement claim is made, so the farmer sees the warning against the
-     figure it affects rather than somewhere else on the page. */
+      h+='<div style="font-size:12px;color:var(--t3);line-height:1.5;margin-top:9px;padding-top:9px;border-top:1px solid var(--br2)">'+
+         (_ndp ? _ndp+(Object.keys(prov.nonDedByCat||{}).length>1?' are in your books, but they don’t come off here — HMRC doesn’t let you take those off.':' is in your books, but it doesn’t come off here — HMRC doesn’t let you take that off.')
+               : 'Some tax you paid is in your books, but it doesn’t come off here — HMRC doesn’t let you take that off.')+'</div>'; }
+  } else h+='<div style="font-size:12.5px;color:var(--t3)">Appears once there’s a year to work out.</div>';
   var _dc=taxDoubleCountRisk((typeof getCurrentFY==='function')?getCurrentFY():0);
-  if(_dc.length) h+='<div style="font-size:11px;color:#7a4a10;background:#FEF6E7;border:1px solid #F1DBA6;border-radius:9px;padding:8px 10px;line-height:1.5;margin-top:9px"><b>Worth a check.</b> '+
-    _dc.slice(0,3).map(function(x){ return esc(x.desc||x.cat)+' '+IE_R(x.amount); }).join(', ')+
-    (_dc.length>3?' and '+(_dc.length-3)+' more':'')+
-    ' is in your books twice — once as something you own, once as a cost. HMRC lets you count it one way or the other, not both — keep the right one and take out the other.</div>';
+  if(_dc.length) h+='<div style="font-size:12px;color:#7a4a10;background:#FEF6E7;border:1px solid #F1DBA6;border-radius:9px;padding:8px 10px;line-height:1.5;margin-top:9px"><b>Worth a check.</b> '+
+    _dc.slice(0,3).map(function(x){ return esc(x.desc||x.cat)+' '+fmt(x.amount); }).join(', ')+(_dc.length>3?' and '+(_dc.length-3)+' more':'')+
+    ' is in your books twice — once as something you own, once as a cost. HMRC lets you count it one way or the other, not both.</div>';
   h+='</div>';
-  h+='<div class="tx-card" style="display:flex;flex-direction:column"><div class="tx-h">Your tax year — what’s ahead</div>';
-  /* HMRC deadlines, not the SA provisional calendar this started life as. Payments on
-     account fall 31 Jan and 31 Jul with the balancing payment the following 31 Jan; VAT
-     is one calendar month and seven days after the period ends; PAYE and NIC are due the
-     22nd of the following tax month when paid electronically (19th by post); the Self
-     Assessment return and the balancing payment share 31 Jan. Employers liability cover
-     has no statutory date \u2014 it runs to the policy anniversary \u2014 so it is listed as a
-     standing duty rather than a deadline, which is what it actually is. */
-  var cal=[], _n=_txNow();
-  /* A company pays corporation tax in one go, 9 months and a day after ITS period ends -
-     it makes no payments on account and files no Self Assessment return. Showing it the
-     31 January / 31 July schedule was telling a farmer to pay on dates that do not apply. */
-  if(ukIsCompany()){
-    var _ctEnd=ukFyPeriodEnd(fyOf(_txNow()));
-    cal.push([_shortDate(ukCtPaymentDue(_ctEnd)),'Corporation tax'+(prov.ok?(' \u00b7 '+fmt(prov.total!=null?prov.total:prov.next.amt)):''),'9 months + 1 day after year end','#B45309',true]);
-    cal.push([_shortDate(ukCtReturnDue(_ctEnd)),'Company Tax Return (CT600)','12 months after year end','#2D6A4F',false]);
+  var _tyTax=prov.ok?(prov.annualTax+(co?0:class4)):0;
+  h+='<div class="tx-card"><div class="tx-h">This year against last</div>';
+  if(prov.ok||priorTax){ var _ch=priorTax>0?Math.round((_tyTax-priorTax)/priorTax*100):null, _ym=Math.max(_tyTax,priorTax,1);
+    var _pb=function(lbl,v,col,strong){ return '<div class="txh-pb"><span style="color:'+(strong?'#16241C':'var(--t3)')+';font-weight:'+(strong?700:500)+'">'+lbl+'</span><div class="bar"><i style="width:'+Math.max(1,Math.round(v/_ym*100))+'%;background:'+col+'"></i></div><b style="color:'+(strong?'#16241C':'var(--t3)')+'">'+fmt(v)+'</b></div>'; };
+    h+='<div class="txh-yoy"><span class="big">'+fmt(_tyTax)+'</span><span class="chg">'+(_ch==null?(co?'corporation tax':'income tax')+' this year (estimate)':(_tyTax===0?'no '+(co?'corporation':'income')+' tax this year':_ch<0?'↓ '+(-_ch)+'% on last year':'↑ '+_ch+'% on last year'))+'</span></div>'+
+       _pb('This year',_tyTax,'#2D6A4F',true)+_pb('Last year',priorTax,'#B7D3C1',false)+
+       '<div style="font-size:12px;color:var(--t3);margin:12px 0 14px;line-height:1.5">'+(_tl<0
+         ? 'A taxable loss of <b style="color:#16241C">'+fmt(-_tl)+'</b> this year, so no '+(co?'corporation':'income')+' tax — against a taxable profit of '+fmt(Math.max(0,priorRF.taxable||0))+' last year.'
+         : 'Taxable profit is <b style="color:#16241C">'+fmt(Math.max(0,prov.taxableProfit||0))+'</b> this year, against '+fmt(Math.max(0,priorRF.taxable||0))+' last year.')+'</div>';
   }
-  else if(prov.next && prov.next.d && prov.next.amt!==0) cal.push([_shortDate(prov.next.d),_ukPoaLabel(prov.next.per)+(prov.next.amt!=null?' · '+fmt(prov.next.amt):' · add from HMRC'),(prov.next.prevBal>0?'with last year’s balancing':(prov.next.per==='balancing'?'balancing payment':'payment on account')),'#B45309',true]);
-  if(vat) cal.push([_shortDate(_ukVatDueDate(vat.to)),'VAT return','one month + 7 days','#DC2626',false]);
-  if(wk) cal.push(['22nd','PAYE & NIC','paid over to HMRC','#2D6A4F',false]);
-  if(!ukIsCompany()) cal.push(['31 Jan','Self Assessment','return + balancing payment','#2D6A4F',false]);
-  if(wk) cal.push(['ongoing','Employers liability','cover must stay in force','#6B7280',false]);
-  /* -371 (SA -452): rows spread over the card, every date box the same size, the note quiet. */
-  h+='<div style="flex:1;display:flex;flex-direction:column;justify-content:space-evenly">'+cal.map(function(c,i){ return '<div style="display:flex;gap:14px;align-items:center;padding:11px 0;'+(i<cal.length-1?'border-bottom:1px solid var(--br2)':'')+'">'+
-    '<div style="flex:0 0 78px;height:28px;display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:800;color:#fff;background:'+c[3]+';border-radius:8px">'+c[0]+'</div>'+
-    '<div style="flex:1;min-width:0;font-size:13px;font-weight:600;color:var(--t1)">'+c[1]+' <span style="font-size:11px;font-weight:600;color:var(--t4);margin-left:4px">'+c[2]+'</span></div>'+
-    (c[4]?'<span style="font-size:11px;font-weight:800;background:#FEF3E0;color:#B45309;padding:3px 9px;border-radius:999px">next up</span>':'')+'</div>'; }).join('')+'</div>';
-  h+='</div></div>';
-
-  // deductions breakdown + YoY
-  h+='<div class="tx-g2">';
-  h+='<div class="tx-card"><div class="tx-h">Where your deductions come from</div>';
-  /* Only things that ARE deductions. Income tax and HMRC penalties are often among a
-     farm's biggest single payments, so without this filter they top a list headed
-     "where your deductions come from" — while the card above says they are not
-     deductible. One screen, two answers. */
-  var fy=_taxFYProfit(0), ded=[]; Object.keys(fy.byCat||{}).forEach(function(k){ if(taxCatKind(k)!=='nonded') ded.push([k,fy.byCat[k]]); }); ded.sort(function(a,b){return b[1]-a[1];}); ded=ded.slice(0,3);
-  if(cap.total>0) ded.push(['Capital allowances (AIA, writing-down, structures)',cap.total]);
-  var dmx=Math.max.apply(null,ded.map(function(d){return d[1];}).concat(1));
-  h+=(ded.length?ded.map(function(d){ var pc=Math.max(5,Math.round(d[1]/dmx*100)); return '<div style="margin-bottom:9px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px"><span style="font-weight:600">'+esc(_txCatLabel(d[0]))+'</span><b>'+IE_R(d[1])+'</b></div><div class="tx-bar"><i style="width:'+pc+'%;background:#40916C"></i></div></div>'; }).join(''):'<div style="font-size:12.5px;color:var(--t3)">Log costs and assets to see your deductions build up.</div>');
-  h+='</div>';
-  /* -452: the bars sit in the middle of the card, on a baseline, instead of hugging the heading. */
-  h+='<div class="tx-card" style="display:flex;flex-direction:column"><div class="tx-h">'+(ukIsCompany()?'Corporation tax':'Income tax')+' — this year vs last</div>';
-  if(prov.ok||priorTax){ var yv=Math.max(prov.annualTax,priorTax,1);
-    var _bar=function(v,lbl,col,strong){ return '<div style="flex:1;max-width:190px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end">'+
-      '<div style="font-size:12px;font-weight:800;color:'+(strong?'var(--gd)':'var(--t3)')+';margin-bottom:4px;font-variant-numeric:tabular-nums">'+IE_R(v)+'</div>'+
-      '<div style="width:100%;height:'+Math.max(4,Math.round(v/yv*96))+'px;background:'+col+';border-radius:6px 6px 0 0"></div></div>'; };
-    h+='<div style="flex:1;display:flex;flex-direction:column;justify-content:center;padding:8px 6px 0">'+
-      '<div style="display:flex;align-items:flex-end;justify-content:center;gap:28px;height:124px;border-bottom:1px solid var(--br)">'+
-        _bar(priorTax,'last',"#74C69D",false)+_bar(prov.annualTax||0,'this','#1B4332',true)+'</div>'+
-      '<div style="display:flex;justify-content:center;gap:28px;margin-top:6px">'+
-        '<div style="flex:1;max-width:190px;text-align:center;font-size:11.5px;color:var(--t4)">Last year</div>'+
-        '<div style="flex:1;max-width:190px;text-align:center;font-size:11.5px;color:var(--gd);font-weight:700">This year (estimate)</div></div></div>';
-  } else h+='<div style="font-size:12.5px;color:var(--t3)">Builds up as your season progresses.</div>';
-  h+='</div></div>';
-
-  // VAT + workers
-  h+='<div class="tx-g2">';
-  if(vat){ h+='<div class="tx-card"><div class="tx-h"><span class="tx-vaticon">%</span> VAT — current period</div><div class="tx-mr"><span>Collected on sales</span><b>'+IE_R(vat.out)+'</b></div><div class="tx-mr"><span>Paid on costs</span><b>−'+IE_R(vat.inp).replace('−','')+'</b></div><div class="tx-mr" style="border-top:1px solid var(--br2);padding-top:6px;margin-top:4px"><span style="font-weight:700">'+(vat.owe>=0?'Owe HMRC':'HMRC owes you')+'</span><b style="color:'+(vat.owe>=0?'var(--rd)':'var(--gm)')+'">'+IE_R(Math.abs(vat.owe))+'</b></div><div style="font-size:11px;color:var(--t4);margin-top:7px">Period: '+_vatPeriodLabel(vat)+' &nbsp;\u00b7&nbsp; <span onclick="nav(\'settings\')" style="color:var(--gd);cursor:pointer;font-weight:700">change VAT category</span></div><div class="tx-wi"><details><summary>What is this?</summary>VAT charged on sales minus VAT paid on standard-rated costs. Farming inputs like fertiliser, seed and diesel are zero-rated. Filed on a VAT return '+_vatCadence(vat.cat)+', following the VAT category in Settings.</details></div></div>'; }
-  else h+='<div class="tx-card"><div class="tx-h"><span class="tx-vaticon">%</span> VAT</div><div style="font-size:12.5px;color:var(--t3)">You’re not registered for VAT. If your turnover passes £'+_grpInt(vatRegThreshold())+', registration becomes compulsory.</div></div>';
-  if(wk){ h+='<div class="tx-card"><div class="tx-h">👷 Your workers</div><div style="font-size:12.5px;font-weight:700;color:'+(wk.allOk?'var(--gm)':'var(--rd)')+'">'+(wk.allOk?'✓ All '+wk.count+' paid above minimum wage':'⚠ Someone is below minimum wage')+'</div><div class="tx-mr"><span>Employer NI</span><b>'+_wkErNiLine(wk)+'</b></div>'+
-    (wk.erNi?'<div style="font-size:11px;color:var(--t3);margin-top:3px">'+_wkErNiNote(wk)+'</div>':'')+'<div style="font-size:11px;color:var(--t3);margin-top:5px">PAYE &amp; NI worked out each payroll run — <span onclick="nav(\'workers\')" style="color:var(--gm);font-weight:700;cursor:pointer">open Workers →</span></div></div>'; }
-  else h+='<div class="tx-card"><div class="tx-h">👷 Workers</div><div style="font-size:12.5px;color:var(--t3)">No workers on your register — no PAYE, NI or Employers liability insurance to manage.</div></div>';
+  else h+='<div style="font-size:12.5px;color:var(--t3);margin:0 0 14px">No '+(co?'corporation':'income')+' tax this year or last.</div>';
+  var fyp=_taxFYProfit(0), ded=[]; Object.keys(fyp.byCat||{}).forEach(function(k){ if(taxCatKind(k)!=='nonded') ded.push([k,fyp.byCat[k]]); }); ded.sort(function(a,b){return b[1]-a[1];}); ded=ded.slice(0,3);
+  if(cap.total>0) ded.push(['Capital allowances',cap.total]);
+  h+='<div style="font-size:12px;font-weight:700;color:var(--t3);margin-bottom:2px">Biggest costs that come off</div>'+
+     (ded.length?ded.map(function(d){ return '<div style="display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-top:1px solid var(--br2);font-size:12.5px"><span>'+esc(_txCatLabel(d[0]))+'</span><b style="font-variant-numeric:tabular-nums">'+fmt(d[1])+'</b></div>'; }).join(''):'<div style="font-size:12.5px;color:var(--t3)">Log costs and assets to see them build up.</div>')+'</div>';
   h+='</div>';
 
-  // diesel money-back
-  var _dz=(typeof _dslC==='function')?_dslC():null;
-  if((_dz&&(_dz.bought>0||_dz.logged>0))||diesel>0){
-    /* Headline the litres the APP can evidence, not the ones typed in from a paper book.
-       The old card put ST_CROP.compliance.dieselLitres - the field whose own label reads
-       "logged on paper, outside the app" - under the words "qualifying agricultural use
-       logged", on the same tab whose diesel row read "4,300 l bought, none logged to a
-       machine yet". On a record HMRC can ask for, that asserted evidence the farm does
-       not have. Same fix as the crop input-cost report. */
-    var _dzLog=_dz?Math.round(_dz.logged||0):0, _dzBought=_dz?Math.round(_dz.bought||0):0, _dzUn=_dz?Math.round(_dz.unlogged||0):0;
-    var _dzHead=(_dzLog>0)?(_grpInt(_dzLog)+' L'):((_dzBought>0)?(_grpInt(_dzBought)+' L'):(_grpInt(diesel)+' L'));
-    var _dzCap=(_dzLog>0 && _dzUn<=0)
-        ? 'Every litre logged to a machine. Red diesel is bought at the rebated rate \u2014 there is nothing to reclaim, but HMRC can ask you to evidence the use.'
-        : (_dzLog>0
-           ? _grpInt(_dzLog)+' L logged to a machine of '+_grpInt(_dzBought)+' L bought \u2014 '+_grpInt(_dzUn)+' L still has no machine against it. HMRC can ask you to evidence agricultural use.'
-           : (_dzBought>0
-              ? _grpInt(_dzBought)+' L bought, none yet logged to a machine. Red diesel is bought at the rebated rate, so there is nothing to reclaim \u2014 but without a usage log there is nothing to show HMRC either.'
-              : _grpInt(diesel)+' L recorded on paper, outside the app. Nothing is logged to a machine here, so this tab cannot evidence it.'));
-    h+='<div class="tx-card" id="tax-diesel-card" style="border-color:var(--gp);margin-bottom:12px"><div class="tx-h">🛢️ Red diesel \u2014 your usage record</div>'+
-       '<div style="font-size:24px;font-weight:800;color:var(--gd)">'+_dzHead+'</div>'+
-       '<div style="font-size:12px;color:var(--t3)">'+_dzCap+'</div>'+
-       ((diesel>0&&_dzLog<=0)?'<div style="font-size:11px;color:var(--t3);margin-top:5px">'+_grpInt(diesel)+' L is logged on paper, outside the app.</div>':'')+
-       '</div>';
+  /* ---- 5. Checks, the year-end count, the small print ---- */
+  var chk=[], _v=(typeof FARM!=='undefined'&&FARM.vat), _vt=(typeof vatRegThreshold==='function')?vatRegThreshold():90000, _inc=ytd?ytd.income:0;
+  if(_v) chk.push({ok:1, t:'VAT registered', d:vat?'You file a VAT return '+_vatCadence(vat.cat)+' through Making Tax Digital software — the next is due '+_shortDate(_ukVatDueDate(vat.to))+'.':'You file VAT returns through Making Tax Digital software.'});
+  else if(_inc>=_vt) chk.push({ok:0, t:'VAT registration', d:'Your income is over '+fmt(_vt)+', where VAT registration is compulsory.', todo:'Register with HMRC within 30 days of the end of the month you went over — your accountant can do it — then switch VAT on in Settings.', btn:['Open Settings',"nav('settings')"]});
+  else chk.push({ok:1, t:'Not VAT registered', d:'Fine while taxable turnover stays under '+fmt(_vt)+' in any 12 months — you’re '+fmt(Math.max(0,_vt-_inc))+' away this year.'});
+  if(co){
+    var _pe=ukFyPeriodEnd(_fyNow);
+    chk.push({ok:1, t:'Corporation tax', d:'Paid in one go, 9 months and a day after the year end ('+_shortDate(ukCtPaymentDue(_pe))+'); the CT600 return by '+_shortDate(ukCtReturnDue(_pe))+'.'});
+  } else if(poa.known){
+    chk.push({ok:1, t:'Payments on account', d:((poa.each||0)>0?fmt(poa.each)+' on 31 Jan and 31 Jul, '+(poa.source==='hmrc'?'from HMRC’s figure':'half of last year’s bill')+'.':'None due — last year’s bill was under HMRC’s £1,000 line, or mostly taxed at source.')});
+  } else {
+    var _ui=items.filter(function(it){ return it.unknown; })[0];
+    chk.push({ok:0, t:'Payments on account', d:'We can’t work them out without last year’s bill.', todo:'Copy the figure from your HMRC online account — it’s under your Self Assessment payments.', btn:(_ui?['Add HMRC’s figure','txhOpen('+items.indexOf(_ui)+')']:null)});
   }
-
-  // registration nudge
-  var vatThr=(STATUTORY.vatThreshold&&STATUTORY.vatThreshold.value)||90000;
-  if(ytd && (typeof FARM==='undefined'||!FARM.vat)){ var togo=vatThr-ytd.income; if(ytd.income>=vatThr) h+='<div class="tx-nudge"><b>You may need to register for VAT.</b> Your income this year is over '+fmt(vatThr)+' — where registration usually becomes compulsory. Confirm with your accountant.</div>'; else if(togo<10000) h+='<div class="tx-nudge"><b>Nearing the VAT line.</b> You’re about '+fmt(Math.max(0,Math.round(togo)))+' from the '+fmt(vatThr)+' turnover where VAT registration usually becomes compulsory.</div>'; }
-
-  // tax-health check
-  var chk=[]; chk.push([(typeof FARM!=='undefined'&&FARM.vat)?'✓':'—',(typeof FARM!=='undefined'&&FARM.vat)?'VAT registered':'Not VAT registered',(typeof FARM!=='undefined'&&FARM.vat)?1:2]);
-  chk.push(['✓', ukIsCompany() ? 'Corporation tax due 9 months + 1 day after year end' : 'Set up for payments on account', 1]);
-  if(wk) chk.push([wk.allOk?'✓':'⚠',wk.allOk?'All workers above minimum wage':'A worker is below minimum wage',wk.allOk?1:0]);
-  var dlog=(typeof ST_CROP!=='undefined'&&ST_CROP.compliance&&ST_CROP.compliance.dieselLogbook);
-  /* The tick has to agree with the card directly above it. dlog is the crop module's
-     "paper logbook kept?" checkbox; what HMRC would ask for is litres against a machine,
-     which is the fuel log. Tick only when the app can actually evidence it. */
-  var _dzC=(typeof _dslC==='function')?_dslC():null;
-  var _dzOk=!!(_dzC && _dzC.logged>0 && !(_dzC.unlogged>0));
-  if((_dzC&&(_dzC.bought>0||_dzC.logged>0))||diesel>0){
-    chk.push([_dzOk?'✓':'⚠',
-      _dzOk ? 'Red diesel logged to a machine'
-            : ((_dzC&&_dzC.logged>0)
-               ? ('Red diesel part-logged — '+_grpInt(Math.round(_dzC.unlogged))+' L has no machine against it')
-               : (dlog ? 'Red diesel on paper only — nothing logged to a machine here'
-                       : 'Diesel logbook incomplete')),
-      _dzOk?1:0]);
+  if(wk){
+    var _low=[]; try{ _low=wkList().filter(function(w){ var r=wkHourly(w); return r>0 && r<wk.rate-0.005; }).map(function(w){ return w.name||'A worker'; }); }catch(e){}
+    if(wk.allOk) chk.push({ok:1, t:'Minimum wage', d:'All '+wk.count+' workers are paid at least £'+(+wk.rate).toFixed(2)+' an hour.'});
+    else chk.push({ok:0, t:'Minimum wage', d:(_low.length?esc(_low.slice(0,3).join(', '))+(_low.length>3?' and '+(_low.length-3)+' more':'')+(_low.length===1?' is':' are'):'Someone is')+' paid below £'+(+wk.rate).toFixed(2)+' an hour.', todo:'Raise the rate in Workers. Underpaying means paying the arrears, and HMRC can add a penalty of up to 200% of them.', btn:['Open Workers',"nav('workers')"]});
+    var _ef=wk.erNi;
+    chk.push({ok:1, t:'Employer NI', d:_ef?(_ef.covered?'Covered by the Employment Allowance this year ('+fmt(_ef.er)+').':fmt(_ef.toPay)+' to pay this year after the Employment Allowance — it goes with your PAYE payment.'):(wk.erNiPayable?'Payable — it goes with your PAYE payment.':'Covered by the Employment Allowance this year.')});
+    chk.push({ok:1, t:'Employers’ liability insurance', d:'Needed while you employ anyone — at least £5 million of cover, with the certificate where staff can see it.'});
   }
-  chk.push(['✓','Records kept (5-year rule)',1]);
-  if(wk){ var _ef=wk.erNi;
-    chk.push(['✓', _ef
-      ? (_ef.covered ? ('Employer NI of '+fmt(_ef.er)+' covered by the Employment Allowance')
-                     : (fmt(_ef.toPay)+' of employer NI to pay — report it on the FPS'))
-      : (wk.erNiPayable?'Employer NI payable — report it on the FPS':'Employer NI covered by the Employment Allowance'),1]); }
-  h+='<div class="tx-card" style="margin-bottom:12px"><div class="tx-h">Tax-health check</div><div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px 18px">'+chk.map(function(c){ var col=c[2]===1?'var(--gm)':c[2]===0?'#B45309':'var(--t4)'; return '<div style="display:flex;gap:8px;align-items:center;font-size:12px"><span style="color:'+col+';font-weight:800">'+c[0]+'</span><span style="color:'+(c[2]===0?'#7a4a10':'var(--t2)')+'">'+esc(c[1])+'</span></div>'; }).join('')+'</div></div>';
-
-  /* -347 NOT `fy`: in this function that name holds _taxFYProfit(0), a profit object.
-     Passing it printed "6 Apr [object Object]" and silently matched no transactions, so
-     every spend hint read "leave blank if none".
-
-     And not the CURRENT year either. Closing stock is what was in the shed on a year end,
-     so the only year that can be counted is one that has actually ended - which is the
-     same year ukStockGap() is asking about. Counting the running year stored a figure
-     under a key nothing was looking for: the count saved, profit moved, and the word
-     "provisional" stayed on screen because the year it asks about was still unanswered. */
+  if((_dd.bought>0||_dd.logged>0)||paperL>0){
+    if(_dd.unlogged>0 || (!(_dd.logged>0) && paperL>0)) chk.push({ok:0, t:'Red diesel', d:(_dd.unlogged>0?_grpInt(Math.round(_dd.unlogged))+' L bought with no machine logged against it.':_grpInt(paperL)+' L logged on paper only, outside the app.'), todo:'Log it against the tractor or machine that used it. Red diesel is only for qualifying farm use, and HMRC can ask for the record.', btn:['Log diesel',"nav('crop')"]});
+    else chk.push({ok:1, t:'Red diesel', d:'Every litre bought is logged to a machine — the record HMRC can ask for.'});
+  }
+  chk.push({ok:1, t:'Records', d:co?'Keep the company’s records for 6 years from the end of the accounting period.':'Keep your records for at least 5 years after the 31 January return deadline.'});
+  var bad=chk.filter(function(c){ return !c.ok; });
+  h+='<details class="txh-chk txh-chkd'+(bad.length?' bad':'')+'"'+(bad.length?' open':'')+'><summary>'+_ic('ok')+
+     (bad.length?'<span class="txh-warn">▲ '+bad.length+' of '+chk.length+' checks '+(bad.length===1?'needs':'need')+' attention</span><span class="sm">'+bad.map(function(c){ return c.t; }).join(', ')+'</span>'
+                :'<span class="txh-ok">'+chk.length+' checks OK</span><span class="sm">'+chk.map(function(c){ return c.t; }).join(' · ')+'</span>')+
+     '<span class="cv">›</span></summary><div class="ls">'+
+     chk.map(function(c){ return '<div class="ck'+(c.ok?'':' bad')+'"><span class="mk">'+(c.ok?'✓':'▲')+'</span><div class="tx"><b>'+c.t+'</b><div>'+c.d+'</div>'+(c.todo?'<div class="do">'+c.todo+'</div>':'')+'</div>'+
+       (c.btn?'<button class="txh-sb" onclick="'+c.btn[1]+'">'+c.btn[0]+'</button>':'<span></span>')+'</div>'; }).join('')+'</div></details>';
   try{
     var _sg = (typeof ukStockGap==='function') ? ukStockGap() : null;
     var _sfy = (_sg && _sg.fy != null) ? _sg.fy : ((typeof getCurrentFY==='function') ? getCurrentFY() : null);
-    /* -371 (SA -452): the count is a year-end job - the full card from the last month of the
-       year until four months after, for the year whose count is due; one line otherwise. A
-       farm on the cash basis gets no card at all (ukStockCardHTML says so), so no line either. */
+    /* The count is a year-end job: the full card from the last month of the year until four
+       months after; one line otherwise. A farm on the cash basis gets no card, so no line. */
     var _cfy = (typeof getCurrentFY==='function') ? getCurrentFY() : _sfy;
     var _wfy = ukStockWindowOpen(_cfy) ? _cfy : (ukStockWindowOpen(_cfy-1) ? _cfy-1 : null);
     var _card = ukStockCardHTML(_wfy != null ? _wfy : _sfy);
@@ -56990,10 +57152,121 @@ function taxGlanceHTML(){
       else h += ukStockStripHTML(_cfy);
     }
   }catch(e){}
-  h+='<div class="tx-btn" onclick="taxAccountantPack()">📤 Share HMRC-ready pack with your accountant</div>';
-  h+='<div class="tx-disc"><b>Everything here is a helper to plan with — not a filed return.</b> Figures are worked out from your records; rates are reviewed each Budget ('+esc((STATUTORY&&STATUTORY.tax&&STATUTORY.tax.yearLabel)||'2026/27')+' tables). These figures follow HMRC’s rules rather than just adding everything up. It’s still not tax advice — other money you earn, or farming on the side rather than as your main work, can change the answer. Confirm the final numbers with your accountant.'+(ukIsCompany()?' A company\u2019s losses follow the corporation tax rules (CTA 2010), not the five-year farming-loss restriction.':' And if the farm has been loss-making for several years running, ask them about the five-year farming-loss restriction (ITA 2007 s67\u201370), which can stop those losses being set against your other income.')+'</div>';
+  h+='<div class="txh-disc"><details><summary>A helper to plan with — not a filed return.</summary> <b>Everything here is a helper to plan with — not a filed return.</b> Figures are worked out from your records; rates are reviewed each Budget ('+esc((STATUTORY&&STATUTORY.tax&&STATUTORY.tax.yearLabel)||'2026/27')+' tables). These figures follow HMRC’s rules rather than just adding everything up. It’s still not tax advice — other money you earn, or farming on the side rather than as your main work, can change the answer. Confirm the final numbers with your accountant.'+(co?' A company’s losses follow the corporation tax rules (CTA 2010), not the five-year farming-loss restriction.':' And if the farm has been loss-making for several years running, ask them about the five-year farming-loss restriction (ITA 2007 s67–70), which can stop those losses being set against your other income.')+'</details></div>';
+  h=h.split('📦').join(_ic('box'));
   return h;
 }
+/* The panel a payment tile opens. One payment: what it is, how it is made up, how to pay it,
+   and what to do next - prepare it, or mark it paid. */
+(function(){
+  var MO = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  var MF = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  function d2(d){ return d.getDate()+' '+MO[d.getMonth()]; }
+  function d3(d){ return d.getDate()+' '+MO[d.getMonth()]+' '+d.getFullYear(); }
+  function iso(d){ return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); }
+  function row(k, v, cls){ return '<div class="td-r'+(cls?' td-'+cls:'')+'"><span>'+k+'</span><b>'+v+'</b></div>'; }
+  function days(d){ return Math.ceil((d - _txNow())/86400000); }
+  function sec(t, body){ return '<div class="td-sec"><div class="td-sh">'+t+'</div>'+body+'</div>'; }
+
+  window.txhClose = function(){ var el = document.getElementById('txh-drawer'); if(el) el.className = ''; };
+  document.addEventListener('keydown', function(e){ if(e.key === 'Escape') window.txhClose(); });
+
+  window.txhOpen = function(i, mode){
+    var c = TAX_TXH; if(!c) return; var it = c.items[i]; if(!it) return;
+    var vat = c.vat, prov = c.prov, poa = c.poa || {}, h = '', ey = '', title = '', acts = '';
+    var n = days(it.d), when = n <= 0 ? 'today' : (n < 45 ? 'in '+n+' day'+(n===1?'':'s') : 'in '+Math.round(n/30.4)+' months');
+    var pill = it.paid ? '<span class="td-pl td-g">✓ Paid '+it.paid.label+'</span>'
+             : (it.unknown ? '<span class="td-pl td-a">Due '+d3(it.d)+' · amount not known yet</span>'
+             : (it.nil ? '<span class="td-pl">Nothing to pay · '+d3(it.d)+'</span>' : '<span class="td-pl'+(n<=7?' td-a':' td-g')+'">Due '+d3(it.d)+' · '+when+'</span>'));
+
+    if(it.code === 'VAT'){
+      ey = 'VAT return'; title = c.sub(it);
+      h += '<div class="td-big">'+fmt(Math.abs(it.amt))+'</div><div class="td-bs">'+(it.amt >= 0 ? 'to pay HMRC' : 'HMRC pays you')+' by '+d3(it.d)+'</div>';
+      h += sec('How it’s made up', row('VAT on your sales', fmt(vat.out))+row('VAT on your costs', (vat.inp > 0 ? '−' : '')+fmt(vat.inp))+row(it.amt >= 0 ? 'To pay' : 'Refund', fmt(Math.abs(it.amt)), 't'));
+      if(_txNow() <= vat.to) h += '<div class="td-note">The quarter is still open. Sales and costs you record up to <b>'+d2(vat.to)+'</b> still change this figure.</div>';
+      h += sec('How to pay', '<p class="td-p">File the return through your Making Tax Digital software, then pay HMRC by '+d2(it.d)+' — by Direct Debit, or by bank transfer with your 9-digit VAT number as the reference.</p>');
+      acts = '<button class="td-b1" onclick="txhClose();taxTab(\'reports\')">Prepare the VAT return</button>';
+    } else if(it.code === 'PAYE'){
+      var pm = new Date(it.d.getFullYear(), it.d.getMonth()-1, 1), pp = it.parts || {};
+      ey = 'PAYE & National Insurance'; title = MF[pm.getMonth()]+' pay';
+      h += '<div class="td-big">'+fmt(it.amt)+'</div><div class="td-bs">by '+d3(it.d)+' — the 22nd every month if you pay electronically</div>';
+      h += sec('How it’s made up', row('PAYE — from wages', fmt(pp.paye || 0))+row('Employee NI — from wages', fmt(pp.ee || 0))+
+           row('Employer NI'+((c.pay.allowance||0) > 0 ? ' (after the Employment Allowance)' : ''), fmt(pp.er || 0))+row('This payment', fmt(it.amt), 't'));
+      h += '<div class="td-note">Worked out from '+MF[pm.getMonth()]+'’s payroll. PAYE and employee NI come out of wages — only employer NI is a cost to the farm.</div>';
+      h += sec('How to pay', '<p class="td-p">Pay HMRC by the 22nd (the 19th by cheque) with your 13-character Accounts Office reference.</p>');
+      acts = '<button class="td-b1" onclick="txhClose();nav(\'workers\')">Open payroll</button>';
+    } else if(it.code === 'CT'){
+      var pe = ukFyPeriodEnd(it.fyFor != null ? it.fyFor : c.fy), txb = it.prior ? Math.max(0,(c.priorTaxable||0)) : Math.max(0,prov.taxableProfit||0);
+      ey = 'Corporation tax'; title = 'For the year to '+d3(pe);
+      h += '<div class="td-big">'+fmt(it.amt||0)+'</div><div class="td-bs">by '+d3(it.d)+' — 9 months and a day after the year end</div>';
+      h += sec('How it’s made up', row('Taxable profit'+(it.prior?'':' (estimate)'), fmt(txb))+row('Corporation tax', fmt(it.amt||0), 't'));
+      if(it.prior) h += '<div class="td-note">Worked out from last year’s records. If the CT600 your accountant filed shows a different figure, pay that one.</div>';
+      h += sec('How to pay', '<p class="td-p">Pay HMRC by '+d2(it.d)+' with the company’s 17-character corporation tax payment reference. The CT600 return is due by '+d3(ukCtReturnDue(pe))+'.</p>');
+      acts = '<button class="td-b1" onclick="txhClose();var e=document.getElementById(\'txh-how\');if(e)e.scrollIntoView({behavior:\'smooth\'})">See the working</button>';
+    } else if(it.code === 'SA'){
+      var hm = (typeof ukPoaHmrc==='function') ? ukPoaHmrc(it.fyFor) : null;
+      ey = 'Self Assessment'; title = it.per==='balancing' ? 'Balancing payment' : (it.per==='1st' ? '31 January payment' : '2nd payment on account');
+      if(it.unknown){
+        h += '<div class="td-big">Not known yet</div><div class="td-bs">due '+d3(it.d)+'</div>';
+        h += '<div class="td-note td-a">Payments on account are half of <b>last</b> year’s bill, and there’s no bill for last year in the app. Copy the figures from your HMRC online account:'+
+             '<label for="txh-poa-each">Each payment on account</label><input id="txh-poa-each" type="number" inputmode="decimal" min="0" placeholder="£">'+
+             '<label for="txh-poa-prev">Balancing payment for last year (if any)</label><input id="txh-poa-prev" type="number" inputmode="decimal" min="0" placeholder="£"></div>';
+        acts = '<button class="td-b1" onclick="taxPoaFromPanel('+it.fyFor+','+i+')">Save HMRC’s figures</button>';
+      } else {
+        h += '<div class="td-big">'+fmt(it.amt||0)+'</div><div class="td-bs">by '+d3(it.d)+'</div>';
+        var rows='';
+        if(it.per==='balancing'){
+          rows += row('This year’s bill (estimate)', fmt(poa.thisBill||0))+row('Less payments on account', '−'+fmt(2*(poa.each||0)))+row('Balancing payment', fmt(it.amt||0), 't');
+        } else {
+          if(it.prevBal>0) rows += row('Balancing payment for last year', fmt(it.prevBal));
+          rows += row((it.per==='1st'?'1st':'2nd')+' payment on account', fmt(it.poaEach||0))+row('This payment', fmt(it.amt||0), 't');
+        }
+        h += sec('How it’s made up', rows);
+        if(it.per!=='balancing') h += '<div class="td-note">'+(hm?'HMRC’s figure, from your online account.':'Half of last year’s bill — the figure HMRC uses. If your HMRC account shows something different, <span class="td-lk" onclick="txhClose();taxTab(\'reports\')">use HMRC’s figure</span>.')+'</div>';
+        if(it.per!=='balancing' && (poa.thisBill||0) < 2*(poa.each||0))
+          h += '<div class="td-note td-a">This year’s bill looks lower than last year’s. You can ask HMRC to reduce your payments on account — in your online account or on form SA303. Reduce them too far and HMRC charges interest on the shortfall.</div>';
+        var mo = Math.max(1, Math.round(n/30.44));
+        if(it.amt>0) h += sec('Getting ready for it', row('Set aside each month', fmt(Math.round(it.amt/mo)))+row('Months until it\u2019s due', String(mo)));
+        h += sec(it.amt>0?'How to pay':'How to file', it.amt>0
+          ? '<p class="td-p">Pay HMRC Self Assessment by '+d2(it.d)+' — Direct Debit, online banking or card. The reference is your 10-digit UTR followed by K.</p>'
+          : '<p class="td-p">Nothing more to pay on this estimate. The return itself is still due online by 31 January.</p>');
+        acts = '<button class="td-b1" onclick="txhClose();var e=document.getElementById(\'txh-how\');if(e)e.scrollIntoView({behavior:\'smooth\'})">See the working</button>';
+      }
+    }
+
+    /* mark it paid - the amount (filled in) and the date (today) - or undo a mark */
+    if(it.paid){
+      h = '<div class="td-note" style="margin-top:14px">✓ You marked this paid: <b>'+fmt(+it.paid.amt)+'</b>'+(it.paid.label?' on <b>'+it.paid.label+'</b>':'')+'. <span class="td-lk" role="button" tabindex="0" onclick="txhUnpay('+i+')">Undo</span></div>' + h;
+    } else if(!it.nil && !it.refund && !it.unknown){
+      if(mode === 'pay'){
+        acts = '<button class="td-b1" onclick="txhSavePaid('+i+')">Save</button><button class="td-b2" onclick="txhOpen('+i+')">Cancel</button>';
+        h += '<div class="td-sec" id="txh-payform"><div class="td-sh">Mark as paid</div>'+
+             '<label for="txh-pa">Amount you paid</label><input id="txh-pa" type="number" inputmode="decimal" min="0" value="'+Math.abs(it.amt)+'">'+
+             '<label for="txh-pd">Date you paid</label><input id="txh-pd" type="date" value="'+iso(_txNow())+'">'+
+             '<p class="td-p" style="font-size:12.5px;color:#5F6368;margin-top:10px">It then shows as paid here and comes off what’s due. Nothing is sent to HMRC.</p></div>';
+      } else acts += '<button class="td-b2" onclick="txhOpen('+i+',\'pay\')">Mark as paid</button>';
+    }
+
+    var el = document.getElementById('txh-drawer');
+    if(!el){ el = document.createElement('div'); el.id = 'txh-drawer'; document.body.appendChild(el); }
+    el.innerHTML = '<div class="td-ov" onclick="txhClose()"></div><aside class="td-dr" role="dialog" aria-modal="true" aria-label="'+ey+'">'+
+      '<div class="td-hd"><div><div class="td-ey">'+ey+'</div><h3>'+title+'</h3><div style="margin-top:8px">'+pill+'</div></div><button class="td-x" aria-label="Close" onclick="txhClose()">×</button></div>'+
+      '<div class="td-bd">'+h+'</div>'+(acts ? '<div class="td-ft">'+acts+'</div>' : '')+'</aside>';
+    el.className = 'on';
+    var f = el.querySelector(mode === 'pay' ? '#txh-pa' : (it.unknown ? '#txh-poa-each' : '.td-x')); if(f) try{ f.focus(); }catch(e){}
+  };
+  window.txhSavePaid = function(i){
+    var c = TAX_TXH, it = c && c.items[i]; if(!it) return;
+    var ae = document.getElementById('txh-pa'), a = parseFloat(ae && ae.value), dv = (document.getElementById('txh-pd') || {}).value || iso(_txNow());
+    if(!(a > 0)){ if(ae){ ae.focus(); ae.style.borderColor = '#C2410C'; } return; }
+    window.txhClose(); taxSetPaid(it.key, { amt: a, date: dv });
+    try{ if(typeof toast === 'function') toast('Marked as paid — '+fmt(a)+' on '+d2(new Date(dv+'T00:00:00')), 'success'); }catch(e){}
+  };
+  window.txhUnpay = function(i){
+    var c = TAX_TXH, it = c && c.items[i]; if(!it) return;
+    window.txhClose(); taxSetPaid(it.key, null);
+  };
+})();
 /* ── Costs filed where they get no deduction, that don't look like tax ────────────
    _catOk is set by ANY category choice, including a bulk assign across selected rows —
    which is how an imported statement usually gets sorted. So filing thirty HMRC payments
@@ -62843,9 +63116,9 @@ settings: [
     { intro:true, title:'Tax & HMRC — all in one place', icon:'🧾',
       text:'Everything to do with HMRC lives here — payment on account, VAT, payroll and depreciation — worked out from what you’ve already recorded. Three tabs: At a glance, Reports, and What-if.', pos:'center' },
     { target:'tax-hero-card', title:'At a glance — what you owe, and when', icon:'📊', tab:'glance',
-      text:'The top card totals your estimated tax for the year — income tax, VAT and payroll together — and how much of your bank balance is really yours after the next set-aside. Below that: your effective tax rate, what to set aside each month, and your last few VAT periods.', tip:'The amber note reminds you to top up your provisional payment if profit climbs later in the season, to avoid HMRC interest.', pos:'smart' },
+      text:'The top card says what HMRC gets next and when — this month\u2019s total and whether your cash covers it — with your next three payments underneath. Click one to see how it\u2019s made up and how to pay it; "See every date" shows the rest of the tax year.', pos:'smart' },
     { target:'tax-tab-glance', title:'From profit to tax, and your year ahead', icon:'📅', tab:'glance',
-      text:'A waterfall shows exactly how your farming income becomes taxable profit and then tax. Next to it, a calendar of what’s actually due — provisional payments, VAT returns, worker tax — each with its HMRC form name and days to go.', pos:'smart' },
+      text:'One card each for income tax (or corporation tax), VAT and your workers, then how your profit becomes tax — step by step, the way HMRC works it out — and this year against last.', pos:'smart' },
     { target:'tax-tab-reports', title:'Reports — the actual HMRC forms', icon:'📄', tab:'reports',
       text:'Pull the real numbers for your SA103F income-tax pre-fill, your Full Payment Submission payroll return, your VAT return, and main pool / 12B depreciation — for any month, quarter or year, ready to hand to your accountant.', pos:'smart' },
     { target:'tax-tab-whatif', title:'What-if — plan before the money moves', icon:'🎚️', tab:'whatif',
