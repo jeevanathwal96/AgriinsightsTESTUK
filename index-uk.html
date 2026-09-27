@@ -55180,7 +55180,7 @@ function taxProvEstimate(){
           provPayment:next.amt,pay1:pay1,pay2:pay2,entity:entity,next:next,dts:dts,poa:poaSch,total:annualTax,basis:basis,planComplete:planComplete,
           working:working, b5:_b5te, preTax:_preTax,
           monthsElapsed:me,monthsLedger:meLedger,tooNew:tooNew,
-          nudge:nudge,daysAway:Math.ceil((next.d-now)/86400000),ok:(annualProfit>0&&annualIncome>0)};
+          nudge:nudge,daysAway:Math.ceil(((typeof ukPayBy==='function'?ukPayBy(next.d):next.d)-now)/86400000),ok:(annualProfit>0&&annualIncome>0)};
 }
 // VAT filing period for the farm's HMRC category (audit #7): A/B = 2-monthly
 // (HMRC assigns which); C = monthly; D = 6-monthly farming cycle; E = annual.
@@ -57672,16 +57672,16 @@ function taxGlanceHTML(){
 
   /* ---- Every date HMRC is owed something, in date order ---- */
   var items=[];
-  if(vat){ var vd=_ukVatDueDate(vat.to);
-    items.push({d:vd, code:'VAT', amt:vat.owe, pay:vat.owe>0, refund:vat.owe<0}); }
-  if(wk && pay.total>0){ var ed=new Date(now.getFullYear(),now.getMonth(),22); if(ed<=now) ed=new Date(now.getFullYear(),now.getMonth()+1,22);
+  if(vat){ var vdRaw=_ukVatDueDate(vat.to), vd=ukPayBy(vdRaw);
+    items.push({d:vd, due:vdRaw, code:'VAT', amt:vat.owe, pay:vat.owe>0, refund:vat.owe<0}); }
+  if(wk && pay.total>0){ var edRaw=new Date(now.getFullYear(),now.getMonth(),22); if(ukPayBy(edRaw)<=now) edRaw=new Date(now.getFullYear(),now.getMonth()+1,22); var ed=ukPayBy(edRaw);
     var _wp={paye:Math.round((pay.paye||0)/12), ee:Math.round((pay.employeeNI||0)/12), er:Math.round((pay.employerNI||0)/12)};
-    items.push({d:ed, code:'PAYE', amt:_wp.paye+_wp.ee+_wp.er, parts:_wp, pay:true}); }
+    items.push({d:ed, due:edRaw, code:'PAYE', amt:_wp.paye+_wp.ee+_wp.er, parts:_wp, pay:true}); }
   var today0=new Date(now.getFullYear(),now.getMonth(),now.getDate());
   (poa.dts||[]).forEach(function(p){
-    if(!p || !p.d || p.d<today0) return;
+    if(!p || !p.d || ukPayBy(p.d)<today0) return;
     var code=(p.per==='ct')?'CT':'SA', unk=(p.amt==null);
-    items.push({d:p.d, code:code, per:p.per, amt:(unk?null:p.amt), unknown:unk, poaEach:p.poa, prevBal:p.prevBal, fyFor:(p.fyFor!=null?p.fyFor:_fyNow),
+    items.push({d:ukPayBy(p.d), due:p.d, code:code, per:p.per, amt:(unk?null:p.amt), unknown:unk, poaEach:p.poa, prevBal:p.prevBal, fyFor:(p.fyFor!=null?p.fyFor:_fyNow),
                 pay:!unk && p.amt>0, nil:!unk && !(p.amt>0)});
   });
   /* A company's LAST year is usually the next bill: a 31 March year end pays on 1 January,
@@ -57744,14 +57744,14 @@ function taxGlanceHTML(){
         '<div class="t2-tp">'+pill(it)+'<span class="t2-cv">›</span></div>'+
         '<div class="t2-nm">'+_nm[it.code]+'</div><div class="t2-sb">'+sub(it)+'</div>'+
         '<div class="t2-am">'+amt(it)+'</div>'+
-        '<div class="t2-ft">'+(it.refund?'Return due ':'Due ')+_shortDate(it.d)+((it.code==='SA'||it.code==='CT') && it.pay && !(f1 && same(it.d,f1.d)) ? ' \u00b7 put aside '+fmt(Math.round(it.amt/_mo(it.d)))+' a month' : '')+'</div></button>'; }).join('')+'</div>';
+        '<div class="t2-ft"'+(!it.refund&&it.due&&ukPayByMoved(it.due)?' title="Money sent by Bacs, CHAPS or cheque must reach HMRC by this date. Faster Payments or a card payment can still go on the '+_ukOrd(it.due.getDate())+'."':'')+'>'+(it.refund?'Return due '+_shortDate(it.due||it.d):((it.due&&ukPayByMoved(it.due))?'Pay by '+_shortDate(it.d)+' ('+_ukOrd(it.due.getDate())+' is a '+(it.due.getDay()===0?'Sunday':it.due.getDay()===6?'Saturday':'bank holiday')+')':'Due '+_shortDate(it.d)))+((it.code==='SA'||it.code==='CT') && it.pay && !(f1 && same(it.d,f1.d)) ? ' \u00b7 put aside '+fmt(Math.round(it.amt/_mo(it.d)))+' a month' : '')+'</div></button>'; }).join('')+'</div>';
 
     /* every other date to the end of the tax year, a card per month */
     var fyEnd=ukFyPeriodEnd(_fyNow);
     var all=[]; items.forEach(function(it,ix){ if(it.d<=fyEnd) all.push({d:it.d,nm:_nm[it.code],code:it.code,sb:sub(it),amt:(it.unknown?null:(it.nil?0:it.amt)),unk:it.unknown,it:it,ix:ix}); });
     var e0=items.filter(function(it){ return it.code==='PAYE'; })[0];
-    if(e0){ for(var k=1;k<13;k++){ var dk=new Date(e0.d.getFullYear(),e0.d.getMonth()+k,22); if(dk>fyEnd) break; var pm=new Date(dk.getFullYear(),dk.getMonth()-1,1); all.push({d:dk,nm:'PAYE & NI',code:'PAYE',sb:MF[pm.getMonth()]+' pay',amt:e0.amt,about:true}); } }
-    if(vat && typeof _txVatBlock==='function'){ for(var q=1;q<5;q++){ var b=_txVatBlock(q), bt=new Date(b.to+'T00:00:00'), bd=_ukVatDueDate(bt); if(bd>fyEnd) break;
+    if(e0){ for(var k=1;k<13;k++){ var dk=ukPayBy(new Date((e0.due||e0.d).getFullYear(),(e0.due||e0.d).getMonth()+k,22)); if(dk>fyEnd) break; var pm=new Date(dk.getFullYear(),dk.getMonth()-1,1); all.push({d:dk,nm:'PAYE & NI',code:'PAYE',sb:MF[pm.getMonth()]+' pay',amt:e0.amt,about:true}); } }
+    if(vat && typeof _txVatBlock==='function'){ for(var q=1;q<5;q++){ var b=_txVatBlock(q), bt=new Date(b.to+'T00:00:00'), bd=ukPayBy(_ukVatDueDate(bt)); if(bd>fyEnd) break;
       all.push({d:bd,nm:'VAT',code:'VAT',sb:b.label.replace(/ \d{4}$/,'')+' quarter',amt:null,later:'after '+_shortDate(bt)}); } }
     all.sort(function(x,y){ return x.d-y.d; });
     var after=[];
@@ -59809,7 +59809,7 @@ function taxDueStripHTML(fy, wk, hasVat){
   if(wk){
     /* PAYE and NI for the month just run are paid over by the 22nd of the next month. */
     try{
-      var pm=new Date(today.getFullYear(),today.getMonth()+1,22);
+      var pm=ukPayBy(new Date(today.getFullYear(),today.getMonth()+1,22));
       var due=(typeof ukPayrollRun==='function')?ukPayrollRun((typeof _txPayMonthLabel==='function')?_txPayMonthLabel():''):null;
       items.push({d:days(pm), name:'PAYE &amp; NIC for '+(((typeof _txPayMonthLabel==='function')?_txPayMonthLabel():'this month').split(' ')[0]),
         sub:(due&&due.dueToHMRC?(fmt(Math.round(due.dueToHMRC))+' · '):'')+'paid over to HMRC by the 22nd of the month after payday',
@@ -59824,7 +59824,7 @@ function taxDueStripHTML(fy, wk, hasVat){
     try{
       var vp=_txVatBlock(0);
       var vend=new Date(String(vp.to)+'T00:00:00');
-      var vdue=_ukVatDueDate(vend);
+      var vdue=ukPayBy(_ukVatDueDate(vend));
       var vd=days(vdue);
       if(vd>=0){
         var pos=(typeof taxVatPosition==='function')?taxVatPosition():null;
@@ -66291,6 +66291,18 @@ function computeAIInsights(){
   return out.slice(0, 3);
 }
 /* The VAT period's return and payment date under MTD: one month and seven days after it ends. */
+/* The date to PAY by. HMRC's deadline itself never moves, but money sent by Bacs, CHAPS or cheque
+   does not arrive at a weekend or on a bank holiday: "If the deadline falls on a weekend or bank
+   holiday, make sure your payment reaches HMRC on the last working day before (unless you're
+   paying by Faster Payments or by debit or credit card)" - gov.uk, Self Assessment / Corporation
+   Tax / PAYE / VAT payment pages, read 27 Sep 2026. Bank holidays for the farm's own nation, from
+   gov.uk/bank-holidays.json (2025-2027). */
+var UK_BANK_HOLIDAYS = { ew:{'2025-01-01':1,'2025-04-18':1,'2025-04-21':1,'2025-05-05':1,'2025-05-26':1,'2025-08-25':1,'2025-12-25':1,'2025-12-26':1,'2026-01-01':1,'2026-04-03':1,'2026-04-06':1,'2026-05-04':1,'2026-05-25':1,'2026-08-31':1,'2026-12-25':1,'2026-12-28':1,'2027-01-01':1,'2027-03-26':1,'2027-03-29':1,'2027-05-03':1,'2027-05-31':1,'2027-08-30':1,'2027-12-27':1,'2027-12-28':1}, sc:{'2025-01-01':1,'2025-01-02':1,'2025-04-18':1,'2025-05-05':1,'2025-05-26':1,'2025-08-04':1,'2025-12-01':1,'2025-12-25':1,'2025-12-26':1,'2026-01-01':1,'2026-01-02':1,'2026-04-03':1,'2026-05-04':1,'2026-05-25':1,'2026-06-15':1,'2026-08-03':1,'2026-11-30':1,'2026-12-25':1,'2026-12-28':1,'2027-01-01':1,'2027-01-04':1,'2027-03-26':1,'2027-05-03':1,'2027-05-31':1,'2027-08-02':1,'2027-11-30':1,'2027-12-27':1,'2027-12-28':1}, ni:{'2025-01-01':1,'2025-03-17':1,'2025-04-18':1,'2025-04-21':1,'2025-05-05':1,'2025-05-26':1,'2025-07-14':1,'2025-08-25':1,'2025-12-25':1,'2025-12-26':1,'2026-01-01':1,'2026-03-17':1,'2026-04-03':1,'2026-04-06':1,'2026-05-04':1,'2026-05-25':1,'2026-07-13':1,'2026-08-31':1,'2026-12-25':1,'2026-12-28':1,'2027-01-01':1,'2027-03-17':1,'2027-03-26':1,'2027-03-29':1,'2027-05-03':1,'2027-05-31':1,'2027-07-12':1,'2027-08-30':1,'2027-12-27':1,'2027-12-28':1} };
+function _ukHolSet(){ var r=String((typeof ukRegion==='function')?ukRegion():'England').toLowerCase(); return r.indexOf('scot')>=0?UK_BANK_HOLIDAYS.sc:(r.indexOf('northern')>=0?UK_BANK_HOLIDAYS.ni:UK_BANK_HOLIDAYS.ew); }
+function _ukIso(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function ukPayBy(d){ if(!d) return d; var H=_ukHolSet(), x=new Date(d.getFullYear(),d.getMonth(),d.getDate()), g=0; while((x.getDay()===0||x.getDay()===6||H[_ukIso(x)]) && g++<10) x.setDate(x.getDate()-1); return x; }
+function _ukOrd(n){ var t=n%100; if(t>=11&&t<=13) return n+'th'; return n+(['th','st','nd','rd'][n%10]||'th'); }
+function ukPayByMoved(d){ return !!d && ukPayBy(d).getTime()!==new Date(d.getFullYear(),d.getMonth(),d.getDate()).getTime(); }
 function ukVatDueDate(periodEnd){ /* the end of the following month, plus seven days: 30 Jun -> 7 Aug, 31 Mar -> 7 May */ var d = new Date(periodEnd.getFullYear(), periodEnd.getMonth()+2, 0); d.setDate(d.getDate()+7); return d; }
 function aiPriorityInsight(){
   var K = function(n){ return _moneyCompact(n); };
@@ -66306,13 +66318,13 @@ function aiPriorityInsight(){
   var due = [];
   try{ var tp = (typeof taxProvEstimate==='function') ? taxProvEstimate() : null, nx = tp && tp.next;
     if (nx && nx.d && tp.poa && (nx.amt == null || nx.amt > 0) && tp.daysAway >= 0 && tp.daysAway <= 30)
-      due.push({ d:tp.daysAway, t:_ukPoaLabel(nx.per) + ' due in ' + _nDays(tp.daysAway), x: nx.amt != null ? ('About ' + K(nx.amt) + ' to HMRC on ' + nx.lbl + '.') : ('Due to HMRC on ' + nx.lbl + '.') }); }catch(e){}
+      due.push({ d:tp.daysAway, t:_ukPoaLabel(nx.per) + ' due in ' + _nDays(tp.daysAway), x: nx.amt != null ? ('About ' + K(nx.amt) + ' to HMRC by ' + _shortDate(ukPayBy(nx.d)) + '.') : ('Due to HMRC by ' + _shortDate(ukPayBy(nx.d)) + '.') }); }catch(e){}
   try{ if (typeof FARM!=='undefined' && FARM.vat && typeof taxVatPosition==='function'){ var vp = taxVatPosition();
-    if (vp){ var vn = _txDaysTo(ukVatDueDate(vp.to));
+    if (vp){ var vn = _txDaysTo(ukPayBy(ukVatDueDate(vp.to)));
       if (vn >= 0 && vn <= 30) due.push({ d:vn, t:'VAT return due in ' + _nDays(vn),
         x: vp.owe >= 0 ? ('About ' + K(vp.owe) + ' to pay on your VAT return.') : ('A refund of about ' + K(-vp.owe) + ' is due to you.') }); } } }catch(e){}
   try{ if (typeof taxWorkerSnapshot==='function' && taxWorkerSnapshot()){ var tn = (typeof APP_TODAY!=='undefined' && APP_TODAY) ? new Date(APP_TODAY) : new Date();
-    var ed = new Date(tn.getFullYear(), tn.getMonth()+1, 22), en = _txDaysTo(ed);
+    var ed = ukPayBy(new Date(tn.getFullYear(), tn.getMonth()+1, 22)), en = _txDaysTo(ed);
     /* A monthly return falls due every month, so it is always within 30 days: only its last week counts. */
     if (en >= 0 && en <= 7) due.push({ d:en, t:'PAYE and NI due in ' + _nDays(en), x:'PAYE and National Insurance for your team, due the 22nd if you pay electronically.' }); } }catch(e){}
   due.sort(function(a,b){ return a.d - b.d; });
@@ -66585,7 +66597,7 @@ function computeNotifications(){
       if (_vp) {
         /* UK VAT (MTD): return and payment due one month and seven days after the period ends. The
            25th of the next month was South Africa's VAT201 rule. */
-        var _vd = ukVatDueDate(_vp.to);
+        var _vd = ukPayBy(ukVatDueDate(_vp.to));
         var vdays = (typeof _txDaysTo==='function') ? _txDaysTo(_vd) : 99;
         if (vdays >= 0 && vdays <= 20) n.push({ color:'var(--am)', score:82, title:'VAT return due in '+vdays+' day'+(vdays===1?'':'s'), body:(_vp.owe>=0?'About '+fmtMoney(_vp.owe)+' to pay':'A refund is due')+' on your VAT return.', time:'Tax', action:function(){ nav('tax'); } });
       }
@@ -66594,7 +66606,7 @@ function computeNotifications(){
       /* The 7th was South Africa's EMP201 date. UK PAYE and NIC for a tax month are
          due by the 22nd of the following month when paid electronically (the 19th by
          post), so the reminder was firing a fortnight early every month. */
-      var _ed = new Date((typeof APP_TODAY!=='undefined'&&APP_TODAY?new Date(APP_TODAY):new Date()).getFullYear(), (typeof APP_TODAY!=='undefined'&&APP_TODAY?new Date(APP_TODAY):new Date()).getMonth()+1, 22);
+      var _ed = ukPayBy(new Date((typeof APP_TODAY!=='undefined'&&APP_TODAY?new Date(APP_TODAY):new Date()).getFullYear(), (typeof APP_TODAY!=='undefined'&&APP_TODAY?new Date(APP_TODAY):new Date()).getMonth()+1, 22));
       var edays = (typeof _txDaysTo==='function') ? _txDaysTo(_ed) : 99;
       if (edays >= 0 && edays <= 7) n.push({ color:'var(--gm)', score:70, title:'PAYE and NI due in '+edays+' day'+(edays===1?'':'s'), body:'PAYE and National Insurance for your team, due the 22nd if you pay electronically.', time:'Tax', action:function(){ nav('tax'); } });
     }
