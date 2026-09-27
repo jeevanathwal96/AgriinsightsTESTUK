@@ -12288,7 +12288,13 @@ function cropInputSafe(inp){ if(!inp.phi||!inp.date) return null; var d=new Date
 function cropLocalISO(d){ if(!d) return ''; var m=d.getMonth()+1, x=d.getDate(); return d.getFullYear()+'-'+(m<10?'0':'')+m+'-'+(x<10?'0':'')+x; }
 function cropInputActive(inp){ var s=cropInputSafe(inp); return s && s>LS_TODAY; }
 function cropInputKindMeta(k){ return {seed:['Seed','p-seed'],fertiliser:['Fertiliser','p-fert'],herbicide:['Herbicide','p-herb'],fungicide:['Fungicide','p-fung'],insecticide:['Insecticide','p-pest']}[k] || ['Other','p-fert']; }
-function cropInputCostTotal(){ return ST_CROP.inputs.reduce(function(s,inp){var l=cropLandById(inp.land);return s+(inp.costPerHa||0)*((l&&l.area)||0);},0); }
+/* U45 (step 5, A): "this season" is the current season (seasonOf), for the count, the spend
+   and "records complete". The register below still lists every application. */
+function cropInputThisSeason(inp){
+  if(!inp || !inp.date || typeof seasonOf!=='function') return false;
+  try{ return seasonOf(String(inp.date).slice(0,10))===seasonOf(APP_TODAY); }catch(e){ return false; }
+}
+function cropInputCostTotal(){ return ST_CROP.inputs.filter(cropInputThisSeason).reduce(function(s,inp){var l=cropLandById(inp.land);return s+(inp.costPerHa||0)*((l&&l.area)||0);},0); }
 function cropActivePHI(){ return ST_CROP.inputs.filter(cropInputActive); }
 
 /* ---------- progress (growth %) from planted→harvest dates ---------- */
@@ -12304,6 +12310,7 @@ function cropGrowthPct(l){
 /* ---------- compliance scoring ---------- */
 function cropComplianceDefs(){
   var c=ST_CROP.compliance;
+  var _nvz=(typeof rnNvzAnswer==='function')?rnNvzAnswer():(c.nvzInZone?true:null);
   var missingBatch=ST_CROP.inputs.filter(function(i){return i.product && i.kind!=='fertiliser' && i.kind!=='seed' && !i.batch;}).length;
   var withinPHI=cropActivePHI().length;
   var chemStatus = (missingBatch>0||withinPHI>0||!c.sdsRegister||!c.containerDisposal)?'a':'g';
@@ -12325,9 +12332,10 @@ function cropComplianceDefs(){
      desc:'When a label asks for an unsprayed strip next to water, write down what you did every time: the full width, or a narrower strip worked out with a LERAP (the HSE buffer check). You answer it on the spray form. Keep it for 3 years.',
      kv:[['Sprays with the water strip recorded', (function(){ var s=nxLerapStats(); return s.tot?(s.rec+' of '+s.tot+' sprays'):'no sprays yet'; })()],['Usual strip','5 m from water \u00b7 1 m from a dry ditch'],['Records kept','3 years']],
      fields:[{k:'lerapLast',label:'Last assessment',type:'text',ph:'e.g. Long Field \u00b7 12 Jun 2026'}], keep:['What you left next to water, for every spray (full width or LERAP)','A map of ditches, streams and ponds, with the strip widths','3 years of records']},
-    {id:'nvz', t:'Nitrate Vulnerable Zone records', law:'Nitrate Pollution Prevention Regs 2015', auto:true, status: (c.nvzPlan && c.nvzWithinLimit) ? 'g':'a',
-     desc:'In an NVZ you must hold a fertilisation plan, record every nitrogen application per field, and stay within the 170 kg/ha organic-nitrogen limit. Records are kept 5 years.',
-     kv:[['In an NVZ', c.nvzInZone?'yes':'not recorded'],['Fertilisation plan', c.nvzPlan?'\u2713 held':'\u26a0 missing'],['Organic N limit','170 kg/ha'],['Within limit', c.nvzWithinLimit?'\u2713 yes':'\u26a0 check']],
+    /* U84 (step 5, A): the one NVZ answer (Rainfall / Settings), not a second tick of its own. */
+    {id:'nvz', t:'Nitrate Vulnerable Zone records', law:'Nitrate Pollution Prevention Regs 2015', auto:true, status: (_nvz===false || (c.nvzPlan && c.nvzWithinLimit)) ? 'g':'a',
+     desc:(_nvz===false ? 'Your farm is not in an NVZ, so these rules do not apply. The Farming Rules for Water still do.' : 'In an NVZ you must hold a fertilisation plan, record every nitrogen application per field, and stay within the 170 kg/ha organic-nitrogen limit. Records are kept 5 years.'),
+     kv:(_nvz===false ? [['In an NVZ','no \u2014 not in an NVZ']] : [['In an NVZ', _nvz===true?'yes':'not recorded'],['Fertilisation plan', c.nvzPlan?'\u2713 held':'\u26a0 missing'],['Organic N limit','170 kg/ha'],['Within limit', c.nvzWithinLimit?'\u2713 yes':'\u26a0 check']]),
      fields:[{k:'nvzInZone',label:'Field lies in an NVZ?',type:'bool'},{k:'nvzPlan',label:'Fertilisation plan held?',type:'bool'},{k:'nvzWithinLimit',label:'Within the 170 kg N/ha organic limit?',type:'bool'},{k:'nvzLoadKgHa',label:'Organic N loading (kg/ha)',type:'number'}], keep:['Fertilisation plan','N applications per field','Livestock manure N loading','5 years of records']},
     {id:'seed', t:'Certified seed & variety rights', law:'Plant Varieties Act 1997 \u00b7 farm-saved seed', auto:true, status: c.seedCertified ? 'g':'a',
      desc:'Seed source and cultivar are recorded; any retained/farm-saved seed and royalties are tracked for protected cultivars.',
@@ -13487,7 +13495,7 @@ function orPickEditFill(id){
   set('or-pk-block', x.bid); set('or-pk-tons', x.tons||x.tn||''); set('or-pk-cartons', x.cartons||''); set('or-pk-date', x.dateISO); set('or-pk-to', x.to||'');
   /* The pay run already went to Workers; changing its cost here would leave it saying
      something else. */
-  ['or-pk-labour','or-pk-pickers'].forEach(function(k){ var e=$(k); if(e){ e.value=''; e.disabled=true; e.placeholder=fixT('change it in Workers','verander dit in Werkers'); } });
+  ['or-pk-labour','or-pk-pickers','or-pk-hours'].forEach(function(k){ var e=$(k); if(e){ e.value=''; e.disabled=true; e.placeholder=fixT('change it in Workers','verander dit in Werkers'); } });
   var root=$('or-modal-content');
   var t=root&&root.querySelector('.or-mt'); if(t) t.textContent=fixT('Correct this pick','Stel hierdie pluk reg');
   var s=root&&root.querySelector('.or-ms'); if(s) s.textContent=fixT('Change what was wrong. The income it booked follows.','Verander wat verkeerd was. Die inkomste wat dit geboek het, volg.');
@@ -13737,13 +13745,13 @@ function cropRenderInputs(){
       return p ? '<span class="cr-pill warn">\u26D4 '+esc(l.name)+' \u2014 wait to '+lsFmtDate(p.safe)+'</span>'
                : '<span class="cr-pill ok">\u2713 '+esc(l.name)+'</span>'; }).join('');
   var stripHtml = strip ? ('<div class="cr-safestrip"><span class="t">Safe to harvest?</span>'+strip+'</div>') : '';
-  var inputs=ST_CROP.inputs||[];
-  var complete=inputs.filter(function(i){ var needBatch=!(i.kind==='fertiliser'||i.kind==='seed'); var okBatch=!needBatch||!!(i.batch&&String(i.batch).trim()); return okBatch && !!(i.by&&String(i.by).trim()); }).length;
+  var inputs=ST_CROP.inputs||[], seasonIn=inputs.filter(cropInputThisSeason);
+  var complete=seasonIn.filter(function(i){ var needBatch=!(i.kind==='fertiliser'||i.kind==='seed'); var okBatch=!needBatch||!!(i.batch&&String(i.batch).trim()); return okBatch && !!(i.by&&String(i.by).trim()); }).length;
   var kpis='<div class="crop-kpis">'+
-    cropKpi('Applications this season', inputs.length)+
+    cropKpi('Applications this season', seasonIn.length)+
     cropKpi('Input & spray spend', cropFmtR(cropInputCostTotal()), true)+
     cropKpi('Fields not yet safe to harvest', phiLands)+
-    cropKpi('Records complete', complete+' / '+inputs.length)+
+    cropKpi('Records complete', complete+' / '+seasonIn.length)+
   '</div>';
   var filt=ST_CROP.filter;
   var list=inputs.slice().sort(function(a,b){return a.date<b.date?1:-1;}).filter(function(i){
@@ -14023,6 +14031,13 @@ function cropCaptureComplyFields(){
 function cropOpenCompliance(id){ CROP_COMPLY_ID=id; CROP_LOG_PHOTOS=[]; cropRenderComplianceModal(); }
 function cropComplyToggleBool(key){
   cropCaptureComplyFields();
+  /* U84: "Field lies in an NVZ?" is the farm's one NVZ answer - it writes back to it. */
+  if(key==='nvzInZone' && typeof rnNvzAnswer==='function' && typeof ST_RAIN!=='undefined'){
+    var _v=!(rnNvzAnswer()===true);
+    ST_RAIN.nvz=_v; ST_RAIN.spreadHide=''; ST_RAIN.prefsSet=true; ST_CROP.compliance.nvzInZone=_v;
+    try{ if(typeof rnPersist==='function') rnPersist(); }catch(e){}
+    cropRenderComplianceModal(); return;
+  }
   ST_CROP.compliance[key] = !ST_CROP.compliance[key];
   cropRenderComplianceModal();
 }
@@ -14052,7 +14067,7 @@ function cropRenderComplianceModal(){
 
   // ---- Editable fields ----
   var fields=(it.fields||[]).map(function(f){
-    var val=c[f.k];
+    var val=(f.k==='nvzInZone' && typeof rnNvzAnswer==='function') ? (rnNvzAnswer()===true) : c[f.k];   /* U84 */
     if(f.type==='bool'){
       var on=!!val;
       return '<div class="crop-field" style="margin-bottom:11px"><label>'+f.label+'</label>'+
@@ -16083,9 +16098,9 @@ function _pfWhatIfCropHTML(c){
     var _bk={}; _li.rows.forEach(function(r){ var b=cropKindBucket(r.kind); _bk[b]=(_bk[b]||0)+r.cost; });
     PF_CC_LINES.forEach(function(l){ if(_bk[l.key]>0){ l.logged=true; l.loggedHa=Math.round(_bk[l.key]/10)*10; } });
   }
-  var pMin=Math.round(price0*0.4/10)*10, pMax=Math.round(price0*1.6/10)*10;
+  var pMin=price0-Math.round(price0*0.6/10)*10, pMax=Math.round(price0*1.6/10)*10;   /* on the plan price's own steps, so an untouched what-if shows no change */
   var yMin=Math.max(0.2,Math.round(yld0r*0.4*10)/10), yMax=Math.round(yld0r*1.6*10)/10;
-  var iMin=Math.round(input0*0.4/50)*50, iMax=Math.round(input0*1.6/50)*50;
+  var iMin=input0-Math.round(input0*0.6/50)*50, iMax=Math.round(input0*1.6/50)*50;   /* on the budget's own R50 steps: R11 296 snapped to R11 300 and the card opened R280 down */
   return '<div class="pf-sub"><div class="pf-subt">\uD83C\uDF9B\uFE0F Test size, price, yield or cost \u2014 '+esc(c.crop)+'</div>'+'<div class="pf-sl size"><div class="pf-sllab"><span>Hectares planted <span class="pf-szbadge">SIZE</span></span><span class="pf-slval"><span id="vPfHa">'+(c.area||0)+'</span><small> ha</small></span></div>'+_pfSlider('pfHa',0,Math.max(10,Math.round((c.area||0)*2)),(c.area>=100?5:1),(c.area||0),'pfWhatIfCrop')+'<div class="pf-slends"><span>0</span><span>now '+(c.area||0)+' ha</span><span>'+Math.max(10,Math.round((c.area||0)*2))+'</span></div></div>'+
     '<div class="pf-sl"><div class="pf-sllab"><span>Price</span><span class="pf-slval"><span id="vPfPr">'+fmt(price0)+'</span><small>/tonne</small></span></div>'+_pfSlider('pfPr',pMin,pMax,10,price0,'pfWhatIfCrop')+'<div class="pf-slends"><span>'+fmt(pMin)+'</span><span>AHDB today</span><span>'+fmt(pMax)+'</span></div></div>'+
     '<div class="pf-sl"><div class="pf-sllab"><span>Yield</span><span class="pf-slval"><span id="vPfYl">'+yld0r.toFixed(1)+'</span><small> t/ha</small></span></div>'+_pfSlider('pfYl',yMin,yMax,0.1,yld0r.toFixed(1),'pfWhatIfCrop')+'<div class="pf-slends"><span>'+yMin.toFixed(1)+'</span><span>your average</span><span>'+yMax.toFixed(1)+'</span></div></div>'+
@@ -18035,7 +18050,7 @@ function ytdSummary(opts) {
 
 /* Last tax year to the same point in the year. Farm income is seasonal, so "vs the
    previous six months" compares harvest with spring and tells the farmer nothing. */
-function _txFyToDatePrev(){
+function _txFyToDatePrev(exVat){
   var out={income:0,expenses:0,profit:0};
   try{
     var cur=getCurrentFY(), now=_txNow(), fyStart=((ST.fyStartMonth||4)-1);
@@ -18045,7 +18060,7 @@ function _txFyToDatePrev(){
       if(typeof fyOf!=='function' || fyOf(t.date)!==cur-1) return;
       var d=parseDate(t.date); if(!d) return;
       if(rel(d.m, d.d||1) > cut) return;
-      if(t.type==='income') out.income+=(t.amt||0);
+      if(t.type==='income') out.income+=(exVat && typeof ukExVat==='function') ? ukExVat(t) : (t.amt||0);
       else if(t.type==='expense') out.expenses+=(t.amt||0);
     });
     out.profit=out.income-out.expenses;
@@ -18142,7 +18157,13 @@ var n = parseInt(ST.incPeriod || '6', 10);
       if (rg.to)  { var tp=rg.to.split('-');   if (dn > (+tp[0]*10000 + +tp[1]*100 + +tp[2])) return false; }
       return true;
     }
-    return periodMonths.indexOf(MO[d.m] + ' ' + d.y) >= 0;
+    if (periodMonths.indexOf(MO[d.m] + ' ' + d.y) < 0) return false;
+    /* U6: "This financial year" is the tax year by its exact dates, not whole months. */
+    if ((ST.incPeriodSel || 'fy') === 'fy' && typeof fyOf === 'function' && typeof getCurrentFY === 'function'){
+      var _iso = d.y + '-' + String(d.m+1).padStart(2,'0') + '-' + String(d.d||1).padStart(2,'0');
+      if (fyOf(_iso) !== getCurrentFY()) return false;
+    }
+    return true;
   }
   var list = ST.txns.filter(function(t, idx) {
     if (t.type !== 'income') return false;
@@ -18836,7 +18857,7 @@ function clearExpFilters() {
 /* fyOnly: the tax year starts on 6 April. A month-label window that opens in April
    otherwise counts rows dated 1-5 April, which belong to the PREVIOUS tax year - the
    demo farm carried four of them (1,900 in, 6,710 out) into this year's figures. */
-function txSummaryPeriod(months, fyOnly) {
+function txSummaryPeriod(months, fyOnly, exVat) {
   var _fyCur = (fyOnly && typeof getCurrentFY === 'function') ? getCurrentFY() : null;
   var curMonth = currentPeriodLabel();
   var MN = {Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
@@ -18860,7 +18881,7 @@ var parts = (curMonth||'May 2024').split(' ');
     var lbl = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.m] + ' ' + d.y;
     if (periodMonths.indexOf(lbl) < 0) return;
     if (_fyCur != null && typeof fyOf === 'function' && fyOf(t.date) !== _fyCur) return;
-    if (t.type === 'income')  income   += t.amt;
+    if (t.type === 'income')  income   += (exVat && typeof ukExVat === 'function') ? ukExVat(t) : t.amt;   /* U6 */
     else if (t.type === 'expense') expenses += t.amt;
     else return; // account payments etc. are cash movements, not P&L lines
     byCat[_catOf(t)] = (byCat[_catOf(t)] || 0) + t.amt;
@@ -18883,15 +18904,17 @@ function updateIncPage() {
   if (fyMode && typeof _txFyMonths === 'function') ST.incPeriod = String(_txFyMonths());
   var p  = ST.incPeriod || '6';
   var n  = parseInt(p);
-  var R  = txSummaryPeriod(n, fyMode);
-  var Rp = txSummaryPeriod(n * 2);
+  /* U6 (step 5, A): income without VAT - the figure the Profit page and the return use - and
+     the tax year by its exact dates (6 April), so rent received on 1 April is last year's. */
+  var R  = txSummaryPeriod(n, fyMode, true);
+  var Rp = txSummaryPeriod(n * 2, false, true);
   var lbl     = _txPeriodTitle(n);
   var prevLbl = fyMode ? 'the same point last year' : (n === 1 ? 'last month' : 'prev ' + p + ' months');
-  var _prevBase = fyMode ? _txFyToDatePrev()
+  var _prevBase = fyMode ? _txFyToDatePrev(true)
                          : { income:Rp.income-R.income, expenses:Rp.expenses-R.expenses, profit:Rp.profit-R.profit };
 
 setEl('inc-banner-val',    fmt(R.income));
-  setEl('inc-banner-lbl',   'Income \u00b7 ' + lbl);
+  setEl('inc-banner-lbl',   'Income \u00b7 ' + lbl + ' \u00b7 ex-VAT');
   _ieBannerChg('inc-banner-chg', R.income, _prevBase.income, prevLbl);
   setEl('inc-metric-in',     fmt(R.income));
   /* -378: Profit is the Profit page's profit for the same period - the tax year so far, or the
@@ -18909,7 +18932,7 @@ setEl('inc-banner-val',    fmt(R.income));
   setEl('inc-chart-title',   'Income Overview — ' + lbl);
   _incPillsOn(fyMode ? 'fy' : p);
 
-setEl('inc-lbl-in',     'Money In (' + lbl + ')');
+setEl('inc-lbl-in',     'Money In (' + lbl + ', ex-VAT)');
     /* The tile is simply "Profit"; the tag says which period and on what basis, so the
      figure reads as one number with the Dashboard rather than two that happen to match. */
   if(typeof setTags==='function') setTags('inc-tag-profit','actual', fyMode ? 'Year so far' : lbl);
@@ -18935,7 +18958,7 @@ var prevInc  = _prevBase.income;
     if (fyMode) {
       /* In the tax-year view the banner already shows this year's total - repeating it
          here is what put two year-to-date incomes side by side. */
-      var _pv = _txFyToDatePrev();
+      var _pv = _txFyToDatePrev(true);
       setEl('inc-lbl-ytd', 'Same point last year');
       setEl('inc-metric-ytd', fmt(_pv.income));
       ytdChgEl.textContent = 'to ' + _txSamePointLabel();
@@ -20163,7 +20186,7 @@ var FARM_CATS = [
   {n:'Soil erosion works'         , t:'exp'  , vat:'std'  , ec:'#78350F'  , ic:''         , tag:'tgr'  , tc:'#FEF3C7:#78350F'    , ss:'no capital allowance', sd:'Works to prevent soil erosion are capital and qualify for no allowance. Maintaining existing works is a repair \u2014 record that as a running cost.', cap:1, noca:1},
   {n:'Handling & housing works'              , t:'exp'  , vat:'std'  , ec:'#7C3AED'  , ic:''         , tag:'tp'   , tc:'#FDF4FF:#7C3AED'    , ss:'SA103F box 53 (SBA, 3%/yr)', sd:'Grain stores, livestock housing, handling systems and hardstanding \u2014 structures. Fixed plant inside them takes AIA instead, so split the invoice.', cap:1, sba:1},
   {n:'Water supply & irrigation works', t:'exp' , vat:'std'  , ec:'#0891B2'  , ic:''         , tag:'tb'   , tc:'#E0F2FE:#0369A1'    , ss:'SA103F box 49 or 53 \u2014 split it', sd:'Pumps, pipework and boreholes are plant (AIA); a reservoir or dam is a structure (SBA). Split the invoice \u2014 it is the biggest allowance decision on the job.', cap:1, sba:1, aia:1},
-  {n:'Fencing'                    , t:'exp'  , vat:'std'  , ec:'#B45309'  , ic:''         , tag:'to'   , tc:'#FFF3E8:#B45309'    , ss:'SA103F box 49 (AIA, 100%)', sd:'Fencing is plant in a farming trade, so it takes the Annual Investment Allowance. Capital \u2014 register it as an asset to claim.', cap:1, aia:1},
+  {n:'Fencing'                    , t:'exp'  , vat:'std'  , ec:'#B45309'  , ic:''         , tag:'to'   , tc:'#FFF3E8:#B45309'    , ss:'SA103F box 53 (SBA, 3%/yr)', sd:'Permanent fencing is a structure, claimed at 3% a year. Movable or electric fencing is kit and can be claimed in full (AIA, box 49). Capital \u2014 register it as an asset to claim.', cap:1},
   {n:'Farm buildings'             , t:'exp'  , vat:'std'  , ec:'#475569'  , ic:''         , tag:'tgr'  , tc:'#F1F5F9:#475569'    , ss:'SA103F box 53 (SBA, 3%/yr)', sd:'Erection of, or improvements to, farm buildings (not domestic). Capital \u2014 register it as an asset to claim.', cap:1, sba:1},
   {n:'Orchard & vineyard planting', t:'exp'  , vat:'std'  , ec:'#16A34A'  , ic:''         , tag:'tg'   , tc:'#F0FDF4:#15803D'    , ss:'no capital allowance', sd:'Establishing an orchard or vineyard is capital but qualifies for NO capital allowance \u2014 it is neither plant nor a structure. Relief comes against Capital Gains Tax when the land is sold.', cap:1, noca:1},
   {n:'Roads & bridges'            , t:'exp'  , vat:'std'  , ec:'#64748B'  , ic:''         , tag:'tgr'  , tc:'#F8FAFC:#334155'    , ss:'SA103F box 53 (SBA, 3%/yr)', sd:'Farm roads, tracks, yards and bridges \u2014 structures, not plant. Capital \u2014 register it as an asset to claim.', cap:1, sba:1},
@@ -22458,7 +22481,21 @@ function LN_annualInterest(){
   t += (LN_odInterestTotal()+LN_coInterestTotal())*12;
   return Math.round(t);
 }
-function LN_equityPct(){ var a=LN_assetsTotal(); if(!a) return 0; return Math.round((a-LN_totalOwed())/a*1000)/10; }
+/* U76 (step 5, A): ONE "how much of the farm you own" - the lender pack's: everything the farm
+   owns (land, buildings and machinery at value, the herd, cash, crops in store, money owed to
+   you) less everything it owes. Loans and the pack read it (Oakvale 95%). The Assets page keeps
+   its own figure under an honest name, "Machinery and buildings paid off". */
+function farmBalanceSheet(){
+  var al={rows:[],tV:0,tO:0,net:0}; try{ al=astLenderData(); }catch(e){}
+  var herd=0; try{ ((typeof ST_LS!=='undefined'&&ST_LS.herd)||[]).forEach(function(h){ if(h && !h.planned && (h.qty||0)>0) herd+=lsHerdValue(h); }); }catch(e){}
+  var cash=(typeof ST!=='undefined'&&typeof ST.bankBalance==='number')?ST.bankBalance:0;
+  var est=((typeof ST_LOANAPP!=='undefined'&&ST_LOANAPP&&ST_LOANAPP.estimates)||{}), crops=est.crops||0, debtors=est.debtors||0;
+  var totalAssets=(al.tV||0)+herd+cash+crops+debtors, totalLiab=0; try{ totalLiab=LN_totalOwed(); }catch(e){}
+  var netWorth=totalAssets-totalLiab;
+  return {totalAssets:totalAssets, totalLiab:totalLiab, netWorth:netWorth, equityPct:totalAssets>0?Math.round(netWorth/totalAssets*100):0};
+}
+function farmEquityPct(){ return farmBalanceSheet().equityPct; }
+function LN_equityPct(){ return farmEquityPct(); }
 function LN_R(n){ return _moneyInt(n); }
 function LN_Rk(n){ return _moneyCompact(n); }
 function LN_paidPct(l){ if(!l.borrowed) return 0; return Math.max(0,Math.min(100,Math.round((l.borrowed-l.balance)/l.borrowed*100))); }
@@ -22937,7 +22974,8 @@ function laReportHTML(withLoan){
   var farmIncome=laFarmIncome();
   // collateral + balance sheet inputs
   var al={rows:[],tV:0,tO:0,net:0}; try{ al=astLenderData(); }catch(e){}
-  var herd=0,herdHead=0,classAgg={}; try{ var ls=_lsHmrcCompute(); herd=ls.T.closeV||ls.T.market||0; herdHead=ls.T.close||0; classAgg=ls.classAgg||{}; }catch(e){}
+  /* U25: the one herd value, herd by herd - it was the HMRC standard (tax) value here. */
+  var herd=0,herdHead=0,classAgg={}; try{ ((typeof ST_LS!=='undefined'&&ST_LS.herd)||[]).forEach(function(h){ if(!h||h.planned||!((h.qty||0)>0)) return; var v=lsHerdValue(h); herd+=v; herdHead+=(h.qty||0); classAgg[h.id]={label:(h.name||h.type||'Herd'), head:(h.qty||0), val:v}; }); }catch(e){}
   var cash=(typeof ST!=='undefined'&&typeof ST.bankBalance==='number')?ST.bankBalance:0;
   var est=(ST_LOANAPP.estimates)||{}; var crops=est.crops||0, debtors=est.debtors||0;
   var currentAssets=cash+crops+debtors;
@@ -23123,7 +23161,7 @@ function laReportHTML(withLoan){
         '<tr class="tot"><td>Fixed-asset equity</td><td>'+laRR(al.tV)+'</td><td>'+laRR(al.tO)+'</td><td class="g">'+laRR(al.tV-al.tO)+'</td></tr></tbody></table></div>');
     if(herd>0){
       var lr=clsRows.map(function(x){ return '<tr><td>'+esc(x.label)+'</td><td>'+x.head+'</td><td>'+laRR(x.val)+'</td></tr>'; }).join('');
-      H.push('<div class="lar-wrap"><table class="lar-tbl"><thead><tr><th>Livestock (year-end value)</th><th>Head</th><th>Value</th></tr></thead><tbody>'+lr+
+      H.push('<div class="lar-wrap"><table class="lar-tbl"><thead><tr><th>Livestock</th><th>Head</th><th>Value</th></tr></thead><tbody>'+lr+
         '<tr class="tot"><td>Herd value</td><td>'+herdHead+'</td><td class="g">'+laRR(herd)+'</td></tr></tbody></table></div>');
     }
     if(secCover!=null) H.push('<div class="lar-note">Total security available '+laRR(al.net+herd)+' against total debt of '+laRR(totalLiab)+' — a security cover of '+secCover.toFixed(2)+'×.</div>');
@@ -24459,7 +24497,7 @@ var ASSET_TAX_MAP = {
   'Vehicles & Tractors':   {type:'aia', life:5,  note:'Tractors and farm vehicles normally qualify for the Annual Investment Allowance \u2014 the full cost off your profit in the year you buy. A car does not; it goes in a pool at 18% or 6% depending on its CO\u2082.'},
   'Machinery & Equipment': {type:'aia', life:5,  note:'Most farming machinery and implements qualify for the Annual Investment Allowance \u2014 the full cost off your profit in the year of purchase, up to the \u00a31m annual cap.'},
   'Renewable Energy':      {type:'aia', life:5,  note:'Solar and battery plant is special rate expenditure, but the Annual Investment Allowance can be claimed against it \u2014 so normally the full cost comes off your profit in the year you buy, up to the \u00a31m cap. Beyond that it writes down at 6% a year. A company can instead claim the 50% first-year allowance; that route is not open to a sole trader or partnership.'},
-  'Capital Development':   {type:'sba', life:10, note:'Farm structures such as roads, bridges and hard standing normally fall under the Structures and Buildings Allowance at 3% a year. Land improvement itself \u2014 drainage, reservoirs, fencing \u2014 often gets no allowance at all, so check each item with your farming income \u2014 your accountant confirms it.'},
+  'Capital Development':   {type:'sba', life:10, note:'Farm structures such as roads, bridges and hard standing normally fall under the Structures and Buildings Allowance at 3% a year. Permanent fencing is a structure too (3% a year); movable or electric fencing is kit and takes the Annual Investment Allowance. Land improvement itself \u2014 drainage, reservoirs \u2014 often gets no allowance at all, so check each item with your farming income \u2014 your accountant confirms it.'},
   'Irrigation & Water':    {type:'aia', life:5,  note:'Irrigation equipment normally qualifies for the Annual Investment Allowance. Fixed pipework forming part of a structure may fall under the Structures & Buildings Allowance instead.'},
   'Storage & Silos':       {type:'aia', life:5,  note:'Silos and storage plant normally qualify for the Annual Investment Allowance. The building itself is not plant \u2014 that goes to the Structures & Buildings Allowance at 3% a year.'},
   'Tools & Implements':    {type:'aia', life:5,  note:'Farming tools and implements generally qualify for the Annual Investment Allowance.'},
@@ -24718,6 +24756,51 @@ function astDisposalValue(a){
   var got=Number(a.goneFor)||0, cost=Number(a.price)||0;
   return Math.max(0, Math.min(got, cost));       // never more than it cost
 }
+/* C8 + N6 (step 5, A): a proper pool each year for each of the main and special rate pools -
+   written-down value brought forward, plus the year's additions (including any spend over
+   the AIA limit, N6), less the year's sale values (capped at cost), then either a balancing
+   charge (the pool went below nil), the small-pools write-off (\u00a31,000 or less left), or the
+   writing-down allowance at that year's rate. The per-asset reducing balances each ran on
+   their own, a sale never came off, and spend over the AIA limit was written down once. */
+function ukCapPools(toFy){
+  var AIA_LIMIT=(function(){ try{ return STATUTORY.tax.aiaLimit || 1000000; }catch(e){ return 1000000; } })();
+  var rows=[], minFy=null;
+  ((typeof ST_ASSETS!=='undefined'&&ST_ASSETS.assets)||[]).forEach(function(a){
+    var pool=astPoolOf(a); if(!pool) return;
+    var dt=(typeof ukDeprType==='function')?ukDeprType(a):a.deprType;
+    var d=_astDeprAsIfHeld(a), sch=(d&&d.deprSchedule)||[]; if(!sch.length) return;   /* hired, still being built, undated */
+    var y0=sch[0].yr; if(minFy==null || y0<minFy) minFy=y0;
+    rows.push({a:a, pool:pool, dt:dt, y0:y0, cost:Number(a.price)||0, goneFy:(a.gone?astGoneFY(a):null), goneVal:astDisposalValue(a)});
+  });
+  var out={main:{}, special:{}, aia:{}};
+  if(minFy==null || toFy==null) return out;
+  var wdv={main:0, special:0};
+  for(var y=minFy; y<=toFy; y++){
+    var add={main:0, special:0}, disp={main:0, special:0}, aiaRaw=0;
+    rows.forEach(function(r){
+      if(r.y0===y){
+        if(r.dt==='aia') aiaRaw+=r.cost;
+        else if(r.dt==='wda6') add.special+=r.cost;
+        else add.main+=r.cost;
+      }
+      if(r.goneFy===y) disp[r.pool]+=r.goneVal;
+    });
+    var aia=Math.min(aiaRaw, AIA_LIMIT), excess=Math.max(0, aiaRaw-AIA_LIMIT);
+    add.main+=excess;
+    out.aia[y]={claimed:Math.round(aia), raw:Math.round(aiaRaw), excess:Math.round(excess)};
+    ['main','special'].forEach(function(k){
+      var bf=wdv[k], p=bf+add[k]-disp[k], charge=0, wda=0, small=false;
+      var rate=(k==='special')?0.06:ukWdaMainRate(y);
+      if(p<0){ charge=-p; p=0; }
+      else if(p>0 && p<=1000){ wda=p; small=true; p=0; }
+      else if(p>0){ wda=Math.round(p*rate); p-=wda; }
+      out[k][y]={bf:Math.round(bf), additions:Math.round(add[k]), disposals:Math.round(disp[k]), charge:Math.round(charge), wda:Math.round(wda), smallPool:small, cf:Math.round(p), rate:rate};
+      wdv[k]=p;
+    });
+  }
+  return out;
+}
+window.ukCapPools=ukCapPools;
 /* Everything the year's disposals do to each pool. */
 function astPoolEffect(fy){
   fy = (fy!=null) ? fy : (getCurrentFY ? getCurrentFY() : 2024);
@@ -24738,9 +24821,13 @@ function astPoolEffect(fy){
       pools[pool].unrelieved += (calcDepr(a).bookValue||0);
     }
   });
+  /* C8: the balancing charge comes from the running pool, not a sum of per-asset values. */
+  var _CP=null; try{ _CP=ukCapPools(fy); }catch(e){ _CP=null; }
   ['main','special'].forEach(function(k){
     var p=pools[k];
     if(!p.gone.length) return;
+    var _y=_CP && _CP[k] && _CP[k][fy];
+    if(_y){ p.unrelieved=_y.bf+_y.additions; p.charge=_y.charge; return; }
     var net=p.unrelieved - p.proceeds;
     if(net < 0) p.charge = Math.round(-net);      // proceeds outran the pool: taxable
     /* A balancing ALLOWANCE only arises on cessation, not on an ordinary disposal from
@@ -26389,12 +26476,22 @@ var purchaseYear = parseInt(date.split('-')[0]) || 2020;
        difference from the SA regime, where farm development was claimed at full cost in
        the build year. Splitting a shed into plant (AIA, 100%) and structure (SBA, 3%)
        is the largest tax decision a UK farm building presents. */
+    /* C7 (step 5, A): the first year is 3% for the days the structure is in use from the
+       later of first use and the spend to the year end (CAA 2001 s270AA), not a full 3%;
+       every later year is 3%, and the last one takes what is left. Past first years read
+       high: fencing \u00a31,230 against about \u00a3835. */
     var sbaAnnual = Math.round(price * 0.03), claimedS = 0;
-    for (var b = 0; b < 34; b++) {
-      var sa2 = (b === 33) ? (price - claimedS) : sbaAnnual;
-      if (sa2 <= 0) break;
+    var _sd = String((asset.inUse && String(asset.inUse) > date) ? asset.inUse : date).split('-');
+    var _sDate = new Date(parseInt(_sd[0],10), (parseInt(_sd[1]||'1',10)-1), parseInt(_sd[2]||'1',10));
+    var _fsd = (typeof fyStartDay==='function') ? fyStartDay() : 1;
+    var _yEnd = new Date(startFY + 1, _fyStart, _fsd);                  /* the day after the year ends */
+    var _days = Math.max(0, Math.min(365, Math.round((_yEnd - _sDate) / 864e5)));
+    var _first = isNaN(_days) ? sbaAnnual : Math.round(price * 0.03 * _days / 365);
+    for (var b = 0; b < 36; b++) {
+      var sa2 = (b === 0) ? _first : Math.min(sbaAnnual, price - claimedS);
+      if (sa2 <= 0) { if (b === 0) continue; break; }
       claimedS += sa2;
-      schedule.push({yr: startFY + b, rate: '3% SBA', amount: sa2});
+      schedule.push({yr: startFY + b, rate: (b === 0 && _first !== sbaAnnual) ? '3% SBA (part year)' : '3% SBA', amount: sa2});
       if (b <= yearsElapsed) remaining -= sa2;
     }
     remaining = Math.max(0, remaining);
@@ -26868,7 +26965,7 @@ function calcAssetDepr() {
     aia:  {t:'Annual Investment Allowance', n:'Plant and machinery is written off in full the year it is brought into use, up to the annual limit across the whole business. Anything over the limit drops into the main pool at 18%.'},
     wda18:{t:'Main pool \u2014 writing-down allowance', n:'A reducing balance: 14% of what is left each year (18% before April 2026), so it never quite reaches zero. The final year sweeps up the remainder.'},
     wda6: {t:'Special rate pool', n:'Solar, integral features and long-life assets get 6% a year on a reducing balance.'},
-    sba:  {t:'Structures &amp; Buildings Allowance', n:'A structure is written off at 3% a year \u2014 slowly. Fixed plant inside it (grain dryers, handling gear, fencing) takes the Annual Investment Allowance at 100% instead, so splitting the invoice between structure and plant is the biggest tax decision on the job.'}
+    sba:  {t:'Structures &amp; Buildings Allowance', n:'A structure is written off at 3% a year \u2014 slowly. Fixed plant inside it (grain dryers, handling gear) and movable or electric fencing take the Annual Investment Allowance at 100% instead, so splitting the invoice between structure and plant is the biggest tax decision on the job.'}
   };
   var m=META[dtype]||{t:'Capital allowances', n:''};
   var total=sch.reduce(function(a,x){ return a+(x.amount||0); },0);
@@ -27508,11 +27605,30 @@ function wkEaUsedThisTaxYear(){
     if(start){ var d=(typeof parseDate==='function')?parseDate(r.date):null;
       if(!d) return;
       if(new Date(d.y,d.m,d.d||1) < start) return; }
-    used += (r.eaUsed!=null) ? (r.eaUsed||0) : Math.round(cap/12);
+    /* U81: a picking run posted before N7 worked out no employer NI at all, so it drew
+       nothing - it was charged a twelfth of the year each, and two picks used the allowance
+       up on paper. */
+    used += (r.eaUsed!=null) ? (r.eaUsed||0) : (r.source==='Picking' ? 0 : Math.round(cap/12));
   });
   return Math.min(cap, Math.round(used*100)/100);
 }
 function wkEaRemaining(){ return Math.max(0, wkEaCap()-wkEaUsedThisTaxYear()); }
+/* U81 (step 5, A): ONE Employment Allowance answer - used so far and left, from the pay runs
+   actually posted - and when, at this year's pace of employer NI, the rest runs out. The Tax
+   page projected a whole year and said nothing was left while Payroll said £3,304. */
+function ukEaStatus(){
+  var cap=wkEaCap(), used=wkEaUsedThisTaxYear(), left=Math.max(0,cap-used), ty=wkTaxYear(), now=(typeof APP_TODAY!=='undefined'&&APP_TODAY)?APP_TODAY:new Date();
+  var raw=0; ((ST_WORK&&ST_WORK.payRuns)||[]).forEach(function(r){ if(!r) return; var d=parseDate(String(r.date||'')); if(!d || new Date(d.y,d.m,d.d||1)<ty.start) return; raw+=(r.employerNI!=null?(+r.employerNI||0):(r.eaUsed||0)); });
+  var months=Math.max(1, (now.getFullYear()-ty.start.getFullYear())*12 + now.getMonth()-ty.start.getMonth() + (now.getDate()>=6?1:0));
+  var pace=raw/months, by=null, within=false;
+  if(left<=0) by='used';
+  else if(pace>0){ var k=Math.ceil(left/pace); var d2=new Date(now.getFullYear(), now.getMonth()+k, 1); var end=new Date(ty.start.getFullYear()+1,3,5);
+    within=(d2<=end); by=within ? ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d2.getMonth()]+' '+d2.getFullYear() : null; }
+  return {cap:cap, used:Math.round(used), left:Math.round(left), by:by, within:within,
+          line:'Employment Allowance: '+_curSym()+_grpInt(Math.round(used))+' used, '+_curSym()+_grpInt(Math.round(left))+' left'+
+               (by==='used'?'':(by?' \u00b7 forecast: all used by '+by:(pace>0?' \u00b7 forecast: not all used this tax year':'')))};
+}
+window.ukEaStatus=ukEaStatus;
 /* HMRC: "If your company has only one director, they must not be the only employee
    liable for secondary Class 1 National Insurance." We hold no director flag, so this
    raises the question rather than answering it - blocking outright would be wrong every
@@ -27969,7 +28085,7 @@ function renderWkPayroll(){ wkSync();
   var _ukEmployerCard = '';
   if (ukRun && ukRun.count) {
     var eaLine = (ukRun.employmentAllowance.thisPeriod > 0)
-      ? '<div class="wk-srow"><span>Less Employment Allowance <span style="color:var(--t4)">\u00b7 '+wkMoney2(wkEaRemaining())+' left this year</span></span><span class="neg">\u2212'+wkMoney2(ukRun.employmentAllowance.thisPeriod)+'</span></div>'
+      ? '<div class="wk-srow"><span>Less Employment Allowance <span style="color:var(--t4)">\u00b7 '+wkMoney2(wkEaRemaining())+' left this year'+((function(){ var e=ukEaStatus(); return (e.by&&e.by!=='used')?' \u00b7 forecast: all used by '+e.by:''; })())+'</span></span><span class="neg">\u2212'+wkMoney2(ukRun.employmentAllowance.thisPeriod)+'</span></div>'
       : '<div class="wk-srow"><span>Employment Allowance</span><span style="color:var(--t4)">all '+wkMoney2(wkEaCap())+' used for the year</span></div>';
     /* gov.uk eligibility: a company whose only director is also the only employee liable
        for secondary Class 1 cannot claim. We do not know who the director is, so ask. */
@@ -29698,14 +29814,14 @@ function renderAssetInsights(){
   var dep={}; fys.forEach(function(f){dep[f]=0;});
   A.forEach(function(a){ var d=calcDepr(a); (d.deprSchedule||[]).forEach(function(s){ if(dep[s.yr]!=null) dep[s.yr]+=s.amount; }); });
   var mxD=Math.max.apply(null, fys.map(function(f){return dep[f];}).concat(1));
-  var barsB=fys.map(function(f){ return _aiBar('FY'+(''+f).slice(-2), dep[f]/mxD*100, '#40916C', dep[f]>0?astK(dep[f]):'\u2014', "astDrill('fy','"+f+"','ai-bd-b')"); }).join('');
+  var barsB=fys.map(function(f){ return _aiBar((typeof _txFyLabel==='function'?_txFyLabel(f).replace('FY ',''):'FY'+(''+f).slice(-2)), dep[f]/mxD*100, '#40916C', dep[f]>0?astK(dep[f]):'\u2014', "astDrill('fy','"+f+"','ai-bd-b')"); }).join('');
   var swB='You can claim about <b>'+astK(dep[fy0])+'</b> against tax this year'+(dep[fy0+4]<dep[fy0]?', dropping to '+astK(dep[fy0+4])+' by FY'+(''+(fy0+4)).slice(-2)+'. As that shrinks your tax bill creeps up \u2014 plan for it, or buy gear that brings fresh deductions.':'. Keep your register current so every deduction is captured.');
   var totP=0, owed=0; A.forEach(function(a){ totP+=a.price||0; owed+=(typeof assetOwed==='function')?assetOwed(a):(a.financed?(a.outstanding||0):0); });
   var netEq=totP-owed; var ownP=totP?Math.round(netEq/totP*100):100; var ownPB=Math.max(0,Math.min(100,ownP));
-  var innerC='<div style="font-size:24px;font-weight:800;color:'+(netEq<0?'var(--rd)':'var(--gd)')+';line-height:1">'+IE_R(netEq)+' <span style="font-size:12px;color:var(--t3);font-weight:600">you own</span></div>'+
+  var innerC='<div style="font-size:24px;font-weight:800;color:'+(netEq<0?'var(--rd)':'var(--gd)')+';line-height:1">'+IE_R(netEq)+' <span style="font-size:12px;color:var(--t3);font-weight:600">paid off</span></div>'+
     '<div style="height:20px;border-radius:7px;overflow:hidden;display:flex;margin:14px 0 9px;cursor:pointer" onclick="astDrill(\'fin\',\'all\',\'ai-bd-c\')"><div style="width:'+ownPB+'%;background:#1B4332"></div><div style="width:'+(100-ownPB)+'%;background:#E74C3C"></div></div>'+
     '<div style="display:flex;justify-content:space-between;font-size:12px">'+_aiLeg('#1B4332','Owned '+IE_R(netEq),'')+_aiLeg('#E74C3C','Financed '+fmt(owed),"astDrill('fin','all','ai-bd-c')")+'</div>';
-  var swC='You own <b>'+ownP+'%</b> of your assets outright. '+(ownP>=80?'That is a strong position \u2014 good news when you apply for a loan.':'The bank still holds a fair chunk \u2014 paying down finance lifts how much you can borrow.');
+  var swC='<b>'+ownP+'%</b> of your machinery and buildings is paid off. '+(ownP>=80?'That is a strong position \u2014 good news when you apply for a loan.':'The bank still holds a fair chunk \u2014 paying down finance lifts how much you can borrow.');
   var equip=[];
   A.forEach(function(a,i){
     var life=astLifeFor(a); if(!life) return;
@@ -29732,7 +29848,7 @@ function renderAssetInsights(){
   var html='';
   html+='<div class="ai-kpis" id="ai-kpis">'+
     '<div class="ai-kpi" onclick="astDrill(\'kpi-total\',\'all\',\'ai-bd-kpi\')"><div class="l">Total assets</div><div class="v">'+astK(totVal)+'</div><div class="s">'+A.length+' assets \u00b7 tap to split</div></div>'+
-    '<div class="ai-kpi" onclick="astDrill(\'fin\',\'all\',\'ai-bd-kpi\')"><div class="l">You own</div><div class="v">'+ownP+'%</div><div class="s">'+IE_R(netEq)+' yours after debt</div></div>'+
+    '<div class="ai-kpi" onclick="astDrill(\'fin\',\'all\',\'ai-bd-kpi\')"><div class="l">Machinery and buildings paid off</div><div class="v">'+ownP+'%</div><div class="s">'+IE_R(netEq)+' of their cost paid for</div></div>'+
     '<div class="ai-kpi" onclick="astDrill(\'fy\',\''+fy0+'\',\'ai-bd-kpi\')"><div class="l">Tax write-off this yr</div><div class="v">'+astK(dep[fy0])+'</div><div class="s">depreciation FY'+(''+fy0).slice(-2)+'</div></div>'+
   '</div><div id="ai-bd-kpi"></div>';
   html+='<div class="ai-grid2">';
@@ -30489,7 +30605,7 @@ function _lsFarmTotals(){
     /* Value the herd the same way the herd-value tile does — per class where classes exist —
        so the two numbers on the same screen agree. Using qty x adult sell price applied the
        adult price to calves and heifers alike and made the return contradict the value above it. */
-    mExp+=(h.classes&&h.classes.length)?h.classes.reduce(function(s,c){return s+(c.n||0)*(c.v||0);},0):qty*(h.sell||0);
+    mExp+=lsHerdValue(h);   /* U25 */
     mInc+=_lsHerdIncome(h.id);
     counted++;
   });
@@ -30553,7 +30669,7 @@ function _lsKpiPanel(key){
     var top=rows2[0];
     var topPct=top?Math.round(top.v/totV*100):0;
     return '<div class="ls-kpih">\ud83d\udcb0 Where your '+_lsCompactRand(totV)+' sits</div>'+html+
-      '<div class="ls-kpimean"><b>Most of your herd value is in '+(top?esc(lsHerdName(top.h)):'your biggest group')+'.</b> At today\u2019s market prices it carries about '+topPct+'% of the total.</div>'+
+      '<div class="ls-kpimean"><b>Most of your herd value is in '+(top?esc(lsHerdName(top.h)):'your biggest group')+'.</b> It carries about '+topPct+'% of the total.</div>'+
       '<button class="ls-kpigo" onclick="lsTab(\'register\')">\ud83d\udccb Open the Register \u2192</button>';
   }
   // roi — only groups whose figures pass _lsSanity, and never dairy (audit #6)
@@ -33137,6 +33253,8 @@ function _lsProdMetrics(act){
     var bf=_lsProdBreedingFemales(b,act); if(!bf.known||bf.n<=0) return; // covered by split row
     var hIds=act.filter(function(h){return _lsProdBase(h)===b;}).map(function(h){return h.id;});
     var births=lsMovesThisFy(function(m){return m.reason==='born' && hIds.indexOf(m.herd)>=0;}).reduce(function(s,m){return s+m.qty;},0);
+    var _cb=lsCalvingFromBreedings(hIds);   /* U68: the breeding seasons first */
+    if(_cb){ births=_cb.born; bf={n:_cb.fem, known:true}; }
     if(births<=0){ season.push({key:'wean-'+b, icon:cfg.ic, label:cfg.label, fx:cfg.fx, status:'locked', value:'—', valSub:'no '+cfg.unit+' logged', chip:{cls:'flat',text:'locked'},
       why:'Log '+cfg.unit+' born against your '+bf.n+' '+cfg.fem+' and this fills in.', actions:[{label:'Record a birth →',pri:true,fn:"lsMoveOpen('','born')"}] }); return; }
     var rate=Math.round(births/bf.n*100), t=lsBench(cfg.benchKey), green=rate>=t, dataErr=rate>250;
@@ -34276,11 +34394,17 @@ function lsAgeOverrideSave(idx){
 // Does this group have a class breakdown that sums to its head count?
 function lsHasClasses(h){ return !!(h.classes && h.classes.length); }
 function lsClassSum(h){ return (h.classes||[]).reduce(function(s,c){return s+(c.n||0);},0); }
-// Group value: derive from classes when present (count x per-class value), else qty x sell.
-function lsHerdValueDerived(h){
+/* U25 (step 5, A): ONE herd value, used everywhere - the classes when the herd has them
+   (count x value per class), else head x the herd's sell price, else today's market price.
+   Four screens had four answers (Oakvale: about £89.9k, £90.9k, £95.0k and £145.7k).
+   The HMRC standard value is a tax valuation and stays only on the HMRC statement. */
+function lsHerdValue(h){
+  if(!h) return 0;
   if(lsHasClasses(h)) return (h.classes||[]).reduce(function(s,c){return s+(c.n||0)*(c.v||0);},0);
-  return (h.qty||0)*(h.sell||0);
+  if((h.sell||0)>0) return (h.qty||0)*(h.sell||0);
+  return (typeof lsHerdMarketVal==='function') ? (lsHerdMarketVal(h)||0) : 0;
 }
+function lsHerdValueDerived(h){ return lsHerdValue(h); }
 // Sex rollup for one group (only counts if it has classes).
 function lsHerdSex(h){
   var o={F:0,M:0,Y:0,known:false};
@@ -34784,6 +34908,17 @@ function _brStatusChip(b){ var i=_brStageIdx(b);
 function _brHerdType(b){ var h=(ST_LS.herd||[]).filter(function(x){return x.id===b.herd;})[0]; return h?h.type:'Beef cattle'; }
 
 // ── KPIs, aggregated across all breeding seasons (SA-correct: denominator = females exposed) ──
+/* U68 (step 5, A): ONE calving % - young born over females mated, from the breeding seasons'
+   records, not capped (twins are real); Production reads the same figure for its herds and
+   falls back to births logged as movements only where no season has a born count. */
+function lsCalvingFromBreedings(hIds){
+  var fem=0, born=0;
+  (ST_LS.breedings||[]).forEach(function(b){
+    if(hIds && hIds.map(String).indexOf(String(b.herd))<0) return;
+    if(b.born!=null && b.born>0){ fem+=_brFemales(b); born+=b.born; }
+  });
+  return fem>0 ? {born:born, fem:fem, pct:Math.round(born/fem*100)} : null;
+}
 function brKPIs(){ var brs=(ST_LS.breedings||[]);
   var fW=0,wean=0,fC=0,born=0,fP=0,inCalf=0,mBorn=0,mLoss=0;
   brs.forEach(function(b){ var fem=_brFemales(b);
@@ -34800,7 +34935,7 @@ function brKPIs(){ var brs=(ST_LS.breedings||[]);
   // a rate-style KPI); calvingRaw keeps the true uncapped figure available for anyone who wants the real multiple-
   // birth rate rather than the capped headline.
   var _calvRaw=fC?Math.round(born/fC*100):null;
-  return { weaning:fW?Math.round(wean/fW*100):null, calving:_calvRaw==null?null:Math.min(100,_calvRaw), calvingRaw:_calvRaw, inCalf:fP?Math.round(inCalf/fP*100):null, mortality:mBorn?Math.round(mLoss/mBorn*1000)/10:null, icp:icp, weanCount:wean, weanFemales:fW }; }
+  return { weaning:fW?Math.round(wean/fW*100):null, calving:_calvRaw, calvingRaw:_calvRaw,   /* U68: uncapped */ inCalf:fP?Math.round(inCalf/fP*100):null, mortality:mBorn?Math.round(mLoss/mBorn*1000)/10:null, icp:icp, weanCount:wean, weanFemales:fW }; }
 function _brPill(kind){ return kind==='good'?'p-good':kind==='warn'?'p-warn':'p-bad'; }
 function _brWeanGrade(v){ return v==null?null:(v>=80?'good':v>=65?'warn':'bad'); }
 function _brCalvGrade(v){ return v==null?null:(v>=80?'good':v>=65?'warn':'bad'); }
@@ -36044,13 +36179,49 @@ function _lsHerdClassDied(hm){ var out={}; hm.forEach(function(m){ if(m.reason==
 // Single pass over every herd building both the farm-wide HMRC totals AND a per-classification value table
 // (aggregated across herds — two Cattle herds' "cows" merge into one row, as HMRC' own return would). Classless
 // mobs (and poultry, which has no LS_CLASSES breakdown) fall back to one row at the flat species standard value.
+/* U26 (step 5, A): what a herd's sales brought in this tax year - the Livestock Sales entries
+   in the ledger tagged to the herd, without VAT, plus any sale movement that no entry is tied
+   to. The statement read only the money typed on movements, so sales entered as income never
+   reached it (2024/25: £6,568 against £38,806 in the ledger). */
+function _u26ISO(v){ var d=parseDate(String(v||'')); return (d && d.y) ? (d.y+'-'+String(d.m+1).padStart(2,'0')+'-'+String(d.d||1).padStart(2,'0')) : ''; }
+function _lsHmrcSales(h, hmFy){
+  /* A sale movement with money posts its own Livestock Sales entry, and the link between the
+     two is not kept across devices - so a movement counts only when no entry for the same herd
+     sits within the matcher's window (7 days, 2%). Each entry answers for one movement. */
+  var from=lsFyStartISO(), led=0, pool=[];
+  (ST.txns||[]).forEach(function(t){
+    if(!_lsIsLivestockSale(t) || String(_lsHerdIdFromEnt(t.ent))!==String(h.id)) return;
+    var iso=_u26ISO(t.date); if(!iso || iso<from) return;
+    led+=(typeof ukExVat==='function')?ukExVat(t):(t.amt||0);
+    pool.push({ms:Date.parse(iso+'T00:00:00'), amt:+t.amt||0, ref:t.moveRef||null, used:false});
+  });
+  var win=_lsSaleMatchWindowDays()*86400000, tol=_lsSaleMatchTolerance(), mv=0;
+  (hmFy||[]).forEach(function(m){
+    if(m.reason!=='sold' || !((m.money||0)>0)) return;
+    var ms=Date.parse(_lsMoveISO(m)+'T00:00:00');
+    var hit=pool.filter(function(p){ return !p.used && (p.ref===m.id || (!isNaN(ms) && Math.abs(p.ms-ms)<=win && Math.abs(p.amt-m.money)/Math.max(p.amt,m.money)<=tol)); })[0];
+    if(hit){ hit.used=true; return; }
+    mv+=m.money;
+  });
+  return Math.round((led+mv)*100)/100;
+}
+function _lsHmrcUntaggedSales(){
+  var from=lsFyStartISO(), n=0;
+  (ST.txns||[]).forEach(function(t){
+    if(!t || t.type!=='income' || t.cat!=='Livestock Sales' || _lsIsLivestockSale(t)) return;
+    var iso=_u26ISO(t.date); if(!iso || iso<from) return;
+    n+=(typeof ukExVat==='function')?ukExVat(t):(t.amt||0);
+  });
+  return Math.round(n*100)/100;
+}
 function _lsHmrcCompute(){
   var herds=ST_LS.herd.filter(function(h){return !h.planned;});
-  var T={op:0,born:0,bought:0,sold:0,died:0,own:0,close:0,openV:0,closeV:0,sales:0,purch:0,cons:0,market:0};
+  var T={op:0,born:0,bought:0,sold:0,died:0,own:0,close:0,openV:0,closeV:0,sales:0,purch:0,cons:0,market:0,salesUntagged:0};
   var classAgg={}, recRows=[];
   herds.forEach(function(h){
     var hmFy=lsHerdMovesFy(h.id);
     var r=lsReconHerd(h,{moves:hmFy});
+    r.soldCash=_lsHmrcSales(h, hmFy);   /* U26 */
     var sc=lsHmrcClass(h.type);
     T.op+=r.opening; T.born+=r.born; T.bought+=r.bought; T.sold+=r.sold; T.died+=r.died; T.own+=r.own; T.close+=r.closing;
     T.openV+=r.opening*sc.val;   // opening value: no per-class snapshot exists from last year, so kept at the flat rate
@@ -36073,6 +36244,7 @@ function _lsHmrcCompute(){
     }
   });
   T.closeV=Object.keys(classAgg).reduce(function(s,k){return s+classAgg[k].head*classAgg[k].val;},0);
+  T.salesUntagged=_lsHmrcUntaggedSales(); T.sales+=T.salesUntagged;   /* U26: livestock sales not tagged to a herd still count */
   return {herds:herds, T:T, classAgg:classAgg, recRows:recRows};
 }
 
@@ -37004,10 +37176,20 @@ function renderHealthMed(){
       ban.innerHTML='<div style="font-size:22px">\u2705</div><div><div class="t">All clear</div><div class="s">No active withdrawal periods across your herds.</div></div>';
     }
   }
-  var spend=all.reduce(function(s,t){return s+(t.cost||0);},0);
+  /* N1 (step 5, A): this tax year's Veterinary & Animal Health spend from the ledger, without
+     VAT - the deductible figure - with the cost of treatments logged this year under it. It
+     summed every treatment ever logged. */
+  var _fy=(typeof getCurrentFY==='function')?getCurrentFY():null, spend=0, trCost=0;
+  (ST.txns||[]).forEach(function(t){
+    if(!t || t.type!=='expense' || t.cat!=='Veterinary & Animal Health') return;
+    var d=parseDate(String(t.date||'')); if(!d || (_fy!=null && _fyOfParts(d)!==_fy)) return;
+    spend+=(typeof ukExVat==='function')?ukExVat(t):(t.amt||0);
+  });
+  all.forEach(function(t){ var d=parseDate(String(t.date||'')); if(d && (_fy==null || _fyOfParts(d)===_fy)) trCost+=(t.cost||0); });
+  spend=Math.round(spend); trCost=Math.round(trCost);
   var kpi=$('ls-hm-kpi');
   if(kpi) kpi.innerHTML=
-    '<div class="lskpi-c"><div class="lskpi-l">Health spend \u00b7 this year</div><div class="lskpi-v">£'+spend.toLocaleString('en-GB')+'</div><div class="lskpi-s">Deductible against your profit</div></div>'+
+    '<div class="lskpi-c"><div class="lskpi-l">Health spend \u00b7 this year</div><div class="lskpi-v">£'+spend.toLocaleString('en-GB')+'</div><div class="lskpi-s">Deductible against your profit'+(trCost?' \u00b7 treatments logged £'+trCost.toLocaleString('en-GB'):'')+'</div></div>'+
     '<div class="lskpi-c"><div class="lskpi-l">Under withdrawal now</div><div class="lskpi-v" style="color:'+(active.length?'var(--rd)':'var(--gd)')+'">'+active.length+'</div><div class="lskpi-s">clears automatically</div></div>'+
     '<div class="lskpi-c"><div class="lskpi-l">Treatments logged</div><div class="lskpi-v">'+all.length+'</div><div class="lskpi-s">total on record</div></div>';
   var chips=[['all','All'],['wd','Under withdrawal'],['vaccine','Vaccinations'],['dipdose','Dips & doses'],['vet','Vet visits']];
@@ -49002,7 +49184,7 @@ function renderDashWidgets() {
         '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px">'+
           '<div style="background:var(--bg);border-radius:5px;padding:6px 8px">'+
             '<div style="font-size:11px;color:var(--t3)">Herd value</div>'+
-            '<div style="font-size:15px;font-weight:800;color:var(--gd)">'+_curSym()+(mktTotal/1000).toFixed(0)+'k</div>'+
+            '<div style="font-size:15px;font-weight:800;color:var(--gd)">'+_curSym()+(lsHerdValue(h)/1000).toFixed(0)+'k</div>'+
           '</div>'+
           '<div style="background:'+rb+';border-radius:5px;padding:6px 8px">'+
             '<div style="font-size:11px;color:var(--t3)">ROI</div>'+
@@ -52751,7 +52933,9 @@ function ukTrialBalance(fy){
     /* Trading accounts carry amounts WITHOUT VAT; the VAT is HMRC's and sits on its own line. */
     var _net=ukExVat(x), _v=(Number(x.amt)||0)-_net;
     if(x.type==='income'){ inc[cat]=(inc[cat]||0)+_net; _tbVat+=_v; }
-    else if(x.type==='expense'){ exp[cat]=(exp[cat]||0)+_net; _tbVat-=_v; }
+    /* U29 (step 5, A): a loan repayment's interest is the expense; the capital repaid is not a
+       cost of the year - it shows through the lower loan balance below. */
+    else if(x.type==='expense'){ var _al=(x.cat==='Loan Repayments' && typeof ukAllowableExpense==='function')?ukAllowableExpense(x):_net; if(_al) exp[cat]=(exp[cat]||0)+_al; _tbVat-=_v; }
   });
   Object.keys(inc).sort().forEach(function(k){ add('Income', k, 0, inc[k]); });
   /* Capital spend is not an expense of the year - it belongs on the asset side, and
@@ -52759,7 +52943,7 @@ function ukTrialBalance(fy){
   Object.keys(exp).sort().forEach(function(k){
     var cl=ukCostClass(k);
     if(cl==='c') return;
-    add('Expenses', k, exp[k], 0, cl==='x'?'not allowable':'');
+    add('Expenses', k, exp[k], 0, cl==='x'?'not allowable':(k==='Loan Repayments'?'interest only':''));
   });
 
   if(Math.round(_tbVat)) add(_tbVat>0?'Current liabilities':'Current assets', _tbVat>0?'VAT on the year\u2019s sales less costs (owed to HMRC)':'VAT on the year\u2019s costs less sales (due from HMRC)',
@@ -52776,7 +52960,7 @@ function ukTrialBalance(fy){
 
   /* ── livestock ── */
   var herd=0;
-  (((typeof ST_LS!=='undefined'&&ST_LS)?ST_LS.herd:null)||[]).forEach(function(h){ herd+=(Number(h.qty)||0)*(Number(h.sell)||0); });
+  (((typeof ST_LS!=='undefined'&&ST_LS)?ST_LS.herd:null)||[]).forEach(function(h){ if(h && !h.planned) herd+=(typeof lsHerdValue==='function')?lsHerdValue(h):(Number(h.qty)||0)*(Number(h.sell)||0); });   /* U25 */
   var onHerdBasis=!!((typeof ST_LS!=='undefined'&&ST_LS&&ST_LS.herdBasis&&ST_LS.herdBasis.elected));
   if(herd) add(onHerdBasis?'Fixed assets':'Current assets', onHerdBasis?'Breeding herd (herd basis)':'Livestock', herd, 0, 'market value');
 
@@ -52896,13 +53080,18 @@ function ukGrossMargins(season){
   });
   var untaggedInc=0, untaggedVar=0, untaggedFixed=0, fixedTotal=0, capitalTotal=0;
 
+  /* N4 (step 5, A): the Profit page's margins (b5Margins) - amounts without VAT, farming income
+     only, and a loan repayment counts only its interest. It took money in and out with VAT and
+     whole repayments, so fertiliser and sprays read 20% high and the net margin about \u00a313k low. */
   ((typeof ST!=='undefined'&&ST.txns)||[]).forEach(function(x){
     if(!x||!x.date) return;
     if(season!=null && (typeof seasonOf==='function') && seasonOf(x.date)!==season) return;
-    var amt=Number(x.amt)||0; if(!amt) return;
+    var amt=(typeof ukExVat==='function')?ukExVat(x):(Number(x.amt)||0); if(!amt) return;
     var cat=(typeof _catOf==='function')?_catOf(x):(x.cat||'Other');
     var e=x.ent?byCode[x.ent]:null;
+    var role=(typeof b5CatRole==='function')?b5CatRole(x.cat):'running';
     if(x.type==='income'){
+      if(role!=='running') return;                /* grants, loans in, sales of assets: not output */
       if(e) e.output+=amt; else untaggedInc+=amt;
       return;
     }
@@ -52910,6 +53099,7 @@ function ukGrossMargins(season){
     var cl=ukCostClass(cat);
     if(cl==='c'){ capitalTotal+=amt; return; }   /* capital never touches a margin */
     if(cl==='x') return;                          /* not a trading cost at all */
+    if(x.cat==='Loan Repayments'){ amt=(typeof ukAllowableExpense==='function')?ukAllowableExpense(x):amt; if(!amt) return; e=null; }
     if(cl==='v'){
       if(e){ e.variable+=amt; e.varByCat[cat]=(e.varByCat[cat]||0)+amt; }
       else untaggedVar+=amt;
@@ -52965,6 +53155,9 @@ function ukGrossMargins(season){
     farmOutput:Math.round(totalOutput+untaggedInc),
     farmVariable:Math.round(totalVar+untaggedVar),
     netMargin:Math.round(totalOutput+untaggedInc-totalVar-untaggedVar-fixedTotal),
+    /* N4: the same enterprises on the tax year, for the line from season to return. */
+    fyGM:(function(){ try{ return (typeof b5Margins==='function') ? b5Margins({season:season}).fyGm : null; }catch(e){ return null; } })(),
+    fyLabel:(function(){ try{ return (typeof _txFyLabel==='function'&&typeof getCurrentFY==='function') ? _txFyLabel(getCurrentFY()) : ''; }catch(e){ return ''; } })(),
     coveragePct:(totalOutput+untaggedInc)>0 ? Math.round(totalOutput/(totalOutput+untaggedInc)*100) : 0
   };
 }
@@ -53014,6 +53207,7 @@ function ukGrossMarginHTML(season){
     (g.untaggedVariable?'<tr class="sub"><td>Less: variable costs not tagged to an enterprise</td><td class="n neg">'+rptMoney(-g.untaggedVariable)+'</td></tr>':'')+
     '<tr class="sub"><td>Less: fixed costs (labour, machinery, rent, finance, admin)</td><td class="n neg">'+rptMoney(-g.fixedCosts)+'</td></tr>'+
     '<tr class="grand"><td>NET MARGIN before capital allowances and tax</td><td class="n '+(g.netMargin>=0?'pos':'neg')+'">'+rptMoney(g.netMargin)+'</td></tr>'+
+    (g.fyGM!=null?'<tr class="sub"><td>The same enterprises\u2019 gross margin on the tax year '+esc4Rpt(g.fyLabel)+' (the figure on your return)</td><td class="n">'+rptMoney(g.fyGM)+'</td></tr>':'')+
     '</tbody></table></div>'+
     '<div class="rpt-note"><b>'+g.coveragePct+'% of farm income is tagged to an enterprise.</b> '+
     (g.coveragePct>=85
@@ -53026,7 +53220,7 @@ function ukGrossMarginHTML(season){
   return ukReportDoc({ title:'Enterprise gross margins',
     subtitle:'What each crop and herd contributes before the farm’s fixed costs',
     period:(typeof _yrLabel==='function'&&typeof seasonStartMonth==='function')?('Season '+_yrLabel(g.season, seasonStartMonth(), seasonStartDay())):('Season '+g.season),
-    note:'Gross margins are stated on the season (production) basis, not the tax year.' }, body);
+    note:'Gross margins are stated on the season (production) basis, not the tax year. All amounts without VAT; loan repayments count only their interest.' }, body);
 }
 function ukGrossMarginPreview(season){
   var g=ukGrossMargins(season);
@@ -53946,8 +54140,11 @@ function ukIncomeTaxTable(){
 function ukScottishTaxDelta(profit){
   var T=(window.STATUTORY&&STATUTORY.tax)||null; if(!T||!T.individualScotland) return null;
   var p=Number(profit)||0; if(p<=0) return null;
-  var sc=Math.round(_taxFromBands(p, T.individualScotland.bands));
-  var ruk=Math.round(_taxFromBands(p, T.individual.bands));
+  /* C2 (step 5, A): both sides through the personal-allowance taper, as the tax itself is
+     worked. Untapered, the Scottish figure at £130k read about £5.7k low. */
+  var sc=Math.round(_ukTaperedBandTax(p, T.individualScotland.bands) - (T.individualScotland.primaryRebate||0));
+  var ruk=Math.round(_ukTaperedBandTax(p, T.individual.bands) - (T.individual.primaryRebate||0));
+  sc=Math.max(0,sc); ruk=Math.max(0,ruk);
   return { scotland:sc, restOfUK:ruk, difference:sc-ruk, payingScottish:(ukIncomeTaxTable()===T.individualScotland) };
 }
 window.ukIncomeTaxTable=ukIncomeTaxTable; window.ukScottishTaxDelta=ukScottishTaxDelta;
@@ -54417,7 +54614,7 @@ function ukMtdStatus(qualifyingIncome, onDate){
   var T=(window.STATUTORY&&STATUTORY.tax&&STATUTORY.tax.mtd)||null; if(!T) return null;
   var today=(onDate?new Date(onDate):((typeof APP_TODAY!=='undefined'&&APP_TODAY)?new Date(APP_TODAY):new Date()));
   var entity=(window.ST&&ST.entityType)||'sole';
-  var income=Number(qualifyingIncome);
+  var income=Number(qualifyingIncome), _perYear=!isFinite(income);
   if(!isFinite(income)) income=ukMtdQualifyingIncome();
   if(entity==='partnership'){
     return { inScope:false, reason:'Partnerships have no mandation date yet', entity:entity,
@@ -54427,8 +54624,21 @@ function ukMtdStatus(qualifyingIncome, onDate){
     return { inScope:false, reason:'MTD for Income Tax applies to sole traders and landlords', entity:entity, income:income, from:null, deferred:false };
   }
   /* Find the earliest threshold this income crosses. */
-  var band=null;
-  for(var i=0;i<T.thresholds.length;i++){ if(income > T.thresholds[i].qualifyingIncome){ band=T.thresholds[i]; break; } }
+  var band=null, testFy=null;
+  if(_perYear){
+    /* C11 (step 5, A): each start date is tested on ITS OWN tax year - the return two years
+       before it: 2024/25 for April 2026, 2025/26 for April 2027, 2026/27 for April 2028.
+       A year not yet complete is judged on the latest complete one, as a forecast. */
+    var _cur=(typeof getCurrentFY==='function')?getCurrentFY():null, _lastDone=null;
+    for(var j=0;j<T.thresholds.length;j++){
+      var tf=parseInt(String(T.thresholds[j].from).slice(0,4),10)-2, inc2;
+      if(_cur!=null && tf>=_cur){ if(_lastDone==null) _lastDone=ukMtdIncomeForFy(_cur-1); inc2=_lastDone; }
+      else inc2=ukMtdIncomeForFy(tf);
+      if(inc2 > T.thresholds[j].qualifyingIncome){ band=T.thresholds[j]; income=inc2; testFy=tf; break; }
+    }
+  } else {
+    for(var i=0;i<T.thresholds.length;i++){ if(income > T.thresholds[i].qualifyingIncome){ band=T.thresholds[i]; break; } }
+  }
   if(!band) return { inScope:false, reason:'Qualifying income is below every threshold', entity:entity, income:income,
                      from:null, nextThreshold:T.thresholds[T.thresholds.length-1] };
   /* The averaging deferral moves a farmer to the later date, never an earlier one.
@@ -54448,7 +54658,7 @@ function ukMtdStatus(qualifyingIncome, onDate){
   var claim=(window.ST&&ST.mtdAvgDeferral)||null;   /* 'claimed' | 'no' | null = unanswered */
   if(canDefer && claim==='claimed'){ start=T.farmerDeferralFrom; deferred=true; }
   var live=(today >= new Date(start));
-  return { inScope:true, entity:entity, income:income, threshold:band.qualifyingIncome,
+  return { inScope:true, entity:entity, income:income, threshold:band.qualifyingIncome, testFy:testFy,
            from:start, deferred:deferred, live:live,
            deferralAvailable:canDefer, deferralAnswered:(claim==='claimed'||claim==='no'),
            deferralTo:T.farmerDeferralFrom,
@@ -54458,11 +54668,15 @@ function ukMtdStatus(qualifyingIncome, onDate){
 /* Qualifying income = gross turnover for the tax year, before any expense. */
 /* Income for one tax year. Pass the year; the caller decides which. */
 function ukMtdIncomeForFy(fy){
+  /* C11: qualifying income is the return's turnover without VAT, plus property income - not
+     VAT repaid by HMRC, not the sale of a machine, not a loan paid in. */
   var tot=0;
   ((window.ST&&ST.txns)||[]).forEach(function(t){
     if(!t||t.type!=='income') return;
     if(fy!=null && typeof fyOf==='function' && fyOf(t.date)!==fy) return;
-    tot+=Math.abs(Number(t.amt)||0);
+    var role=(typeof b5CatRole==='function')?b5CatRole(t.cat):'running';
+    if(role!=='running' && t.cat!=='Rental Income') return;
+    tot+=Math.abs((typeof ukExVat==='function')?ukExVat(t):(Number(t.amt)||0));
   });
   return Math.round(tot);
 }
@@ -55015,9 +55229,8 @@ function _wkErNiLine(wk){
 }
 function _wkErNiNote(wk){
   var f=wk&&wk.erNi; if(!f) return '';
-  return f.covered
-    ? fmt(f.er)+' this year, all of it covered by the '+fmt(f.allowance)+' Employment Allowance · '+fmt(f.left)+' of the allowance still unused'
-    : fmt(f.er)+' this year, less the '+fmt(f.allowance)+' Employment Allowance';
+  var _ea=(typeof ukEaStatus==='function')?ukEaStatus():null;   /* U81 */
+  return fmt(f.er)+' this year'+(_ea?' \u00b7 '+_ea.line:(f.covered?', all of it covered by the Employment Allowance':''));
 }
 /* E1 - this used to open the Self Assessment pre-fill alone, under a card that promised
    "everything above, ready to send". It now opens the pack. */
@@ -55310,6 +55523,15 @@ var CAP_RULES = [
     reason:'Solar, wiring and heating can be claimed in full this year under the Annual Investment Allowance.',
     note:'If your allowance is already used up, the rest goes into the 6% pool instead.' },
 
+  /* U31 (step 5, A): fencing. The category said "plant, full allowance", the prompt said
+     "building, 3%" and the asset note said "often no allowance". Permanent fencing is a
+     structure (SBA, 3%); movable or electric fencing is plant (AIA). */
+  { key:'fence', cats:['Land & Buildings','Capital Development'],
+    match:/\b(fenc\w*|stock netting|post and rail|strainer)\b/i,
+    regime:'sba', ask:'fence', subtype:'fence',
+    reason:'Permanent fencing is a structure, claimed at 3% a year.',
+    note:'Movable or electric fencing is kit instead, and can be claimed in full.' },
+
   /* No `match`: any capital spend filed under buildings that no earlier rule claimed is
      a structure until the farmer says otherwise. Without this the rule only fired on a
      handful of words and everything else was silently ignored. */
@@ -55428,6 +55650,7 @@ function capTest(t){
   if(txAssetIds(t).length) return null;            // already registered, wholly or in part
   var cat  = t.cat || '';
   var desc = String(t.desc||'') + ' ' + String(t.party||'');
+  if(cat==='Fencing') desc += ' fencing';           /* U31: the category speaks for itself */
   var assetCat = CAP_EXPENSE_CATS[cat] || (cat in CAP_EXPENSE_CATS ? cat : null);
   /* Two ways in: the category says capital, or the description names kit. The second
      needs a veto. "Harvest contractor — combine hire" and "Harvest fuel — combine &
@@ -55501,6 +55724,10 @@ function _capApplyAnswer(v){
     else if(v==='van'){ r.regime='aia'; r.reason='Vans and lorries are plant, not cars, so the full allowance is due.'; }
     else if(v==='lowco2'){ r.regime='wda18'; r.reason='A car at or below 50 g/km CO₂ is written down at 14% a year.'; }
     else { r.regime='wda6'; r.reason='Cars above 50 g/km CO₂ are written down at 6% a year. Pickups have counted as cars since 6 April 2025.'; }
+  }
+  if(CAP_Q.res.ask==='fence'){
+    if(v==='movable'){ r.regime='aia'; r.subtype='fence'; r.reason='Movable and electric fencing is kit, so the full cost can be claimed this year.'; }
+    else { r.regime='sba'; r.reason='Permanent fencing is a structure, claimed at 3% a year.'; }
   }
   if(CAP_Q.res.ask==='building'){
     if(v==='functional'){ r.regime='aia'; r.reason='A store that dries, conditions or contains is doing a job, which is what makes it plant rather than a building.'; }
@@ -55739,6 +55966,11 @@ function _capHtml(){
       '<button onclick="capAnswer(\'machine\')">Tractor or machine</button>'+
       '<button onclick="capAnswer(\'lowco2\')">Car under 50 g/km</button></div>'+
       '<div class="cap-hint">Since April 2025 a double-cab pickup counts as a car, so you cannot claim the whole cost in one go.</div></div>';
+    if(r.ask==='fence') ask =
+      '<div class="cap-ask"><div class="cap-q">What kind of fencing?</div><div class="cap-opts">'+
+      '<button onclick="capAnswer(\'permanent\')">Permanent \u2014 posts in the ground</button>'+
+      '<button onclick="capAnswer(\'movable\')">Movable or electric</button></div>'+
+      '<div class="cap-hint">Permanent fencing is claimed at 3% a year. Movable or electric fencing can be claimed in full this year.</div></div>';
     if(r.ask==='building') ask =
       '<div class="cap-ask"><div class="cap-q">Does the building do a job itself?</div><div class="cap-opts">'+
       '<button onclick="capAnswer(\'functional\')">Yes — it dries, cools or holds stuff in</button>'+
@@ -56151,7 +56383,18 @@ function capFirstYear(regime, net){
   }
   if(regime==='wda18') return Math.round(net*ukWdaMainRate(getCurrentFY()));
   if(regime==='wda6')  return Math.round(net*0.06);
-  if(regime==='sba')   return Math.round(net*0.03);
+  if(regime==='sba'){
+    /* C7: the first year is 3% for the days from the spend to the year end, as calcDepr claims it. */
+    try{
+      var _t=CAP_Q&&CAP_Q.res&&CAP_Q.res.txn, _p=_t?parseDate(String(_t.date||'')):null;
+      if(_p && _p.y && typeof fyOf==='function'){
+        var _iso=_p.y+'-'+String(_p.m+1).padStart(2,'0')+'-'+String(_p.d||1).padStart(2,'0'), _fy=fyOf(_iso);
+        var _end=new Date(_fy+1, fyStartMonth()-1, fyStartDay()), _days=Math.max(0,Math.min(365,Math.round((_end-new Date(_p.y,_p.m,_p.d||1))/864e5)));
+        return Math.round(net*0.03*_days/365);
+      }
+    }catch(e){}
+    return Math.round(net*0.03);
+  }
   return 0;
 }
 
@@ -56179,9 +56422,15 @@ function taxCapitalAllowancesFY(fy){
   });
   var mainRate=ukWdaMainRate(fy);
   var aia=Math.min(aiaRaw, AIA_LIMIT), excess=Math.max(0, aiaRaw-AIA_LIMIT);
-  if(excess) wda18 += Math.round(excess*mainRate);
+  /* C8 + N6: the pools' own writing-down allowances (the excess over the AIA limit is in the
+     main pool from the year it was spent, and written down with the rest of it). */
+  var _CP=null; try{ _CP=(typeof ukCapPools==='function')?ukCapPools(fy):null; }catch(e){ _CP=null; }
+  var _pm=_CP&&_CP.main[fy], _ps=_CP&&_CP.special[fy], _small=0;
+  if(_CP){ wda18=_pm?_pm.wda:0; wda6=_ps?_ps.wda:0; _small=((_pm&&_pm.smallPool)?_pm.wda:0)+((_ps&&_ps.smallPool)?_ps.wda:0); if(_CP.aia[fy]) aia=Math.min(aia,_CP.aia[fy].claimed); }
+  else if(excess) wda18 += Math.round(excess*mainRate);
   return {fy:fy, aia:Math.round(aia), wda18:Math.round(wda18), wdaMain:Math.round(wda18), wda6:Math.round(wda6),
-          sba:Math.round(sba), aiaExcess:Math.round(excess), mainRate:mainRate,
+          sba:Math.round(sba), aiaExcess:Math.round(excess), mainRate:mainRate, smallPools:Math.round(_small),
+          poolMain:_pm||null, poolSpecial:_ps||null,
           fyaPossible:(excess>0 && fyaMaybe>0) ? Math.round(Math.min(excess, fyaMaybe)) : 0,
           total:Math.round(aia+wda18+wda6+sba)};
 }
@@ -57096,7 +57345,7 @@ function taxWhatIf(){
       setEl('tax-wi-p1lbl','1st · 31 Jan'); setEl('tax-wi-p2lbl','2nd · 31 Jul');
       setEl('tax-wi-p1',_curSym()+_grpInt(Math.round(tot/2))); setEl('tax-wi-p2',_curSym()+_grpInt(tot-Math.round(tot/2)));
     }
-  } setEl('tax-wi-mo',_curSym()+_grpInt(Math.round(tot/12))); setEl('tax-wi-marg',mrg+'%');
+  } setEl('tax-wi-mo',_curSym()+_grpInt(Math.round(tot/12)));   /* U17: the year's tax / 12 - an average, not what to put aside (that is the months-left figure on each payment) */ setEl('tax-wi-marg',mrg+'%');
   var sv=$('tax-wi-save'), ded=t0-tot; if(sv){ if(ded>0){ sv.style.display='block'; sv.innerHTML='🛠️ Your deductions cut this year’s tax by about <b>'+_curSym()+_grpInt(ded)+'</b>.'; } else sv.style.display='none'; }
   var vo=$('tax-wi-vatout'); if(vo){ var vr=taxVatIfRegistered();
     if(TAX_WI_VAT==='yes') vo.innerHTML='<b style="color:var(--gm)">If you register:</b> reclaim about <b>'+_curSym()+_grpInt(vr.inputVat)+'</b> input VAT on your standard-rated costs (machinery, repairs, vet, admin)'+'. Most of what you sell is food, so it is zero-rated — you would charge nothing on it and still reclaim, which is why farms are usually owed money by HMRC'+(vr.outputVat>0?', though your standard-rated sales (wool, contracting, rent) would carry 20% — about '+_curSym()+_grpInt(vr.outputVat)+' of output VAT':'')+'. Below '+fmt(vatRegThreshold())+' turnover it is your choice.';
@@ -57545,6 +57794,9 @@ function taxGlanceHTML(){
       '<div class="r"><span>PAYE</span><b>'+fmt(pay.paye||0)+'</b></div>'+
       '<div class="r"><span>Employee NI</span><b>'+fmt(pay.employeeNI||0)+'</b></div>'+
       '<div class="r"><span>Employer NI'+((pay.allowance||0)>0?' (after allowance)':'')+'</span><b>'+fmt(pay.employerNI||0)+'</b></div>'+
+      /* U81: the one Employment Allowance answer, the same as Payroll's */
+      ((function(){ var e=(typeof ukEaStatus==='function')?ukEaStatus():null; if(!e) return '';
+        return '<div class="r"><span>Employment Allowance left'+(e.by&&e.by!=='used'?' <span style="color:var(--t4);font-weight:500">\u00b7 all used by '+e.by+'</span>':'')+'</span><b>'+fmt(e.left)+'</b></div>'; })())+
       '</div><div class="f">'+(wk.allOk?'<span class="txh-ok">✓ All '+wk.count+' paid at least the minimum wage</span>':'<span class="txh-warn">▲ Someone is below the minimum wage</span>')+' &nbsp;·&nbsp; <a onclick="nav(\'workers\')">Workers</a></div></div>';
   } else h+='<div class="txh-c"><div class="l">'+_ic('wk')+'Workers</div><div class="v q">None</div><div class="u">no PAYE, NI or employers’ liability insurance to manage</div></div>';
   h+='</div>';
@@ -59930,7 +60182,7 @@ function taxWhatIfHTML(){
     '<div style="margin-top:14px"><div style="display:flex;height:12px;border-radius:6px;overflow:hidden;background:rgba(255,255,255,.12)"><div id="tax-wi-bartax" style="width:0;background:#E8A33D"></div><div id="tax-wi-barkeep" style="flex:1;background:#5FBE85"></div></div>'+
       '<div style="display:flex;justify-content:space-between;font-size:11px;margin-top:6px"><span>🟠 To HMRC <b id="tax-wi-bartaxv">'+_curSym()+'—</b></span><span>🟢 You keep <b id="tax-wi-barkeepv">'+_curSym()+'—</b></span></div></div>'+
     '<div style="display:flex;justify-content:space-between;gap:8px;margin-top:16px;padding-top:14px;border-top:1px solid rgba(255,255,255,.16)">'+
-      ['1st · 31 Jan|tax-wi-p1','2nd · 31 Jul|tax-wi-p2','≈ / month|tax-wi-mo','Next £100k|tax-wi-marg'].map(function(s){var a=s.split('|');return '<div style="text-align:center"><div id="'+a[1]+'lbl" style="font-size:11px;text-transform:uppercase;letter-spacing:.04em;opacity:.72">'+a[0]+'</div><div style="font-size:15px;font-weight:800" id="'+a[1]+'">'+_curSym()+'—</div></div>';}).join('')+
+      ['1st · 31 Jan|tax-wi-p1','2nd · 31 Jul|tax-wi-p2','Average per month over a year|tax-wi-mo','Next £100k|tax-wi-marg'].map(function(s){var a=s.split('|');return '<div style="text-align:center"><div id="'+a[1]+'lbl" style="font-size:11px;text-transform:uppercase;letter-spacing:.04em;opacity:.72">'+a[0]+'</div><div style="font-size:15px;font-weight:800" id="'+a[1]+'">'+_curSym()+'—</div></div>';}).join('')+
     '</div>'+
     '<div id="tax-wi-save" style="font-size:12px;margin-top:14px;background:rgba(255,255,255,.1);border-radius:9px;padding:9px 12px;line-height:1.5;display:none"></div></div>';
   // ── VAT registration helper (a separate tax) ──
@@ -63519,7 +63771,7 @@ var PAGE_TOURS = {
   ],
     livestock: [
     { target:'ls-camps-list', title:'Your animals at a glance', icon:'🐄', tab:'camps',
-      text:'The three cards up top show your total head, herd value at today’s market prices, and ROI on what you’ve spent. Tap any card to break it down — by species, by group, or invested-vs-expected.', tip:'Herd value updates automatically off AMT market prices.', pos:'smart' },
+      text:'The three cards up top show your total head, herd value, and ROI on what you’ve spent. Tap any card to break it down — by species, by group, or invested-vs-expected.', tip:'Herd value uses your class values, else your sell price, else AHDB market prices.', pos:'smart' },
     { target:'ls-hsub-nav', title:'Three views under one Herd tab', icon:'🗂️', tab:'camps',
       text:'The Herd tab holds three sub-views — a fields-and-animals view, Productivity (calving, weaning and off-take rates) and Records (the HMRC-style movement register). Tap between them up here; the rest of this tour opens each one in turn.', pos:'smart' },
     { target:'ls-camps-list', title:'Each field, broken down', icon:'📊', tab:'camps',
@@ -70489,8 +70741,14 @@ function orUnitsLabel(b){
 var OR_CARD_TINT={topfruit:'#FFF3E0',fruit:'#EAF3DE',berry:'#F3E8FF',veg:'#E0F2F1'};
 function orBlockIncome(id){
   if(typeof ST==='undefined'||!ST.txns) return 0;
-  var tag='or:'+id, s=0;
-  ST.txns.forEach(function(t){ if(t && t.type==='income' && t.ent===tag) s+=(+t.amt||0); });
+  /* U55 (step 5, A): this season only, without VAT - it summed every year the block has
+     been tagged, with VAT (Long Orchard: \u00a31,197,760 "to date" against \u00a30 this season). */
+  var tag='or:'+id, s=0, cur=(typeof seasonOf==='function')?seasonOf(APP_TODAY):null;
+  ST.txns.forEach(function(t){
+    if(!t || t.type!=='income' || t.ent!==tag) return;
+    if(cur!=null){ var d=parseDate(String(t.date||'')); if(!d || !d.y) return; var iso=d.y+'-'+String(d.m+1).padStart(2,'0')+'-'+String(d.d||1).padStart(2,'0'); if(seasonOf(iso)!==cur) return; }
+    s+=(typeof ukExVat==='function')?ukExVat(t):(+t.amt||0);
+  });
   return s;
 }
 function orProgressHTML(b){
@@ -71822,7 +72080,8 @@ function orOpenPickForm(editId){
     '<div class="or-frow"><label class="or-flbl">Which block?</label><select class="or-finp" id="or-pk-block">'+orBlockOptions(function(b){return !b.plan;})+'</select></div>'+
     '<div class="or-fg2"><div class="or-frow"><label class="or-flbl">How much picked (tonnes)</label><input class="or-finp" id="or-pk-tons" inputmode="decimal" placeholder="38"></div><div class="or-frow"><label class="or-flbl">Cartons packed <span class="or-fh">optional</span></label><input class="or-finp" id="or-pk-cartons" inputmode="decimal" placeholder="2540"></div></div>'+
     '<div class="or-fg2"><div class="or-frow"><label class="or-flbl">Date</label><input class="or-finp" id="or-pk-date" type="date"></div><div class="or-frow"><label class="or-flbl">Picking wages, gross <span class="or-fh">optional — to Workers</span></label><input class="or-finp" id="or-pk-labour" inputmode="decimal" placeholder="£0"></div></div>'+
-    '<div class="or-fg2"><div class="or-frow"><label class="or-flbl">How many pickers? <span class="or-fh">optional</span></label><input class="or-finp" id="or-pk-pickers" inputmode="numeric" placeholder="e.g. 12"></div><div class="or-frow"><label class="or-flbl">Sold to / packhouse <span class="or-fh">optional</span></label><input class="or-finp" id="or-pk-to" placeholder="e.g. your packhouse or co-op"></div></div>'+
+    '<div class="or-fg2"><div class="or-frow"><label class="or-flbl">How many pickers? <span class="or-fh">optional</span></label><input class="or-finp" id="or-pk-pickers" inputmode="numeric" placeholder="e.g. 12"></div><div class="or-frow"><label class="or-flbl">Hours each <span class="or-fh">optional \u2014 checks the minimum wage</span></label><input class="or-finp" id="or-pk-hours" inputmode="decimal" placeholder="e.g. 40"></div></div>'+
+    '<div class="or-fg2"><div class="or-frow"><label class="or-flbl">Sold to / packhouse <span class="or-fh">optional</span></label><input class="or-finp" id="or-pk-to" placeholder="e.g. your packhouse or co-op"></div></div>'+
     orAttachField('pk','weighbridge slip or delivery note')+
     '<div style="display:flex;gap:10px;margin-top:8px"><button class="btn-pri" onclick="orSavePick()">Save pick</button><button class="btn-sec" onclick="orCloseModal()">Cancel</button></div></div>';
   orModalHTML(h);
@@ -71844,22 +72103,64 @@ function orSavePick(){
     /* -379: vegetables are a crop, not fruit - a veg pick was booked as Fruit Sales. */
     queueOrSave({date:dstr,desc:b.name+' — '+(cartons?cartons.toLocaleString('en-GB')+' cartons':tons+' t'),cat:(b.cat==='veg'?'Crop Sales':'Fruit Sales'),type:'income',amt:Math.round(money),method:'Bank Deposit',ent:'or:'+b.id,source:'Pick',_oh:_ohId});
   }
-  var pickers=parseInt(($('or-pk-pickers')||{}).value,10)||0;
-  if(labour>0){ orPostPickingRun(b,Math.round(labour),pickers,dt,dstr); }
+  var pickers=parseInt(($('or-pk-pickers')||{}).value,10)||0, _hrs=parseFloat(($('or-pk-hours')||{}).value)||0;
+  var _pr=(labour>0)?orPostPickingRun(b,Math.round(labour),pickers,dt,dstr,_hrs):null;
   orSave(); orRenderHarvest(); orCloseModal();
-  orToast('Pick logged \u2713 '+(money>0?'Booked '+orRm(money)+' income':'recorded')+(labour>0?' + '+orRm(labour)+' picking run to Workers':''));
+  orToast('Pick logged \u2713 '+(money>0?'Booked '+orRm(money)+' income':'recorded')+(_pr?' + '+orRm(_pr.cost)+' picking wages to Workers (incl. '+orRm(_pr.P.holiday)+' holiday pay'+(_pr.niPaid>0?', '+orRm(_pr.niPaid)+' employer NI':'')+')':'')+
+    ((_pr&&_pr.P.belowFloor)?' \u2014 \u26a0 '+orRm(_pr.P.hourly)+' an hour is below the '+orRm(_pr.P.floor)+' minimum':''));
 }
 /* create a real seasonal pay run in Workers + post the cost (offline-aware, undoable) */
-function orPostPickingRun(b,labour,pickers,dt,dstr){
+/* N7 (step 5, A): pickers go through the seasonal payroll, one row each. What the farmer types
+   is the wages for the hours worked; on top of that each picker is owed rolled-up holiday pay
+   (12.07%), and the week's pay is run against the WEEKLY thresholds: employee NI above the
+   primary threshold (about £242), employer NI 15% above the secondary threshold (about £96),
+   PAYE on the starter-checklist code (1257L, week 1 basis - most pickers have another job or
+   none this year), and auto-enrolment above its trigger. Employer NI draws on the Employment
+   Allowance like every other run. It posted the typed figure alone - £10k to 20 pickers for a
+   week left about £1,207 of holiday pay and £1,212 of employer NI off the books - and, with no
+   eaUsed on the run, the allowance was charged a twelfth of the year for every pick (U81). */
+function ukPickingPay(labour, pickers, hours){
+  var n=Math.max(1, parseInt(pickers,10)||1), base=Math.round((Number(labour)||0)/n*100)/100, per=52;
+  var R=(STATUTORY._ref)||{};
+  var hol=(typeof wkHolidayAccrual==='function')?wkHolidayAccrual(base):Math.round(base*0.1207*100)/100;
+  var gross=Math.round((base+hol)*100)/100;
+  var PT=((STATUTORY.niPrimaryThresh&&STATUTORY.niPrimaryThresh.value)||12570)/per,
+      UEL=((STATUTORY.niUpperLimit&&STATUTORY.niUpperLimit.value)||50270)/per,
+      eeR=(STATUTORY.niEmployeeRate&&STATUTORY.niEmployeeRate.value)||0.08,
+      STH=((R.employerNiThresh&&R.employerNiThresh.value)||5000)/per,
+      erR=(R.employerNiRate&&R.employerNiRate.value)||0.15;
+  var eeNI=gross>PT ? Math.round(((Math.min(gross,UEL)-PT)*eeR + Math.max(0,gross-UEL)*0.02)*100)/100 : 0;
+  var erNI=Math.round(Math.max(0,gross-STH)*erR*100)/100;
+  var paye=(typeof ukPAYE==='function')?ukPAYE(gross,'1257L',per):0;
+  var pen={total:0,employer:0,enrol:false};
+  if(typeof wkPensionAE==='function'){ var m=wkPensionAE(gross*per/12,{}); if(m.enrol) pen={enrol:true, total:Math.round(m.total*12/per*100)/100, employer:Math.round(m.employer*12/per*100)/100}; }
+  var eePen=Math.max(0,pen.total-pen.employer);
+  var floor=(typeof ukWageFloor==='function')?ukWageFloor({}):{rate:0};
+  var hrs=Number(hours)||0, hourly=hrs>0?Math.round(base/hrs*100)/100:null;
+  var one={base:base, holiday:hol, gross:gross, eeNI:eeNI, paye:paye, eePen:Math.round(eePen*100)/100, erNI:erNI, erPen:pen.employer,
+           net:Math.round((gross-eeNI-paye-eePen)*100)/100, hourly:hourly, belowFloor:(hourly!=null && hourly<floor.rate-0.005), floor:floor.rate||0, enrol:pen.enrol};
+  function x(k){ return Math.round(one[k]*n*100)/100; }
+  return {n:n, one:one, base:x('base'), holiday:x('holiday'), gross:x('gross'), eeNI:x('eeNI'), paye:x('paye'), eePen:x('eePen'),
+          erNI:x('erNI'), erPen:x('erPen'), net:x('net'), belowFloor:one.belowFloor, hourly:hourly, floor:one.floor, enrol:pen.enrol};
+}
+window.ukPickingPay=ukPickingPay;
+function orPostPickingRun(b,labour,pickers,dt,dstr,hours){
   var runId='pr-pick'+Date.now();
-  var per=pickers>0?Math.round(labour/pickers):labour;
+  var P=ukPickingPay(labour,pickers,hours);
+  var eaLeft=(typeof wkEaRemaining==='function')?wkEaRemaining():0;
+  var relief=Math.round(Math.min(P.erNI,eaLeft)*100)/100, niPaid=Math.round(Math.max(0,P.erNI-relief)*100)/100;
+  var cost=Math.round((P.gross+niPaid+P.erPen)*100)/100;   /* the wage cost: gross incl. holiday pay + employer NI after relief + pension */
+  var lines=[]; for(var i=0;i<P.n;i++) lines.push({w:'picker-'+(i+1), g:P.one.gross, t:P.one.paye});
   if(typeof ST_WORK!=='undefined' && ST_WORK && ST_WORK.payRuns){
-    ST_WORK.payRuns.unshift({ id:runId, label:'Picking \u2014 '+b.name, kind:(pickers>0?pickers+' pickers \u00b7 ':'')+orFmtDM(dt), net:labour, gross:labour, ni:0, date:dstr, seasonal:true, source:'Picking', block:b.name, perPicker:per, applied:[] });
+    ST_WORK.payRuns.unshift({ id:runId, label:'Picking — '+b.name, kind:P.n+' picker'+(P.n===1?'':'s')+' · '+orFmtDM(dt), seasonal:true, source:'Picking', block:b.name,
+      gross:Math.round(P.gross), net:Math.round(P.net), holidayPay:P.holiday, employeeNI:P.eeNI, paye:P.paye, employerNI:P.erNI, employerPension:P.erPen,
+      eaUsed:relief, ni:Math.round((P.eeNI+niPaid)*100)/100, date:dstr, perPicker:P.one.gross, hours:(Number(hours)||null), belowFloor:P.belowFloor, lines:lines, applied:[] });
   }
   if(typeof queueOrSave==='function'){
-    queueOrSave({ date:dstr, desc:'Picking labour \u2014 '+b.name+(pickers>0?' ('+pickers+' pickers)':''), cat:'Labour & Wages', type:'expense', amt:labour, method:'Bank Transfer', source:'Picking', payRunId:runId, ent:'or:'+b.id });   /* step 2: pickers are paid through the bank, not in cash */   /* -363: tagged, so it reaches the block's margin */
+    queueOrSave({ date:dstr, desc:'Picking wages — '+b.name+' ('+P.n+' picker'+(P.n===1?'':'s')+')', cat:'Labour & Wages', type:'expense', amt:cost, method:'Bank Transfer', source:'Picking', payRunId:runId, ent:'or:'+b.id });   /* -363: tagged, so it reaches the block's margin */
   }
   if(typeof renderWorkers==='function'){ try{ var pgw=document.querySelector('.pg.on'); if(pgw&&pgw.id==='pg-workers') renderWorkers(); }catch(e){} }
+  return {P:P, cost:cost, relief:relief, niPaid:niPaid};
 }
 function orToggleWhat(id){ var e=$(id); if(e) e.style.display=(e.style.display==='none')?'':'none'; }
 
@@ -74841,18 +75142,18 @@ function _lsRegCertsCard(){
     var totOut=totSold+totDied, closing=herds.reduce(function(s,h){return s+h.qty;},0);
     var opening=closing-totIn+totOut;
     var cash=moves.filter(function(m){return m.reason==='sold';}).reduce(function(s,m){return s+(m.money||0);},0);
-    var closeVal=herds.reduce(function(s,h){return s+(lsHerdMarketVal(h)||h.qty*h.sell);},0);
+    var closeVal=herds.reduce(function(s,h){return s+lsHerdValue(h);},0);   /* U25 */
     return {herds:herds,totIn:totIn,totSold:totSold,totDied:totDied,totOut:totOut,closing:closing,opening:opening,cash:cash,closeVal:closeVal};
   }
   function _zar(n){ return _moneyInt(n); }
   REG.lsClosing=function(){
     var a=_lsReg();
-    var rows=a.herds.slice().sort(function(x,y){return (lsHerdMarketVal(y)||y.qty*y.sell)-(lsHerdMarketVal(x)||x.qty*x.sell);}).slice(0,6).map(function(h){var v=lsHerdMarketVal(h)||h.qty*h.sell;return {nm:(h.name||h.type||'Herd')+' \u00b7 '+h.qty+' head', amt:_zar(v), pct:a.closeVal>0?Math.round(v/a.closeVal*100):0};});
+    var rows=a.herds.slice().sort(function(x,y){return lsHerdValue(y)-lsHerdValue(x);}).slice(0,6).map(function(h){var v=lsHerdValue(h);return {nm:(h.name||h.type||'Herd')+' \u00b7 '+h.qty+' head', amt:_zar(v), pct:a.closeVal>0?Math.round(v/a.closeVal*100):0};});
     return {
       label:'Herd value today', value:lsCompact(a.closeVal), chip:a.closing+' head',
-      verdict:{tone:'good',head:'Your animals are worth '+lsCompact(a.closeVal),text:'You\u2019re carrying '+a.closing+' head right now, valued at today\u2019s market prices.'},
+      verdict:{tone:'good',head:'Your animals are worth '+lsCompact(a.closeVal),text:'You\u2019re carrying '+a.closing+' head right now, valued at your own prices.'},
       mean:'What your livestock would fetch at today\u2019s prices \u2014 a living asset on the farm\u2019s books.',
-      breakdown: rows.length?{title:'By herd', rows:rows, tot:{nm:'Total herd value', amt:_zar(a.closeVal)}, note:'Valued at each herd\u2019s current sell price.'}:null,
+      breakdown: rows.length?{title:'By herd', rows:rows, tot:{nm:'Total herd value', amt:_zar(a.closeVal)}, note:'Valued by class where you have set classes, else at each herd\u2019s sell price, else today\u2019s market price.'}:null,
       jump:{label:'Open livestock', tone:'', go:function(){ nav('livestock'); }, back:function(){ nav('livestock'); kpiOpen('lsClosing'); }, trail:'\u2039 Back to herd register', show:'Showing livestock'}
     };
   };
