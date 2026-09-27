@@ -17922,15 +17922,23 @@ window._ukVatFrac=_ukVatFrac;
 function parseDate(s) {
   if (!s) return null;
   var MN = {Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
-  s = s.trim();
+  s = String(s).trim();
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) s = s.slice(0,10);      // an ISO date with a time on it
   if (s.indexOf('-') > 0) {
     var p = s.split('-');
     return {y:+p[0], m:+p[1]-1, d:+p[2]};
   }
-  var p = s.split(' ');
-  if (p.length >= 3) return {y:+p[2], m:MN[p[1]], d:+p[0]};
+  var p = s.split(/\s+/);
+  /* The browser writes September as "Sept" ("25 Sept 2026"), and some rows carry the month
+     in full or with a full stop. Only the first three letters decide the month; a row that
+     was read as no month dropped out of every monthly total. */
+  if (p.length >= 3){ var _mk=String(p[1]).replace(/\./g,''); _mk=_mk.charAt(0).toUpperCase()+_mk.slice(1,3).toLowerCase(); return {y:+p[2], m:MN[_mk], d:+p[0]}; }
   return null;
 }
+/* A stored date always spells the month the way parseDate and every month label here do -
+   "Sep", never the browser's "Sept". */
+var _MON3=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function _dmy3(d, pad){ return (pad && d.getDate()<10 ? '0' : '')+d.getDate()+' '+_MON3[d.getMonth()]+' '+d.getFullYear(); }
 
 /* One display format for the Date column no matter how the source string was
    stored ("2026-06-03" from bank imports, "06 Apr 2026" from manual entry).
@@ -21979,7 +21987,8 @@ function saveSale() {
 function fmtDate(s) {
   if (!s) return '';
   var d = new Date(s);
-  return d.toLocaleDateString('en-GB', {day:'2-digit',month:'short',year:'numeric'});
+  if (isNaN(d)) return String(s);
+  return _dmy3(d, true);   /* was toLocaleDateString: "25 Sept 2026" */
 }
 
 // ============================================================
@@ -31408,6 +31417,22 @@ function _lsMvFinish(opts){
     }
     go(); return;
   }
+  /* A sale by head count names no animals, so it was never checked: a group under a medicine
+     withdrawal was sold without a word. Ask the same question the tag picker asks. */
+  if(LS_MV_STATE.reason==='sold' && typeof appConfirm==='function' && typeof lsHerdTreatments==='function'){
+    var _tr=lsHerdTreatments(LS_MV_STATE.herdId).filter(lsTrActive);
+    var _whole=_tr.filter(function(t){ return t.target!=='tags'; });
+    if(_whole.length){
+      var _mx=_whole.slice().sort(function(a,b){ return lsTrSafe(b)-lsTrSafe(a); })[0];
+      appConfirm('This group is under a medicine withdrawal until '+lsFmtDate(lsTrSafe(_mx))+' \u2014 not safe to sell yet. Sell anyway?').then(function(ok){ if(ok) _lsMoveCommit(opts); });
+      return;
+    }
+    if(_tr.length){
+      var _n=0; _tr.forEach(function(t){ _n+=(t.tags?t.tags.length:0); });
+      appConfirm(_n+' tagged animal'+(_n===1?' in this group is':'s in this group are')+' under a medicine withdrawal. Make sure '+(_n===1?'it is':'they are')+' not in this sale. Carry on?').then(function(ok){ if(ok) _lsMoveCommit(opts); });
+      return;
+    }
+  }
   _lsMoveCommit(opts);
 }
 function _lsCampCard(c){
@@ -33133,7 +33158,7 @@ function hpAddToForecast(){
   var P=hpProject(); if(!P){ toast('Nothing to add.','info'); return; }
   if(typeof ST_PLAN==='undefined'){ toast('Planning not available.','error'); return; }
   ST_PLAN.events=ST_PLAN.events||[];
-  var base=(ST_PLAN.months&&ST_PLAN.months[0]&&ST_PLAN.months[0].label)?ST_PLAN.months[0].label:(new Date().toLocaleString('en-GB',{month:'short',year:'numeric'}));
+  var base=(ST_PLAN.months&&ST_PLAN.months[0]&&ST_PLAN.months[0].label)?ST_PLAN.months[0].label:(function(){ var _n=(typeof APP_TODAY!=='undefined'&&APP_TODAY)?new Date(APP_TODAY):new Date(); return _MON3[_n.getMonth()]+' '+_n.getFullYear(); })();
   var icon=lsHerdIcon(h);
   var added=0;
   // ---- Poultry: post buys + income from the flock projection ----
@@ -34831,7 +34856,7 @@ function _lsTxnDateISO(v){
   return (d && d.y && d.m!=null && !isNaN(d.m)) ? (d.y+'-'+String(d.m+1).padStart(2,'0')+'-'+String(d.d||1).padStart(2,'0')) : '';
 }
 function _lsTxnISO(d){ return (d && /^\d{4}-\d{2}-\d{2}/.test(String(d))) ? String(d).slice(0,10) : new Date().toISOString().slice(0,10); }
-function lsDispFromISO(iso){ try{ var d=new Date(iso+'T00:00:00'); return d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}); }catch(e){ return iso; } }
+function lsDispFromISO(iso){ try{ var d=new Date(iso+'T00:00:00'); if(isNaN(d)) return iso; return _dmy3(d); }catch(e){ return iso; } }   /* was toLocaleDateString, which stores "Sept" */
 /* TAX basis, deliberately — this drives herd reconciliation and closing stock
    valuation, which is an accountant's number. APP_TODAY, not new Date(): it was
    ignoring the app's own clock. */
@@ -34865,7 +34890,11 @@ function lsHerdCompliance(id){
    that labelled residue-carrying animals "clear". Use lsAnimalHoldUntil() in new code. */
 function lsAnimalHoldUntil(a){ return lsAnimalSafe(a); }
 function lsAnimalSafe(a){
-  var act=(ST_LS.treatments||[]).filter(function(t){return t.tags&&t.tags.indexOf(a.tag)>=0&&lsTrActive(t);});
+  /* A treatment given to the whole group holds every animal in it, not only the tagged ones -
+     an animal in a treated group read "clear" and could be picked for sale without a word. */
+  var act=(ST_LS.treatments||[]).filter(function(t){ if(!lsTrActive(t)) return false;
+    if(t.tags && t.tags.indexOf(a.tag)>=0) return true;
+    return t.target!=='tags' && a.herd!=null && String(t.herd)===String(a.herd); });
   if(!act.length) return null;
   return lsTrSafe(act.sort(function(x,y){return lsTrSafe(y)-lsTrSafe(x);})[0]);
 }
