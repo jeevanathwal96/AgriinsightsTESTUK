@@ -9918,7 +9918,7 @@ button.rn-gchip{border:0;font-family:inherit;cursor:pointer}
         <select class="or-finp" id="or-f-carton" onchange="orCartonAddChange()"></select>
         <input class="or-finp" id="or-f-carton-custom" placeholder="Carton weight in kg" inputmode="decimal" style="display:none;margin-top:8px">
       </div>
-      <div class="or-frow" id="or-row-estab"><label class="or-flbl"><span data-t="or.add.estab">What it cost to establish</span> <span class="or-fh">for your yearly tax write-off</span></label><input class="or-finp" id="or-f-estab" placeholder="£ 250,000"></div>
+      <div class="or-frow" id="or-row-estab"><label class="or-flbl"><span data-t="or.add.estab">What it cost to establish</span> <span class="or-fh">for your records — planting gets no UK tax write-off</span></label><input class="or-finp" id="or-f-estab" placeholder="£ 250,000"></div>
       <div class="or-frow"><label class="or-flbl" id="or-lbl-yield"><span data-t="or.add.yield">Target yield once mature </span><span class="or-fh">tonnes</span></label><input class="or-finp" id="or-f-yield" placeholder="e.g. 868"></div>
       <button class="btn-pri" onclick="orSaveBlock()" data-t="or.add.save">Save block</button>
     </div>
@@ -20977,7 +20977,14 @@ var farmNameEl = document.getElementById('farm-name');
    through. */
 var FRESH_SHAPE = {
   ST:         { txns:[], deletedTxns:[], importBatches:[], coopSettlements:[], recurring:[],
-                schemes:[], stSnap:[], capIgnore:{}, bankBalance:null, budgetExpenseTarget:0 },
+                schemes:[], stSnap:[], capIgnore:{}, bankBalance:null, budgetExpenseTarget:0,
+                /* -384: the payments on account the farm has recorded are records too - the
+                   sample farm's £40,000 each and £27,993 balance landed on every new farm. */
+                poaHmrc:{},
+                /* The farm's own "always file X as Y" rules are records of this farm. */
+                catRules:[],
+                /* Payments the farm has marked paid. */
+                taxPaid:{} },
   ST_ASSETS:  { assets:[], nextId:1 },
   ST_LOANS:   { loans:[], overdrafts:[], coopAccounts:[], archived:[],
                 confirmed:{month:null,paid:{}}, nextId:1, nextOdId:1, nextCoId:1 },
@@ -21008,7 +21015,11 @@ var FRESH_CONFIG = {
                'lang','firstRun','diagnostics','simpleView','nudgeSeen','lastActivity','lastSaved','charts',
                'period','cfPeriod','incPeriod','incPeriodSel','expPeriod','expPeriodSel','txPeriodSel',
                'saleType','saleFreq','expType','expFreq','showDemoBtn','showTourBtn','showTargetBar',
-               'showExpBar','demoData','demoNudgeHidden','consent','_ukYears'],
+               'showExpBar','demoData','demoNudgeHidden','consent','_ukYears',
+               /* -384: the farm's own tax and holding details. Kept when the farmer only clears
+                  records (keepIdentity); removed with the sample identity below. */
+               'partners','farmAddr','payeRef','stockMark','stockMarkType','taxResidence','cashBasis','fyYearEnd',
+               'ieTileMode'],
   ST_ASSETS:  [],
   ST_LOANS:   ['activeTab'],
   ST_WORK:    ['activeTab','nmwRate','hoursWeek','taxThreshold','payRepPeriod'],
@@ -21085,6 +21096,10 @@ function clearAllToFresh(opts) {
       if ('cphNumber' in ST) ST.cphNumber = '';
       if ('farmType' in ST) ST.farmType = '';
       if ('farmEnterprise' in ST) ST.farmEnterprise = null;
+      /* -384: the sample farm's partners, address, PAYE reference, stock mark, tax residence,
+         accounting basis and year end went to the new farm too. Removed, so each reads as
+         "not set yet" and falls back to the app's own default. */
+      ['partners','farmAddr','payeRef','stockMark','stockMarkType','taxResidence','cashBasis','fyYearEnd'].forEach(function(k){ delete ST[k]; });
     }
     if (typeof FARM !== 'undefined' && !keepIdentity) {
       FARM.name = ''; FARM.owner = ''; FARM.ha = 0;
@@ -27994,7 +28009,10 @@ function ukPayrollRun(label, workers){
   try{ if(typeof wkPayRows==='function'){ wkPayRows(label).forEach(function(r){ if(r&&r.w) _grossBy[r.w.id]=r.gross; }); } }catch(e){}
   var rows=list.map(function(w){
     var g=_grossBy[w.id];
-    return (g!=null) ? ukPayrollWorker(w,{gross:g}) : ukPayrollWorker(w);
+    /* -384: the same month (label) as the payslip rows, so PAYE is worked on the same basis.
+       Without it the card fell back to a month-1 figure: a new starter with no P45 paid no
+       PAYE on his row but £190.35 on the card, and "Due to HMRC" was overstated. */
+    return (g!=null) ? ukPayrollWorker(w,{gross:g,label:label}) : ukPayrollWorker(w,{label:label});
   });
   var t=function(k){ return Math.round(rows.reduce(function(a,r){ return a+(r[k]||0); },0)*100)/100; };
   var grossT=t('gross'), erNIT=t('employerNI'), erPenT=t('employerPension');
@@ -34507,7 +34525,12 @@ function lsRecordMove(opts){
     var _mvRec=ST_LS.moves[0];
     if(_mvRec){ _mvRec.money=0; try{ _lsLinkTxnMove(opts.linkTxn, _mvRec); }catch(e){} }
   }
-  else if(reason==='sold' && money>0){ ST.txns=ST.txns||[]; var label=(lsHerdName(h)||'Livestock')+(cls?' ('+lsClassMeta(h.type,cls).label.toLowerCase()+')':'')+' \u00d7 '+qty; ST.txns.unshift({date:lsDispFromISO(date),desc:label,cat:'Livestock Sales',type:'income',amt:money,method:'Bank Deposit',source:'Livestock movement',ent:'ls:'+h.id}); var _lsTI=ST.txns[0]; try{ if(window.AI&&AI.farm&&AI.farm.active()){ txnWriteThrough(_lsTI, {date:_lsTxnISO(date),amt:money,cat:'Livestock Sales',type:'income',desc:label,method:'Bank Deposit',ent:'ls:'+h.id,source:'Livestock movement'}); } }catch(e){} }
+  else if(reason==='sold' && money>0){ ST.txns=ST.txns||[]; var label=(lsHerdName(h)||'Livestock')+(cls?' ('+lsClassMeta(h.type,cls).label.toLowerCase()+')':'')+' \u00d7 '+qty; ST.txns.unshift({date:lsDispFromISO(date),desc:label,cat:'Livestock Sales',type:'income',amt:money,method:'Bank Deposit',source:'Livestock movement',ent:'ls:'+h.id}); var _lsTI=ST.txns[0];
+    /* -384: tie the sale's money to the move that took the animals out. Without the link the
+       "things don't line up" card listed the app's own sale as "no animals taken out", and its
+       button sold the same animals a second time. */
+    try{ _lsLinkTxnMove(_lsTI, _mvRec); }catch(e){}
+    try{ if(window.AI&&AI.farm&&AI.farm.active()){ txnWriteThrough(_lsTI, {date:_lsTxnISO(date),amt:money,cat:'Livestock Sales',type:'income',desc:label,method:'Bank Deposit',ent:'ls:'+h.id,source:'Livestock movement'}); } }catch(e){} }
   if(reason==='bought' && money>0){ ST.txns=ST.txns||[]; var blabel=(lsHerdName(h)||'Livestock')+(cls?' ('+lsClassMeta(h.type,cls).label.toLowerCase()+')':'')+' \u00d7 '+qty+' (purchase)'; ST.txns.unshift({date:lsDispFromISO(date),desc:blabel,cat:'Livestock Purchases',type:'expense',amt:money,method:'Bank Debit',source:'Livestock movement',ent:'ls:'+h.id}); var _lsTB=ST.txns[0]; try{ if(window.AI&&AI.farm&&AI.farm.active()){ txnWriteThrough(_lsTB, {date:_lsTxnISO(date),amt:money,cat:'Livestock Purchases',type:'expense',desc:blabel,method:'Bank Debit',ent:'ls:'+h.id,source:'Livestock movement'}); } }catch(e){} }
   try{ saveState&&saveState(); }catch(e){}
   try{ if(typeof dataChanged==='function') dataChanged('livestock'); }catch(e){}
@@ -36277,7 +36300,9 @@ function _lsHmrcCompute(){
       });
     } else {
       var key2=animalBase(h.type)+'|_all';
-      var row2=classAgg[key2]||(classAgg[key2]={label:sc.cls,val:sc.val,head:0,died:0});
+      /* -384: a herd not split by class is valued at the species' default; say so, or it printed a
+         second "Cattle: Cows" row under the herd that IS split. */
+      var row2=classAgg[key2]||(classAgg[key2]={label:sc.cls+' \u00b7 herd not split by class',val:sc.val,head:0,died:0});
       row2.head+=r.closing; row2.died+=r.died;
     }
   });
@@ -37433,8 +37458,17 @@ var form = document.querySelector('#ls-view-add');
   } else {
 
     if(!buy){toast('Please enter buy price','error');return;}
-    ST_LS.herd.push({id:lsNextHerdId(),type:type,qty:qty,buy:buy,feed:feed,vet:vet,sell:sell,months:months,notes:notes,campId:campId,camp:campNm,breed:breed||undefined});
-    if(buy>0) ST.txns.unshift({date:(new Date()).toISOString().slice(0,10),desc:qty+' '+type+' (purchase)',cat:'Livestock Purchases',type:'expense',amt:qty*buy,method:'Bank Debit',source:'Livestock'});
+    /* -384: the herd arrives through a BOUGHT movement, the same record "Record › Bought"
+       writes - so the holding register shows the arrival, the stock reconciliation counts
+       them as bought (not as opening stock) and the HMRC livestock statement carries the
+       purchase. It used to push the herd at full size with a bare transaction: no move, so
+       10 store cattle at £900 read as opening stock, the statement showed £6,400 of
+       purchases instead of £15,400, and the heads-up said the herd was down 11. */
+    var _nid=lsNextHerdId();
+    ST_LS.herd.push({id:_nid,type:type,qty:0,buy:buy,feed:feed,vet:vet,sell:sell,months:months,notes:notes,campId:campId,camp:campNm,breed:breed||undefined});
+    var _ad=($('add-ls-date')&&$('add-ls-date').value)||new Date().toISOString().slice(0,10);
+    lsRecordMove({herdId:_nid, qty:qty, reason:'bought', money:Math.round(qty*buy*100)/100, date:_ad, note:'Added to the herd'});
+    var _nh0=lsHerdById(_nid); if(_nh0 && !(_nh0.qty>0)) _nh0.qty=qty;
     if(buy>0) dataChanged('transaction');
     toast(qty+' '+type+' added to your herd!','success');
     if(type==='Dairy cattle' && typeof dairySetupOpen==='function'){ try{ var _dh=ST_LS.herd[ST_LS.herd.length-1]; setTimeout(function(){ dairySetupOpen(_dh.id); }, 80); }catch(e){} }  // smooth on-ramp: sort the dairy herd right after adding it
@@ -40737,7 +40771,6 @@ function orpMoneyPanel(r){
   }
   var extra=[];
   if(b.estab) extra.push('cost to plant <b>'+esc(String(b.estab))+'</b>');
-  if(b.writeoff>0) extra.push('yearly tax write-off <b>'+orR(b.writeoff)+'</b>');
   if(b.trees>0) extra.push(_grpInt(b.trees)+' trees');
   if(extra.length) h+='<div class="orp-facts">'+extra.join(' · ')+'</div>';
   return h;
@@ -52266,7 +52299,14 @@ function computeRPT() {
   if (RPT_STATE.type === 'yearly') {
     var _fy = rptFY();
     try {
-      if (_fy === getCurrentFY()) { var _te = b5TaxEstimate(_fy); taxAmount = _te ? Math.round(_te.tax) : 0; taxNote = 'estimate for the whole year, as on the Tax page'; }
+      /* -384: the year still running shows only the profit made SO FAR, so it carries only
+         its share of the year's tax: this profit at the year's expected rate (the Tax page's
+         whole-year estimate / whole-year taxable profit). Taking the whole-year tax off a
+         half-year profit printed "Net profit after tax -£132,407" on a profitable farm. */
+      if (_fy === getCurrentFY()) { var _te = b5TaxEstimate(_fy);
+        var _rate = (_te && _te.taxable > 0) ? Math.max(0, _te.tax) / _te.taxable : 0;
+        taxAmount = netProfitBT > 0 ? Math.round(netProfitBT * _rate) : 0;
+        taxNote = 'on the profit so far at the year\u2019s expected rate, ' + (_rate*100).toFixed(1) + '% \u2014 ' + fmt(_te ? _te.tax : 0) + ' for the whole year on the Tax page'; }
       else { var _sf = ukSa103f(_fy); taxAmount = Math.round(_sf.taxEst || 0); taxNote = 'on the SA103F figures for the year'; }
     } catch(e) { taxAmount = null; }
   }
@@ -54751,19 +54791,27 @@ function ukMtdObligations(fy){
   fy=(fy!=null)?fy:((typeof fyOf==='function')?fyOf():new Date().getFullYear());
   var sm=(typeof fyStartMonth==='function')?fyStartMonth():4;
   var sd=(typeof fyStartDay==='function')?fyStartDay():6;
-  var out=[], start=new Date(fy, sm-1, sd);
+  /* -384: MTD quarters follow the TAX year, never the farm's own year: 6 Apr-5 Jul,
+     6 Jul-5 Oct, 6 Oct-5 Jan, 6 Jan-5 Apr, or calendar quarters (1 Apr-30 Jun...) for
+     a business that elects them - taken here when the farm year starts on 1 April.
+     Either way the deadlines are the same four dates: 7 Aug, 7 Nov, 7 Feb, 7 May
+     (STATUTORY.tax.mtd.quarterDue). The old "one month and seven days after the
+     quarter ends" was only right for quarters ending on the 5th, so calendar
+     quarters showed a month early (30 Sep -> 7 Oct instead of 7 Nov). */
+  var cal=(sm===4 && sd===1);
+  var out=[], start=new Date(fy, 3, cal?1:6), qd=T.quarterDue||['08-07','11-07','02-07','05-07'];
   for(var q=0;q<4;q++){
     var from=new Date(start.getFullYear(), start.getMonth()+q*3, start.getDate());
     var to=new Date(start.getFullYear(), start.getMonth()+(q+1)*3, start.getDate()-1);
-    /* Due one month and seven days after the quarter ends. */
-    var due=new Date(to.getFullYear(), to.getMonth()+1, 7);
+    var dm=parseInt(qd[q].slice(0,2),10), dd=parseInt(qd[q].slice(3),10);
+    var due=new Date(fy+(q>=2?1:0), dm-1, dd);
     out.push({ q:q+1, from:_ukDateStr(from), to:_ukDateStr(to), due:_ukDateStr(due), cumulative:true, kind:'quarter' });
   }
   /* The Final Declaration: everything the quarterly updates could not carry — capital
      allowances, averaging, private-use adjustments, any other income — and the point at
      which the year is actually settled. Due the 31 January after the tax year ends,
      the same day as the Self Assessment balancing payment. */
-  var yEnd=new Date(fy+1, sm-1, sd); yEnd.setDate(yEnd.getDate()-1);
+  var yEnd=new Date(fy+1, 3, start.getDate()); yEnd.setDate(yEnd.getDate()-1);
   out.push({ q:'FD', from:_ukDateStr(start), to:_ukDateStr(yEnd),
              due:_ukDateStr(new Date(fy+2, 0, 31)), cumulative:false, kind:'final',
              label:'Final Declaration' });
@@ -54821,7 +54869,10 @@ window.ukMtdMandatedFrom=ukMtdMandatedFrom;
 /* The obligations this business genuinely owes for a tax year. Empty is a real answer. */
 function ukMtdDueObligations(fy){
   var from=ukMtdMandatedFrom(); if(!from) return [];
-  return ukMtdObligations(fy).filter(function(o){ return o.from >= from; });
+  /* -384: a quarter is owed if any of it falls on or after the mandation date. Comparing
+     the quarter's START dropped calendar quarters (1 Apr < 6 Apr) and with them Q1 and
+     the Final Declaration of the first mandated year. */
+  return ukMtdObligations(fy).filter(function(o){ return o.to >= from; });
 }
 window.ukMtdDueObligations=ukMtdDueObligations;
 
@@ -59490,7 +59541,8 @@ function ukMtdReportHTML(fy, asPanel){
     var isNext=(!filed && next && next.q===o.q);
     var isLate=late.some(function(l){ return l.q===o.q; });
     var isFinal=(o.kind==='final');
-    var notYetRequired=(!mFrom || o.from < mFrom);
+    /* -384: the same rule as ukMtdDueObligations - owed if any of it falls on or after the start date. */
+    var notYetRequired=(!mFrom || o.to < mFrom);
     var started=true; try{ started=new Date(o.from+'T00:00:00')<=_today; }catch(e){}
     var t=isFinal ? (ukMtdQuarterlyTotals(fy,4)||{income:0,expenses:0,profit:0})
                   : (ukMtdQuarterlyTotals(fy,o.q)||{income:0,expenses:0,profit:0});
@@ -70849,7 +70901,7 @@ function orCardBodyHTML(b){
   var h='';
   if(b.plan){
     h+='<div class="oa-meta" style="margin-bottom:10px">'+esc(b.cultivar)+(b.root?(' on '+esc(b.root)):'')+' · planted '+b.plant+(b.trees?(' · '+b.trees.toLocaleString('en-GB')+' trees'):'')+'</div>';
-    h+='<div class="oa-money"><span>Establishment: <b>'+esc(b.estab||'—')+'</b></span>'+(b.writeoff?'<span>Write-off/yr: <b>'+orRm(b.writeoff)+'</b></span>':'')+'</div>';
+    h+='<div class="oa-money"><span>Establishment: <b>'+esc(b.estab||'—')+'</b></span>'+'</div>';
     h+='<div class="oa-cols"><div><div class="oa-ch">Coming into production</div>'+
       '<div class="oa-lrow"><span class="dot" style="background:#B9BEB3"></span><span class="cn">First crop</span><span class="cv">'+(b.plant+3)+'</span></div>'+
       '<div class="oa-lrow"><span class="dot" style="background:var(--gl)"></span><span class="cn">Full bearing</span><span class="cv">'+(b.plant+8)+'</span></div></div>'+
@@ -72044,7 +72096,7 @@ function orOpenBlock(id){
        detail view. Keys are normalised above; the fallback stops a stray value doing it again. */
     var cv=OR_CURVES[b.curve]||OR_CURVES[b.cat]||OR_CURVES.topfruit; var life=cv.length; var now=Math.min(Math.max(b.age-1,0),life-1);
     h+='<div class="or-mlbl">Age vs what it yields</div><div class="or-curve">'+cv.map(function(v,i){return '<i class="'+(i===now?'now':(v>0?'fill':''))+'" style="height:'+Math.max(v,4)+'%"></i>';}).join('')+'</div><div class="or-curvex"><span>Year 1</span><span>Year '+Math.round(life/2)+'</span><span>Year '+life+'</span></div>';
-    h+='<div style="display:flex;gap:18px;flex-wrap:wrap;margin-top:12px"><div><div class="or-mini-l">Cost to plant</div><div class="or-mini-v">'+(b.estab||'\u2014')+'</div></div><div><div class="or-mini-l">Yearly tax write-off</div><div class="or-mini-v lspos">'+(b.writeoff>0?orR(b.writeoff):'starts when it bears')+'</div></div>'+(b.perUnit>0?'<div><div class="or-mini-l">Money / '+b.unitWord+'</div><div class="or-mini-v lspos">'+orR(b.perUnit)+'</div></div>':'')+'</div>';
+    h+='<div style="display:flex;gap:18px;flex-wrap:wrap;margin-top:12px"><div><div class="or-mini-l">Cost to plant</div><div class="or-mini-v">'+(b.estab||'\u2014')+'</div></div>'+(b.perUnit>0?'<div><div class="or-mini-l">Money / '+b.unitWord+'</div><div class="or-mini-v lspos">'+orR(b.perUnit)+'</div></div>':'')+'</div>';
   }
   var sp=(ST_FRUIT.sprayDiary[b.cat]||[])[0];
   if(sp){ h+='<div class="or-mlbl">Latest spray</div><div class="or-mlog">'+sp.t+'<br><span style="color:var(--t3);font-size:12px">'+sp.s+'</span></div>'; }
@@ -72270,7 +72322,7 @@ function orSetStyle(s){
   var lw=$('or-lbl-when'); if(lw) lw.textContent=isVeg?'Date planted':'Year planted';
   var lc=$('or-lbl-count'); if(lc) lc.textContent=(s==='berry')?'Bushes':'Trees';
   var ly=$('or-lbl-yield'); if(ly&&ly.firstChild) ly.firstChild.textContent=isVeg?'Expected yield ':'Target yield once mature ';
-  var at=$('or-add-tip'); if(at) at.innerHTML=isVeg?'<b>What happens next:</b> Veg costs are normal season expenses (no multi-year write-off). The block tracks its planting cycle, pack-out &amp; money-back and flows into Planning, Money Flow and Profit.':'<b>What happens next:</b> The establishment cost is filed for your yearly tax write-off, the block goes onto its yield curve, and its forecast crop &amp; money-back flow into Overview, Planning and Profit.';
+  var at=$('or-add-tip'); if(at) at.innerHTML=isVeg?'<b>What happens next:</b> Veg costs are normal season expenses (no multi-year write-off). The block tracks its planting cycle, pack-out &amp; money-back and flows into Planning, Money Flow and Profit.':'<b>What happens next:</b> The establishment cost stays on the block’s record (planting an orchard gets no UK tax write-off), the block goes onto its yield curve, and its forecast crop &amp; money-back flow into Overview, Planning and Profit.';
   orAutoApply();
 }
 function orValNum(id){ var e=$(id); if(!e) return 0; var v=parseFloat(String(e.value).replace(/[^0-9.\-]/g,'')); return isNaN(v)?0:v; }
@@ -72314,8 +72366,16 @@ function orSaveBlock(){
        tons:bearing?orValNum('or-f-yield'):0,exp:bearing?70:0,cartonKg:(cat==='berry'?0:cartonKg),unit:(cat==='berry'?'kg':undefined),
        margin:0,estab:($('or-f-estab')||{}).value||'\u2014',estabYr:yr,writeoff:0,perUnit:0,unitWord:(style==='berry'?'bush':'tree'),
        curve:(cat==='berry'?'berry':(/bramley|biennial/i.test(crop)?'biennial':'topfruit')),plan:!bearing,docs:[]};
-    if(prof.body.indexOf('British Apples')>=0){ ST_FRUIT.pricing[id]={price:640,comm:8,pack:180,ship:42,levy:0,levyName:'',others:[{label:'Other costs',amt:0}]}; }
-    else if(cat==='berry'){ ST_FRUIT.pricing[id]={price:95,comm:10,pack:22,ship:14,levy:0.30,levyName:'Berries UK',others:[{label:'Other costs',amt:0}]}; }
+    /* -384: a new block starts on the UK prices (orDefaultPricing: per TONNE, like every block
+       on the farm, with a local price for what the packhouse doesn't take). When the fruit is
+       sold in cartons the per-tonne price, packing and transport are turned into per-CARTON
+       figures - the old code put the per-tonne £640 on each 15 kg carton, so one 3 ha Gala
+       block was worth £2.57m and a 5 t pick booked £110,040. Berries were a rand leftover
+       (95 a kg, a "Berries UK" levy). */
+    var _pr=JSON.parse(JSON.stringify(orDefaultPricing(cat)));
+    if(cat!=='berry' && b.cartonKg>0 && b.cartonKg!==1000){ var _k=b.cartonKg/1000;
+      _pr.price=Math.round(_pr.price*_k*100)/100; _pr.pack=Math.round(_pr.pack*_k*100)/100; _pr.ship=Math.round(_pr.ship*_k*100)/100; }
+    ST_FRUIT.pricing[id]=_pr;
   }
   if(style==='veg'){ ST_FRUIT.pricing[id]={price:3650,comm:7.5,pack:250,ship:400,levy:0,levyName:'',others:[{label:'Other costs',amt:0}]}; }
   if(!ST_FRUIT.pricing[id]) ST_FRUIT.pricing[id]=orDefaultPricing(cat);
