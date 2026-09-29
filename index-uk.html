@@ -2318,6 +2318,8 @@ small{font-size:11px}
 #tax-tab-glance .al-nw{min-width:0;display:flex;flex-direction:column}
 #tax-tab-glance .al-nw b{font-size:13.5px;color:#16241C}
 #tax-tab-glance .al-nw small{font-size:11.5px;color:var(--t3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* -386: the 31 January line names both parts - let it wrap rather than cut off */
+#tax-tab-glance .al-mc.ye .al-nw small{white-space:normal;line-height:1.35}
 #tax-tab-glance .al-aa{font-size:13.5px;font-weight:800;color:#16241C;font-variant-numeric:tabular-nums;text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:3px;white-space:nowrap}
 #tax-tab-glance .al-aa.q{font-weight:600;color:var(--t4);font-size:12px}
 #tax-tab-glance .al-aa small{font-size:11px;font-weight:600;color:var(--t4)}
@@ -9398,6 +9400,16 @@ button.rn-gchip{border:0;font-family:inherit;cursor:pointer}
   <div class="wk-sl" style="margin:18px 0 10px;font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--gm)">Tax &amp; wage floor</div>
   <div class="wk-f" style="margin:0 0 12px"><label>Tax code</label><input type="text" id="awf-taxcode" placeholder="1257L" maxlength="8">
     <div class="hint">On their P45, P60 or HMRC letter. Leave blank and we assume 1257L, the standard code. An S at the front means Scottish rates; K codes, 0T, BR and D0 are all handled. Worked cumulatively unless the code ends W1, M1 or X. A new starter with no P45: ticked A on the starter checklist &rarr; 1257L; B &rarr; 1257L M1; C &rarr; BR; no checklist &rarr; 0T M1.</div></div>
+  <!-- -386: HMRC starter checklist (PAYE61030). Choosing a statement fills in the code HMRC prescribes. -->
+  <div class="wk-f" style="margin:0 0 12px"><label>No P45? Their starter checklist</label>
+    <select id="awf-starter" onchange="wkStarterPick(this.value)">
+      <option value="">Not needed &mdash; I have their tax code</option>
+      <option value="A">Statement A &mdash; first job since 6 April (1257L)</option>
+      <option value="B">Statement B &mdash; their only job now, but they had another since 6 April (1257L M1)</option>
+      <option value="C">Statement C &mdash; they have another job or a pension (BR)</option>
+      <option value="none">No P45 and no checklist yet (0T M1)</option>
+    </select>
+    <div class="hint">What HMRC tells you to use for a new starter without a P45. Leave the tax code blank with no P45 and no checklist, and we use 0T M1, as HMRC requires.</div></div>
   <div class="wk-f" style="margin:0 0 12px"><label>From their P45 <span style="color:var(--t4);font-weight:600">&mdash; only if they had another job since 6 April</span></label>
     <div style="display:flex;gap:8px"><div class="wk-ipre" style="flex:1"><span class="r">&pound;</span><input type="number" id="awf-p45pay" placeholder="Pay to date"></div><div class="wk-ipre" style="flex:1"><span class="r">&pound;</span><input type="number" id="awf-p45tax" placeholder="Tax to date"></div></div>
     <div class="hint">Boxes &ldquo;Total pay to date&rdquo; and &ldquo;Total tax to date&rdquo;. Their first PAYE here carries on from those figures.</div></div>
@@ -10674,7 +10686,7 @@ button.rn-gchip{border:0;font-family:inherit;cursor:pointer}
       <div class="tx-sum-chg" id="tx-sum-out-chg" style="color:var(--t3)"></div>
     </div>
     <div class="tx-sum-card">
-      <div class="tx-sum-lbl">Profit this month</div>
+      <div class="tx-sum-lbl">Net cash this month</div>
       <div class="tx-sum-val" id="tx-sum-pro">—</div>
       <div class="tx-sum-chg" id="tx-sum-pro-chg" style="color:var(--t3)"></div>
     </div>
@@ -18915,6 +18927,7 @@ function updateIncPage() {
      the tax year by its exact dates (6 April), so rent received on 1 April is last year's. */
   var R  = txSummaryPeriod(n, fyMode, true);
   var Rp = txSummaryPeriod(n * 2, false, true);
+  var _E = ieEngine(n, fyMode); if (_E){ R.income=_E.cur.income; }   /* -386 D1: loans, own money and refunds are not income */
   var lbl     = _txPeriodTitle(n);
   var prevLbl = fyMode ? 'the same point last year' : (n === 1 ? 'last month' : 'prev ' + p + ' months');
   var _prevBase = fyMode ? _txFyToDatePrev(true)
@@ -18922,7 +18935,9 @@ function updateIncPage() {
 
 setEl('inc-banner-val',    fmt(R.income));
   setEl('inc-banner-lbl',   'Income \u00b7 ' + lbl + ' \u00b7 ex-VAT');
+  if (_E) _prevBase.income=_E.prev.income;
   _ieBannerChg('inc-banner-chg', R.income, _prevBase.income, prevLbl);
+  if (_E) ieOtherNote('income', _E.cur);
   setEl('inc-metric-in',     fmt(R.income));
   /* -378: Profit is the Profit page's profit for the same period - the tax year so far, or the
      months on screen - and keeps its sign (Math.abs dropped the minus on a loss). It was money
@@ -19002,13 +19017,17 @@ function updateExpPage() {
   var n  = parseInt(p);
   var R  = txSummaryPeriod(n, fyMode);
   var Rp = txSummaryPeriod(n * 2);
+  /* -386 D1: running costs and income as the Profit page counts them (no VAT, no loans, tax or drawings). */
+  var _E = ieEngine(n, fyMode); if (_E){ R.expenses=_E.cur.running; R.income=_E.cur.income; }
   var lbl     = _txPeriodTitle(n);
   var prevLbl = fyMode ? 'the same point last year' : (n === 1 ? 'last month' : 'prev ' + p + ' months');
   var _prevBaseE = fyMode ? _txFyToDatePrev() : { expenses:Rp.expenses-R.expenses };
+  if (_E) _prevBaseE = { expenses:_E.prev.running };
   var ha = ST.farmHa || 1;
 
 setEl('exp-banner-val',   fmt(R.expenses));
-  setEl('exp-banner-lbl',  'Spending \u00b7 ' + lbl);
+  setEl('exp-banner-lbl',  'Spending \u00b7 ' + lbl + ((typeof FARM!=='undefined'&&FARM.vat)?' \u00b7 ex-VAT':''));
+  if (_E) ieOtherNote('expense', _E.cur);
   _ieBannerChg('exp-banner-chg', R.expenses, _prevBaseE.expenses, prevLbl);
   setEl('exp-metric-total', fmt(R.expenses));
   setEl('exp-chart-title',  'Expenses Overview — ' + lbl);
@@ -19054,6 +19073,7 @@ var expCats = {};
     var tl = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.m]+' '+d.y;
     if (periodMonths.indexOf(tl) >= 0) expCats[_catOf(t)] = (expCats[_catOf(t)]||0) + t.amt;
   });
+  (function(){ var E=ieEngine(n, ieIsFy('expense')); if(E){ expCats={}; var b=E.cur.byCatLbl||{}; Object.keys(b).forEach(function(k){ if(Math.round(b[k])) expCats[k]=b[k]; }); } })();   /* -386 D1 */
   var topCat = {cat:'\u2014', amt:0};
   Object.keys(expCats).forEach(function(k){ if(expCats[k]>topCat.amt) topCat={cat:k,amt:expCats[k]}; });
   setEl('exp-metric-top',    topCat.cat);
@@ -19119,6 +19139,8 @@ var COLORS = (typeof EXP_CAT_COLORS !== 'undefined' && EXP_CAT_COLORS) ? EXP_CAT
     if (periodMonths.indexOf(lbl) < 0) return;
     cats[_catOf(t)] = (cats[_catOf(t)] || 0) + t.amt;
   });
+  /* -386 D1: running costs without VAT, by category - the Profit page's figures. */
+  (function(){ var E=ieEngine(n, ieIsFy('expense')); if(E){ cats={}; var b=E.cur.byCatLbl||{}; Object.keys(b).forEach(function(k){ if(Math.round(b[k])) cats[k]=b[k]; }); } })();
 
   var total  = Object.keys(cats).reduce(function(s,k){ return s+cats[k]; }, 0);
   var sorted = Object.keys(cats).sort(function(a,b){ return cats[b]-cats[a]; });
@@ -19290,10 +19312,14 @@ function ieInsights(kind){
   var _p0=(typeof _txFyToDatePrev==='function')?_txFyToDatePrev():null;
   var std=_ieSeasonToDate(0, type);
   var stdLast=_p0 ? (type==='income'?_p0.income:_p0.expenses) : _ieSeasonToDate(1, type);
+  /* -386: the banner above is the Profit page's figure (ex-VAT, no loans or own money) - this line
+     compares the same figure, or it reads "down 2%" beside "2% above". */
+  var _Ep=null; try{ _Ep=ieEngine(12, true); }catch(e){ _Ep=null; }
+  if(_Ep){ std=(type==='income'?_Ep.cur.income:_Ep.cur.running); stdLast=(type==='income'?_Ep.prev.income:_Ep.prev.running); }
   if(stdLast>0){ var pctp=Math.round((std-stdLast)/stdLast*100);
     if(Math.abs(pctp)<=200){ var dir=pctp>=0?'above':'below';
       out.push({type:'pace', icon:'📊',
-        text:'This tax year '+(type==='income'?'income is ':'you’ve spent ')+'<span class="fig">'+_ieK(std)+'</span>, tracking <span class="fig">'+Math.abs(pctp)+'%</span> '+dir+' the same point last year.', basis:'tax year to date vs the same point last year'}); } }
+        text:'This tax year '+(type==='income'?'income is ':(_Ep?'costs are ':'you’ve spent '))+'<span class="fig">'+_ieK(std)+'</span>, tracking <span class="fig">'+Math.abs(pctp)+'%</span> '+dir+' the same point last year.', basis:'tax year to date vs the same point last year'}); } }
 
   // 5) INCOME — enterprise spread (diversification), counted over the season
   if(type==='income'){ var seen={}; (ST.txns||[]).forEach(function(t){ if(t.type==='income' && t.ent && _ieInCurFY(t)) seen[t.ent]=1; });
@@ -20087,7 +20113,7 @@ function renderSeasonKpis() {
       /* -371: when today's balance is itself the low point, say so - the 12-month low looks
          only at the months ahead, and "Lowest £163k" under £64,000 read as a contradiction. */
       cSub.textContent = !_lo ? (_b5.cash.start.estimated ? 'Estimated from your records' : '')
-        : (_lo.balance < 0 ? 'Runs short in ' + _lo.label
+        : (_lo.balance < 0 ? 'Runs short from ' + ((_b5.cash.months||[]).filter(function(m){ return m.balance < 0; })[0] || _lo).label   /* batch 2 rule 5: the first month below zero, as Money Flow says */
           : (_b5.cash.start.bal <= _lo.balance ? 'The lowest point in the next 12 months' : 'Lowest ' + fmtK(_lo.balance) + ' in ' + _lo.label));
       cSub.className = 'skpi-sub' + (_lo && _lo.balance < 0 ? ' dn' : ' muted');
     }
@@ -20145,7 +20171,10 @@ var FARM_CATS = [
   {n:'SFI & Stewardship'          , t:'inc'  , vat:'none' , ec:'#4D7C0F'  , ic:'#4D7C0F'  , tag:'tg'   , tc:'#F0FDF4:#3F6212'    , ss:'SA103F box 16' , sd:'Sustainable Farming Incentive and Countryside Stewardship agreement income', sys:1},
   {n:'Contracting income'         , t:'inc'  , vat:'std'  , ec:'#0F766E'  , ic:'#0F766E'  , tag:'to'   , tc:'#F1F5F9:#334155'    , ss:'SA103F box 15'  , sd:'Contracting and machinery work done for others', sys:1},
   {n:'Agritourism'                , t:'inc'  , vat:''     , ec:''         , ic:'#7C3AED'  , tag:'tp'   , tc:''                   , ss:'SA103F box 16'       , sd:'', cor:5},
-  {n:'Rental Income'              , t:'inc'  , vat:'exmt'  , ec:''         , ic:'#0891B2'  , tag:'tp'   , tc:'#D8F3DC:#1B4332'    , ss:'SA103F box 16'       , sd:'', cor:6, bor:5},
+  {n:'Rental Income'              , t:'inc'  , vat:'exmt'  , ec:''         , ic:'#0891B2'  , tag:'tp'   , tc:'#D8F3DC:#1B4332'    , ss:'SA103F box 16 · grazing licence or a let of under a year (BIM55065)'       , sd:'', cor:6, bor:5},
+  /* -386 D8: land let for a year or more makes the tenant the farmer; the rent is PROPERTY income for
+     the SA105 (BIM55060) - outside farm profit and Class 4, even if you farm other land. */
+  {n:'Land let (a year or more)'  , t:'inc'  , vat:'exmt'  , ec:''         , ic:'#0891B2'  , tag:'tp'   , tc:'#D8F3DC:#1B4332'    , ss:'not reported · property income for your SA105 (a let of a year or more, BIM55060), not farm trading income', sd:'', cor:6.1, bor:5.1, notax:1, nonop:1},
   /* UK zero-rating is much wider than the SA schedule this table was built against. VATA 1994
      Sch 8 Group 1 zero-rates food for human consumption and everything that feeds into it, so
      cereals, livestock, milk and fruit are ALL zero-rated here - under the SA rules only fresh
@@ -20567,6 +20596,8 @@ function renderDashExpCats() {
     if (months.indexOf(lbl) < 0) return;
     cats[_catOf(t)] = (cats[_catOf(t)] || 0) + t.amt;
   });
+  /* -386 D1: the Profit engine's running costs for the same months - no VAT, and loan repayments, tax, drawings and transfers are not costs. */
+  (function(){ var P=null; try{ P=b5ProfitPeriod({months:months}); }catch(e){} if(P){ cats={}; var b=P.byCatLbl||{}; Object.keys(b).forEach(function(k){ if(Math.round(b[k])>0) cats[k]=b[k]; }); } })();
 
   var total = Object.keys(cats).reduce(function(s,k){return s+cats[k];}, 0);
   var sorted = Object.keys(cats).sort(function(a,b){return cats[b]-cats[a];}).slice(0, 7);
@@ -20611,6 +20642,8 @@ function renderDashIncSources() {
     if (months.indexOf(lbl) < 0) return;
     cats[_catOf(t)] = (cats[_catOf(t)] || 0) + t.amt;
   });
+  /* -386 D1: the Profit engine's farm income for the same months - no VAT, and loans and own money are not income. */
+  (function(){ var P=null; try{ P=b5ProfitPeriod({months:months}); }catch(e){} if(P){ cats={}; var b=P.byIncLbl||{}; Object.keys(b).forEach(function(k){ if(Math.round(b[k])>0) cats[k]=b[k]; }); } })();
 
   var total = Object.keys(cats).reduce(function(s,k){return s+cats[k];}, 0);
   var sorted = Object.keys(cats).sort(function(a,b){return cats[b]-cats[a];});
@@ -23031,7 +23064,9 @@ function laReportHTML(withLoan){
   var fyLabel=fy+'/'+String(fy+1).slice(-2),
       fyRange=(typeof getFYLabel==='function')?getFYLabel(fy):('6 April '+fy+' – 5 April '+(fy+1));
   var debtAssetPct=totalAssets>0?Math.round(totalLiab/totalAssets*100):0;
-  var secCover=totalLiab>0?((al.net+herd)/totalLiab):null;
+  /* -386 D5: security is the GROSS value of what can be pledged against ALL debt - al.net already had the
+     asset finance taken off, so dividing it by total debt counted that debt twice. */
+  var secCover=totalLiab>0?(((al.tV||0)+herd)/totalLiab):null;
   var LC=null; if(withLoan){ try{ LC=laComputeStored(); }catch(e){} }
   var hasLoan = !!(withLoan && LC && LC.amount>0);
   var cfMonths=[]; try{ cfMonths=buildCfForecast(12)||[]; }catch(e){}
@@ -23040,7 +23075,8 @@ function laReportHTML(withLoan){
   // enterprise income (real revenue attribution — no tagging needed)
   var entInc=[];
   try{ (_pfCropEnts()||[]).forEach(function(e){ if(e.income>0) entInc.push({label:e.crop, size:(e.area||0)+' ha', income:Math.round(e.income)}); }); }catch(e){}
-  try{ (_pfLiveEnts()||[]).forEach(function(l){ var inc=(l.sellHead||0)*(l.qty||0); if(inc>0) entInc.push({label:l.name, size:(l.qty||0)+' head', income:Math.round(inc)}); }); }catch(e){}
+  /* -386 D5: a herd's INCOME, not the value of every head (sell price x head count counted the herd itself as income). */
+  try{ (_pfLiveEnts()||[]).forEach(function(l){ var _hh=((ST_LS&&ST_LS.herd)||[]).filter(function(x){ return x.id===l.id; })[0], inc=(_hh&&typeof lsHerdIncome==='function')?(lsHerdIncome(_hh)||0):0; if(inc>0) entInc.push({label:l.name, size:(l.qty||0)+' head', income:Math.round(inc)}); }); }catch(e){}
   try{ (_pfOrchardEnts()||[]).forEach(function(o){ if((o.moneyBack||0)>0) entInc.push({label:o.name, size:(o.area||0)+' ha', income:Math.round(o.moneyBack)}); }); }catch(e){}
   entInc.sort(function(a,b){return b.income-a.income;});
   var entTotal=entInc.reduce(function(a,x){return a+x.income;},0);
@@ -23187,7 +23223,7 @@ function laReportHTML(withLoan){
       H.push('<div class="lar-wrap"><table class="lar-tbl"><thead><tr><th>Livestock</th><th>Head</th><th>Value</th></tr></thead><tbody>'+lr+
         '<tr class="tot"><td>Herd value</td><td>'+herdHead+'</td><td class="g">'+laRR(herd)+'</td></tr></tbody></table></div>');
     }
-    if(secCover!=null) H.push('<div class="lar-note">Total security available '+laRR(al.net+herd)+' against total debt of '+laRR(totalLiab)+' — a security cover of '+secCover.toFixed(2)+'×.</div>');
+    if(secCover!=null) H.push('<div class="lar-note">Machinery, buildings and livestock at market value '+laRR((al.tV||0)+herd)+' against total debt of '+laRR(totalLiab)+' — a security cover of '+secCover.toFixed(2)+'×.</div>');
     H.push('</div>');
   }
 
@@ -23262,8 +23298,9 @@ function laReportHTML(withLoan){
       '<div class="lar-wrap" style="margin-bottom:0"><table class="lar-tbl"><thead><tr><th>Assets</th><th>Value</th></tr></thead><tbody>'+
         '<tr><td>Land, machinery &amp; equipment</td><td>'+laRR(fixedVal)+'</td></tr>'+
         (herd>0?'<tr><td>Livestock</td><td>'+laRR(herd)+'</td></tr>':'')+
-        (crops>0?'<tr><td>Growing crops &amp; inputs</td><td>'+laRR(crops)+'</td></tr>':'')+
-        ((cash+debtors)>0?'<tr><td>Cash &amp; receivables</td><td>'+laRR(cash+debtors)+'</td></tr>':'')+
+        (crops>0?'<tr><td>Growing crops &amp; inputs <span style="color:#6B7280">(your estimate)</span></td><td>'+laRR(crops)+'</td></tr>':'')+
+        (cash>0?'<tr><td>Cash at the bank</td><td>'+laRR(cash)+'</td></tr>':'')+
+        (debtors>0?'<tr><td>Money owed to the farm <span style="color:#6B7280">(your estimate)</span></td><td>'+laRR(debtors)+'</td></tr>':'')+
         '<tr class="tot"><td>Total assets</td><td>'+laRR(totalAssets)+'</td></tr></tbody></table></div>'+
       '<div class="lar-wrap" style="margin-bottom:0"><table class="lar-tbl"><thead><tr><th>Liabilities</th><th>Balance</th></tr></thead><tbody>'+
         '<tr><td>Long-term loans</td><td>'+laRR(totalLiab-shortLiab)+'</td></tr>'+
@@ -23271,13 +23308,19 @@ function laReportHTML(withLoan){
         '<tr class="tot"><td>Total liabilities</td><td>'+laRR(totalLiab)+'</td></tr></tbody></table></div>'+
     '</div>'+
     '<div class="lar-net"><div><div class="nl">Net worth (equity)</div><div class="nv">'+laRR(netWorth)+'</div></div>'+
-      '<div class="nr">Total assets '+laRR(totalAssets)+'<br>less total liabilities '+laRR(totalLiab)+'</div></div></div>');
+      '<div class="nr">Total assets '+laRR(totalAssets)+'<br>less total liabilities '+laRR(totalLiab)+'</div></div>'+
+    /* -386 D5: market values, as the Farm Business Survey prefers, beside the accounts figure so the
+       two can be squared: the accounts carry machinery at written-down value and none of the farmer's estimates. */
+    (function(){ try{ var bs=ukBalanceSheet(); return '<div class="lar-note">At market values, as lenders and the Farm Business Survey prefer. Your accounts show net assets of '+laRR(bs.netAssets)+
+      ': they carry machinery and buildings at written-down value'+((crops+debtors)>0?' and leave out your estimates of crops and money owed':'')+'.</div>'; }catch(e){ return ''; } })()+'</div>');
 
   // 9. financial ratios
   var ratioRows='<tr><td>Equity ratio</td><td class="l2">Net worth ÷ total assets</td><td>'+equityPct+'%</td></tr>'+
     '<tr><td>Debt-to-asset ratio</td><td class="l2">Total liabilities ÷ total assets</td><td>'+debtAssetPct+'%</td></tr>'+
     (currentRatio!=null?'<tr><td>Current ratio</td><td class="l2">Current assets ÷ current liabilities</td><td>'+currentRatio.toFixed(1)+'</td></tr>':'')+
-    (intCover!=null?'<tr><td>Interest cover</td><td class="l2">Profit before interest ÷ interest</td><td>'+intCover.toFixed(1)+'×</td></tr>':'')+
+    (intCover!=null?'<tr><td>Interest cover</td><td class="l2">Profit before interest ÷ interest · this farm year (recorded so far + your plan)</td><td>'+intCover.toFixed(1)+'×</td></tr>':'')+
+    /* -386 D5: debt service - EBITDA over a year of loan repayments, capital and interest (AHDB: most lenders look for over 1.5×). */
+    (function(){ var svc=laExistingService(); return (DC && svc>0)?'<tr><td>Debt service cover</td><td class="l2">Profit before interest and write-off ÷ a year of loan repayments (lenders look for over 1.5×)</td><td>'+(DC.available/svc).toFixed(2)+'×</td></tr>':''; })()+
     '<tr><td>Return on assets</td><td class="l2">Profit before interest ÷ total assets</td><td>'+roa+'%</td></tr>';
   H.push('<div class="lar-sec">'+sh('Financial ratios','Standard solvency, liquidity and return measures.')+
     '<div class="lar-wrap"><table class="lar-tbl"><thead><tr><th>Ratio</th><th class="l2">Basis</th><th>Value</th></tr></thead><tbody>'+ratioRows+'</tbody></table></div></div>');
@@ -23288,10 +23331,15 @@ function laReportHTML(withLoan){
     var pe=null; try{ pe=taxProvEstimate(); }catch(e){}
     if(pe){ items.push({ok:true,t:'Income tax',s:ent+' · payments on account · estimate '+laRR(pe.annualTax||0)+'/yr'}); }
     var vat=null; try{ vat=taxVatPosition(); }catch(e){}
-    if(vat){ items.push({ok:true,t:'VAT',s:'Registered · current cycle '+laRR(vat.owe)+' · VAT return filed'}); }
+    /* -386 UKM-09: never "filed" for a quarter that is still open - it states the open quarter and its due date. */
+    if(vat){ var _vd=''; try{ _vd=_shortDate(ukPayBy(_ukVatDueDate(vat.to))); }catch(e){}
+      items.push({ok:true,t:'VAT',s:'Registered · this quarter so far '+laRR(vat.owe)+(vat.owe<0?' due back':'')+(_vd?' · return due '+_vd:'')}); }
     var ws=null; try{ ws=taxWorkerSnapshot(); }catch(e){}
     if(ws){ items.push({ok:ws.allOk,t:'Payroll',s:ws.count+' worker'+(ws.count===1?'':'s')+(ws.allOk?' · at or above minimum wage':' · some below minimum wage')+' · Full Payment Submission monthly'}); }
-    if(pe && pe.next && pe.next.lbl && pe.next.amt!=null && pe.next.amt>0){ items.push({ok:false,t:_ukPoaLabel(pe.next.per)+' due',s:laRR(pe.next.amt)+' due '+pe.next.lbl}); }
+    if(pe && pe.next && pe.next.lbl && pe.next.amt!=null && pe.next.amt>0){
+      /* -386 UKM-09: a 31 January payment names its parts - it was all called the 1st payment on account. */
+      var _nx=pe.next, _pt=(_nx.per==='1st' && _nx.prevBal>0) ? (' — '+laRR(_nx.poa||0)+' payment on account + '+laRR(_nx.prevBal)+' balance for last year') : '';
+      items.push({ok:false,t:(_nx.per==='1st' && _nx.prevBal>0 ? '31 January payment' : _ukPoaLabel(_nx.per))+' due',s:laRR(_nx.amt)+' due '+_nx.lbl+_pt}); }
     var cr=items.map(function(it){ return '<div class="lar-cr"><div class="ci '+(it.ok?'':'wait')+'">'+(it.ok?'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>':'<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>')+'</div><div><div class="ct">'+it.t+'</div><div class="cs">'+it.s+'</div></div></div>'; }).join('');
     if(items.length) H.push('<div class="lar-sec">'+sh('HMRC &amp; compliance','Tax and statutory standing.')+'<div class="lar-comp">'+cr+'</div></div>');
   })();
@@ -29690,6 +29738,9 @@ function wkDoRemove(id){
   try{ renderWorkers(); }catch(e){}
 }
 
+/* -386 HMRC starter checklist -> the code to operate (PAYE Manual PAYE61030). */
+function wkStarterCode(st){ return st==='A'?'1257L':st==='B'?'1257L M1':st==='C'?'BR':st==='none'?'0T M1':''; }
+function wkStarterPick(st){ var el=$('awf-taxcode'); if(el && st) el.value=wkStarterCode(st); }
 function wkSaveWorker(){
   var name=(($('awf-name')||{}).value||'').trim();
   if(!name){ if(typeof toast==='function') toast('Please enter their name.','error'); return; }
@@ -29713,7 +29764,11 @@ function wkSaveWorker(){
   var w={ id:'w'+Date.now(), name:name, role:(($('awf-role')||{}).value||'').trim()||'Worker',
     type:wkSegVal('awf-type')||'Permanent', start:(($('awf-start')||{}).value||''), onFarm:wkSwOn('awf-onfarm'),
     niNo:(($('awf-id')||{}).value||'').trim(), basis:basis, amt:amt,
-    taxCode:((($('awf-taxcode')||{}).value||'').trim().toUpperCase())||'1257L',
+    /* -386: HMRC PAYE61030 - a new starter with no P45 and no starter checklist is taxed on 0T Month 1,
+       not the cumulative 1257L this used to assume for a blank box. */
+    taxCode:((($('awf-taxcode')||{}).value||'').trim().toUpperCase())||(function(){ var st=(($('awf-starter')||{}).value)||'', pp=parseFloat(($('awf-p45pay')||{}).value)||0;
+      if(st) return wkStarterCode(st); return pp>0 ? '1257L' : '0T M1'; })(),
+    starter:((($('awf-starter')||{}).value)||undefined),
     p45:(function(){ var pp=parseFloat(($('awf-p45pay')||{}).value)||0, pt=parseFloat(($('awf-p45tax')||{}).value)||0;
       return (pp>0||pt>0) ? { sy:wkTaxYear().sy, pay:pp, tax:pt } : null; })(),
     age:_age, awoGrade:(_awo && !isNaN(_awo)? parseInt(_awo,10) : _awo), apprentice:_appr,
@@ -42856,7 +42911,8 @@ function gbpLevers(c) {
 
   var zr = 0, zrNames = [];
   cats.expense.rows.forEach(function(r) {
-    if (/feed|fertilis|fertiliz|seed/i.test(r.cat) && r.act > 0) { zr += r.act; zrNames.push(r.cat + ' ' + bgtFmt(r.act)); }
+    /* -386 UKM-08: feed and food-crop seed only - fertiliser is standard-rated (the lever's own note says so; Notices 701/15, 701/38). */
+    if (/feed|seed/i.test(r.cat) && !/fertilis|fertiliz/i.test(r.cat) && r.act > 0) { zr += r.act; zrNames.push(r.cat + ' ' + bgtFmt(r.act)); }
   });
   if (zr > GBP_MIN * 4) {
     /* UK standard rate, from the statutory table (IE_VAT_RATE = 0.20): the VAT inside a
@@ -43025,6 +43081,9 @@ function gbpRender() {
   var got = 0, i;
   m.ways.forEach(function(o, k) { if (GBP_PICK[k]) got += o.v; });
   var short = m.gap - got, s = gbpSeries(c, short);
+  /* -386 D4: where the year lands is shown as the bank at the year end - the Budgets headline's figure -
+     plus what the picked cards add; the plan's landing point is that figure plus the gap. */
+  var _yb = b5YearEndBank(), _land = _yb ? (_yb.end + got) : s.end, _planLand = _yb ? (_yb.end + m.gap) : s.plan[11], _atLbl = _yb ? (' in the bank at ' + _yb.endLabel) : '';
 
   var shown = [];
   m.ways.forEach(function(o, k) { if (GBP_FILTER === 'all' || o.cat === GBP_FILTER) shown.push({o:o, i:k}); });
@@ -43035,10 +43094,10 @@ function gbpRender() {
   var head = short > 0
     ? { l:(got ? 'Still short' : 'Year-end shortfall'), v:bgtFmt(short), cls:'bad',
         vd:'You are ' + (s.lead >= 0 ? '<b>' + bgtFmt(s.lead) + ' ahead</b>' : '<b>' + bgtFmt(-s.lead) + ' behind</b>') +
-           ' today, but land at <b>' + bgtFmt(s.end) + '</b> against a plan of ' + bgtFmt(s.plan[11]) +
+           ' today, but land at <b>' + bgtFmt(_land) + '</b>' + _atLbl + ' against a plan of ' + bgtFmt(_planLand) +
            '. <i>Add cards to lift the amber line.</i>', vc:'gbp-verdict' }
-    : { l:'Back on plan', v:bgtFmt(s.end), cls:'ok',
-        vd:'These land you at <b>' + bgtFmt(s.end) + '</b> — on or above your plan of ' + bgtFmt(s.plan[11]) + '.',
+    : { l:'Back on plan', v:bgtFmt(_land), cls:'ok',
+        vd:'These land you at <b>' + bgtFmt(_land) + '</b>' + _atLbl + ' — on or above your plan of ' + bgtFmt(_planLand) + '.',
         vc:'gbp-verdict ok' };
 
   var FL = [{k:'all', l:'All'}, {k:'earn', l:'Earn more'}, {k:'spend', l:'Spend less'}, {k:'tax', l:'Tax &amp; grants'}];
@@ -43259,7 +43318,10 @@ function bgtPrint() {
     '<table>' +
     '<tr><td>Income so far vs plan-to-date</td><td class="amt' + (c.aheadIn >= 0 ? ' pos' : ' neg') + '">' + (c.aheadIn >= 0 ? '+' : '−') + bgtFmt(Math.abs(c.aheadIn)) + '</td></tr>' +
     '<tr><td>Spending so far vs plan-to-date</td><td class="amt' + (c.aheadOut >= 0 ? ' pos' : ' neg') + '">' + (c.aheadOut >= 0 ? '−' : '+') + bgtFmt(Math.abs(c.aheadOut)) + '</td></tr>' +
-    '<tr class="total"><td>Projected year-end net (if the rest of the year goes to plan)</td><td class="amt">' + bgtFmt(projNet) + '</td></tr>' +
+    (function(){ var yb=b5YearEndBank(); if(!yb) return '<tr class="total"><td>Projected year-end net (if the rest of the year goes to plan)</td><td class="amt">' + bgtFmt(projNet) + '</td></tr>';
+      /* -386 D4: the same year-end figure as the Budgets page - the bank at the year end, and the lowest point. */
+      return '<tr class="total"><td>Bank at ' + yb.endLabel + ' (forecast' + (yb.estimated?', estimated opening balance':'') + ')</td><td class="amt">' + bgtFmt(yb.end) + '</td></tr>' +
+             (yb.lowIsEnd ? '' : '<tr><td>Lowest point before then (' + yb.lowLabel + ')</td><td class="amt">' + bgtFmt(yb.low) + '</td></tr>'); })() +
     '</table>' +
     '<p style="font-size:12px;color:#666;margin-top:18px">Actual columns run to the current month. Prepared from AgriInsights — figures come from the farm’s own captured records, to be confirmed against source documents.</p>';
   printWindow('Budget vs Actual — ' + farm, html);
@@ -48451,6 +48513,8 @@ function renderIncBySource() {
     if (periodMonths.indexOf(lbl) < 0) return;
     cats[_catOf(t)] = (cats[_catOf(t)] || 0) + t.amt;
   });
+  /* -386 D1: farm income without VAT, by category - the Profit page's figures. */
+  (function(){ var E=ieEngine(n, ieIsFy('income')); if(E){ cats={}; var b=E.cur.byIncLbl||{}; Object.keys(b).forEach(function(k){ if(Math.round(b[k])) cats[k]=b[k]; }); } })();
 
   var total  = Object.keys(cats).reduce(function(s,k){ return s+cats[k]; }, 0);
   var sorted = Object.keys(cats).sort(function(a,b){ return cats[b]-cats[a]; });
@@ -49120,7 +49184,65 @@ function setPeriod(p) {
 // Canonical per-month series from real transactions. Uses txSummary() — the same
 // income/expense/profit definition the dashboard tiles use — so charts and numbers
 // can never disagree. Anchored to ST.budgets.currentMonth (the real current month).
-function periodSeries(n){
+/* -386 batch 2 (D1): the Income and Expenses pages on the Profit engine. Income and running
+   costs are counted exactly as the Profit page counts them - without VAT, and with loans, own
+   money, tax, drawings, VAT paid over and assets bought kept apart - so "costs" means one thing
+   on every screen. Industry standard for a VAT-registered business (FRS 102 23.4; FreeAgent,
+   Xero): the profit side excludes VAT, and loan capital and drawings are never a cost. */
+function _ieZeroP(){ return {income:0,running:0,interest:0,depr:0,gain:0,profit:0,loanCapital:0,capitalLinked:0,capitalUnreg:0,nonopIn:0,nonopOut:0,tax:0,paydown:0,vatIn:0,vatOut:0,cashIn:0,cashOut:0,byCatLbl:{},byIncLbl:{}}; }
+function ieIsFy(kind){ try{ return ((kind==='income'?ST.incPeriodSel:ST.expPeriodSel)||'fy')==='fy'; }catch(e){ return false; } }
+function ieEngine(n, fyMode){
+  try{
+    var now=b5TodayYm();
+    if(fyMode){ var fy=getCurrentFY(); return {cur:b5Profit(fy,{toYm:now})||_ieZeroP(), prev:b5Profit(fy-1,{toYm:b5YmAdd(now,-12)})||_ieZeroP()}; }
+    var ms=_iePeriodMonths(n), pms=_iePeriodMonths(n*2).slice(0,n);
+    return {cur:b5ProfitPeriod({months:ms})||_ieZeroP(), prev:b5ProfitPeriod({months:pms})||_ieZeroP()};
+  }catch(e){ return null; }
+}
+/* The line under each banner that says what is NOT in the figure, so the gap to the bank is explained. */
+/* -386/-477: what the heading leaves out sits behind an info button beside the change chip (the
+   sentence under the banner looked untidy); it opens the same explainer card as the Dashboard tiles. */
+function _ieNoteRows(kind, P){
+  var r=[], f=function(x){ return fmt(Math.round(x)); };
+  if(kind==='income'){
+    if(P.nonopIn>0.5) r.push({nm:'Loans, own money and refunds — not income', v:P.nonopIn});
+    if(P.vatIn>0.5) r.push({nm:'VAT on sales — it goes to HMRC', v:P.vatIn});
+  } else {
+    if(P.interest>0.5) r.push({nm:'Loan interest — Profit takes it off separately', v:P.interest});
+    if(P.depr>0.5) r.push({nm:'Write-off on machinery and buildings — Profit takes it off separately', v:P.depr});
+    if(P.loanCapital>0.5) r.push({nm:'Loan capital paid back — not a cost', v:P.loanCapital});
+    if(P.capitalLinked>0.5) r.push({nm:'Things bought for the asset register — written off over their life', v:P.capitalLinked});
+    if(P.tax>0.5) r.push({nm:'Tax paid — not a farm cost', v:P.tax});
+    if(P.nonopOut>0.5) r.push({nm:'Drawings, transfers and VAT paid over — not costs', v:P.nonopOut});
+    if(P.vatOut>0.5) r.push({nm:'VAT on costs — you claim it back', v:P.vatOut});
+    if((P.unsorted||0)>0.5) r.push({nm:'Not sorted into a category yet', v:P.unsorted});
+  }
+  var mx=0; r.forEach(function(x){ if(x.v>mx) mx=x.v; });
+  return r.map(function(x,i){ return {nm:x.nm, amt:f(x.v), pct:mx>0?Math.round(x.v/mx*100):0, cls:(i>0?'gold':'')}; });
+}
+function ieOtherNote(kind, P){
+  var pre=(kind==='income'?'inc':'exp'), old=document.getElementById(pre+'-othermoney'); if(old) old.remove();
+  var chg=document.getElementById(pre+'-banner-chg'), host=chg&&chg.parentElement; if(!host) return;
+  var btn=document.getElementById(pre+'-banner-info');
+  var rows=P?_ieNoteRows(kind, P):[];
+  if(!rows.length){ if(btn) btn.style.display='none'; return; }
+  if(!btn){ btn=document.createElement('button'); btn.type='button'; btn.id=pre+'-banner-info'; btn.className='ib-info'; btn.innerHTML='&#9432;';
+    btn.setAttribute('aria-label', kind==='income'?'What is not counted as income':'What is not counted as a cost');
+    btn.onclick=function(e){ e.stopPropagation(); kpiOpen(kind==='income'?'ieIncomeLeftOut':'ieCostsLeftOut'); };
+    host.appendChild(btn); }
+  btn.style.display='';
+  btn.title=(kind==='income'?'Not counted as income: ':'Not in this figure: ')+rows.map(function(x){ var t=x.nm.split(' — ')[0]; return (/^[A-Z][a-z]/.test(t)?t.charAt(0).toLowerCase()+t.slice(1):t)+' '+x.amt; }).join(' · ');
+  window._ieNote=window._ieNote||{}; window._ieNote[kind]={P:P, lbl:((document.getElementById(pre+'-banner-sub')||document.getElementById(pre+'-banner-lbl')||{}).textContent||'').trim(), val:((document.getElementById(pre+'-banner-val')||{}).textContent||'').trim()};
+  if(window.KPI_REG && !window.KPI_REG.ieCostsLeftOut){
+    var spec=function(k){ return function(){ var n=(window._ieNote||{})[k]; if(!n) return null; var rows=_ieNoteRows(k, n.P), inc=(k==='income');
+      return { label:inc?'Income':'Costs', value:n.val, chip:n.lbl,
+        verdict:{tone:'info', head:inc?'Only farm income is counted':'Only running costs are counted', text:inc?' This is the income the Profit page counts, without VAT.':' This is what the Profit page counts as running costs, without VAT.'},
+        mean:inc?'Money came into the bank that is not farm income. It is kept out so this matches your profit, which is why it is lower than your bank statement.':'Money left the bank that is not a running cost. It is kept out so this matches your profit, which is why it is lower than your bank statement.',
+        breakdown:{title:'Kept out of this figure', rows:rows, note:'These are for the same months as the heading.'},
+        jump:{label:'See the Profit page', tone:'', go:function(){ nav('profit'); }, back:function(){ nav(inc?'income':'expenses'); kpiOpen(inc?'ieIncomeLeftOut':'ieCostsLeftOut'); }, trail:'\u2039 Back to '+(inc?'Income':'Expenses'), show:'Showing Profit'} }; }; };
+    window.KPI_REG.ieIncomeLeftOut=spec('income'); window.KPI_REG.ieCostsLeftOut=spec('expense'); }
+}
+function periodSeries(n, opt){
   var MO=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   var MN={Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
   var parts=(currentPeriodLabel()).split(' ');
@@ -49130,7 +49252,8 @@ function periodSeries(n){
   for(var k=n-1;k>=0;k--){
     var mo=((cm-k)%12+12)%12;
     var yr=cy+Math.floor((cm-k)/12);
-    var s=txSummary(MO[mo]+' '+yr);
+    /* opt.profit: the Income and Expenses charts, month by month on the Profit engine (D1). */
+    var s=(opt&&opt.profit)?(function(){ var P=null; try{ P=b5ProfitPeriod({months:[MO[mo]+' '+yr]}); }catch(e){} P=P||_ieZeroP(); return {income:P.income, expenses:P.running, profit:P.profit}; })():txSummary(MO[mo]+' '+yr);
     labels.push(MO[mo]); i.push(Math.round(s.income)); o.push(Math.round(s.expenses)); pr.push(Math.round(s.profit));
   }
   return {labels:labels,i:i,o:o,p:pr};
@@ -49411,7 +49534,7 @@ function initIncomeCharts() {
   if (c) {
     destroyChart('inc');
     var p = ST.incPeriod || '6';
-    var _s = periodSeries(p==='1'?1 : p==='3'?3 : p==='12'?12 : 6);
+    var _s = periodSeries(Math.max(1, Math.min(12, parseInt(p,10)||6)), {profit:true});   /* -386 D1: the heading's months, on the Profit engine */
     var labels = _s.labels;
     var data   = _s.i;
     ST.charts['inc'] = new Chart(c, {type:'bar', data:{labels:labels, datasets:[{label:'Income',data:data,backgroundColor:barGrad('#40916C','#2D6A4F'),hoverBackgroundColor:barGrad('#4CA37B','#357A5B'),borderRadius:6,borderSkipped:false}]}, options:baseOpts});
@@ -49430,7 +49553,7 @@ function initExpCharts() {
   if (c) {
     destroyChart('exp');
     var p = ST.expPeriod || '6';
-    var _s = periodSeries(p==='1'?1 : p==='3'?3 : p==='12'?12 : 6);
+    var _s = periodSeries(Math.max(1, Math.min(12, parseInt(p,10)||6)), {profit:true});   /* -386 D1: the heading's months, on the Profit engine */
     var labels = _s.labels;
     var data   = _s.o;
     ST.charts['exp'] = new Chart(c,{type:'bar',data:{labels:labels,datasets:[{label:'Expenses',data:data,backgroundColor:barGrad('#ED6152','#CB3A2B'),hoverBackgroundColor:barGrad('#F2776A','#D6493A'),borderRadius:6,borderSkipped:false}]},options:baseOpts});
@@ -51844,6 +51967,19 @@ function b5Margins(opt){
 }
 /* D6 + D11: the ONE tax computation (the SA103F's), run on actual so far + the working budget
    for the months still to come. The return runs it on actuals. */
+/* -386 rule 3: THE tax figure for the year - exactly what the Tax page shows (taxProvEstimate's
+   taxable profit; income tax + Class 4 for a person, corporation tax at 19%/25% with marginal
+   relief for a company). The P&L, the Tax Summary, the SA103F pre-fill and the MTD set-aside all
+   read this, so no screen has a tax figure of its own. On a limited company the P&L said £0 while
+   the Tax page said £2,143 of corporation tax. */
+function ukYearTaxEstimate(fy){
+  fy=(fy!=null)?fy:getCurrentFY();
+  if(fy!==getCurrentFY()) return b5TaxEstimate(fy);
+  var pe=null; try{ pe=taxProvEstimate(); }catch(e){ pe=null; } if(!pe) return b5TaxEstimate(fy);
+  var ent=(typeof ukEntityType==='function')?ukEntityType(ST.entityType):'sole', taxable=Math.round(pe.taxableProfit||0), p=Math.max(0,taxable);
+  if(ent==='company'){ var ct=Math.round(calcAnnualIncomeTax(p,'company')||0); return {fy:fy, taxable:taxable, tax:ct, incomeTax:ct, class4:0, company:true}; }
+  var t=ukPersonalTaxTotal(p, ent); return {fy:fy, taxable:taxable, tax:Math.round(t.total), incomeTax:Math.round(t.incomeTax), class4:Math.round(t.ni)};
+}
 function b5TaxEstimate(fy){
   fy=(fy!=null)?fy:getCurrentFY();
   var s=null; try{ s=ukSa103f(fy); }catch(e){} if(!s) return null;
@@ -51892,6 +52028,21 @@ function b5BudgetGoals(fy){
   return g;
 }
 /* Cash left at the year end on the same working budget as "heading for". */
+/* -386 D4: THE year-end cash figure - the forecast bank balance at the end of the farm year and the
+   lowest point before it, from the one month-by-month forecast (b5CashForecast, which the Dashboard
+   and Money Flow read). Budgets' headline, its fix-it panel and its bank printout all show this.
+   AHDB's cash-flow template and SA bank budgets carry the closing balance forward month to month;
+   the lowest point is what an overdraft is sized on. */
+function b5YearEndBank(fy){
+  fy=(fy!=null)?fy:getCurrentFY();
+  var f=null; try{ f=b5CashForecast(12); }catch(e){ f=null; } if(!f || !f.months || !f.months.length) return null;
+  var endLbl=getFYMonths(fy)[11], rows=[], i;
+  for(i=0;i<f.months.length;i++){ rows.push(f.months[i]); if(f.months[i].label===endLbl) break; }
+  var end=rows[rows.length-1], low=null; rows.forEach(function(r){ if(!low || r.balance<low.balance) low=r; });
+  var MF={Jan:31,Feb:28,Mar:31,Apr:30,May:31,Jun:30,Jul:31,Aug:31,Sep:30,Oct:31,Nov:30,Dec:31}, p=String(end.label).split(' ');
+  var lastDay=(p[0]==='Feb' && (+p[1])%4===0)?29:(MF[p[0]]||30);
+  return { end:end.balance, endLabel:lastDay+' '+p[0], low:low.balance, lowLabel:String(low.label).split(' ')[0], lowIsEnd:(low===end), estimated:!!(f.start&&f.start.estimated) };
+}
 function b5CashHeading(fy){
   var h=b5ProfitHeading(fy), p=h.soFar, r=h.rest;
   return Math.round((p.cashIn-p.cashOut)+r.income-r.running-r.interest-r.loanCapital);
@@ -52224,7 +52375,10 @@ function rptPeriodInfo(){
   var months = [];
   if (t === 'monthly') months = [MONTH_LABELS[RPT_STATE.monthIdx] + ' ' + RPT_STATE.year];
   else if (t === 'quarterly'){ var q = RPT_STATE.quarterIdx*3; for (var i=0;i<3;i++){ var mi=(q+i)%12, yr=RPT_STATE.year+(q+i>=12?1:0); months.push(MONTH_LABELS[mi]+' '+yr); } }
-  else { months=getFYMonths(rptFY()); }
+  else { months=getFYMonths(rptFY());
+    /* -386 rule 6: the prior year cut at the same month, so a year so far is compared like for like. */
+    if (RPT_STATE.capYm){ var _MI={Jan:'01',Feb:'02',Mar:'03',Apr:'04',May:'05',Jun:'06',Jul:'07',Aug:'08',Sep:'09',Oct:'10',Nov:'11',Dec:'12'};
+      months=months.filter(function(l){ var q=String(l).split(' '); return (q[1]+'-'+_MI[q[0]])<=RPT_STATE.capYm; }); } }
   return {months: months, from: null, to: null};
 }
 function rptInPeriod(d, info){
@@ -52307,6 +52461,10 @@ function computeRPT() {
      that has ended, the estimate for the year still running). A month or a quarter has no tax
      of its own. */
   var taxAmount = null, taxNote = '';
+  /* -386: for a sole trader or partnership the tax is the OWNER's personal tax, not a cost of the
+     business - management accounts show profit before tax with the tax to set aside as a memo
+     (FreeAgent/Xero: personal tax is drawings). A company or trust pays its own tax. */
+  var taxMemo = (function(){ try{ var e=(typeof ukEntityType==='function'?ukEntityType(ST.entityType):(ST.entityType||'sole')); return !(e==='company'||e==='trust'); }catch(_){ return true; } })();
   if (RPT_STATE.type === 'yearly') {
     var _fy = rptFY();
     try {
@@ -52314,10 +52472,10 @@ function computeRPT() {
          its share of the year's tax: this profit at the year's expected rate (the Tax page's
          whole-year estimate / whole-year taxable profit). Taking the whole-year tax off a
          half-year profit printed "Net profit after tax -£132,407" on a profitable farm. */
-      if (_fy === getCurrentFY()) { var _te = b5TaxEstimate(_fy);
+      if (_fy === getCurrentFY()) { var _te = ukYearTaxEstimate(_fy);
         var _rate = (_te && _te.taxable > 0) ? Math.max(0, _te.tax) / _te.taxable : 0;
         taxAmount = netProfitBT > 0 ? Math.round(netProfitBT * _rate) : 0;
-        taxNote = 'on the profit so far at the year\u2019s expected rate, ' + (_rate*100).toFixed(1) + '% \u2014 ' + fmt(_te ? _te.tax : 0) + ' for the whole year on the Tax page'; }
+        taxNote = (_te&&_te.company?'corporation tax ':'')+'on the profit so far at the year\u2019s expected rate, ' + (_rate*100).toFixed(1) + '% \u2014 ' + fmt(_te ? _te.tax : 0) + ' for the whole year on the Tax page'; }
       else { var _sf = ukSa103f(_fy); taxAmount = Math.round(_sf.taxEst || 0); taxNote = 'on the SA103F figures for the year'; }
     } catch(e) { taxAmount = null; }
   }
@@ -52344,7 +52502,7 @@ function computeRPT() {
   return {
     months:months, from:info.from, to:info.to, totalIncome:totalIncome, totalCOS:totalCOS, totalOpex:totalOpex, totalCosts:totalCosts,
     grossProfit:grossProfit, netProfitBT:netProfitBT, taxAmount:taxAmount, taxNote:taxNote,
-    netProfitAT:netProfitAT, grossMargin:grossMargin, netMargin:netMargin,
+    netProfitAT:netProfitAT, taxMemo:taxMemo, grossMargin:grossMargin, netMargin:netMargin,
     vatOut:P.vatIn, vatIn:P.vatOut, vatPayable:P.vatIn-P.vatOut, byCat:byCat, byIncCat:byIncCat,
     wt:0, taxRate:(taxRate*100).toFixed(0), loanSplit:loanSplit, cf:cf, running:P.running, interest:P.interest, depr:P.depr
   };
@@ -52442,7 +52600,7 @@ function computePrevRPT() {
   var old = JSON.parse(JSON.stringify(RPT_STATE));
   if (RPT_STATE.type==='monthly')   { if (RPT_STATE.monthIdx===0) RPT_STATE.year--; RPT_STATE.monthIdx = (RPT_STATE.monthIdx+11)%12; }
   if (RPT_STATE.type==='quarterly') { if (RPT_STATE.quarterIdx===0) RPT_STATE.year--; RPT_STATE.quarterIdx = (RPT_STATE.quarterIdx+3)%4; }
-  if (RPT_STATE.type==='yearly')    RPT_STATE.fy = rptFY() - 1;
+  if (RPT_STATE.type==='yearly'){ var _cy=(rptFY()===getCurrentFY()); RPT_STATE.fy = rptFY() - 1; if(_cy) RPT_STATE.capYm=b5YmAdd(b5TodayYm(),-12); }   /* -386 rule 6 */
   if (RPT_STATE.type==='custom' && RPT_STATE.customFrom && RPT_STATE.customTo){
     var _f=rptParseISO(RPT_STATE.customFrom), _day=86400000, _span=(rptParseISO(RPT_STATE.customTo)-_f)+_day;
     RPT_STATE.customTo  =rptISO(new Date(_f.getTime()-_day));
@@ -52557,8 +52715,8 @@ function buildPLReport() {
     '<tr><td>Gross Profit</td><td class="amt '+(R.grossProfit>=0?'pos':'neg')+'">'+IE_R(R.grossProfit)+'</td></tr>'+
     '<tr class="total"><td>NET PROFIT (BEFORE TAX)</td><td class="amt '+(R.netProfitBT>=0?'pos':'neg')+'">'+IE_R(R.netProfitBT)+'</td></tr>'+
     (R.taxAmount!=null
-      ? '<tr><td>Income tax and Class 4 NI ('+R.taxNote+')</td><td class="amt neg">'+fmt(R.taxAmount)+'</td></tr>'+
-        '<tr class="total"><td>NET PROFIT AFTER TAX</td><td class="amt '+(R.netProfitAT>=0?'pos':'neg')+'">'+IE_R(R.netProfitAT)+'</td></tr>'
+      ? '<tr><td>'+(R.taxMemo?'Memo: tax to set aside on this profit \u2014 your own tax, not a business cost (':(/^corporation tax /.test(R.taxNote||'')?'Corporation tax (':'Income tax and Class 4 NI ('))+String(R.taxNote||'').replace(/^corporation tax /,'')+')</td><td class="amt'+(R.taxMemo?'':' neg')+'">'+fmt(R.taxAmount)+'</td></tr>'+
+        '<tr class="total"><td>'+(R.taxMemo?'LEFT AFTER SETTING TAX ASIDE':'NET PROFIT AFTER TAX')+'</td><td class="amt '+(R.netProfitAT>=0?'pos':'neg')+'">'+IE_R(R.netProfitAT)+'</td></tr>'
       : '<tr><td colspan="2" style="color:#6B7280;font-size:12px">Income tax is worked out for the whole tax year — choose Yearly, or see the Tax page.</td></tr>')+
     '<tr><td>Net Margin</td><td class="amt">'+R.netMargin+'%</td></tr>'+
     '</table>';
@@ -52669,9 +52827,17 @@ function _rptTaxBody(fy, cls, R){
     tr('− Capital allowances (box 57)', '−'+fmt(F.ca.total), neg)+
     (F.balancingCharge>0 ? tr('+ Balancing charge (box 59)', fmt(F.balancingCharge)) : '')+
     '<tr class="total"><td>'+(loss?'Trading loss (box 65)':'Taxable profit (box 64)')+(cur?' so far':'')+'</td><td class="amt">'+fmt(Math.abs(F.profit))+'</td></tr>'+
-    tr('Income tax — '+(F.scot?'Scottish':'rest-of-UK')+' rates, '+esc4Rpt(_entityTaxLabel(F.entity)), fmt(F.incomeTax))+
-    (F.class4 ? tr('Class 4 National Insurance', fmt(F.class4)) : '')+
-    '<tr class="total"><td>Tax on it</td><td class="amt">'+fmt(F.taxEst)+'</td></tr>'+
+    /* -386 D3: while the year runs, the tax is the Tax page's estimate for the WHOLE year (SARS/HMRC
+       estimates and IAS 34 all work on the full year) - the profit so far run through the annual
+       tables understated the year and did not match the Tax page. */
+    (function(){ var te=cur?ukYearTaxEstimate(fy):null;
+      if(!te) return tr('Income tax — '+(F.scot?'Scottish':'rest-of-UK')+' rates, '+esc4Rpt(_entityTaxLabel(F.entity)), fmt(F.incomeTax))+
+        (F.class4 ? tr('Class 4 National Insurance', fmt(F.class4)) : '')+
+        '<tr class="total"><td>Tax on it</td><td class="amt">'+fmt(F.taxEst)+'</td></tr>';
+      return tr('Taxable profit \u2014 estimate for the whole year (as on the Tax page)', fmt(te.taxable))+
+        tr('Income tax — '+(F.scot?'Scottish':'rest-of-UK')+' rates, '+esc4Rpt(_entityTaxLabel(F.entity)), fmt(te.incomeTax))+
+        (te.class4 ? tr('Class 4 National Insurance', fmt(te.class4)) : '')+
+        '<tr class="total"><td>Tax for the year (estimate)</td><td class="amt">'+fmt(te.tax)+'</td></tr>'; })()+
     '</tbody></table>');
   /* income by source */
   var inc = Object.keys(F.incByCat).filter(function(k){ return Math.round(F.incByCat[k]); }).sort(function(a,b){ return F.incByCat[b]-F.incByCat[a]; });
@@ -53811,8 +53977,8 @@ function buildPreviewPL(R, meta) {
     '<tr><td>Gross Margin</td><td class="amt">'+R.grossMargin+'%</td></tr>'+
     '<tr class="'+(R.netProfitBT>=0?'total':'total-neg')+'"><td>NET PROFIT (BEFORE TAX)</td><td class="amt '+(R.netProfitBT>=0?'pv-pos':'pv-neg')+'">'+IE_R(R.netProfitBT)+'</td></tr>'+
     (R.taxAmount!=null
-      ? '<tr><td>Income tax and Class 4 NI ('+R.taxNote+')</td><td class="amt pv-neg">'+fmt(R.taxAmount)+'</td></tr>'+
-        '<tr class="total"><td>NET PROFIT AFTER TAX</td><td class="amt '+(R.netProfitAT>=0?'pv-pos':'pv-neg')+'">'+IE_R(R.netProfitAT)+'</td></tr>'
+      ? '<tr><td>'+(R.taxMemo?'Memo: tax to set aside on this profit \u2014 your own tax, not a business cost (':(/^corporation tax /.test(R.taxNote||'')?'Corporation tax (':'Income tax and Class 4 NI ('))+String(R.taxNote||'').replace(/^corporation tax /,'')+')</td><td class="amt'+(R.taxMemo?'':' pv-neg')+'">'+fmt(R.taxAmount)+'</td></tr>'+
+        '<tr class="total"><td>'+(R.taxMemo?'LEFT AFTER SETTING TAX ASIDE':'NET PROFIT AFTER TAX')+'</td><td class="amt '+(R.netProfitAT>=0?'pv-pos':'pv-neg')+'">'+IE_R(R.netProfitAT)+'</td></tr>'
       : '<tr><td colspan="2" style="color:#6B7280;font-size:12px">Income tax is worked out for the whole tax year — choose Yearly, or see the Tax page.</td></tr>')+
     '<tr><td>Net Margin</td><td class="amt">'+R.netMargin+'%</td></tr>'+
     '</tbody></table></div>'+
@@ -53835,11 +54001,13 @@ function buildPreviewCF(R, meta) {
 function buildPreviewTax(R, meta) {
   var fy = _rptTaxFY(), T = _rptTaxBody(fy, true, R), F = T.F;
   var eff = F.profit > 0 ? Math.round(F.taxEst / F.profit * 100) : 0;
+  var _te = (fy === getCurrentFY()) ? ukYearTaxEstimate(fy) : null;   /* -386 D3: so far | the year */
+  if (_te) eff = _te.taxable > 0 ? Math.round(_te.tax / _te.taxable * 100) : 0;
   return meta +
     '<div class="pv-hero">'+
-      '<div class="pv-card"><div class="pv-card-lbl">'+(F.profit<0?'Trading loss':'Taxable profit')+'</div><div class="pv-card-val">'+fmt(Math.abs(F.profit))+'</div></div>'+
-      '<div class="pv-card"><div class="pv-card-lbl">Works out at</div><div class="pv-card-val">'+eff+'%</div></div>'+
-      '<div class="pv-card"><div class="pv-card-lbl">Tax</div><div class="pv-card-val">'+fmt(F.taxEst)+'</div></div>'+
+      '<div class="pv-card"><div class="pv-card-lbl">'+(F.profit<0?'Trading loss':'Taxable profit')+(_te?' so far':'')+'</div><div class="pv-card-val">'+fmt(Math.abs(F.profit))+'</div></div>'+
+      (_te?'<div class="pv-card"><div class="pv-card-lbl">Taxable profit \u2014 the year (estimate)</div><div class="pv-card-val">'+fmt(_te.taxable)+'</div></div>':'<div class="pv-card"><div class="pv-card-lbl">Works out at</div><div class="pv-card-val">'+eff+'%</div></div>')+
+      '<div class="pv-card"><div class="pv-card-lbl">'+(_te?'Tax for the year (estimate)':'Tax')+'</div><div class="pv-card-val">'+fmt(_te?_te.tax:F.taxEst)+'</div></div>'+
     '</div>'+
     T.html+
     '<div class="pv-disclaimer">The same figures as the Self Assessment pre-fill — income without VAT, the expenses HMRC allows and your capital allowances. An estimate on your own records, not a filed return; confirm with your accountant.</div>';
@@ -53997,6 +54165,21 @@ function IE_schedule(cats, sectionName){
     '<table class="ie-dt"><tbody><tr class="cs"><td colspan="3" style="font-size:12px">Total ' + sectionName + '</td><td class="r">' + IE_R(tincl) + '</td><td class="r">' + IE_R(tvat) + '</td><td class="r nt" style="color:#1B4332">' + IE_R(tnet) + '</td></tr></tbody></table>';
 }
 
+/* -386 D2: money in and out of the period that is not income or a cost, by category, as recorded. */
+function IE_otherMoney(info){
+  var out={inc:{}, out:{}}, loans=0, now=b5TodayYm();
+  (ST.txns||[]).forEach(function(t){
+    if(!t) return; var d=parseDate(t.date); if(!d || !rptInPeriod(d, info) || b5Ym(d)>now) return;
+    var g=+t.amt||0, role=b5CatRole(t.cat), c=_catOf(t);
+    if(t.type==='income'){ if(role==='nonop') out.inc[c]=(out.inc[c]||0)+g; return; }
+    if(t.type!=='expense'){ out.out['Payments to accounts']=(out.out['Payments to accounts']||0)+g; return; }
+    if(role==='nonop' || role==='tax'){ out.out[c]=(out.out[c]||0)+g; return; }
+    if(role==='loan'){ loans+=g; return; }
+    if(role==='capital'){ var la=null; try{ la=txLinkedAsset(t); }catch(e){} if(la) out.out[c+' (on the register)']=(out.out[c+' (on the register)']||0)+g; }
+  });
+  var cap=loans-(+info.interest||0); if(cap>0.5) out.out['Loan repayments \u2014 capital']=cap;
+  return out;
+}
 function IE_buildDoc(forPrint){
   var curInfo  = computeRPT();
   var prevInfo = computePrevRPT();
@@ -54017,13 +54200,23 @@ function IE_buildDoc(forPrint){
   var priorIn  = prev.income.reduce(function(a,c){ return a + c.net; }, 0);
   var priorOut = prev.expense.reduce(function(a,c){ return a + c.net; }, 0);
   var netRes = netIn - netOut, priorNet = priorIn - priorOut;
+  /* -386 D2: the top half IS the P&L - income without VAT; running costs, loan interest and the
+     write-off; the same profit as the Profit page. Loan capital, tax, drawings, transfers, VAT paid
+     over and things bought for the register are not income or costs (FRS 102 / IFRS for SMEs s7):
+     they are listed underneath as "other money in and out", so every line is still here. */
+  var _rows=function(o){ return Object.keys(o||{}).filter(function(k){ return Math.round(o[k]); }).map(function(k){ return {cat:k, net:o[k]}; }).sort(function(a,b){ return b.net-a.net; }); };
+  var _pIn=_rows(curInfo.byIncCat), _pOut=_rows(curInfo.byCat);
+  priorInMap=Object.assign({}, prevInfo.byIncCat||{}); priorOutMap=Object.assign({}, prevInfo.byCat||{});
+  netIn=curInfo.totalIncome; netOut=curInfo.totalCosts; netRes=curInfo.netProfitBT;
+  priorIn=prevInfo.totalIncome; priorOut=prevInfo.totalCosts; priorNet=prevInfo.netProfitBT;
+  var _om=IE_otherMoney(curInfo), _omP=IE_otherMoney(prevInfo);
 
   if (!cur.income.length && !cur.expense.length) {
     return '<style>' + IE_CSS + '</style><div class="ie-doc"><div class="ie-ttl"><div class="t">Statement of Income &amp; Expenses</div><div class="p">' + lbl + '</div></div><div class="ie-empty">No transactions recorded for this period.<br>Pick another period above.</div></div>';
   }
 
-  var inRows  = cur.income.map(function(c){ return IE_cmpRow(c, priorInMap); }).join('');
-  var outRows = cur.expense.map(function(c){ return IE_cmpRow(c, priorOutMap, true); }).join('');
+  var inRows  = _pIn.map(function(c){ return IE_cmpRow(c, priorInMap); }).join('');
+  var outRows = _pOut.map(function(c){ return IE_cmpRow(c, priorOutMap, true); }).join('');
   var vatInfo = FARM.vat;
 
   var html = '<style>' + IE_CSS + '</style><div class="ie-doc">' +
@@ -54052,6 +54245,18 @@ function IE_buildDoc(forPrint){
       '<tr class="st"><td class="l">Total Expenses</td><td>' + IE_R(netOut) + '</td><td class="ie-flat">' + IE_R(priorOut) + '</td><td class="ie-' + IE_dir(priorOut, netOut) + '">' + IE_Rpar(netOut - priorOut) + '</td><td class="ie-' + IE_dir(priorOut, netOut) + '">' + IE_pctChg(netOut, priorOut) + '</td></tr>' +
       '<tr class="ie-sp"><td colspan="5"></td></tr>' +
       '<tr class="gr' + (netRes < 0 ? ' neg' : '') + '"><td class="l">Net ' + (netRes >= 0 ? 'Income' : 'Loss') + ' for the Period</td><td class="b">' + IE_Rpar(netRes) + '</td><td class="b ie-flat">' + IE_Rpar(priorNet) + '</td><td class="b">' + IE_Rpar(netRes - priorNet) + '</td><td class="b">' + IE_pctChg(netRes, priorNet) + '</td></tr>' +
+      (function(){
+        var inK=Object.keys(_om.inc).filter(function(k){ return Math.round(_om.inc[k]); }), outK=Object.keys(_om.out).filter(function(k){ return Math.round(_om.out[k]); });
+        if(!inK.length && !outK.length) return '';
+        var r=function(k,v,pv,isOut){ return IE_cmpRow({cat:k, net:v}, (function(){ var m={}; m[k]=pv||0; return m; })(), isOut); };
+        var tIn=inK.reduce(function(a,k){ return a+_om.inc[k]; },0), tOut=outK.reduce(function(a,k){ return a+_om.out[k]; },0);
+        var ptIn=Object.keys(_omP.inc).reduce(function(a,k){ return a+_omP.inc[k]; },0), ptOut=Object.keys(_omP.out).reduce(function(a,k){ return a+_omP.out[k]; },0);
+        return '<tr class="ie-sp"><td colspan="5"></td></tr><tr class="sh"><td colspan="5">Other money in and out \u2014 not income or costs</td></tr>' +
+          inK.map(function(k){ return r(k+' (in)', _om.inc[k], _omP.inc[k], false); }).join('') +
+          outK.map(function(k){ return r(k, _om.out[k], _omP.out[k], true); }).join('') +
+          '<tr class="st"><td class="l">Other money in</td><td>' + IE_R(tIn) + '</td><td class="ie-flat">' + IE_R(ptIn) + '</td><td></td><td></td></tr>' +
+          '<tr class="st"><td class="l">Other money out</td><td>' + IE_R(tOut) + '</td><td class="ie-flat">' + IE_R(ptOut) + '</td><td></td><td></td></tr>';
+      })() +
       '</tbody></table>';
 
   if (vatInfo) {
@@ -54391,10 +54596,17 @@ function ukPoaSchedule(fy, thisYearTaxable){
   var bal=e.known ? Math.round(thisBill-2*(e.each||0)) : null;
   dts.push({d:new Date(fy+1,0,31),lbl:'31 Jan '+(fy+1),per:'1st',amt:(e.known?(e.each+(prevBal||0)):null),poa:e.each,prevBal:prevBal,known:e.known,fyFor:fy});
   dts.push({d:new Date(fy+1,6,31),lbl:'31 Jul '+(fy+1),per:'2nd',amt:(e.known?e.each:null),poa:e.each,prevBal:null,known:e.known,fyFor:fy});
-  dts.push({d:new Date(fy+2,0,31),lbl:'31 Jan '+(fy+2),per:'balancing',amt:(bal!=null?Math.max(0,bal):null),poa:0,prevBal:null,known:e.known,fyFor:fy});
+  /* -386 UKM-17: 31 January after the year end also carries the 1st payment on account for the NEXT
+     tax year - half of this year's bill, unless it is under £1,000 or mostly collected at source
+     (gov.uk: payments on account). The date list left it out, so the biggest day of the tax year
+     read about half its real size. */
+  var _nx=null; try{ var _r=ukPaymentsOnAccount(thisBill, 0); _nx=(_r&&_r.required)?Math.round(_r.each):0; }catch(err){ _nx=null; }
+  dts.push({d:new Date(fy+2,0,31),lbl:'31 Jan '+(fy+2),per:'balancing',amt:(bal!=null?Math.max(0,bal)+(_nx||0):null),balOnly:(bal!=null?Math.max(0,bal):null),nextPoa:_nx,poa:0,prevBal:null,known:e.known,fyFor:fy});
   return { fy:fy, applies:true, company:false, known:e.known, source:e.source, each:e.each, prevBal:prevBal,
            priorBill:(e.priorBill!=null?e.priorBill:null), exempt:e.exempt||null, minLiability:e.minLiability, atSourcePct:e.atSourcePct,
-           thisBill:thisBill, balancing:bal, dts:dts, next:pickNext(dts) };
+           thisBill:thisBill, balancing:bal, nextPoa:_nx, dts:dts, next:pickNext(dts),
+           /* this year's payments on account cover less than 80% of the estimated bill */
+           shortfall:(e.known && bal>0 && thisBill>0 && 2*(e.each||0) < 0.8*thisBill) };
 }
 function _ukPoaPersist(){
   try{ if(typeof dataChanged==='function') dataChanged(); else if(typeof saveState==='function') saveState(); }catch(e){}
@@ -54921,36 +55133,18 @@ function ukMtdQuarterlyTotals(fy, quarter){
   var obs=ukMtdObligations(fy); if(!obs.length) return null;
   var q=obs[Math.min(Math.max((quarter||1)-1,0),3)];
   var from=new Date(obs[0].from+'T00:00:00'), to=new Date(q.to+'T00:00:00');
-  var boxes={}, income=0, expenses=0, uncategorised=0, rows=0, loanCapital=0;
-  var catBox={};
-  ((window.FARM_CATS)||[]).forEach(function(cd){ if(cd&&cd.n) catBox[cd.n]=cd.ss||''; });
-  ((window.ST&&ST.txns)||[]).forEach(function(t){
-    if(!t||!t.date) return;
-    var d=new Date(String(t.date).length===10? t.date+'T00:00:00' : t.date);
-    if(isNaN(d)||d<from||d>to) return;
-    var amt=Math.abs(ukExVat(t)); if(!amt) return;          // MTD figures exclude VAT for a registered farm
-    /* Box 25 is interest on bank and other loans, so a loan instalment reports its
-       interest only - the capital repayment is not a deductible expense. */
-    if(t.type!=='income' && typeof ukLoanCapitalPart==='function'){
-      var _cap=ukLoanCapitalPart(t);
-      if(_cap>0){ loanCapital+=_cap; amt=Math.max(0, amt-_cap); if(!amt){ rows++; return; } }
-    }
-    rows++;
-    var box=catBox[t.cat]||'';
-    /* A category explicitly marked "not reported" is a decision, not an omission -
-       income tax, penalties and PAYE remittances have no place on the return. Only a
-       genuinely blank box counts as uncategorised. */
-    if(/^not reported/.test(box)){ return; }
-    if(!t.cat || !box) uncategorised+=amt;
-    var key=box||'Unassigned';
-    boxes[key]=(boxes[key]||0)+amt;
-    if(t.type==='income') income+=amt; else expenses+=amt;
-  });
+  /* -386 UKM-05: the SA103F engine over the update's dates, so a quarterly update and the SA103F
+     pre-fill carry the same categories and the same figures for the same days (HMRC: MTD "uses the
+     same categories of income and expenses as Self Assessment"). It had rules of its own and gave a
+     different profit for the same months. */
+  var F=ukSa103f(fy, {from:from, to:to}), boxes={};
+  Object.keys(F.byBox||{}).forEach(function(k){ boxes[k]=F.byBox[k]; });
+  if(F.box15) boxes['box 15']=F.box15; if(F.box16) boxes['box 16']=F.box16;
   return { fy:fy, quarter:q.q, from:obs[0].from, to:q.to, due:q.due, cumulative:true,
-           income:Math.round(income), expenses:Math.round(expenses),
-           profit:Math.round(income-expenses), boxes:boxes,
-           loanCapital:Math.round(loanCapital),
-           uncategorised:Math.round(uncategorised), transactions:rows };
+           income:Math.round(F.turnover), expenses:Math.round(F.expenses),
+           profit:Math.round(F.turnover-F.expenses), boxes:boxes,
+           loanCapital:Math.round((F.loan&&F.loan.capital)||0),
+           uncategorised:Math.round(F.uncategorised||0), transactions:F.rows||0 };
 }
 /* Are the records actually fit to send? A quarterly update built on uncategorised
    rows is a wrong return, so this is a gate, not a nag. */
@@ -57737,13 +57931,18 @@ function taxGlanceHTML(){
   if(vat){ var vdRaw=_ukVatDueDate(vat.to), vd=ukPayBy(vdRaw);
     items.push({d:vd, due:vdRaw, code:'VAT', amt:vat.owe, pay:vat.owe>0, refund:vat.owe<0}); }
   if(wk && pay.total>0){ var edRaw=new Date(now.getFullYear(),now.getMonth(),22); if(ukPayBy(edRaw)<=now) edRaw=new Date(now.getFullYear(),now.getMonth()+1,22); var ed=ukPayBy(edRaw);
-    var _wp={paye:Math.round((pay.paye||0)/12), ee:Math.round((pay.employeeNI||0)/12), er:Math.round((pay.employerNI||0)/12)};
-    items.push({d:ed, due:edRaw, code:'PAYE', amt:_wp.paye+_wp.ee+_wp.er, parts:_wp, pay:true}); }
+    var _wp={paye:Math.round((pay.paye||0)/12), ee:Math.round((pay.employeeNI||0)/12), er:Math.round((pay.employerNI||0)/12)}, _amt=_wp.paye+_wp.ee+_wp.er;
+    /* -386 rule 4: what HMRC is owed on the 22nd is that tax month's pay run (FPS less the EPS
+       Employment Allowance), not a twelfth of the year - £1,705 against £2,433 on the demo. */
+    try{ var _pm=new Date(edRaw.getFullYear(),edRaw.getMonth()-1,1), _MFL=['January','February','March','April','May','June','July','August','September','October','November','December'];
+      var _run=ukPayrollRun(_MFL[_pm.getMonth()]+' '+_pm.getFullYear());
+      if(_run && _run.count){ _wp={paye:Math.round(_run.paye), ee:Math.round(_run.employeeNI), er:Math.round(Math.max(0,_run.employerNIAfterAllowance||0))}; _amt=Math.round(_run.dueToHMRC); } }catch(e){}
+    items.push({d:ed, due:edRaw, code:'PAYE', amt:_amt, parts:_wp, pay:true}); }
   var today0=new Date(now.getFullYear(),now.getMonth(),now.getDate());
   (poa.dts||[]).forEach(function(p){
     if(!p || !p.d || ukPayBy(p.d)<today0) return;
     var code=(p.per==='ct')?'CT':'SA', unk=(p.amt==null);
-    items.push({d:ukPayBy(p.d), due:p.d, code:code, per:p.per, amt:(unk?null:p.amt), unknown:unk, poaEach:p.poa, prevBal:p.prevBal, fyFor:(p.fyFor!=null?p.fyFor:_fyNow),
+    items.push({d:ukPayBy(p.d), due:p.d, code:code, per:p.per, amt:(unk?null:p.amt), unknown:unk, poaEach:p.poa, prevBal:p.prevBal, balOnly:p.balOnly, nextPoa:p.nextPoa, fyFor:(p.fyFor!=null?p.fyFor:_fyNow),
                 pay:!unk && p.amt>0, nil:!unk && !(p.amt>0)});
   });
   /* A company's LAST year is usually the next bill: a 31 March year end pays on 1 January,
@@ -57765,7 +57964,7 @@ function taxGlanceHTML(){
     if(it.code==='CT'){ var pe=ukFyPeriodEnd(it.fyFor!=null?it.fyFor:_fyNow); return 'for the year to '+_shortDate(pe)+' '+pe.getFullYear(); }
     if(it.per==='1st') return '1st payment on account'+(it.prevBal>0?' + last year’s balance':'');
     if(it.per==='2nd') return '2nd payment on account';
-    return 'balancing payment';
+    return 'balancing payment'+(it.nextPoa>0?' + next year’s 1st payment on account':'');
   };
 
   /* ---- 1. The answer ---- */
@@ -58071,7 +58270,10 @@ function taxGlanceHTML(){
         h += '<div class="td-big">'+fmt(it.amt||0)+'</div><div class="td-bs">by '+d3(it.d)+'</div>';
         var rows='';
         if(it.per==='balancing'){
-          rows += row('This year’s bill (estimate)', fmt(poa.thisBill||0))+row('Less payments on account', '−'+fmt(2*(poa.each||0)))+row('Balancing payment', fmt(it.amt||0), 't');
+          var _bo=(it.balOnly!=null)?it.balOnly:(it.amt||0), _np=it.nextPoa||0;
+          rows += row('This year’s bill (estimate)', fmt(poa.thisBill||0))+row('Less payments on account', '−'+fmt(2*(poa.each||0)))+row('Balancing payment', fmt(_bo))+
+                  (_np?row('1st payment on account for next year (half this year’s bill)', fmt(_np)):'')+row('Due that day', fmt(it.amt||0), 't');
+          if(poa.shortfall) h += '<div class="td-note td-a">Your payments on account ('+fmt(2*(poa.each||0))+') cover less than 80% of this year’s estimated bill ('+fmt(poa.thisBill||0)+'), because they are based on last year. The rest falls on this date, together with next year’s first payment on account. HMRC charges no interest on payments on account paid as set, but setting money aside each month spreads the cost.</div>';
         } else {
           if(it.prevBal>0) rows += row('Balancing payment for last year', fmt(it.prevBal));
           rows += row((it.per==='1st'?'1st':'2nd')+' payment on account', fmt(it.poaEach||0))+row('This payment', fmt(it.amt||0), 't');
@@ -59663,12 +59865,17 @@ function ukMtdReportHTML(fy, asPanel){
   var pf=Math.max(0, ytd.profit||0);
   var it=(typeof calcAnnualIncomeTax==='function')?calcAnnualIncomeTax(pf,ent):0;
   var ni=Math.round(ukClass4Business(pf, ent));
+  /* -386 D3: the set-aside is the profit so far at the YEAR's expected rate (the Tax page's estimate
+     for the year / the year's taxable profit) - the same method as the P&L - not the profit so far
+     run through the annual tables, which gave a third tax figure. */
+  try{ var _te=ukYearTaxEstimate(fy), _r=(_te&&_te.taxable>0)?Math.max(0,_te.tax)/_te.taxable:0;
+    if(_te){ var _tot=Math.round(pf*_r), _sh=(_te.tax>0)?(_te.incomeTax/_te.tax):1; it=Math.round(_tot*_sh); ni=_tot-it; } }catch(e){}
   var estimate = (pf>0)
     ? '<div class="mtd-est"><div class="mtd-est-l">Tax on the year so far</div>'+
       '<div class="mtd-est-row"><span>Income tax</span><b>'+money(it)+'</b></div>'+
       (ni?'<div class="mtd-est-row"><span>Class 4 National Insurance</span><b>'+money(ni)+'</b></div>':'')+
       '<div class="mtd-est-row tot"><span>Set aside</span><b>'+money(it+ni)+'</b></div>'+
-      '<div class="mtd-est-n">On the profit recorded so far, at the rates for your tax residence. Other income stacks on top, and capital allowances and averaging are settled at the Final Declaration &mdash; so treat this as what to put by, not the bill.</div></div>'
+      '<div class="mtd-est-n">On the profit recorded so far, at the rate the Tax page expects for the whole year. Other income stacks on top, and capital allowances and averaging are settled at the Final Declaration &mdash; so treat this as what to put by, not the bill.</div></div>'
     : '';
 
   var acts='<div class="txc-btns" style="margin-top:12px;max-width:430px">'+
@@ -64865,13 +65072,18 @@ function _hmrcByCat(fy){
        its written-down value;
      · a loss is a loss (box 65). It was clamped to £0, which hides a figure the farmer
        can use against other income or carry forward. */
-function ukSa103f(fy){
+function ukSa103f(fy, opt){
+  /* -386 rule 3/UKM-05: opt.from/opt.to (Dates) - the same rules for any stretch of dates, which is
+     what an MTD quarterly update is: the SA103F categories, cumulative, before year-end adjustments. */
+  var _rng=(opt&&opt.from&&opt.to)?opt:null, rows=0, uncategorised=0;
   var SUPPORT={'Delinked payment':1,'Subsidies':1,'SFI & Stewardship':1,'Agritourism':1,'Rental Income':1,'Other Income':1};
   var boxOfCat={}; ((window.FARM_CATS)||[]).forEach(function(c){ if(c&&c.n) boxOfCat[c.n]=c.ss||''; });
   var incByCat={}, byCat={}, byBox={}, nonAllow={}, capitalSpend=0, loanPaid=0, loanInt=0, box15=0, box16=0, expenses=0;
   ((typeof ST!=='undefined'&&ST.txns)||[]).forEach(function(x){
     if(!x||!x.date) return;
-    var d=parseDate(x.date); if(!d||_fyOfParts(d)!==fy) return;
+    var d=parseDate(x.date); if(!d) return;
+    if(_rng){ var dd=new Date(d.y,d.m,d.d||1); if(dd<_rng.from||dd>_rng.to) return; } else if(_fyOfParts(d)!==fy) return;
+    rows++; if(!x.cat) uncategorised+=Math.abs(ukExVat(x));
     var cat=(typeof _catOf==='function')?_catOf(x):(x.cat||'Other');
     if(x.type==='income'){
       if(!taxIncomeCounts(cat)) return;          // a VAT repayment is not turnover (-369)
@@ -64891,6 +65103,12 @@ function ukSa103f(fy){
     byBox[box]=(byBox[box]||0)+amt;
     expenses+=amt;
   });
+  if(_rng){   /* a quarterly update: no capital allowances, stock or balancing charges - those go on the Final Declaration */
+    box15=Math.round(box15); box16=Math.round(box16); expenses=Math.round(expenses);
+    return { fy:fy, range:true, incByCat:incByCat, box15:box15, box16:box16, turnover:box15+box16, byCat:byCat, byBox:byBox, expenses:expenses, nonAllow:nonAllow,
+             capitalSpend:Math.round(capitalSpend), loan:loanPaid>0?{paid:loanPaid, interest:loanInt, capital:Math.max(0,loanPaid-loanInt)}:null,
+             profit:box15+box16-expenses, rows:rows, uncategorised:Math.round(uncategorised) };
+  }
   var ca=taxCapitalAllowancesFY(fy);
   var bc=0; try{ var pe=(typeof astPoolEffect==='function')?astPoolEffect(fy):null; bc=Math.round((pe&&pe.charge)||0); }catch(err){ bc=0; }
   var stock=0; try{ if(typeof ukStockAdj==='function') stock=Math.round(ukStockAdj(fy)||0); }catch(err){ stock=0; }
@@ -64925,6 +65143,9 @@ function buildHMRCPreviewHTML(fy) {
     '<div class="rpt-kpi"><div class="rpt-kpi-l">'+(F.profit<0?'Loss':'Taxable profit')+'</div><div class="rpt-kpi-v '+(F.profit>0?'pos':'neg')+'">'+M(Math.abs(F.profit))+'</div><div class="rpt-kpi-n">'+(F.profit<0?'box 65':'box 64')+'</div></div>'+
   '</div>';
 
+  /* -386 D8: property income is kept out of these boxes and listed for the SA105. */
+  (function(){ var pr=0; ((typeof ST!=='undefined'&&ST.txns)||[]).forEach(function(x){ if(x&&x.type==='income'&&x.cat==='Land let (a year or more)'){ var d=parseDate(x.date); if(d&&_fyOfParts(d)===fy) pr+=ukExVat(x); } });
+    if(pr>0.5) body+='<div class="rpt-note"><b>Property income for your SA105: '+M(pr)+'.</b> Rent from land let for a year or more is not farm trading income (BIM55060), so it is not in these boxes or in Class 4 National Insurance. It is taxed as property income on the SA105 pages.</div>'; })();
   /* Section A — income, itemised */
   var incRows=Object.keys(F.incByCat).sort(function(a,b){return F.incByCat[b]-F.incByCat[a];}).map(function(k){
     return '<tr><td>'+lab(k)+'</td><td class="n" style="color:#6B7280">'+(SUPPORT[k]?'box 16':'box 15')+'</td><td class="n pos">'+M(F.incByCat[k])+'</td></tr>';
@@ -64988,9 +65209,15 @@ function buildHMRCPreviewHTML(fy) {
   var parts=(F.partners&&F.partners.length) ? '<div class="rpt-note">A partnership pays no tax itself. This is the total for the partners, each taxed on their own share: '+F.partners.map(function(x){ return M(x); }).join(' + ')+'.</div>' : '';
   body+='<div class="rpt-sec"><div class="rpt-h2">Section E &mdash; Estimated tax<small>'+(F.scot?'Scottish rates':'rest-of-UK rates')+'</small></div>'+
     '<div class="rpt-tw"><table class="rpt-t"><tbody>'+
-    '<tr><td>Income tax on the farming profit</td><td class="n neg">'+M(F.incomeTax)+'</td></tr>'+
-    (F.class4?'<tr><td>Class 4 National Insurance</td><td class="n neg">'+M(F.class4)+'</td></tr>':'')+
-    '<tr class="grand"><td>ESTIMATED TOTAL</td><td class="n neg">'+M(F.taxEst)+'</td></tr>'+
+    (function(){ var te=(fy===getCurrentFY())?ukYearTaxEstimate(fy):null;   /* -386 D3: recorded so far | estimate for the year */
+      if(!te) return '<tr><td>Income tax on the farming profit</td><td class="n neg">'+M(F.incomeTax)+'</td></tr>'+
+        (F.class4?'<tr><td>Class 4 National Insurance</td><td class="n neg">'+M(F.class4)+'</td></tr>':'')+
+        '<tr class="grand"><td>ESTIMATED TOTAL</td><td class="n neg">'+M(F.taxEst)+'</td></tr>';
+      return '<tr><td></td><td class="n" style="color:#6B7280;font-size:12px">Recorded so far</td><td class="n" style="color:#6B7280;font-size:12px">Estimate for the year</td></tr>'+
+        '<tr><td>Taxable profit</td><td class="n">'+M(F.profit)+'</td><td class="n">'+M(te.taxable)+'</td></tr>'+
+        '<tr><td>Income tax on the farming profit</td><td class="n" style="color:#6B7280">\u2014</td><td class="n neg">'+M(te.incomeTax)+'</td></tr>'+
+        (te.class4?'<tr><td>Class 4 National Insurance</td><td class="n" style="color:#6B7280">\u2014</td><td class="n neg">'+M(te.class4)+'</td></tr>':'')+
+        '<tr class="grand"><td>ESTIMATED TOTAL FOR THE YEAR (as on the Tax page)</td><td></td><td class="n neg">'+M(te.tax)+'</td></tr>'; })()+
     '</tbody></table></div>'+parts+
     '<div class="rpt-note">Estimated on this farming profit alone, at the rates for your tax residence. Other income stacks on top and will change the result, and Class 2 National Insurance, student loan and payments on account are not included here.</div>'+
   '</div>';
@@ -65794,9 +66021,8 @@ function txUpdateSummary() {
   setEl3('tx-sum-out', txFmtK(cur.expenses), 'tx-sum-out-chg', pctStr(cur.expenses,prevExp), pctCol(cur.expenses,prevExp,false));
   /* -378 (port of SA -466): Profit is the Profit page's profit for the month (income without
      VAT, less running costs, loan interest and the write-off). It was money in less money out. */
-  var _cm=currentPeriodLabel(), _pm=(typeof prevMonthKey==='function')?prevMonthKey(_cm):null, _P=null, _Pp=null;
-  try{ _P=b5ProfitPeriod({months:[_cm]}); if(_pm) _Pp=b5ProfitPeriod({months:[_pm]}); }catch(e){}
-  if(_P){ profit=_P.profit; prevPro=_Pp?_Pp.profit:0; }
+  /* -386 rule 2: this page is the bank ledger, so its third card is NET CASH - money in less money
+     out, the two cards beside it - and not profit. Profit lives on the Profit page. */
   var proEl=$('tx-sum-pro'); if(proEl){proEl.textContent=txFmtK(profit); proEl.style.color=profit>=0?'var(--gd)':'var(--rd)';}
   setEl3('', '', 'tx-sum-pro-chg', pctStr(profit,prevPro), pctCol(profit,prevPro,true));
 }
@@ -65891,10 +66117,9 @@ function txRender() {
       var moTxns = byMonth[mo];
       var moInc  = moTxns.reduce(function(s,t){ return s+(t.type==='income'?t.amt:0);},0);
       var moExp  = moTxns.reduce(function(s,t){ return s+(t.type==='expense'?t.amt:0);},0);
-      /* -378: the month's Profit is the Profit page's, not in less out; a month still ahead
-         (entries dated in the future) has no profit yet. */
-      var _mp = null; try{ _mp = b5ProfitPeriod({months:[mo]}); }catch(e){ _mp = null; }
-      var moPro  = _mp ? _mp.profit : null;
+      /* -386 rule 2: net cash of the rows shown - in less out - so a search or filter moves all three
+         figures together. It was the whole month's profit beside the filtered in and out. */
+      var moPro  = (moInc || moExp) ? (moInc - moExp) : null;
       var proCol = (moPro||0) >= 0 ? 'var(--gd)' : 'var(--rd)';
 
       rows += '<tr class="tx-month-row"><td colspan="7" style="padding:0">' +
@@ -65903,7 +66128,7 @@ function txRender() {
           '<span class="tx-month-totals">' +
             (moInc?'In '+txFmtK(moInc)+' &nbsp;':'') +
             (moExp?'Out '+txFmtK(moExp)+' &nbsp;':'') +
-            (moPro!=null ? 'Profit <span style="color:'+proCol+';font-weight:700">'+txFmtK(moPro)+'</span>' : '') +
+            (moPro!=null ? 'Net cash <span style="color:'+proCol+';font-weight:700">'+txFmtK(moPro)+'</span>' : '') +
           '</span>' +
         '</div>' +
       '</td></tr>';
@@ -70770,6 +70995,7 @@ function orLocalTons(b){
 }
 function orNetPer(b){
   var p=ST_FRUIT.pricing[b.id]; if(!p){ p=ST_FRUIT.pricing[b.id]=orDefaultPricing(b.cat); }
+  if(!((parseFloat(p.price)||0)>0)) return 0;   /* -386: price not set yet - counted as nothing, never as a loss */
   var others=(p.others||[]).reduce(function(s,o){return s+(parseFloat(o.amt)||0);},0);
   var levy=p.levyName?(parseFloat(p.levy)||0):0;
   return (parseFloat(p.price)||0) - (parseFloat(p.price)||0)*(parseFloat(p.comm)||0)/100 - (parseFloat(p.pack)||0) - (parseFloat(p.ship)||0) - levy - others;
@@ -72088,7 +72314,7 @@ function orOpenBlock(id){
   if(b.cat==='veg'){
     h+='<div class="lskpi-c"><div class="lskpi-l">Area</div><div class="lskpi-v" style="font-size:16px">'+b.ha+' ha</div></div><div class="lskpi-c"><div class="lskpi-l">Cycle</div><div class="lskpi-v" style="font-size:16px">'+b.cycle+'</div></div><div class="lskpi-c"><div class="lskpi-l">Top grade</div><div class="lskpi-v" style="font-size:16px">'+b.grade+'%</div></div><div class="lskpi-c"><div class="lskpi-l">Money / ha</div><div class="lskpi-v lspos" style="font-size:16px">'+orR(m)+'</div></div>';
   } else {
-    h+='<div class="lskpi-c"><div class="lskpi-l">Area</div><div class="lskpi-v" style="font-size:16px">'+b.ha+' ha</div></div><div class="lskpi-c"><div class="lskpi-l">Trees</div><div class="lskpi-v" style="font-size:16px">'+((b.trees||0).toLocaleString('en-GB'))+'</div></div><div class="lskpi-c"><div class="lskpi-l">Sold as</div><div class="lskpi-v" style="font-size:15px">'+orBlockUnits(b).toLocaleString('en-GB')+' '+(b.cat==='berry'?'kg':'cartons')+'</div></div><div class="lskpi-c"><div class="lskpi-l">Money / ha</div><div class="lskpi-v '+(m<0?'lsneg':'lspos')+'" style="font-size:16px">'+orR(m)+'</div></div>';
+    h+='<div class="lskpi-c"><div class="lskpi-l">Area</div><div class="lskpi-v" style="font-size:16px">'+b.ha+' ha</div></div><div class="lskpi-c"><div class="lskpi-l">Trees</div><div class="lskpi-v" style="font-size:16px">'+((b.trees||0).toLocaleString('en-GB'))+'</div></div><div class="lskpi-c"><div class="lskpi-l">Sold as</div><div class="lskpi-v" style="font-size:15px">'+orBlockUnits(b).toLocaleString('en-GB')+' '+(b.cat==='berry'?'kg':'cartons')+'</div></div><div class="lskpi-c"><div class="lskpi-l">Money / ha</div><div class="lskpi-v '+(m<0?'lsneg':'lspos')+'" style="font-size:16px">'+orR(m)+'</div>'+((b.cat!=='berry' && !(((ST_FRUIT.pricing[b.id]||{}).price||0)>0))?'<div style="font-size:11px;color:#8A5A10;font-weight:600;margin-top:2px">Packhouse price not set \u2014 add yours on Harvest &amp; Pack</div>':'')+'</div>';
   }
   h+='</div>';
   /* editable inputs — this is where the farmer enters the numbers that drive money/ha */
@@ -72386,6 +72612,12 @@ function orSaveBlock(){
     var _pr=JSON.parse(JSON.stringify(orDefaultPricing(cat)));
     if(cat!=='berry' && b.cartonKg>0 && b.cartonKg!==1000){ var _k=b.cartonKg/1000;
       _pr.price=Math.round(_pr.price*_k*100)/100; _pr.pack=Math.round(_pr.pack*_k*100)/100; _pr.ship=Math.round(_pr.ship*_k*100)/100; }
+    /* -386 (owner, 28 Sep, option A): top fruit starts with NO packhouse price - there is no published
+       UK grower return to default to, and the old £640/t sat at half the £1,330/t cost of production
+       (British Apples & Pears, 2024) - so the block says "price not set" and the forecast leaves the
+       packhouse fruit out until the farmer enters theirs. Juice / cider-grade fruit at £120/t, the
+       going rate from the large cider makers (the old £545/t was a dessert-fruit figure). */
+    if(cat!=='berry'){ _pr.price=0; _pr.local={price:120, comm:0, trans:0, other:0}; }
     ST_FRUIT.pricing[id]=_pr;
   }
   if(style==='veg'){ ST_FRUIT.pricing[id]={price:3650,comm:7.5,pack:250,ship:400,levy:0,levyName:'',others:[{label:'Other costs',amt:0}]}; }
@@ -74861,6 +75093,8 @@ function _lsRegCertsCard(){
 #kpi-trail .fx{margin-left:auto;font-size:11px;font-weight:800;color:#8a6516;background:#fff;border:1px solid #eed3a6;border-radius:20px;padding:4px 9px;cursor:pointer}
 .kpi-tap{cursor:pointer;position:relative}
 .kpi-i{position:absolute;top:8px;right:9px;width:15px;height:15px;border-radius:50%;border:1.3px solid var(--br);color:var(--t4);font-size:11px;font-weight:800;display:grid;place-items:center}
+.ib-info{display:inline-grid;place-items:center;width:18px;height:18px;margin-left:8px;vertical-align:middle;border-radius:50%;border:1.3px solid rgba(255,255,255,.55);background:transparent;color:#fff;opacity:.85;font-size:11px;font-weight:800;line-height:1;padding:0;cursor:pointer}
+.ib-info:hover,.ib-info:focus-visible{opacity:1;background:rgba(255,255,255,.18);outline:none}
 </style>
 <div class="kdt-modal" id="kpi-modal" onclick="if(event.target===this)kpiClose()"><div class="kdt-card" id="kpi-card"></div></div>
 <div id="kpi-trail"></div>
