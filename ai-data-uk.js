@@ -411,6 +411,11 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
      Employment Allowance running total need to survive a reload from the cloud. */
   let CAN_PR_LINES     = false;   /* pay_runs.lines/paye/employer_ni/ea_used/employer_pension */
   let CAN_WKR_P45      = false;   /* workers.p45_year/p45_pay/p45_tax */
+  /* -391 (B5-C17): worker_settings.contract_extra (text, in the schema since the workers
+     tables were made, never written). It now carries each worker's contract rates for
+     Sunday, bank holiday and overtime hours, and the contract builder's switches, as JSON.
+     Probed like every late column, so a project without it still saves the rest. */
+  let CAN_WKS_EXTRA    = false;
   /* ---- what this database actually has, asked once ------------------------
      Ported from SA -438, same reasoning. Every late-added column is gated on a
      CAN_* flag, and each flag cost its own round trip in series on every
@@ -476,7 +481,7 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     ['orchard_harvest','removed_at'], ['livestock_treatments','removed_at'],
     ['crop_inputs','bbch'], ['orchard_sprays','bbch'], ['crop_lands','field_ref'], ['orchard_blocks','field_ref'],
     ['crop_inputs','situation'], ['orchard_sprays','situation'],
-    ['workers','tax_code'], ['pay_runs','lines'], ['workers','p45_pay']
+    ['workers','tax_code'], ['pay_runs','lines'], ['workers','p45_pay'], ['worker_settings','contract_extra']
   ];
 
   async function probeCaps(farmId){
@@ -541,6 +546,7 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     CAN_WKR_PAY       = keep(CAN_WKR_PAY,       'workers','tax_code');
     CAN_PR_LINES      = keep(CAN_PR_LINES,      'pay_runs','lines');
     CAN_WKR_P45       = keep(CAN_WKR_P45,       'workers','p45_pay');
+    CAN_WKS_EXTRA     = keep(CAN_WKS_EXTRA,     'worker_settings','contract_extra');
   }
   probeCaps.reset = function(){ _colCache = Object.create(null); _colRpcDead = false; };
   probeCaps.seen  = function(){ return _colCache; };
@@ -2618,14 +2624,23 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     if(r.adv_owing!=null||r.adv_per_pay!=null||r.adv_reason||r.adv_consent!=null){ w.adv={owing:Number(r.adv_owing)||0,perPay:Number(r.adv_per_pay)||0,reason:r.adv_reason||'',consent:!!r.adv_consent}; } else { w.adv=null; }
     if(r.fund_on!=null||r.fund_balance!=null||r.fund_per_pay!=null){ w.fund={on:!!r.fund_on,where:r.fund_where||'hold',scheme:r.fund_scheme||'',freq:r.fund_freq||'month',perPay:Number(r.fund_per_pay)||0,balance:Number(r.fund_balance)||0,consent:!!r.fund_consent}; } else { w.fund=null; }
     return w; }
-  function wkSettToDb(stw, fid){ var ct=stw.contractTemplate||{}; return { farm_id:fid,
+  function wkSettToDb(stw, fid){ var ct=stw.contractTemplate||{}; var o={ farm_id:fid,
     nmw_rate:(stw.nmwRate!=null)?Number(stw.nmwRate):null,
     hours_week:(stw.hoursWeek!=null)?parseInt(stw.hoursWeek,10):null,
     tax_threshold:(stw.taxThreshold!=null)?parseInt(stw.taxThreshold,10):null,
     levy_registered:!!(stw.compliance&&stw.compliance.levyRegistered),
     contract_brk:ct.brk||null, contract_days:ct.days||null, contract_payday:ct.payday||null,
-    contract_method:ct.method||null, contract_prob:ct.prob||null }; }   // contract_extra deferred (object map)
+    contract_method:ct.method||null, contract_prob:ct.prob||null };
+    /* -391: {rates:{workerId:{sun,ph,ot}}, extra:{...builder switches}} */
+    if(CAN_WKS_EXTRA) o.contract_extra=JSON.stringify({ rates:(stw.contractRates&&typeof stw.contractRates==='object')?stw.contractRates:{}, extra:(ct.extra&&typeof ct.extra==='object')?ct.extra:null });
+    return o; }
   function wkSettApply(stw, r){ if(!r) return;
+    if(r.contract_extra){
+      try{ var cx=(typeof r.contract_extra==='string')?JSON.parse(r.contract_extra):r.contract_extra;
+        if(cx && cx.rates && typeof cx.rates==='object') stw.contractRates=cx.rates;
+        if(cx && cx.extra && typeof cx.extra==='object'){ stw.contractTemplate=stw.contractTemplate||{}; stw.contractTemplate.extra=cx.extra; }
+      }catch(e){}
+    }
     if(r.nmw_rate!=null) stw.nmwRate=Number(r.nmw_rate);
     if(r.hours_week!=null) stw.hoursWeek=Number(r.hours_week);
     if(r.tax_threshold!=null) stw.taxThreshold=Number(r.tax_threshold);
@@ -2700,7 +2715,7 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     async saveAll(stw){
       if(!stw) return;
       const fid=farm.active(); if(!fid) return;
-      const snap=JSON.stringify({ w:stw.workers, s:[stw.nmwRate,stw.hoursWeek,stw.taxThreshold,(stw.compliance&&stw.compliance.levyRegistered),stw.contractTemplate], p:stw.paye, b:stw.bonus, e:stw.extra, sd:stw.seasonal, r:stw.payRuns });
+      const snap=JSON.stringify({ w:stw.workers, s:[stw.nmwRate,stw.hoursWeek,stw.taxThreshold,(stw.compliance&&stw.compliance.levyRegistered),stw.contractTemplate,stw.contractRates], p:stw.paye, b:stw.bonus, e:stw.extra, sd:stw.seasonal, r:stw.payRuns });
       if(snap===_wkSnap) return;
       { const e=(await client().from('worker_settings').upsert(wkSettToDb(stw,fid),{onConflict:'farm_id'})).error; if(e) throw e; }
       var ws=(stw.workers||[]);
@@ -2870,6 +2885,9 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
        class (next year's opening), herd basis elections by class and an accountant's value per
        class. Farm-level and not queried relationally, so it rides in prefs like the stock count. */
     if(prefs.ls && typeof prefs.ls==='object') p.lsYear = prefs.ls;
+    /* -391 (D6): the separate marketing opt-in {optIn, at, version}. Farm-level and never
+       queried, so it rides in prefs - no new column. */
+    if(prefs.marketing && typeof prefs.marketing==='object') p.marketingOptIn = prefs.marketing;
     return p;
   }
   function _profPrefsNext(prev, st){
@@ -2879,6 +2897,7 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     if(st && (st.fyYearEnd==='31mar' || st.fyYearEnd==='5apr')){ next.yearEnd = st.fyYearEnd; has=true; }
     if(st && typeof st.cashBasis==='boolean'){ next.cashBasis = st.cashBasis; has=true; }
     if(st && st.lsYear && typeof st.lsYear==='object'){ next.ls = st.lsYear; has=true; }   /* -388 */
+    if(st && st.marketingOptIn && typeof st.marketingOptIn==='object'){ next.marketing = st.marketingOptIn; has=true; }   /* -391 */
     return has ? next : null;
   }
 
@@ -2937,6 +2956,17 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
         _profPrefsApply(_farmPrefs, p);
       }
     }catch(e){}
+    /* -391 (D6): the accepted notice version was written to the farm row and never read
+       back, so a second device (or a cleared cache) showed "not accepted" and would be
+       asked again for what was already agreed. Its own request, behind the column probe. */
+    if(CAN_FARM_CONSENT){
+      try{
+        const rc=await client().from('farms').select('consent_version,consent_accepted_at').eq('id',farmId).single();
+        if(!rc.error && rc.data && rc.data.consent_version)
+          p.consent={ policyVersion:String(rc.data.consent_version), acceptedAt:rc.data.consent_accepted_at||null };
+      }catch(e){}
+    }
+    global.__AI_PROFILE_LOADED = true;   /* -391: the consent check waits for this */
     return p;
   };
   var _farmPrefs=null;
