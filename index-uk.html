@@ -33,7 +33,7 @@
 <script defer src="vendor/chart.umd.js"></script>
 <!-- AgriInsights backend: Supabase client + data service (load order matters) -->
 <script src="vendor/supabase.js"></script>
-<script src="ai-data-uk.js?v=uk128"></script>
+<script src="ai-data-uk.js?v=uk129"></script>
 <script src="ai-auth-uk.js?v=uk110"></script>
 <link rel="stylesheet" href="fonts.css"/>
 <style>
@@ -4599,6 +4599,7 @@ details.ls-taglist>summary .ls-tag-add{font-size:11px;font-weight:800;color:var(
 .rc-sub{font-size:13px;color:var(--t3);margin:4px 0 14px}
 .rc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px 16px;margin-bottom:16px}
 .rc-k{font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--t4)}
+.rc-report{border:1px solid var(--gp);background:#fff;border-radius:10px;padding:11px 13px;margin:12px 0 14px}.rc-report .rc-v{font-size:15px;font-weight:800;color:var(--gd);margin:2px 0 3px}.rc-rhow{font-size:12.5px;color:var(--t2);line-height:1.5}
 .rc-v{font-size:13px;font-weight:700;color:var(--t1);margin-top:2px}
 .rc-acts{display:flex;gap:9px;flex-wrap:wrap;align-items:center}
 .rc-btn{background:#fff;border:1.5px solid var(--br);border-radius:var(--rs);padding:9px 15px;font-size:13px;font-weight:600;color:var(--t2);cursor:pointer}
@@ -4623,7 +4624,7 @@ details.ls-taglist>summary .ls-tag-add{font-size:11px;font-weight:800;color:var(
 .rc-t-no{font-weight:800;letter-spacing:.2px;white-space:nowrap}
 .rc-t-sup{color:var(--t4);text-decoration:line-through}
 .rc-t-act{white-space:nowrap;text-align:right}
-.ls-mvf{margin-bottom:12px}.ls-mvf label{font-size:11.5px;font-weight:700;color:var(--t3);display:block;margin-bottom:4px}
+.ls-mvf{margin-bottom:12px}.ls-mvf label{font-size:11.5px;font-weight:700;color:var(--t3);display:block;margin-bottom:4px}.ls-mv-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}.ls-mv-2 .ls-mvf{min-width:0}
 .ls-mvf select,.ls-mvf input{width:100%;border:1.5px solid var(--br);border-radius:9px;padding:10px 11px;font-family:inherit;font-size:13px;background-color:#fff}
 .ls-mv-reasons{display:flex;gap:6px;flex-wrap:wrap}
 .ls-mv-reason{border:1.5px solid var(--br);border-radius:20px;background:#fff;font-size:11.5px;font-weight:700;color:var(--t2);padding:7px 13px;cursor:pointer}
@@ -21952,6 +21953,8 @@ function _dzClear(zoneId, previewId) {
 
 function saveSale() {
   if (!validateSaleForm()) return;
+  /* -388 B3-01: animals leaving a herd split by class come out of a named class. */
+  try{ if(LS_LEAVE && LS_LEAVE.on && LS_LEAVE.herdId!=null && !LS_LEAVE.cls && !(LS_LEAVE.animalIds||[]).length){ var _lh=lsHerdById(LS_LEAVE.herdId); if(_lh && lsHasClasses(_lh)){ toast('Pick which class the animals came out of \u2014 the class counts have to add up to the herd.','error'); return; } } }catch(e){}
   /* Snapshot the "did these animals leave" answer synchronously. saveSale's body runs in a
      setTimeout, and re-entering the income page during that window resets LS_LEAVE — so
      reading the global inside the timeout loses the farmer's picks. */
@@ -25753,7 +25756,7 @@ function ukStockDerived(fy){
     if(L && L.T && L.T.closeV > 0){
       out.livestock = Math.round(L.T.closeV);
       out.qty.livestock = (L.T.close || 0) + ' head';
-      out.why.livestock = 'Already valued at deemed cost \u2014 cattle 60%, sheep and pigs 75%';
+      out.why.livestock = 'From the livestock statement \u2014 home-bred at deemed cost, bought-in at what you paid';
     }
   }catch(e){}
   try{
@@ -30464,8 +30467,8 @@ var ST_LS = {
   ],
   moves: [
     {id:'m1',herd:1,reason:'born',qty:3,date:'2024-05-18',note:'3 calves',money:0},
-    {id:'m2',herd:1,reason:'sold',qty:4,date:'2024-05-14',note:'Sedgemoor Auction',money:5800},
-    {id:'m3',herd:1,reason:'died',qty:1,date:'2024-05-09',note:'Illness',money:0},
+    {id:'m2',herd:1,reason:'sold',cls:'cows',qty:4,date:'2024-05-14',note:'Sedgemoor Auction',money:5800},
+    {id:'m3',herd:1,reason:'died',cls:'cows',qty:1,date:'2024-05-09',note:'Illness',money:0},
     /* R37 200 for six cull ewes is R6 200 a head — the weaner-calf price from m2
        above, copied onto sheep. The herd's own plan sells cull ewes at R1 850,
        so the tracker read the flock as 235% up on price. R2 100 is a realistic
@@ -30473,10 +30476,10 @@ var ST_LS = {
        looks like. */
     {id:'m4',herd:2,reason:'sold',qty:6,date:'2024-05-12',note:'Harrison & Hetherington auction',money:768},
     {id:'m5',herd:3,reason:'born',qty:4,date:'2024-05-20',note:'4 kids',money:0},
-    {id:'m6',herd:1,reason:'bought',qty:4,date:'2024-04-22',note:'Replacement heifers',money:6400},
-    {id:'m7',herd:3,reason:'slaughter',qty:2,date:'2024-04-15',note:'Home & staff rations',money:0},
-    {id:'m8',herd:5,reason:'sold',qty:6,date:'2024-05-20',note:'Store steers — finishing unit',money:0,txnRef:'seed-steers'},
-    {id:'m9',herd:3,reason:'sold',qty:3,date:'2024-04-11',note:'Dairy goats — dealer at auction',money:0,txnRef:'seed-goats'}
+    {id:'m6',herd:1,reason:'bought',cls:'heifers',qty:4,date:'2024-04-22',note:'Replacement heifers',money:6400},
+    {id:'m7',herd:3,reason:'slaughter',cls:'kids',qty:2,date:'2024-04-15',note:'Home & staff rations',money:0},
+    {id:'m8',herd:5,reason:'sold',cls:'steers',qty:6,date:'2024-05-20',note:'Store steers — finishing unit',money:0,txnRef:'seed-steers'},
+    {id:'m9',herd:3,reason:'sold',cls:'does',qty:3,date:'2024-04-11',note:'Dairy goats — dealer at auction',money:0,txnRef:'seed-goats'}
   ],
   /* UK veterinary medicine records. Product names, active ingredients, GB
      authorisation numbers and withdrawal periods are the real figures from the VMD
@@ -30580,7 +30583,7 @@ function lsTab(tab, sub) {
   if(tab==='camps')    return lsTab('herd','overview');
   if(tab==='insights') return lsTab('herd','productivity');
   if(tab==='register') return lsTab('herd','records');
-  var labels = {herd:'Your herd \u2014 where they are, how they\u2019re doing & the stock register',breeding:'Breeding & calving \u2014 the number that pays the bills',health:'Treatments & health \u2014 cost and compliance in one place',plan:'Plan the season ahead \u2014 keep, sell &amp; cash',add:'Add livestock to your herd'};
+  var labels = {herd:'Your herd \u2014 where they are, how they\u2019re doing & the stock register',breeding:'Breeding & calving \u2014 the number that pays the bills',health:'Treatments & health \u2014 cost and compliance in one place',plan:'Plan the season ahead \u2014 keep, sell & cash',add:'Add livestock to your herd'};
   // capture where we're coming from (for the Add view's return flow) before the chips/views reset
   var _lsPrevTab=null, _lsWasAdd=false;
   try{
@@ -31116,7 +31119,8 @@ function _lsCampDonut(groups){
   var acc=0, stops=[];
   order.forEach(function(k){ var pct=agg[k]/tot*100; stops.push(meta[k].col+' '+acc.toFixed(2)+'% '+(acc+pct).toFixed(2)+'%'); acc+=pct; });
   var donut='<div class="ls-donut" style="background:conic-gradient('+stops.join(',')+')"></div>';
-  var leg=order.slice().sort(function(a,b){return agg[b]-agg[a];}).slice(0,4).map(function(k){ return '<span><i style="background:'+meta[k].col+'"></i>'+agg[k]+' '+esc(String(meta[k].label).toLowerCase())+'</span>'; }).join('');
+  /* -388 B3-01: every class, the bull included - the chips have to add up to the field's head count. */
+  var leg=order.slice().sort(function(a,b){return agg[b]-agg[a];}).map(function(k){ return '<span><i style="background:'+meta[k].col+'"></i>'+agg[k]+' '+esc(String(meta[k].label).toLowerCase())+'</span>'; }).join('');
   return '<div class="ls-camp-drow">'+donut+'<div class="ls-dlgd">'+leg+'</div>'+_lsCampFMY(groups)+'</div>';
 }
 // "Who's in this field" — aggregated class breakdown, 2 per row.
@@ -31402,7 +31406,7 @@ function lsRecGo(reason){
 }
 // Movement-modal helpers: class chip grid + exact-animal picker.
 function lsMvSetCls(k, el){
-  var inp=document.getElementById('ls-mv-cls'); if(inp) inp.value=k;
+  var inp=document.getElementById('ls-mv-cls'); if(inp) inp.value=k; LS_MV_STATE.cls=k;
   document.querySelectorAll('#ls-mv-body .mvc').forEach(function(b){ b.classList.remove('sel'); });
   if(el) el.classList.add('sel');
   LS_MV_STATE.animalIds=[]; lsMvTagsRender(); lsMovePrev();
@@ -31470,9 +31474,34 @@ function lsMvTagTog(id){
   }
   lsMvTagsRender(); lsMovePrev();
 }
+/* -388 B3-U5: supplying an animal for slaughter while a MEAT withdrawal runs is an offence (VMR
+   2013) - that is refused, not asked. A whole-group treatment holds every animal in the group;
+   a tagged one holds the ticked animals it names. */
+function _lsFoodHold(h, ids){
+  if(!h) return '';
+  var today=_ukDateStr(_brToday()), until=function(t){ var d=new Date(String(t.date).slice(0,10)+'T00:00:00'); d.setDate(d.getDate()+(+t.meat||0)); return _ukDateStr(d); };
+  var tr=lsHerdTreatments(h.id).filter(function(t){ return (+t.meat||0)>0 && t.date && until(t)>today; });
+  var whole=tr.filter(function(t){ return t.target!=='tags'; }).sort(function(a,b){ return until(a)<until(b)?1:-1; });
+  if(whole.length) return lsHerdName(h)+' is under a meat withdrawal until '+lsFmtDate(new Date(until(whole[0])+'T00:00:00'))+' \u2014 no animal from it can go for slaughter for food before then.';
+  var tags={}; lsHerdAnimals(h.id).forEach(function(a){ if((ids||[]).indexOf(a.id)>=0) tags[a.tag]=1; });
+  var hit=tr.filter(function(t){ return t.target==='tags' && (t.tags||[]).some(function(g){ return tags[g]; }); }).sort(function(a,b){ return until(a)<until(b)?1:-1; });
+  if(hit.length) return 'A ticked animal is under a meat withdrawal until '+lsFmtDate(new Date(until(hit[0])+'T00:00:00'))+' \u2014 it cannot go for slaughter for food before then.';
+  return '';
+}
 // Finish path: pre-selected animals retire from the register, hold-warning first.
-function _lsMvFinish(opts){
+function _lsMvFinish(opts, _gated){
   var ids=(LS_MV_STATE.animalIds||[]).slice();
+  if(!_gated){
+    var _gh=(ST_LS.herd||[]).filter(function(x){return x.id===LS_MV_STATE.herdId;})[0];
+    var _forFood=(LS_MV_STATE.reason==='slaughter') || (LS_MV_STATE.reason==='sold' && !!opts.leaving && !!LS_MV_STATE.forSlaughter);
+    if(_forFood){ var _fh=_lsFoodHold(_gh, ids); if(_fh){ toast(_fh,'error'); return; } }
+    /* The register's own door ran the standstill and TB pre-movement checks before it wrote
+       anything; it now opens this form, so the checks come with it. */
+    if(LS_MV_STATE.fromRegister && opts.leaving && LS_MV_STATE.reason==='sold' && typeof ukMovementCheck==='function' && _gh){
+      var _chk=ukMovementCheck({dir:'off', date:opts.date, species:(typeof ukSpeciesOf==='function'?ukSpeciesOf(_gh.type):_gh.type), qty:opts.qty, toSlaughter:_forFood, otherCph:'-'});
+      if(!_chk.ok){ toast('This movement cannot go ahead. '+_chk.blockers.map(function(b){ return b.msg; }).join(' '),'error'); return; }
+    }
+  }
   if(ids.length && LS_MV_STATE.reason==='promote'){
     opts.qty=Math.max(parseInt(opts.qty,10)||0, ids.length);   // names never shrink the count
     (ST_LS.animals||[]).forEach(function(a){ if(ids.indexOf(a.id)>=0) a.cls=opts.toCls; });
@@ -31485,7 +31514,8 @@ function _lsMvFinish(opts){
     opts.qty=Math.max(parseInt(opts.qty,10)||0, ids.length);
     var h=(ST_LS.herd||[]).filter(function(x){return x.id===LS_MV_STATE.herdId;})[0];
     var held=lsHerdAnimals(h.id).filter(function(a){ return ids.indexOf(a.id)>=0 && lsAnimalHoldUntil(a); });
-    var go=function(){ _lsRemApply(ids); _lsMoveCommit(opts); };
+    var _parts=_lsMvClassParts(h, ids, opts);   /* -388 B3-01: the ticked animals' own classes */
+    var go=function(){ _lsRemApply(ids); _lsMoveCommitParts(opts, _parts); };
     if(held.length && LS_MV_STATE.reason==='sold' && typeof appConfirm==='function'){
       appConfirm(held.length+' of the picked animals '+(held.length===1?'is':'are')+' still under a medicine withdrawal — not safe to sell yet. Sell anyway?').then(function(ok){ if(ok) go(); });
       return;
@@ -31848,7 +31878,7 @@ function _lsSyncHerd(h){
   h.track=true;
 }
 function _lsRecInline(hid){
-  var items=[['sold','💰','Sold','posts income to Money Flow'],['born','🐣','Born','lands in the youngest class'],['bought','➕','Bought',''],['promote','⬆️','Promoted','e.g. calves → heifers'],['died','📉','Died / home use',''],['stolen','🚨','Stolen / missing','with SAPS reference']];
+  var items=[['sold','💰','Sold','posts income to Money Flow'],['born','🐣','Born','lands in the youngest class'],['bought','➕','Bought',''],['promote','⬆️','Promoted','e.g. calves → heifers'],['died','📉','Died / home use',''],['stolen','🚨','Stolen / missing','with the police crime reference']];
   var id='lsrec-'+hid;
   var menu=items.map(function(it){ return '<div class="ls-rec-item'+(it[0]==='stolen'||it[0]==='died'?' lost':'')+'" onclick="lsRecPick('+hid+',\''+it[0]+'\')"><span class="ic">'+it[1]+'</span><div>'+it[2]+(it[3]?'<small>'+it[3]+'</small>':'')+'</div></div>'; }).join('');
   return '<div class="ls-rec" id="'+id+'"><button class="ls-recbtn2" onclick="event.stopPropagation();lsRecToggle(\''+id+'\')">↕ Record a movement</button><div class="ls-rec-menu">'+menu+'</div></div>';
@@ -31996,7 +32026,7 @@ function lsMoveCampSave(){
   var h=ST_LS.herd.filter(function(x){return x.id===LS_MVC.herdId;})[0];
   var dest=$('ls-mvc-dest'); if(!h||!dest) return;
   var c=lsCampById(dest.value); if(!c) return;
-  h.campId=c.id; h.field=c.name;
+  h.campId=c.id; h.fieldId=c.id; h.field=c.name;   /* -388: field_id syncs, so the move reaches the server and the phone */
   try{ saveState&&saveState(); }catch(e){}
   try{ if(typeof dataChanged==='function') dataChanged('livestock'); }catch(e){}
   lsMoveCampClose();
@@ -33319,7 +33349,7 @@ function _lsYoungValue(b,act){
   return n>0?Math.round(tot/n):0;
 }
 // prod-species: dairy cattle treated as their own group (own calving row, no bull-ratio row)
-function _lsProdBase(h){ return (typeof _lsIsDairy==='function'&&_lsIsDairy(h))?'Dairy':animalBase(h.type); }
+function _lsProdBase(h){ return (typeof _lsIsDairy==='function'&&_lsIsDairy(h)&&animalBase(h.type)==='Cattle')?'Dairy':animalBase(h.type); }   /* -388: dairy GOATS are goats */
 function _lsProdBreedingFemales(key,act){ var n=0,known=false; (act||[]).forEach(function(h){ if(_lsProdBase(h)!==key||!lsHasClasses(h)) return; var c=_lsClassObj(h,lsBreedingClass(h.type)); if(c){ n+=c.n; known=true; } }); return {n:n,known:known}; }
 function _lsProdAgg(act){ var agg={}; (act||[]).forEach(function(h){ if(!lsHasClasses(h)) return; var b=_lsProdBase(h); if(!agg[b]) agg[b]={sire:0,breedF:0,young:0,repl:0,base:b}; var sk=lsSireClass(h.type),bk=lsBreedingClass(h.type),yk=lsYoungClass(h.type); (h.classes||[]).forEach(function(c){ if(c.k===sk)agg[b].sire+=c.n; else if(c.k===bk)agg[b].breedF+=c.n; else if(c.k===yk)agg[b].young+=c.n; if(c.k==='heifers')agg[b].repl+=c.n; }); }); return agg; }
 var _LS_BIRTHCFG={
@@ -33352,19 +33382,25 @@ function _lsProdMetrics(act){
     var bf=_lsProdBreedingFemales(b,act); if(!bf.known||bf.n<=0) return; // covered by split row
     var hIds=act.filter(function(h){return _lsProdBase(h)===b;}).map(function(h){return h.id;});
     var births=lsMovesThisFy(function(m){return m.reason==='born' && hIds.indexOf(m.herd)>=0;}).reduce(function(s,m){return s+m.qty;},0);
-    var _cb=lsCalvingFromBreedings(hIds);   /* U68: the breeding seasons first */
-    if(_cb){ births=_cb.born; bf={n:_cb.fem, known:true}; }
+    /* -388 B3-03: the Breeding page's figure for this species - its last complete season, or the
+       one running now "so far". Cattle show WEANING (weaned / cows put to the bull), the others
+       lambing/kidding/calving (born alive / females put to the male). Only a species with no
+       breeding season falls back to this year's births over today's females. */
+    var _kp=brSpeciesKPI(b==='Dairy'?'Cattle':b, hIds), _useW=(b==='Cattle'), _src=null, _brPartial=null, _pctFixed=null;
+    if(_kp){ [_kp.head,_kp.cur].forEach(function(g){ if(_src||!g) return; var v=_useW?g.weaning:g.calving; if(v!=null){ _src=g; _pctFixed=v; } }); }
+    if(_src){ births=_useW?_src.weaned:_src.alive; bf={n:_src.fem, known:true}; _brPartial=(_src===_kp.cur); }
     if(births<=0){ season.push({key:'wean-'+b, icon:cfg.ic, label:cfg.label, fx:cfg.fx, status:'locked', value:'—', valSub:'no '+cfg.unit+' logged', chip:{cls:'flat',text:'locked'},
       why:'Log '+cfg.unit+' born against your '+bf.n+' '+cfg.fem+' and this fills in.', actions:[{label:'Record a birth →',pri:true,fn:"lsMoveOpen('','born')"}] }); return; }
-    var rate=Math.round(births/bf.n*100), t=lsBench(cfg.benchKey), green=rate>=t, dataErr=rate>250;
+    var _part=(_brPartial!=null)?_brPartial:partial;
+    var rate=(_pctFixed!=null)?_pctFixed:Math.round(births/bf.n*100), t=lsBench(cfg.benchKey), green=rate>=t, dataErr=rate>250;
     var yv=_lsYoungValue(b,act);
     var gapUnits=green?0:Math.round((t-rate)/100*bf.n);
     var rand=(!green && !dataErr && yv>0)?gapUnits*yv:null;
     var status=dataErr?'neutral':(green?'green':'amber');
     var m={key:'wean-'+b, icon:cfg.ic, label:cfg.label, fx:cfg.fx, status:status,
-      value:(partial?'~':'')+rate+'%', valSub:dataErr?'check records':(partial?'so far · target '+t+'%':'target '+t+'%'),
+      value:(_part?'~':'')+rate+'%', valSub:dataErr?'check records':(_part?'so far · target '+t+'%':'target '+t+'%'),
       fillPct:_clamp(rate,3,100), targetPct:_clamp(t,3,100), rand:rand,
-      sum:births+' '+cfg.unit+' ÷ '+bf.n+' '+cfg.fem+' = '+rate+'%'+(partial?' so far':''),
+      sum:births+' '+(_useW&&_src?(cfg.unit+' weaned'):cfg.unit)+' ÷ '+bf.n+' '+cfg.fem+(_src?' put to the '+(_kp.term.sire):'')+' = '+rate+'%'+(_src?(' · '+_src.season):'')+(_part?' so far':''),
       col:dataErr?'#9DA199':(green?'#40916C':'#BA7517') };
     if(dataErr){ m.why='More '+cfg.unit+' than '+cfg.fem+' — likely a miscount or a missing class. Worth a quick check.'; m.chip={cls:'neu',text:'?'}; m.actions=[{label:'Review records →',pri:true,fn:"lsTab('records')"}]; }
     else if(green){ m.why='Strong — above your '+t+'% target. Nothing to do.'; m.chip={cls:'ok',text:'✓ On target'}; }
@@ -34085,7 +34121,7 @@ function lsMoveOpen(herdId, presetReason){
 function lsMoveClose(){ document.getElementById('ls-mv-bg').classList.remove('on'); }
 document.addEventListener('click', function(e){ if(!e.target.closest||!e.target.closest('.ls-rec')) document.querySelectorAll('.ls-rec.open').forEach(function(r){r.classList.remove('open');}); });
 function lsMoveSetHerd(id){ LS_MV_STATE.herdId=parseInt(id,10); LS_MV_STATE.cls=''; LS_MV_STATE.toCls=''; lsMoveRender(); }
-function lsMoveSetReason(r){ LS_MV_STATE.reason=r; lsMoveRender(); }
+function lsMoveSetReason(r){ LS_MV_STATE.reason=r; LS_MV_STATE.cls=''; lsMoveRender(); }
 function lsMoveRender(){
   var body=document.getElementById('ls-mv-body'); if(!body) return;
   var _ttl=document.querySelector('#ls-mv-bg .ls-mv-h'); if(_ttl) _ttl.textContent=(typeof LS_MV_TITLES!=='undefined'&&LS_MV_TITLES[LS_MV_STATE.reason])||'Record a movement';
@@ -34106,40 +34142,54 @@ function lsMoveRender(){
       var _col=_lsClassColor(h.type);
       var _lockYoung=(LS_MV_STATE.reason==='born');
       var _yk=lsYoungClass(h.type);
-      classRow='<div class="ls-mvf"><label>'+(_lockYoung?'Newborns land in the youngest class':'Which class? <span style="font-weight:600;color:var(--t4)">(optional \u2014 blank adjusts the whole group)</span>')+'</label>'+
-        '<input type="hidden" id="ls-mv-cls" value="'+(_lockYoung&&_yk?_yk:'')+'">'+
+      /* -388 B3-01: a herd split by class must say WHICH class every movement touches - there is
+         no "whole group" any more, or the classes stop adding up to the head count. When only
+         one class has animals it is picked for the farmer. */
+      var _split=lsHasClasses(h), _out=_lsMvRemovalReason();
+      var _pre=(_lockYoung&&_yk)?_yk:(LS_MV_STATE.cls||'');
+      if(_split && !_lockYoung && _out && _pre && !(_cnt[_pre]>0)) _pre='';
+      if(_split && !_lockYoung && !_pre && _out){ var _wn=(h.classes||[]).filter(function(cc){ return (cc.n||0)>0; }); if(_wn.length===1) _pre=_wn[0].k; }
+      LS_MV_STATE.cls=_lockYoung?'':_pre;
+      classRow='<div class="ls-mvf"><label>'+(_lockYoung?'Newborns land in the youngest class':(_split?'Which class?':'Which class? <span style="font-weight:600;color:var(--t4)">(optional \u2014 blank adjusts the whole group)</span>'))+'</label>'+
+        '<input type="hidden" id="ls-mv-cls" value="'+_pre+'">'+
         '<div class="mv-grid">'+
-        (_lockYoung?'':'<button type="button" class="mvc sel" onclick="lsMvSetCls(\'\',this)">\u2014 whole group \u2014</button>')+
+        ((_lockYoung||_split)?'':'<button type="button" class="mvc'+(_pre?'':' sel')+'" onclick="lsMvSetCls(\'\',this)">\u2014 whole group \u2014</button>')+
         defs.map(function(d){
-          var lock=_lockYoung&&d.k!==_yk;
-          return '<button type="button" class="mvc'+((_lockYoung&&d.k===_yk)?' sel':'')+'"'+(lock?' disabled':'')+' onclick="lsMvSetCls(\''+d.k+'\',this)"><span class="d" style="background:'+(_col[d.k]||'#B9BEB3')+'"></span>'+d.label+(_cnt[d.k]!=null?' <b>'+_cnt[d.k]+'</b>':'')+'</button>';
+          var lock=(_lockYoung&&d.k!==_yk) || (_split && _out && !(_cnt[d.k]>0));
+          return '<button type="button" class="mvc'+(d.k===_pre?' sel':'')+'"'+(lock?' disabled':'')+' onclick="lsMvSetCls(\''+d.k+'\',this)"><span class="d" style="background:'+(_col[d.k]||'#B9BEB3')+'"></span>'+d.label+(_cnt[d.k]!=null?' <b>'+_cnt[d.k]+'</b>':'')+'</button>';
         }).join('')+'</div></div>';
     }
   }
   var moneyRow=(LS_MV_STATE.reason==='sold')?'<div class="ls-mvf"><label>Money in (£)</label><input type="number" id="ls-mv-money" placeholder="auction / sale total"></div>':'';
-  /* Movement-document particulars. Asked only when
-     stock actually leaves the farm: a camp-to-camp move needs no certificate, and
-     taxing every capture for the sake of the rare one is how a compliance feature
-     stops being used. Defaults on for a sale, because a sale nearly always is one. */
+  /* -388 D6 / B3-U7 (option A): stock crossing the holding boundary goes in the MOVEMENT RECORD
+     (the holding register) with what LIS-1, eAML2 and BCMS ask for - both holdings' CPH, the date,
+     the number, the tag numbers or flock/herd mark, the haulier and the vehicle - and is then
+     reported to the right service. The app no longer issues a document of its own: the legal
+     paper is the official form or the online report. Asked only when stock actually crosses
+     the boundary; on by default for a sale or a purchase, because nearly all of them do. */
   var leaveRow='';
-  if(LS_MV_STATE.reason==='sold'){
-    var _lv=(LS_MV_STATE.leaving!==false);
+  if(LS_MV_STATE.reason==='sold' || LS_MV_STATE.reason==='bought'){
+    var _in=(LS_MV_STATE.reason==='bought'), _lv=(LS_MV_STATE.leaving!==false);
+    var _ownCph=(LS_MV_STATE.ownCph!=null)?LS_MV_STATE.ownCph:((window.ST&&ST.cphNumber)||'');
+    var _mark=(LS_MV_STATE.idMark!=null)?LS_MV_STATE.idMark:'';
+    var _f=function(lbl,id,val,ph,opt){ return '<div class="ls-mvf"><label>'+lbl+(opt?' <span style="font-weight:600;color:var(--t4)">(optional)</span>':'')+'</label><input oninput="lsMvStash()" id="'+id+'" value="'+esc(val||'')+'" placeholder="'+esc(ph||'')+'"></div>'; };
     leaveRow='<div class="ls-mvf"><label style="display:flex;align-items:center;gap:8px;cursor:pointer">'+
         '<input type="checkbox" id="ls-mv-leave"'+(_lv?' checked':'')+' onchange="lsMvLeaveTog(this.checked)" style="width:auto;margin:0;accent-color:var(--gm)">'+
-        '<span>Leaving the farm — needs a movement document</span></label></div>'+
+        '<span>'+(_in?'Arriving on the holding':'Leaving the holding')+' — goes in your movement record</span></label></div>'+
       '<div id="ls-mv-transport" style="display:'+(_lv?'block':'none')+'">'+
-        '<div class="ls-mvf"><label>Place from</label><input oninput="lsMvStash()" id="ls-mv-fromplace" value="'+esc(LS_MV_STATE.fromPlace||ST.farmName||'')+'" placeholder="farm name and address"></div>'+
-        '<div class="ls-mvf"><label>Place to</label><input oninput="lsMvStash()" id="ls-mv-toplace" value="'+esc(LS_MV_STATE.toPlace||'')+'" placeholder="e.g. Sedgemoor Market, Bridgwater"></div>'+
-        '<div class="ls-mvf"><label>Transporter</label><input oninput="lsMvStash()" id="ls-mv-transporter" value="'+esc(LS_MV_STATE.transporter||'')+'" placeholder="who is driving"></div>'+
-        '<div class="ls-mvf"><label>Vehicle registration</label><input oninput="lsMvStash()" id="ls-mv-vehreg" value="'+esc(LS_MV_STATE.vehReg||'')+'" placeholder="e.g. CA 418 992"></div>'+
-        '<div class="ls-mvf"><label>Make &amp; model</label><input oninput="lsMvStash()" id="ls-mv-vehmake" value="'+esc(LS_MV_STATE.vehMake||'')+'" placeholder="e.g. Ifor Williams TA510"></div>'+
+        '<div class="ls-mv-2">'+_f('Your holding CPH','ls-mv-owncph',_ownCph,'12/345/6789')+_f((_in?'Coming from':'Going to')+' — CPH','ls-mv-othercph',LS_MV_STATE.otherCph,'12/345/6789')+'</div>'+
+        _f(_in?'Coming from':'Going to','ls-mv-otherplace',LS_MV_STATE.otherPlace,_in?'the farm or market they came from':'e.g. Sedgemoor Market, Bridgwater')+
+        (_in?'':'<div class="ls-mvf"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="ls-mv-slt"'+(LS_MV_STATE.forSlaughter?' checked':'')+' onchange="LS_MV_STATE.forSlaughter=this.checked" style="width:auto;margin:0;accent-color:var(--gm)"><span>Going for slaughter (abattoir)</span></label></div>')+
+        _f('Tag numbers or flock / herd mark','ls-mv-idmark',_mark,(window.ST&&ST.stockMark)?('the ticked tags, or mark '+ST.stockMark):'the ticked tags, or your flock / herd mark')+
+        '<div class="ls-mv-2">'+_f('Haulier','ls-mv-transporter',LS_MV_STATE.transporter,'who is driving')+_f('Vehicle registration','ls-mv-vehreg',LS_MV_STATE.vehReg,'e.g. WX19 ABC')+'</div>'+
+        _f('Make &amp; model','ls-mv-vehmake',LS_MV_STATE.vehMake,'e.g. Ifor Williams TA510',true)+
       '</div>';
   }
   var qtyRow='<div class="ls-mvf"><label>How many?</label><input type="number" id="ls-mv-qty" value="1" min="1" oninput="lsMovePrev()"></div>';
-  var dateRow='<div class="ls-mvf"><label>Date</label><input type="date" id="ls-mv-date" value="'+new Date().toISOString().slice(0,10)+'"></div>';
+  var dateRow='<div class="ls-mvf"><label>Date</label><input type="date" id="ls-mv-date" value="'+(LS_MV_STATE.date||new Date().toISOString().slice(0,10))+'"></div>';
   var noteRow='';
   if(LS_MV_STATE.reason==='stolen'){
-    noteRow='<div class="ls-mvf"><label>SAPS case / reference <span style="font-weight:600;color:var(--t4)">(for insurance &amp; the stock-theft unit)</span></label><input id="ls-mv-ref" placeholder="e.g. CAS 123/04/2026"></div>';
+    noteRow='<div class="ls-mvf"><label>Police crime reference <span style="font-weight:600;color:var(--t4)">(for your insurer)</span></label><input id="ls-mv-ref" placeholder="the number the police give you"></div>';
   } else if(LS_MV_STATE.reason==='missing'||LS_MV_STATE.reason==='died'){
     noteRow='<div class="ls-mvf"><label>Note <span style="font-weight:600;color:var(--t4)">(optional)</span></label><input id="ls-mv-ref" placeholder="'+(LS_MV_STATE.reason==='died'?'cause, if known':'where / when last seen')+'"></div>';
   }
@@ -34158,13 +34208,13 @@ function lsMovePrev(){
   var clsLbl=cls?lsClassMeta(h.type,cls).label.toLowerCase():'';
   var youngK=lsYoungClass(h.type), youngLbl=youngK?lsClassMeta(h.type,youngK).label.toLowerCase():'young';
   var msg;
-  if(r==='born') msg='<b>Born:</b> +'+q+' '+youngLbl+' \u2192 group '+base+' \u2192 '+(base+q)+' head.'+(lsHasClasses(h)?' This is what fills your '+(animalBase(h.type)==='Cattle'?'weaning':animalBase(h.type)==='Sheep'?'lambing':'kidding')+'-rate card.':'');
+  if(r==='born') msg='<b>Born:</b> +'+q+' '+(q===1?_brTerm(h.type).single:youngLbl)+' \u2192 group '+base+' \u2192 '+(base+q)+' head.'+(lsHasClasses(h)?' This is what fills your '+(animalBase(h.type)==='Cattle'?'weaning':animalBase(h.type)==='Sheep'?'lambing':'kidding')+'-rate card.':'');
   else if(r==='bought') msg='<b>Bought:</b> +'+q+(clsLbl?' '+clsLbl:'')+' \u2192 group '+base+' \u2192 '+(base+q)+' head.';
   else if(r==='sold') msg='<b>Sold:</b> \u2212'+q+(clsLbl?' '+clsLbl:'')+' \u2192 group '+base+' \u2192 '+Math.max(0,base-q)+' head; income posts to Money Flow.';
   else if(r==='died') msg='<b>Died:</b> \u2212'+q+(clsLbl?' '+clsLbl:'')+' \u2192 group '+base+' \u2192 '+Math.max(0,base-q)+' head; feeds the mortality card.';
   else if(r==='slaughter') msg='<b>Home use:</b> \u2212'+q+(clsLbl?' '+clsLbl:'')+' \u2192 group '+base+' \u2192 '+Math.max(0,base-q)+' head.';
   else if(r==='promote') msg='<b>Promote:</b> '+q+' move up a class \u2014 group stays '+base+' head, just re-counted.';
-  else if(r==='stolen') msg='<b>Stolen:</b> \u2212'+q+(clsLbl?' '+clsLbl:'')+' \u2192 group '+base+' \u2192 '+Math.max(0,base-q)+' head. Logged with your case reference for insurance.';
+  else if(r==='stolen') msg='<b>Stolen:</b> \u2212'+q+(clsLbl?' '+clsLbl:'')+' \u2192 group '+base+' \u2192 '+Math.max(0,base-q)+' head. Logged with the police crime reference for your insurer.';
   else if(r==='missing') msg='<b>Missing:</b> \u2212'+q+(clsLbl?' '+clsLbl:'')+' \u2192 group '+base+' \u2192 '+Math.max(0,base-q)+' head. Move it back with a Born/Bought entry if it turns up.';
   p.innerHTML=msg||'';
 }
@@ -34182,7 +34232,18 @@ function lsMvStash(){
   LS_MV_STATE.transporter=_v('ls-mv-transporter');
   LS_MV_STATE.vehReg=_v('ls-mv-vehreg');
   LS_MV_STATE.vehMake=_v('ls-mv-vehmake');
+  if(document.getElementById('ls-mv-owncph')) LS_MV_STATE.ownCph=_v('ls-mv-owncph');
+  LS_MV_STATE.otherCph=_v('ls-mv-othercph'); LS_MV_STATE.otherPlace=_v('ls-mv-otherplace');
+  if(document.getElementById('ls-mv-idmark')) LS_MV_STATE.idMark=_v('ls-mv-idmark');
+  var _d=document.getElementById('ls-mv-date'); if(_d && _d.value) LS_MV_STATE.date=_d.value;
 }
+/* -388 D6: the two holdings travel on the movement as "Name · CPH 12/345/6789" in the place
+   fields the movement already syncs (from_place / to_place) - no new column. */
+function _ukPlaceJoin(name, cph){ name=String(name||'').trim(); cph=String(cph||'').trim(); return cph?((name?name+' \u00b7 ':'')+'CPH '+cph):name; }
+function _ukPlaceCph(str){ var s=String(str||''), m=s.match(/(?:\s*\u00b7\s*)?CPH\s*([0-9]{2}\s*\/\s*[0-9]{3}\s*\/\s*[0-9]{4}|[^\u00b7]+)$/i);
+  if(!m) return {name:s.trim(), cph:''}; return {name:s.slice(0,m.index).trim(), cph:String(m[1]).trim()}; }
+function _ukMoveIdMark(m){ var n=String((m&&m.note)||''), x=n.match(/(?:^|\u00b7\s*)ID\s+([^\u00b7]+)/); return x?x[1].trim():''; }
+function _ukMoveForSlaughter(m){ return /(^|\u00b7\s*)For slaughter\b/.test(String((m&&m.note)||'')); }
 function lsMoveSave(){
   var h=(ST_LS.herd||[]).filter(function(x){return x.id===LS_MV_STATE.herdId;})[0]; if(!h){ return; }
   var q=parseInt((document.getElementById('ls-mv-qty')||{}).value||0,10)||0;
@@ -34191,19 +34252,32 @@ function lsMoveSave(){
   var opts={herdId:h.id,reason:r,qty:q,date:(document.getElementById('ls-mv-date')||{}).value};
   if(r==='promote'){ opts.cls=(document.getElementById('ls-mv-from')||{}).value; opts.toCls=(document.getElementById('ls-mv-to')||{}).value; if(opts.cls===opts.toCls){ toast('Pick two different classes.','error'); return; } }
   else { var clsEl=document.getElementById('ls-mv-cls'); opts.cls=clsEl?clsEl.value:''; if(r==='sold'){ opts.money=parseFloat((document.getElementById('ls-mv-money')||{}).value)||0; } }
+  /* -388 B3-01: a herd split by class must name the class (or tick animals whose classes cover the count). */
+  if(r!=='born' && r!=='promote' && lsHasClasses(h) && !opts.cls){
+    var _ids=LS_MV_STATE.animalIds||[], _an=lsHerdAnimals(h.id).filter(function(a){ return _ids.indexOf(a.id)>=0; });
+    var _covered=_ids.length>0 && _an.length===_ids.length && _an.every(function(a){ return !!a.cls; }) && q<=_ids.length;
+    if(!_covered){ toast('Pick which class '+(r==='bought'?'they go into':'they came out of')+' \u2014 the class counts have to add up to the herd.','error'); return; }
+  }
   var refEl=document.getElementById('ls-mv-ref');
-  if(refEl && refEl.value){ opts.note=(r==='stolen'?'SAPS '+refEl.value:refEl.value); }
+  if(refEl && refEl.value){ opts.note=(r==='stolen'?'Police crime reference '+refEl.value:refEl.value); }
   /* Transport particulars ride along on the move so the certificate can be
      reproduced from the record alone, months later, without the farmer's memory. */
   var leaveEl=document.getElementById('ls-mv-leave');
   if(leaveEl && leaveEl.checked){
     var _v=function(id){ var e=document.getElementById(id); return e?e.value.trim():''; };
+    var _own=_ukPlaceJoin((window.ST&&ST.farmName)||'This holding', _v('ls-mv-owncph')), _oth=_ukPlaceJoin(_v('ls-mv-otherplace'), _v('ls-mv-othercph'));
     opts.leaving=true;
-    opts.fromPlace=_v('ls-mv-fromplace');
-    opts.toPlace=_v('ls-mv-toplace');
+    opts.fromPlace=(r==='bought')?_oth:_own;
+    opts.toPlace=(r==='bought')?_own:_oth;
     opts.transporter=_v('ls-mv-transporter');
     opts.vehReg=_v('ls-mv-vehreg');
     opts.vehMake=_v('ls-mv-vehmake');
+    if(_v('ls-mv-owncph') && window.ST && !ST.cphNumber){ ST.cphNumber=_v('ls-mv-owncph'); }
+    var _idm=_v('ls-mv-idmark');
+    if(!_idm){ var _tg=lsHerdAnimals(h.id).filter(function(a){ return (LS_MV_STATE.animalIds||[]).indexOf(a.id)>=0; }).map(function(a){ return a.tag; }).filter(Boolean);
+      _idm=_tg.length?_tg.join(', '):((window.ST&&ST.stockMark)?('mark '+ST.stockMark):''); }
+    var _nb=[]; if(r==='sold' && LS_MV_STATE.forSlaughter) _nb.push('For slaughter'); if(_idm) _nb.push('ID '+_idm);
+    if(_nb.length) opts.note=(opts.note?opts.note+' \u00b7 ':'')+_nb.join(' \u00b7 ');
   }
   /* One match step instead of two prompts. The plan-dedup confirm used to live here on its
      own; a farmer who had also banked the money through the income form would then get a
@@ -34226,6 +34300,25 @@ function lsMoveSave(){
   _lsMvFinish(opts);
 }
 var LS_LAST_MOVE=null;
+/* -388 B3-01: ticked animals come out of THEIR classes; any head beyond the named ones come out
+   of the class picked on the form. One movement per class, the sale money shared by head. */
+function _lsMvClassParts(h, ids, opts){
+  var q=Math.max(parseInt(opts.qty,10)||0, (ids||[]).length);
+  if(!h || !lsHasClasses(h)) return [{cls:opts.cls||'', qty:q}];
+  var by={}, order=[], add=function(k,n){ if(!(n>0)) return; if(by[k]==null){ by[k]=0; order.push(k); } by[k]+=n; };
+  lsHerdAnimals(h.id).forEach(function(a){ if((ids||[]).indexOf(a.id)>=0) add(a.cls||opts.cls||'', 1); });
+  add(opts.cls||'', q-(ids||[]).length);
+  return order.map(function(k){ return {cls:k, qty:by[k]}; });
+}
+function _lsMoveCommitParts(opts, parts){
+  if(!parts || parts.length<=1){ if(parts && parts[0]){ opts.cls=parts[0].cls; opts.qty=parts[0].qty; } _lsMoveCommit(opts); return; }
+  var total=+opts.money||0, q=parts.reduce(function(s,p){ return s+p.qty; },0), used=0;
+  parts.forEach(function(p,i){
+    var o=Object.assign({}, opts, {cls:p.cls, qty:p.qty});
+    if(i<parts.length-1){ o.money=Math.round(total*p.qty/Math.max(1,q)*100)/100; used+=o.money; delete o.linkTxn; lsRecordMove(o); }
+    else { o.money=Math.round((total-used)*100)/100; _lsMoveCommit(o); }
+  });
+}
 function _lsMoveCommit(opts){
   LS_LAST_MOVE=null;
   lsRecordMove(opts);
@@ -34537,12 +34630,36 @@ function _lsClassObj(h,k){ if(!h.classes) return null; for(var i=0;i<h.classes.l
 function _lsEnsureClass(h,k){ if(!k) return null; h.classes=h.classes||[]; var c=_lsClassObj(h,k); if(!c){ c={k:k,n:0,v:h.sell||0}; h.classes.push(c); } return c; }
 // Single source of truth for a head-count change: keeps h.qty, h.classes and h.ages in lock-step. Used by
 // lsRecordMove AND by markEventDone (plan sale/buy realisation) so no path updates qty without its class/age band.
+/* -388 B3-01: on a herd split by class every head-count change names a class, so the classes
+   always add up to the head count (a sale of 2 "whole group" left 12 head of classes on a
+   10-head herd, and the herd value and the HMRC class table read the classes). The forms now
+   ask; a path with no one to ask (plan realisation, an import) gets the class worked out here:
+   born -> the youngest class; bought -> the breeding class; out -> the only class with animals,
+   else the largest class that is neither the breeding females nor the sires. A removal bigger
+   than its class takes the rest from the other classes, largest first. Returns the class used. */
+function _lsAutoCls(h, reason){
+  if(!h || !lsHasClasses(h)) return '';
+  if(reason==='born') return lsYoungClass(h.type)||'';
+  if(reason==='bought') return lsBreedingClass(h.type)||((h.classes[0]||{}).k)||'';
+  var withN=(h.classes||[]).filter(function(c){ return (c.n||0)>0; });
+  if(withN.length===1) return withN[0].k;
+  var bk=lsBreedingClass(h.type), sk=lsSireClass(h.type);
+  var pool=withN.filter(function(c){ return c.k!==bk && c.k!==sk; }); if(!pool.length) pool=withN;
+  pool=pool.slice().sort(function(a,b){ return (b.n||0)-(a.n||0); });
+  return pool[0]?pool[0].k:'';
+}
 function _lsAdjustHead(h, reason, qty, cls){
-  if(!h) return; qty=Math.max(0,parseInt(qty,10)||0); if(!qty) return;
+  if(!h) return ''; qty=Math.max(0,parseInt(qty,10)||0); if(!qty) return '';
   var inc=(reason==='born'||reason==='bought'), youngK=lsYoungClass(h.type);
   if(reason==='born' && h.classes && youngK) cls=cls||youngK; cls=cls||'';
+  if(!cls && lsHasClasses(h)) cls=_lsAutoCls(h, reason);
   if(inc){ h.qty=(h.qty||0)+qty; if(h.planned&&h.qty>0) h.planned=false; if(cls && h.classes){ _lsEnsureClass(h,cls).n+=qty; } if(h.ages && reason==='born'){ h.ages.young=(h.ages.young||0)+qty; } else if(h.ages && reason==='bought'){ h.ages.prime=(h.ages.prime||0)+qty; } }
-  else { h.qty=Math.max(0,(h.qty||0)-qty); if(cls && h.classes){ var co=_lsClassObj(h,cls); if(co) co.n=Math.max(0,co.n-qty); } if(h.ages){ var band=(cls===youngK)?'young':'prime'; h.ages[band]=Math.max(0,(h.ages[band]||0)-qty); } }
+  else { h.qty=Math.max(0,(h.qty||0)-qty);
+    if(cls && h.classes){ var co=_lsClassObj(h,cls), left=qty;
+      if(co){ var take=Math.min(left, co.n||0); co.n=(co.n||0)-take; left-=take; }
+      if(left>0){ h.classes.slice().sort(function(a,b){ return (b.n||0)-(a.n||0); }).forEach(function(c){ if(left<=0||!(c.n>0)) return; var t=Math.min(left,c.n); c.n-=t; left-=t; }); } }
+    if(h.ages){ var band=(cls===youngK)?'young':'prime'; h.ages[band]=Math.max(0,(h.ages[band]||0)-qty); } }
+  return cls;
 }
 function lsRecordMove(opts){
   var h=ST_LS.herd.filter(function(x){return x.id===opts.herdId;})[0]; if(!h) return null;
@@ -34557,7 +34674,7 @@ function lsRecordMove(opts){
     if(h.ages && from===youngK){ var m2=Math.min(qty,h.ages.young||0); h.ages.young-=m2; h.ages.prime=(h.ages.prime||0)+m2; }
   } else {
     if(reason==='born' && h.classes && youngK) cls=cls||youngK;
-    _lsAdjustHead(h, reason, qty, cls);
+    cls=_lsAdjustHead(h, reason, qty, cls)||cls;
   }
   var uid='m'+Date.now().toString(36)+Math.floor(Math.random()*1e3);
   ST_LS.moves=ST_LS.moves||[];
@@ -34666,9 +34783,11 @@ function lsLeaveRender(entId, qty, unit){
   var defs=(typeof lsClassDefs==='function'?lsClassDefs(h.type):null)||[];
   var clsSel='';
   if(lsHasClasses&&lsHasClasses(h)){
+    /* -388 B3-01: a herd split by class must name the class the animals came out of. */
+    if(!LS_LEAVE.cls){ var _wn=(h.classes||[]).filter(function(c){ return (c.n||0)>0; }); if(_wn.length===1) LS_LEAVE.cls=_wn[0].k; }
     clsSel='<div style="margin-top:9px"><label style="font-size:11px;font-weight:700;color:var(--t3)">Which class?</label>'+
       '<select id="ai-leave-cls" onchange="LS_LEAVE.cls=this.value;lsLeaveRefresh()" style="width:100%;padding:9px 11px;border:1.5px solid var(--br);border-radius:9px;font-size:13px;background:#fff">'+
-      '<option value="">Any / not sure</option>'+
+      '<option value="">Pick a class</option>'+
       (h.classes||[]).map(function(c){
         var lbl=(typeof lsClassMeta==='function'?lsClassMeta(h.type,c.k).label:c.k);
         return '<option value="'+esc(c.k)+'"'+(LS_LEAVE.cls===c.k?' selected':'')+'>'+esc(lbl)+' \u00b7 '+(c.n||0)+' available</option>';
@@ -34853,11 +34972,13 @@ function lsSellFromTxn(o){
   /* Two separate things: the head count always moves, and the named animals additionally
      come off the register. _lsRemApply only deletes animal records — it does NOT touch
      h.qty — so calling it alone would strip the tags and leave the count untouched. */
-  _lsAdjustHead(h,'sold',qty,o.cls||'');
+  /* -388 B3-01: ticked animals come out of their own classes. */
+  var _parts=(ids.length && !o.cls)?_lsMvClassParts(h, ids, {qty:qty, cls:''}):[{cls:o.cls||'', qty:qty}], _usedCls='';
+  _parts.sort(function(a,b){ return b.qty-a.qty; }).forEach(function(p,i){ var u=_lsAdjustHead(h,'sold',p.qty,p.cls); if(i===0) _usedCls=u; });
   if(ids.length) _lsRemApply(ids);
   var uid='m'+Date.now().toString(36)+Math.floor(Math.random()*1e3);
   ST_LS.moves=ST_LS.moves||[];
-  var mv={id:uid, herd:h.id, reason:'sold', cls:o.cls||undefined, qty:qty,
+  var mv={id:uid, herd:h.id, reason:'sold', cls:(o.cls||_usedCls)||undefined, qty:qty,
           date:o.date||new Date().toISOString().slice(0,10), note:o.note||'',
           money:0,                 // the money lives on the transaction, not here
           txnRef:o.txnRef||null,   // ← the link
@@ -35009,7 +35130,7 @@ function _brFemales(b){ if(b.females!=null) return b.females; var h=(ST_LS.herd|
 // current stage index across the 6-step cycle: 0 bull-in,1 bull-out,2 PD,3 pre-calving,4 calving,5 weaning
 function _brStageIdx(b){ var t=_brTodayISO(), ef=_brExpectedFrom(b);
   if(b.weaned>0) return 5;
-  if(b.born>0) return 4;
+  if(brSeasonBorn(b).born>0) return 4;
   if(ef && t>=ef) return 4;
   if(ef && t>=_brAddDays(ef,-56)) return 3;
   if(b.pdDate) return 3;
@@ -35025,35 +35146,89 @@ function _brStatusChip(b){ var i=_brStageIdx(b);
   return {t:'Planned',bg:'var(--br2)',c:'var(--t3)'}; }
 function _brHerdType(b){ var h=(ST_LS.herd||[]).filter(function(x){return x.id===b.herd;})[0]; return h?h.type:'Beef cattle'; }
 
-// ── KPIs, aggregated across all breeding seasons (SA-correct: denominator = females exposed) ──
-/* U68 (step 5, A): ONE calving % - young born over females mated, from the breeding seasons'
-   records, not capped (twins are real); Production reads the same figure for its herds and
-   falls back to births logged as movements only where no season has a born count. */
-function lsCalvingFromBreedings(hIds){
-  var fem=0, born=0;
-  (ST_LS.breedings||[]).forEach(function(b){
-    if(hIds && hIds.map(String).indexOf(String(b.herd))<0) return;
-    if(b.born!=null && b.born>0){ fem+=_brFemales(b); born+=b.born; }
-  });
-  return fem>0 ? {born:born, fem:fem, pct:Math.round(born/fem*100)} : null;
+/* -388 D1 (signed off, option A): a season's "born" is the herd's BORN MOVEMENTS dated inside
+   its calving window - first expected calving less 21 days to last expected calving plus 21 -
+   less the stillborn (a born movement matched by a "died" movement noted stillborn). The
+   season counter was only ever filled from its own card, so a calving logged on a tagged cow,
+   from the herd, or on the phone never reached it. A season with no born movement in its
+   window keeps the number typed on it (old records). */
+var BR_WIN_DAYS=21;
+function _brWindow(b){ var ef=_brExpectedFrom(b); if(!ef) return null; var et=_brExpectedTo(b)||ef;
+  return {from:_brAddDays(ef,-BR_WIN_DAYS), to:_brAddDays(et,BR_WIN_DAYS)}; }
+function _lsIsStillMove(m){ return !!m && m.reason==='died' && /\bstillborn\b/i.test(String(m.note||'')); }
+function brSeasonBorn(b){
+  var w=_brWindow(b), total=0, still=0, n=0;
+  if(w && b){ (ST_LS.moves||[]).forEach(function(m){
+    if(!m || String(m.herd)!==String(b.herd)) return;
+    var d=_lsMoveISO(m); if(!d || d<w.from || d>w.to) return;
+    if(m.reason==='born'){ total+=(+m.qty||0); n++; }
+    else if(_lsIsStillMove(m)) still+=(+m.qty||0);
+  }); }
+  if(n>0){ still=Math.min(still,total); return {born:total, still:still, alive:total-still, src:'moves', win:w}; }
+  var a=Math.max(0,+(b&&b.born)||0), s=Math.max(0,+(b&&b.stillborn)||0);
+  return {born:a+s, still:s, alive:a, src:'typed', win:w};
 }
-function brKPIs(){ var brs=(ST_LS.breedings||[]);
-  var fW=0,wean=0,fC=0,born=0,fP=0,inCalf=0,mBorn=0,mLoss=0;
-  brs.forEach(function(b){ var fem=_brFemales(b);
-    if(b.weaned!=null&&b.weaned>0){ fW+=fem; wean+=b.weaned; }
-    // Mortality denominator must include stillbirths (they were part of the calving attempt, not just the live
-    // count) — the old code divided total losses (stillborn + post-birth deaths) by live-born only, inflating the
-    // rate. Numerator was already correct (no overlap between stillborn and post-birth-death counts).
-    if(b.born!=null&&b.born>0){ fC+=fem; born+=b.born; var _delivered=b.born+(b.stillborn||0); if(b.weaned!=null&&b.weaned>0){ mBorn+=_delivered; mLoss+=Math.max(0,(b.stillborn||0)+(b.born-b.weaned)); } else { mBorn+=_delivered; mLoss+=(b.stillborn||0); } }
-    if(b.pdDate&&b.inCalf!=null){ fP+=fem; inCalf+=b.inCalf; }
+function _brAlive(b){ return brSeasonBorn(b).alive; }
+
+/* -388 B3-03: ONE definition, per species and per season (AHDB maternal KPIs): calving,
+   lambing or kidding % = young born alive / females put to the male; weaning % = weaned /
+   females put to the male. Not capped (a 160% lambing is real) and never pooled across
+   species - the hero used to add calves and lambs together. Dairy goats are goats.
+   Headline = the last complete (weaned) season; the season running now is "so far". */
+function _brSpecies(b){ return animalBase(_brHerdType(b))||'Cattle'; }
+function _brSeasonKey(b){ return b.season || (b.start?_brSeasonLabel(b.start):'Season'); }
+function brSeasonGroups(sp, hIds){
+  var g={}, ids=hIds?hIds.map(String):null;
+  (ST_LS.breedings||[]).forEach(function(b){
+    if(!b) return;
+    if(sp && _brSpecies(b)!==sp) return;
+    if(ids && ids.indexOf(String(b.herd))<0) return;
+    var k=_brSeasonKey(b), x=g[k]||(g[k]={season:k, recs:[], start:'', fem:0, alive:0, still:0, weaned:0, fP:0, inCalf:0, anyBorn:false, complete:true});
+    var sb=brSeasonBorn(b), fem=+_brFemales(b)||0;
+    x.recs.push(b); if((b.start||'')>x.start) x.start=b.start||'';
+    x.fem+=fem; x.alive+=sb.alive; x.still+=sb.still; x.weaned+=(+b.weaned||0);
+    if(sb.born>0) x.anyBorn=true;
+    if(b.pdDate && b.inCalf!=null){ x.fP+=fem; x.inCalf+=(+b.inCalf||0); }
+    if(!(b.weaned>0)) x.complete=false;
   });
-  var icpVals=[]; lsBreedingHerds().forEach(function(h){ var ss=lsHerdBreedings(h.id).filter(function(b){return b.start;}).sort(function(a,b){return a.start<b.start?-1:1;}); for(var i=1;i<ss.length;i++){ var a=_brExpectedFrom(ss[i-1]),c=_brExpectedFrom(ss[i]); if(a&&c){ var g=(new Date(c)-new Date(a))/86400000; if(g>0&&g<1000) icpVals.push(g); } } });
+  return Object.keys(g).map(function(k){ var x=g[k], del=x.alive+x.still;
+    x.calving=(x.anyBorn && x.fem>0)?Math.round(x.alive/x.fem*100):null;
+    x.weaning=(x.weaned>0 && x.fem>0)?Math.round(x.weaned/x.fem*100):null;
+    x.inCalfPct=(x.fP>0)?Math.round(x.inCalf/x.fP*100):null;
+    x.mortality=del>0?Math.round((x.still+(x.weaned>0?Math.max(0,x.alive-x.weaned):0))/del*1000)/10:null;
+    return x; }).sort(function(a,b){ return a.start<b.start?1:(a.start>b.start?-1:0); });
+}
+function brSpeciesKPI(sp, hIds){
+  var gs=brSeasonGroups(sp, hIds); if(!gs.length) return null;
+  var head=gs.filter(function(x){ return x.complete; })[0]||null;
+  var cur=gs.filter(function(x){ return !x.complete && (x.anyBorn || x.fP>0); })[0]||null;
+  if(cur && head && cur.start<head.start) cur=null;
+  var icpVals=[]; lsBreedingHerds().forEach(function(h){ if(animalBase(h.type)!==sp) return; if(hIds && hIds.map(String).indexOf(String(h.id))<0) return;
+    var ss=lsHerdBreedings(h.id).filter(function(b){return b.start;}).sort(function(a,b){return a.start<b.start?-1:1;});
+    for(var i=1;i<ss.length;i++){ var a=_brExpectedFrom(ss[i-1]),c=_brExpectedFrom(ss[i]); if(a&&c){ var gg=(new Date(c)-new Date(a))/86400000; if(gg>0&&gg<1000) icpVals.push(gg); } } });
   var icp=icpVals.length?Math.round(icpVals.reduce(function(s,x){return s+x;},0)/icpVals.length):null;
-  // Calving % is capped for display/grading (a raw rate over 100% from twins/multiples reads as nonsensical for
-  // a rate-style KPI); calvingRaw keeps the true uncapped figure available for anyone who wants the real multiple-
-  // birth rate rather than the capped headline.
-  var _calvRaw=fC?Math.round(born/fC*100):null;
-  return { weaning:fW?Math.round(wean/fW*100):null, calving:_calvRaw, calvingRaw:_calvRaw,   /* U68: uncapped */ inCalf:fP?Math.round(inCalf/fP*100):null, mortality:mBorn?Math.round(mLoss/mBorn*1000)/10:null, icp:icp, weanCount:wean, weanFemales:fW }; }
+  var anyH=(ST_LS.herd||[]).filter(function(h){ return animalBase(h.type)===sp; })[0];
+  return {sp:sp, term:_brTerm(anyH?anyH.type:(sp==='Sheep'?'Lowland ewes':sp==='Goats'?'Meat goats':sp==='Pigs'?'Breeding sows':'Beef cattle')), head:head, cur:cur, icp:icp, groups:gs};
+}
+function brSpeciesList(){ var out=[]; ['Cattle','Sheep','Goats','Pigs'].forEach(function(sp){ var k=brSpeciesKPI(sp); if(k && (k.head||k.cur)) out.push(k); }); return out; }
+
+// ── KPIs (kept for callers): the first species' headline season ──
+/* U68 + -388: the calving % a herd set shows = its headline breeding season (last complete,
+   else the one running now), born alive over females mated, uncapped. With no herd list it is
+   the first species that has one - never a pool of species. */
+function lsCalvingFromBreedings(hIds){
+  var sp=null;
+  if(hIds && hIds.length){ var h0=(ST_LS.herd||[]).filter(function(h){ return hIds.map(String).indexOf(String(h.id))>=0; })[0]; sp=h0?animalBase(h0.type):null; }
+  else { var l=brSpeciesList(); sp=l.length?l[0].sp:null; }
+  if(!sp) return null;
+  var k=brSpeciesKPI(sp, hIds||null); if(!k) return null;
+  var s=(k.head && k.head.calving!=null)?k.head:((k.cur && k.cur.calving!=null)?k.cur:null);
+  return s ? {born:s.alive, fem:s.fem, pct:s.calving, season:s.season, soFar:(s===k.cur)} : null;
+}
+function brKPIs(){
+  var l=brSpeciesList(), k=l[0]||null, s=k?(k.head||k.cur):null;
+  return { weaning:s?s.weaning:null, calving:s?s.calving:null, calvingRaw:s?s.calving:null, inCalf:s?s.inCalfPct:null,
+           mortality:s?s.mortality:null, icp:k?k.icp:null, weanCount:s?s.weaned:0, weanFemales:s?s.fem:0, sp:k?k.sp:null, season:s?s.season:null }; }
 function _brPill(kind){ return kind==='good'?'p-good':kind==='warn'?'p-warn':'p-bad'; }
 function _brWeanGrade(v){ return v==null?null:(v>=80?'good':v>=65?'warn':'bad'); }
 function _brCalvGrade(v){ return v==null?null:(v>=80?'good':v>=65?'warn':'bad'); }
@@ -35069,6 +35244,7 @@ function renderBreeding(){ var box=$('ls-view-breeding'); if(!box) return;
   if(!document.getElementById('br-css')){ var st=document.createElement('style'); st.id='br-css'; st.textContent=
     ".brwrap{--good:#2E7D4F;--warn:#B45309;--bad:#DC2626}"+
     ".br-hero{background:linear-gradient(150deg,#173a2c,#1B4332 62%,#245139);color:#fff;border-radius:16px;padding:18px 20px;margin-bottom:14px}"+
+    ".br-hero .br-sofar{display:block;margin-top:4px;opacity:.8;font-size:12px}"+
     ".br-hero .l{font-size:11px;text-transform:uppercase;letter-spacing:.07em;opacity:.72}.br-hero .big{font-size:40px;font-weight:800;line-height:1.03;margin:2px 0}.br-hero .cap{font-size:12.5px;opacity:.92;line-height:1.5}"+
     ".br-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-top:15px}@media(max-width:640px){.br-kpis{grid-template-columns:repeat(2,1fr)}}"+
     ".br-kpi{background:rgba(255,255,255,.10);border-radius:11px;padding:10px 12px}.br-kpi .k{font-size:11px;opacity:.75;text-transform:uppercase;letter-spacing:.03em}.br-kpi .v{font-size:20px;font-weight:800;margin-top:1px}.br-kpi .p{display:inline-block;font-size:11px;font-weight:800;border-radius:999px;padding:1px 7px;margin-top:4px}"+
@@ -35160,21 +35336,29 @@ function renderBreeding(){ var box=$('ls-view-breeding'); if(!box) return;
   var h='<div class="brwrap">';
   if(!herds.length){ box.innerHTML='<div class="brwrap"><div class="br-empty"><div class="e1">🐄 Breeding &amp; calving</div><div class="e2">Add a breeding herd (cows, ewes or does) and this page tracks your seasons, pregnancy tests and calvings — and works out the number that pays the bills: calves weaned per female mated.</div><span class="br-b pri" style="display:inline-block" onclick="lsTab(\'add\')">+ Add a breeding herd</span></div></div>'; return; }
 
-  var k=brKPIs();
-  if(k.weaning!=null||k.calving!=null){
-    var head = k.weaning!=null?k.weaning:k.calving;
-    var lbl  = k.weaning!=null?'Calves &amp; lambs weaned per female mated':'Calving rate this season';
-    var _wTgt = (typeof lsBench==='function') ? (lsBench('weanCattle')||90) : 90;
-    var cap  = k.weaning!=null?('You weaned <b>'+k.weanCount+'</b> from <b>'+k.weanFemales+'</b> females mated. '+(k.weaning>=_wTgt?('That’s at or above your target of '+_wTgt+'% — money in the bank.'):('Your target is '+_wTgt+'% — every extra 5% is roughly one more weaner per 20 females.'))):'From females exposed to the bull/ram this season.';
-    function tile(name,v,suffix,grade){ var p=grade?('<span class="p '+_brPill(grade)+'">'+(grade==='good'?'good':grade==='warn'?'watch':'low')+'</span>'):''; return '<div class="br-kpi"><div class="k">'+name+'</div><div class="v">'+(v==null?'—':(v+(suffix||'')))+'</div>'+p+'</div>'; }
-    h+='<div class="br-hero"><div class="l">'+lbl+'</div><div class="big">'+(head==null?'—':head+'%')+'</div><div class="cap">'+cap+'</div>'+
+  /* -388 B3-03: one hero per species (never calves and lambs added together), headline = the
+     last complete season, the season running now shown as "so far". */
+  function tile(name,v,suffix,grade){ var p=grade?('<span class="p '+_brPill(grade)+'">'+(grade==='good'?'good':grade==='warn'?'watch':'low')+'</span>'):''; return '<div class="br-kpi"><div class="k">'+name+'</div><div class="v">'+(v==null?'—':(v+(suffix||'')))+'</div>'+p+'</div>'; }
+  brSpeciesList().forEach(function(k){
+    var t=k.term, s=k.head||k.cur, soFar=!k.head, Ev=t.ev.replace(/ing$/,'ing');
+    var tgt=(typeof lsBench==='function')?(k.sp==='Sheep'?lsBench('lambSheep'):k.sp==='Goats'?lsBench('kidGoats'):lsBench('weanCattle')):90; tgt=tgt||90;
+    var calvGrade=function(v){ if(v==null) return null; if(k.sp==='Cattle'||k.sp==='Pigs') return _brCalvGrade(v); return v>=tgt?'good':(v>=tgt*0.85?'warn':'bad'); };
+    var weanHead=(s && s.weaning!=null);
+    var big=weanHead?s.weaning:(s?s.calving:null);
+    var lbl=weanHead?(t.young.charAt(0).toUpperCase()+t.young.slice(1)+' weaned per '+t.femSingle+' put to the '+t.sire+' · '+esc(s.season))
+                    :(t.ev+' % · '+esc(s?s.season:'')+(soFar?' so far':''));
+    var cap=weanHead?('You weaned <b>'+s.weaned+'</b> from <b>'+s.fem+'</b> '+t.fem+' put to the '+t.sire+'.')
+                    :(s?('<b>'+s.alive+'</b> '+(s.alive===1?t.single:t.young)+' born alive from <b>'+s.fem+'</b> '+t.fem+' put to the '+t.sire+'.'):'');
+    if(k.head && k.cur) cap+=' <span class="br-sofar">'+esc(k.cur.season)+' so far: '+(k.cur.calving!=null?(k.cur.alive+' born alive ('+k.cur.calving+'%)'):(k.cur.inCalfPct!=null?(k.cur.inCalfPct+'% in '+t.single+' at the scan'):'under way'))+'</span>';
+    var lossName=t.single.charAt(0).toUpperCase()+t.single.slice(1)+' losses';
+    h+='<div class="br-hero" data-sp="'+k.sp+'"><div class="l">'+lbl+'</div><div class="big">'+(big==null?'—':big+'%')+'</div><div class="cap">'+cap+'</div>'+
       '<div class="br-kpis">'+
-        tile('Calving %',k.calving,'%',_brCalvGrade(k.calving))+
-        tile('Inter-calving',k.icp,' d',_brIcpGrade(k.icp))+
-        tile('In-calf (scan)',k.inCalf,'%',_brInCalfGrade(k.inCalf))+
-        tile('Calf losses',k.mortality,'%',_brMortGrade(k.mortality))+
+        tile(t.ev+' %',s?s.calving:null,'%',calvGrade(s?s.calving:null))+
+        (k.sp==='Cattle'?tile('Inter-calving',k.icp,' d',_brIcpGrade(k.icp)):tile('Weaned %',s?s.weaning:null,'%',_brWeanGrade(s?s.weaning:null)))+
+        tile('In-'+t.single+' (scan)',s?s.inCalfPct:null,'%',_brInCalfGrade(s?s.inCalfPct:null))+
+        tile(lossName,s?s.mortality:null,'%',_brMortGrade(s?s.mortality:null))+
       '</div></div>';
-  }
+  });
 
   // empties cull nudge — latest scored season with empties
   var withEmpty=(ST_LS.breedings||[]).filter(function(b){return b.pdDate&&b.empty>0&&!(b.weaned>0);}).sort(function(a,b){return (a.pdDate||'')<(b.pdDate||'')?1:-1;})[0];
@@ -35208,12 +35392,15 @@ function _brHerdNext(h){
   var cur=lsHerdBreedings(h.id)[0];
   if(!cur || cur.weaned>0) return {icon:icon,chip:{t:'No active season',cls:'mut'},title:'Start when the '+term.sire+' goes in',sub:'',act:{label:term.sireIcon+' Start',fn:'brOpenForm(\'season\','+h.id+')'},urg:20};
   var idx=_brStageIdx(cur); var c=_brStatusChip(cur);
-  var cls=(idx>=4||cur.born>0)?'good':(idx===2?'warn':'run');
+  var _sb=brSeasonBorn(cur);
+  var cls=(idx>=4||_sb.born>0)?'good':(idx===2?'warn':'run');
   var act,title,urg;
-  if(idx>=1 && !cur.pdDate){ act={label:'🔬 Record scan',fn:'brOpenForm(\'pd\','+h.id+',\''+cur.id+'\')'}; title='Scan due'; urg=85; }
-  else if(idx>=3 || cur.born>0){ act={label:term.bornIcon+' Record '+term.ev.toLowerCase(),fn:'brBirthOpen({herdId:'+h.id+',brId:\''+cur.id+'\'})'}; title=(cur.born>0?(cur.born+' '+term.young+' born'):('Expected '+term.ev.toLowerCase())); urg=88; }
+  if(idx>=1 && idx<4 && !cur.pdDate){ act={label:'🔬 Record scan',fn:'brOpenForm(\'pd\','+h.id+',\''+cur.id+'\')'}; title='Scan due'; urg=85; }
+  else if(idx>=3 || _sb.born>0){ act={label:term.bornIcon+' Record '+term.ev.toLowerCase(),fn:'brBirthOpen({herdId:'+h.id+',brId:\''+cur.id+'\'})'}; title=(_sb.born>0?(_sb.alive+' '+(_sb.alive===1?term.single:term.young)+' born'):('Expected '+term.ev.toLowerCase())); urg=88; }
   else { act={label:'View season',fn:''}; title=term.sire.charAt(0).toUpperCase()+term.sire.slice(1)+' in '+_brDisp(cur.start); urg=50; }
-  return {icon:icon,chip:{t:c.t,cls:cls},title:title,sub:(_brExpectedFrom(cur)?('expected '+term.ev.toLowerCase()+' '+_brDisp(_brExpectedFrom(cur))):''),act:act,urg:urg};
+  /* -388 B3-05: the title already says "Expected calving" - the line under it gives the date only. */
+  var _expSub=_brExpectedFrom(cur)?(/^Expected /.test(title)?_brDisp(_brExpectedFrom(cur)):('expected '+term.ev.toLowerCase()+' '+_brDisp(_brExpectedFrom(cur)))):'';
+  return {icon:icon,chip:{t:c.t,cls:cls},title:title,sub:_expSub,act:act,urg:urg};
 }
 function brHerdSummary(h,n){
   var actBtn = n.act.fn ? '<span class="br-hbtn'+(n.urg>=80?'':' sec')+'" onclick="event.preventDefault();event.stopPropagation();'+n.act.fn+'">'+n.act.label+'</span>' : '';
@@ -35234,14 +35421,14 @@ function brGroupCard(h,compact){
     var _nAn0=lsHerdAnimals(h.id).length;
     return '<div class="br-grp">'+head+'<div style="font-size:12.5px;color:var(--t3);margin-bottom:11px">'+(cur?('Last season weaned '+(cur.weaned||0)+' '+term.young+'. '):'')+'Start a new season when the '+term.sire+' goes in.</div><div class="br-acts"><span class="br-b pri" onclick="brOpenForm(\'season\','+h.id+')">'+term.sireIcon+' Start a season ('+term.sire+' in)</span><span class="br-b gh" onclick="brViewCows('+h.id+')">🐄 '+(_nAn0?('View '+term.fem+' ('+_nAn0+')'):('Track '+term.fem))+'</span></div></div>';
   }
-  var idx=_brStageIdx(cur); var fem=_brFemales(cur);
+  var idx=_brStageIdx(cur); var fem=_brFemales(cur); var _sbC=brSeasonBorn(cur);
   var inCalfTxt = cur.inCalf!=null?(cur.inCalf+' / '+fem):'not scanned';
   var expTxt = _brExpectedFrom(cur)?(_brDisp(_brExpectedFrom(cur))+'–'+_brDisp(_brExpectedTo(cur))):'—';
   var mets='<div class="br-gm">'+
     '<div class="br-m"><div class="mk">'+term.fem+' mated</div><div class="mv">'+fem+'</div></div>'+
     '<div class="br-m"><div class="mk">'+term.sire+' in–out</div><div class="mv" style="font-size:12px">'+_brDisp(cur.start)+'–'+(cur.end?_brDisp(cur.end):'now')+'</div></div>'+
     '<div class="br-m"><div class="mk">Expected '+term.ev.toLowerCase()+'</div><div class="mv" style="font-size:12px">'+expTxt+'</div></div>'+
-    '<div class="br-m"><div class="mk">'+(cur.born>0?term.ev:'In '+term.single)+'</div><div class="mv">'+(cur.born>0?(cur.born+' born'):inCalfTxt)+'</div></div>'+
+    '<div class="br-m"><div class="mk">'+(_sbC.born>0?term.ev:'In '+term.single)+'</div><div class="mv">'+(_sbC.born>0?(_sbC.alive+' born alive'+(_sbC.still?(' · '+_sbC.still+' dead'):'')):inCalfTxt)+'</div></div>'+
   '</div>';
   var pct=[15,33,50,70,88,100][idx]||10;
   var prog='<div class="br-prog"><i style="width:'+pct+'%"></i></div>';
@@ -35256,9 +35443,9 @@ function brGroupCard(h,compact){
   var next=_brNextAction(cur,term);
   // actions by stage
   var acts='<div class="br-acts">';
-  if(idx>=1 && !cur.pdDate) acts+='<span class="br-b pri" onclick="brOpenForm(\'pd\','+h.id+',\''+cur.id+'\')">🔬 Record scan (PD)</span>';
-  if(idx>=3 || cur.born>0) acts+='<span class="br-b '+(cur.born>0?'sec':'pri')+'" onclick="brBirthOpen({herdId:'+h.id+',brId:\''+cur.id+'\'})">'+term.bornIcon+' Record '+term.ev.toLowerCase()+'</span>';
-  if(cur.born>0) acts+='<span class="br-b pri" onclick="brOpenForm(\'weaning\','+h.id+',\''+cur.id+'\')">⚖️ Record weaning</span>';
+  if(idx>=1 && idx<4 && !cur.pdDate) acts+='<span class="br-b pri" onclick="brOpenForm(\'pd\','+h.id+',\''+cur.id+'\')">🔬 Record scan (PD)</span>';
+  if(idx>=3 || _sbC.born>0) acts+='<span class="br-b '+(_sbC.born>0?'sec':'pri')+'" onclick="brBirthOpen({herdId:'+h.id+',brId:\''+cur.id+'\'})">'+term.bornIcon+' Record '+term.ev.toLowerCase()+'</span>';
+  if(_sbC.born>0) acts+='<span class="br-b pri" onclick="brOpenForm(\'weaning\','+h.id+',\''+cur.id+'\')">⚖️ Record weaning</span>';
   if(idx<1 && !cur.end) acts+='<span class="br-b sec" onclick="brOpenForm(\'pd\','+h.id+',\''+cur.id+'\')">🔬 Record scan (PD)</span>';
   var _nAn=lsHerdAnimals(h.id).length;
   acts+='<span class="br-b gh" onclick="brViewCows('+h.id+')">🐄 '+(_nAn?('View '+term.fem+' ('+_nAn+')'):('Track '+term.fem+' individually'))+'</span>';
@@ -35312,7 +35499,7 @@ function brFormHTML(){ var h=(ST_LS.herd||[]).filter(function(x){return x.id===B
   if(BR_FORM.kind==='weaning'){ if(!b) return top; return '<div class="br-form">'+top+
     '<div class="br-h">⚖️ Record weaning</div>'+
     '<div class="br-f2"><div class="br-fr"><label>Weaning date</label><input id="br-f-wdate" type="date" value="'+today+'"></div>'+
-    '<div class="br-fr"><label>'+term.young.charAt(0).toUpperCase()+term.young.slice(1)+' weaned</label><input id="br-f-wn" type="number" value="'+(b.born||'')+'" placeholder="0"></div></div>'+
+    '<div class="br-fr"><label>'+term.young.charAt(0).toUpperCase()+term.young.slice(1)+' weaned</label><input id="br-f-wn" type="number" value="'+(_brAlive(b)||'')+'" placeholder="0"></div></div>'+
     '<div class="br-fr"><label>Average weaning weight (kg, optional)</label><input id="br-f-wt" type="number" value="'+(b.weanWeight||'')+'" placeholder="e.g. 205"></div>'+
     '<div class="br-acts"><span class="br-b pri" onclick="brSaveWeaning()">Save weaning</span><span class="br-b gh" onclick="brCloseForm()">Cancel</span></div>'+
     '<div class="br-src">Weaned '+term.young+' per '+term.femSingle+' mated is your bottom-line reproduction number.</div></div>'; }
@@ -35374,7 +35561,7 @@ function brCowsHTML(){
       else if(cst.servedDate){ pillTxt='Served'; pillCls='p-mut'; }
       else { pillTxt=lsClassMeta(h.type,a.cls).label; }
     } else if(isFem && cur){ var i=_brStageIdx(cur);
-      if(cur.born>0 || i>=4){ pillTxt=term.ev; pillCls='p-good'; }
+      if(brSeasonBorn(cur).born>0 || i>=4){ pillTxt=term.ev; pillCls='p-good'; }
       else if(cur.pdDate){ pillTxt='In '+term.single; pillCls='p-good'; }
       else if(i>=2){ pillTxt='Scan due'; pillCls='p-warn'; }
       else { pillTxt='Season'; pillCls='p-mut'; }
@@ -35588,7 +35775,7 @@ function _brCowDue(a,h,cst,cur,term){
   }
   if(cur){
     if(cur.pdDate){ var ef=_brExpectedFrom(cur); return ef?{txt:'~'+_brDisp(ef), sub:_brWeeksFrom(ef), t:new Date(ef+'T00:00:00').getTime()}:{txt:'—',sub:'',t:null}; }
-    if(_brStageIdx(cur)>=2) return {txt:'Scan due', sub:'now', t:_brToday().getTime()};
+    var _si=_brStageIdx(cur); if(_si>=2 && _si<4) return {txt:'Scan due', sub:'now', t:_brToday().getTime()};   /* -388: never after the expected birth date */
   }
   return {txt:'—', sub:'', t:null};
 }
@@ -35802,7 +35989,7 @@ function _brBornDupeCheck(herdId,date){
 function brBirthOpen(opts){
   opts=opts||{}; var h=lsHerdById(opts.herdId); if(!h) return;
   var tracked=(typeof _dairyCows==='function' && _dairyCows(h).length>0) || (typeof lsHerdAnimals==='function' && lsHerdAnimals(h.id).length>0);
-  BR_BIRTH={herdId:h.id, brId:opts.brId||null, tracked:tracked, date:_brTodayISO(), sel:{}, headLive:'', headStill:0, done:null};
+  BR_BIRTH={herdId:h.id, brId:opts.brId||null, tracked:tracked, date:_brTodayISO(), sel:{}, headLive:'', headStill:'', done:null};
   if(tracked && opts.preAnimId) BR_BIRTH.sel[opts.preAnimId]={on:true,young:1};
   _dzShow(_brBirthHtml());
 }
@@ -35811,26 +35998,36 @@ function _bbRefresh(){ if(BR_BIRTH) $('dz-in').innerHTML=_brBirthHtml(); }
 function bbSel(id){ _bbSnap(); var c=BR_BIRTH.sel[id]; BR_BIRTH.sel[id]=c?{on:!c.on,young:c.young||1}:{on:true,young:1}; _bbRefresh(); }
 function bbSelAll(on){ _bbSnap(); var h=lsHerdById(BR_BIRTH.herdId); if(h) _dairyCows(h).forEach(function(a){ var c=BR_BIRTH.sel[a.id]||{young:1}; BR_BIRTH.sel[a.id]={on:on,young:c.young||1}; }); _bbRefresh(); }
 function bbStep(id,d){ _bbSnap(); var c=BR_BIRTH.sel[id]||{on:true,young:1}; c.young=Math.max(1,(c.young||1)+d); c.on=true; BR_BIRTH.sel[id]=c; _bbRefresh(); }
+/* -388 D1: the calving form records BORN MOVEMENTS and nothing else - the season works its born
+   count out from them (brSeasonBorn), so it no longer matters where the form was opened from.
+   A herd with some tagged cows still lets the farmer count calves from the untagged ones: only
+   tagged cows could be picked, so 14 of 16 mated cows could never be recorded as calved.
+   "Born dead" writes a born movement AND a died movement (noted stillborn) of that count on the
+   same date - existing movement types, so the phone's head count stays right unchanged. */
 function _brBirthHtml(){
   var h=lsHerdById(BR_BIRTH.herdId); if(!h) return ''; var term=_brTerm(h.type); var today=BR_BIRTH.date||_brTodayISO();
   var top='<div class="lshmv-top"><div class="ttl"><span class="dic">'+term.bornIcon+'</span><div><h3>Record '+term.ev.toLowerCase()+'</h3><small>'+esc(lsHerdName(h))+'</small></div></div><button class="lshmv-x" onclick="dzClose()">×</button></div>';
   var dateFld='<div class="ls-tr-fld"><label>Date</label><input id="bb-date" type="date" value="'+today+'" onchange="_bbSnap()"></div>';
+  var Young=term.young.charAt(0).toUpperCase()+term.young.slice(1);
   var body, foot;
   if(BR_BIRTH.tracked){
     var cows=_dairyCows(h); var youngN=0;
     Object.keys(BR_BIRTH.sel).forEach(function(id){ var c=BR_BIRTH.sel[id]; if(c&&c.on) youngN+=Math.max(1,c.young||1); });
+    youngN+=Math.max(0,parseInt(BR_BIRTH.headLive,10)||0);
     var allOn=cows.length>0 && cows.every(function(a){ var c=BR_BIRTH.sel[a.id]; return c&&c.on; });
     var selN=cows.filter(function(a){ var c=BR_BIRTH.sel[a.id]; return c&&c.on; }).length;
     var selall='<div class="dz-selall"><label><span class="cbx'+(allOn?' on':'')+'" onclick="bbSelAll('+(allOn?'false':'true')+')">'+(allOn?'✓':'')+'</span> Select all '+cows.length+'</label><span class="rm">'+selN+' selected</span></div>';
     var rows=cows.map(function(a){ var c=BR_BIRTH.sel[a.id]||{}; var sel=!!c.on; var st=_brCowState(a,h); var n=Math.max(1,c.young||1);
       return '<div class="dz-row'+(sel?' sel':'')+'"><div style="flex:1;display:flex;align-items:center;gap:11px;cursor:pointer;min-width:0" onclick="bbSel(\''+esc(a.id)+'\')"><span class="cbx">'+(sel?'✓':'')+'</span><span class="ctag">'+esc(a.tag)+'</span><div class="nm"><b>'+esc(a.name||a.tag)+'</b><span>'+_dzlCowSub(a,st)+'</span></div></div>'+
         '<div class="bb-step"><button onclick="bbStep(\''+esc(a.id)+'\',-1)">−</button><span class="sv">'+n+'</span><button onclick="bbStep(\''+esc(a.id)+'\',1)">+</button></div></div>'; }).join('');
-    body=dateFld+selall+'<div class="dz-list">'+rows+'</div><div class="dz-shint">Tick who '+term.verb+'d — use the +/− if one had twins.</div>';
+    var untagged=Math.max(0,_brFemalesFromHerd(h)-cows.length);
+    body=dateFld+selall+'<div class="dz-list">'+rows+'</div><div class="dz-shint">Tick who '+term.verb+'d — use the +/− if one had twins.</div>'+
+      '<div class="ls-tr-row2" style="margin-top:10px"><div class="ls-tr-fld"><label>'+Young+' born alive to '+term.fem+' without a tag'+(untagged?(' <span style="font-weight:600;color:var(--t4)">('+untagged+' '+term.fem+')</span>'):'')+'</label><input id="bb-live" type="number" min="0" value="'+esc(BR_BIRTH.headLive)+'" placeholder="0" oninput="_bbSnap()"></div>'+
+      '<div class="ls-tr-fld"><label>Born dead</label><input id="bb-still" type="number" min="0" value="'+esc(BR_BIRTH.headStill)+'" placeholder="0" oninput="_bbSnap()"></div></div>';
     foot='<div class="lshmv-act"><button onclick="dzClose()">Cancel</button><button class="pri" onclick="brBirthSave()">Log '+term.ev.toLowerCase()+' · '+youngN+' →</button></div>';
   } else {
-    body=dateFld+'<div class="ls-tr-row2"><div class="ls-tr-fld"><label>Live '+term.young+'</label><input id="bb-live" type="number" value="'+esc(BR_BIRTH.headLive)+'" placeholder="0" onchange="_bbSnap()"></div>'+
-      '<div class="ls-tr-fld"><label>Stillborn / died at birth</label><input id="bb-still" type="number" value="'+(BR_BIRTH.headStill||0)+'" onchange="_bbSnap()"></div></div>'+
-      '<div class="br-src">Live '+term.young+' are added to your herd count and stock register automatically. You can record more than once as '+term.young+' drop.</div>';
+    body=dateFld+'<div class="ls-tr-row2"><div class="ls-tr-fld"><label>'+Young+' born alive</label><input id="bb-live" type="number" min="0" value="'+esc(BR_BIRTH.headLive)+'" placeholder="0" onchange="_bbSnap()"></div>'+
+      '<div class="ls-tr-fld"><label>Born dead</label><input id="bb-still" type="number" min="0" value="'+esc(BR_BIRTH.headStill)+'" placeholder="0" onchange="_bbSnap()"></div></div>';
     foot='<div class="lshmv-act"><button onclick="dzClose()">Cancel</button><button class="pri" onclick="brBirthSave()">Save '+term.ev.toLowerCase()+'</button></div>';
   }
   return top+body+foot;
@@ -35839,34 +36036,30 @@ function brBirthSave(){
   _bbSnap(); var h=lsHerdById(BR_BIRTH.herdId); if(!h) return; var term=_brTerm(h.type);
   var date=BR_BIRTH.date||_brTodayISO();
   function commit(){
-    var undo={tracked:BR_BIRTH.tracked, cows:[], move:null, brId:BR_BIRTH.brId, prevB:null};
-    var totalYoung=0, ids=[];
+    var undo={tracked:BR_BIRTH.tracked, cows:[], move:null, moveIds:[]};
+    var totalYoung=0, ids=[], dairy=_lsIsDairy(h);
     if(BR_BIRTH.tracked){
       ids=Object.keys(BR_BIRTH.sel).filter(function(id){ return BR_BIRTH.sel[id]&&BR_BIRTH.sel[id].on; });
-      if(!ids.length){ try{toast('Tick the '+term.fem+' that '+term.verb+'d.','info');}catch(e){} return; }
-      ids.forEach(function(id){
-        var a=(ST_LS.animals||[]).filter(function(x){return x.id===id;})[0]; if(!a) return;
-        var n=Math.max(1,parseInt(BR_BIRTH.sel[id].young,10)||1);
-        var st=_brCowState(a,h); var sire=st?st.sire:'';
-        var ev={id:brNewId(),k:'calving',date:date,young:n,sire:sire};
-        a.repro=a.repro||[]; a.repro.push(ev); undo.cows.push({a:a,evId:ev.id,prev:a.status}); a.status='fresh';
-        totalYoung+=n;
-      });
-      undo.move=_lsMoveSnapshot(h);
-      if(typeof lsRecordMove==='function'){ lsRecordMove({herdId:h.id,reason:'born',qty:totalYoung,date:date,note:totalYoung+' '+(totalYoung===1?term.single:term.young)+' · '+ids.length+' '+(ids.length===1?term.femSingle:term.fem)}); if(ST_LS.moves&&ST_LS.moves[0]) undo.move.moveId=ST_LS.moves[0].id; }
-    } else {
-      var live=parseInt(BR_BIRTH.headLive,10)||0, still=parseInt(BR_BIRTH.headStill,10)||0;
-      if(live<=0 && still<=0){ try{toast('Enter how many '+term.young+' were born.','info');}catch(e){} return; }
-      var b=BR_BIRTH.brId?_brFind(BR_BIRTH.brId):null;
-      if(b){ undo.prevB={born:b.born||0,stillborn:b.stillborn||0,status:b.status}; b.born=(b.born||0)+live; b.stillborn=(b.stillborn||0)+still; b.status='calving'; }
-      totalYoung=live;
-      if(live>0 && typeof lsRecordMove==='function'){
-        undo.move=_lsMoveSnapshot(h);
-        lsRecordMove({herdId:h.id,reason:'born',qty:live,date:date,note:live+' '+term.young+(b?(' · '+b.season):'')});
-        if(ST_LS.moves&&ST_LS.moves[0]) undo.move.moveId=ST_LS.moves[0].id;
-      }
     }
-    BR_BIRTH.done={date:date,tracked:BR_BIRTH.tracked,ids:ids,totalYoung:totalYoung,headLive:BR_BIRTH.headLive,headStill:BR_BIRTH.headStill,undo:undo};
+    var liveHead=Math.max(0,parseInt(BR_BIRTH.headLive,10)||0), still=Math.max(0,parseInt(BR_BIRTH.headStill,10)||0);
+    if(!ids.length && liveHead<=0 && still<=0){ try{toast(BR_BIRTH.tracked?('Tick the '+term.fem+' that '+term.verb+'d, or enter the '+term.young+' born to '+term.fem+' without a tag.'):('Enter how many '+term.young+' were born.'),'info');}catch(e){} return; }
+    ids.forEach(function(id){
+      var a=(ST_LS.animals||[]).filter(function(x){return x.id===id;})[0]; if(!a) return;
+      var n=Math.max(1,parseInt(BR_BIRTH.sel[id].young,10)||1);
+      var st=_brCowState(a,h); var sire=st?st.sire:'';
+      var ev={id:brNewId(),k:'calving',date:date,young:n,sire:sire};
+      a.repro=a.repro||[]; a.repro.push(ev); undo.cows.push({a:a,evId:ev.id,prev:a.status}); if(dairy) a.status='fresh';
+      totalYoung+=n;
+    });
+    totalYoung+=liveHead;
+    undo.move=_lsMoveSnapshot(h);
+    var youngK=lsYoungClass(h.type), made=function(){ if(ST_LS.moves&&ST_LS.moves[0]) undo.moveIds.push(ST_LS.moves[0].id); };
+    if(totalYoung>0){ lsRecordMove({herdId:h.id,reason:'born',qty:totalYoung,date:date,note:totalYoung+' '+(totalYoung===1?term.single:term.young)+(ids.length?(' · '+ids.length+' tagged '+(ids.length===1?term.femSingle:term.fem)):'')}); made(); }
+    if(still>0){
+      lsRecordMove({herdId:h.id,reason:'born',qty:still,date:date,note:still+' stillborn'}); made();
+      lsRecordMove({herdId:h.id,reason:'died',qty:still,cls:youngK||'',date:date,note:'stillborn'}); made();
+    }
+    BR_BIRTH.done={date:date,tracked:BR_BIRTH.tracked,ids:ids,totalYoung:totalYoung,headLive:liveHead,headStill:still,undo:undo};
     try{ _dzCommit(); }catch(e){}
     _dzShow(_brBirthResultHtml());
   }
@@ -35877,27 +36070,28 @@ function brBirthSave(){
 }
 function _brBirthResultHtml(){
   var h=lsHerdById(BR_BIRTH&&BR_BIRTH.herdId); if(!h||!BR_BIRTH||!BR_BIRTH.done) return '';
-  var d=BR_BIRTH.done, term=_brTerm(h.type);
+  var d=BR_BIRTH.done, term=_brTerm(h.type), dairy=_lsIsDairy(h);
+  var yw=function(n){ return n+' '+(n===1?term.single:term.young); };
   var top='<div class="lshmv-top"><div class="ttl"><span class="dic">'+term.bornIcon+'</span><div><h3>'+esc(lsHerdName(h))+'</h3><small>Logged '+_brDisp(d.date)+'</small></div></div><button class="lshmv-x" onclick="dzClose()">×</button></div>';
-  var banner='<div class="dzr-ban"><span class="ck">✓</span><div><div class="bt">'+d.totalYoung+' '+(d.totalYoung===1?term.single:term.young)+' born</div><div class="bs">'+_brDisp(d.date)+'</div></div></div>';
+  var banner='<div class="dzr-ban"><span class="ck">✓</span><div><div class="bt">'+yw(d.totalYoung)+' born alive'+(d.headStill?(' · '+d.headStill+' born dead'):'')+'</div><div class="bs">'+_brDisp(d.date)+'</div></div></div>';
   var youngLabel=''; try{ var yc=lsYoungClass(h.type); youngLabel=yc?lsClassMeta(h.type,yc).label:term.young; }catch(e){ youngLabel=term.young; }
-  var body='<div class="dzr-hero g"><div class="hl">'+term.bornIcon+' What this means</div><div class="hv">'+d.totalYoung+' '+term.young+' born → '+esc(lsHerdName(h))+' now '+(h.qty||0)+' head</div><div class="hs">Up from '+Math.max(0,(h.qty||0)-d.totalYoung)+(d.headStill?(' · '+d.headStill+' stillborn recorded separately'):'')+' — the births are in your stock register automatically.</div></div>';
-  if(d.tracked){
+  var body='<div class="dzr-hero g"><div class="hl">'+term.bornIcon+' What this means</div><div class="hv">'+yw(d.totalYoung)+' born → '+esc(lsHerdName(h))+' now '+(h.qty||0)+' head</div><div class="hs">Up from '+Math.max(0,(h.qty||0)-d.totalYoung)+' — the births are in your stock register automatically.</div></div>';
+  if(d.tracked && (d.ids||[]).length){
     var sel=(d.ids||[]).map(function(id){ return (ST_LS.animals||[]).filter(function(x){return x.id===id;})[0]; }).filter(Boolean);
-    body+='<div class="dzr-l">What changed</div><div class="dzr-changed"><div class="dzr-chg">'+_dzrTags(sel)+'<span class="from">In calf</span><span class="arw">→</span><b>Fresh</b><span class="rt">back in the milking line</span></div><div class="dzr-chg"><span class="ni" style="font-size:15px">🍼</span>'+d.totalYoung+' '+term.young+' added to <b>'+esc(youngLabel)+'</b> · register updated</div></div>';
+    body+='<div class="dzr-l">What changed</div><div class="dzr-changed"><div class="dzr-chg">'+_dzrTags(sel)+'<span class="from">In '+term.single+'</span><span class="arw">→</span><b>'+(dairy?'Fresh':'Calved')+'</b>'+(dairy?'<span class="rt">back in the milking line</span>':'')+'</div><div class="dzr-chg"><span class="ni" style="font-size:15px">🍼</span>'+yw(d.totalYoung)+' added to <b>'+esc(youngLabel)+'</b> · register updated</div></div>';
     var rebreed=_brAddDays(d.date,60);
-    body+='<div class="dzr-next"><span class="ni">🏷️</span><div><div class="nt">Tag the '+d.totalYoung+' '+term.young+' so their pedigree builds itself</div><div class="ns">Their dam links automatically. Then rebreed from ~'+_brDisp(rebreed)+' ('+_brWeeksFrom(rebreed)+') to stay on a yearly '+term.ev.toLowerCase()+' cycle.</div></div></div>';
+    body+='<div class="dzr-next"><span class="ni">🏷️</span><div><div class="nt">Tag the '+yw(d.totalYoung)+' so their pedigree builds itself</div><div class="ns">Their dam links automatically. Then rebreed from ~'+_brDisp(rebreed)+' ('+_brWeeksFrom(rebreed)+') to stay on a yearly '+term.ev.toLowerCase()+' cycle.</div></div></div>';
   } else {
     body+='<div class="dzr-next"><span class="ni">🏷️</span><div><div class="nt">Tag the new '+term.young+' individually</div><div class="ns">Their '+term.sire+' links automatically for pedigree.</div></div></div>';
   }
-  body+='<div class="dzr-foot"><span class="dzr-undo" onclick="bbrUndo()">↩ Undo</span><span class="dzr-btn sec" onclick="bbrDone()">Done</span><span class="dzr-btn pri" onclick="bbrTagCalves()">Tag the '+term.young+'</span></div>';
+  body+='<div class="dzr-foot"><span class="dzr-undo" onclick="bbrUndo()">↩ Undo</span><span class="dzr-btn sec" onclick="bbrDone()">Done</span>'+(d.totalYoung>0?'<span class="dzr-btn pri" onclick="bbrTagCalves()">Tag the '+term.young+'</span>':'')+'</div>';
   return top+banner+body;
 }
 function bbrUndo(){
   if(!BR_BIRTH||!BR_BIRTH.done) return; var u=BR_BIRTH.done.undo||{}; var h=lsHerdById(BR_BIRTH.herdId);
   (u.cows||[]).forEach(function(c){ var a=c.a; if(a&&a.repro){ a.repro=a.repro.filter(function(e){return e.id!==c.evId;}); if(!a.repro.length) delete a.repro; } if(a){ if(c.prev==null) delete a.status; else a.status=c.prev; } });
   if(u.move && h){ _lsMoveRestore(h, u.move); }
-  if(u.brId && u.prevB){ var b=_brFind(u.brId); if(b){ b.born=u.prevB.born; b.stillborn=u.prevB.stillborn; b.status=u.prevB.status; } }
+  if((u.moveIds||[]).length && ST_LS.moves){ ST_LS.moves=ST_LS.moves.filter(function(m){ return u.moveIds.indexOf(m.id)<0; }); }
   try{ _dzCommit(); }catch(e){}
   try{toast('Undone — nothing was saved.','info');}catch(e){}
   dzClose();
@@ -36144,8 +36338,21 @@ function _heTag(h,used){ var pre=(typeof _dairyPrefix==='function')?_dairyPrefix
 // prefill (optional): {cls,dam,sire} applied to every seeded row — a calving typically shares one dam/sire across
 // all her new young. For a batch with DIFFERENT dams/sires per row (e.g. several cows calving at once), use
 // heOpenSeeded instead, which takes one prefill per row.
+/* -388 UK minor: a store or finishing group is not a herd of cows. Its grid starts on the class
+   and sex it is made of (store cattle: steers; finishing lambs: lambs; finishing pigs: piglets),
+   and a UK tag starts from the farm's herd / flock mark when one is set, not "S-001". */
+function _heGridDefault(h){
+  var t=String(h.type||''), b=animalBase(h.type), store=/store|finish|broiler/i.test(t);
+  if(store && b==='Cattle') return {cls:'steers', sex:'M'};
+  if(store && b==='Sheep') return {cls:'lambs', sex:'M'};
+  if(store && b==='Pigs') return {cls:'piglets', sex:'M'};
+  return {cls:(lsClassDefs(h.type)||[{k:''}])[0].k, sex:'F'};
+}
+function _heUkTag(h,used){ var mk=String((window.ST&&ST.stockMark)||'').replace(/[^0-9A-Za-z]/g,''); if(!mk) return _heTag(h,used);
+  var s=1, t; do{ t='UK '+mk+' '+String(s).padStart(5,'0'); s++; } while(used.indexOf(t)>=0); used.push(t); return t; }
 function _heSeedRow(h,used,made,prefill){
-  var row={id:'an'+Date.now().toString(36)+Math.floor(Math.random()*1e5)+made, herd:h.id, tag:_heTag(h,used), sex:'F', cls:(prefill&&prefill.cls)||(lsClassDefs(h.type)||[{k:''}])[0].k};
+  var _gd=_heGridDefault(h);
+  var row={id:'an'+Date.now().toString(36)+Math.floor(Math.random()*1e5)+made, herd:h.id, tag:_heUkTag(h,used), sex:_gd.sex, cls:(prefill&&prefill.cls)||_gd.cls};
   if(prefill&&prefill.dam) row.dam=prefill.dam;
   if(prefill&&prefill.sire) row.sire=prefill.sire;
   return row;
@@ -36258,45 +36465,169 @@ function _heHtml(){
 }
 
 /* ===== Livestock reports: HMRC valuation + Medicine/vaccine audit ===== */
-/* Year-end stock value per head for the primary breeding-female class. These were the
-   South African First Schedule standard values, in rand - a cow at 40, a ewe at 6 - and
-   they had simply been relabelled HMRC_STD. On the demo herd that valued 124 head at
-   £2,216. There is no standard-value table in the UK, so these are DEEMED COST under
-   BIM55410: 60% of open market value for cattle, 75% for sheep and pigs. Goats are not
-   named in that guidance; 75% is applied as the closest analogue and should be agreed
-   with an accountant. Market values are indicative UK breeding stock - a farmer with
-   their own valuation should use it, which is what the herd basis election is for. */
-var HMRC_STD = {
-  'Cattle':   {cls:'Cattle: Cows',           val:840, mkt:1400, rate:0.60},
-  'Sheep':    {cls:'Sheep: Ewes',            val:98,  mkt:130,  rate:0.75},
-  'Goats':    {cls:'Goats: Does',            val:135, mkt:180,  rate:0.75},
-  'Pigs':     {cls:'Pigs: Sows',             val:210, mkt:280,  rate:0.75},
-  'Chickens': {cls:'Poultry: Laying hens',   val:5,   mkt:7,    rate:0.75}
-};
-function lsHmrcClass(type){ var b=animalBase(type); return HMRC_STD[b] || {cls:(type+' \u2014 no default value; set your own'), val:0}; }
-// Relative value multipliers BY CLASS within a species, anchored to HMRC_STD's base (the
-// primary breeding female — e.g. "Cattle: Cows"). A mixed herd of cows, heifers, bulls and
-// calves is not worth one flat figure a head, so bulls sit above the cow and calves well
-// below. These proportions are typical trade relativities, not published figures; the
-// per-class values they produce should be agreed with an accountant.
-var HMRC_CLASS_MULT = {
-  Cattle: {cows:1, heifers:0.75, steers:0.65, bulls:1.75, calves:0.35},
-  Sheep:  {ewes:1, rams:1.6, wethers:0.75, lambs:0.4},
-  Goats:  {does:1, bucks:1.5, kids:0.4},
-  Pigs:   {sows:1, boars:1.4, piglets:0.3}
-};
-function lsHmrcClassValue(type, k){
-  var b=animalBase(type), base=(HMRC_STD[b]||{val:0}).val;
-  var mult=(HMRC_CLASS_MULT[b]||{})[k];
-  var val=(mult!=null)?Math.round(base*mult):base;
-  var meta=lsClassMeta(type,k);
-  return {k:k, label:(b+': '+(meta.label||k)), val:val};
+/* -388 D4 / B3-U3 (signed off, option A): year-end value per class, BIM55410. The invented
+   national cow price (HMRC_STD, £1,400 x 60%) and the "typical trade relativities" that scaled
+   it for bulls and calves (HMRC_CLASS_MULT) are gone. Now, for each class ON THE HERD:
+     - home-bred / home-reared: deemed cost = 60% (cattle) or 75% (sheep, pigs; goats by analogy -
+       agree with your accountant) of THAT class's own market value on the herd;
+     - bought in and still on hand: what was paid a head (from the bought movements), or the
+       market value if that is lower - deemed cost may not take a bought animal below its price;
+     - an accountant's figure for the class replaces both, for opening and closing alike.
+   D3: opening stock = last year's closing statement, saved per herd and class; with none saved,
+   a one-off entry pre-filled by working this year's class counts back through this year's
+   movements at this year's values. Opening and closing are then on the same basis (BIM33199).
+   D5: a class under a herd basis election (ITTOIA 2005 s124) leaves opening AND closing trading
+   stock; its purchases and sales go on a herd basis schedule for the accountant.
+   Stored in ST.lsYear, which travels in farms.prefs.ls (ai-data-uk.js) - no new column. */
+var UK_DEEMED_RATE = { Cattle:0.60, Sheep:0.75, Pigs:0.75, Goats:0.75 };
+var UK_LS_BASIS_LBL = { d:'deemed cost', c:'price paid', m:'market value (below price paid)', a:'your accountant’s value' };
+function _lsY(){ return (window.ST && ST.lsYear && typeof ST.lsYear==='object') ? ST.lsYear : {}; }
+function _lsYW(){ ST.lsYear=(ST.lsYear && typeof ST.lsYear==='object')?ST.lsYear:{}; var y=ST.lsYear; if(!y.close||typeof y.close!=='object') y.close={}; if(!Array.isArray(y.hb)) y.hb=[]; if(!y.acct||typeof y.acct!=='object') y.acct={}; return y; }
+function _lsYPersist(msg){
+  try{ _lsHbSync(); }catch(e){}
+  try{ if(typeof saveState==='function') saveState(); }catch(e){}
+  try{ if(!window.__AI_GUEST && window.AI && AI.farm && AI.farm.active() && AI.profile && AI.profile.save)
+         AI.profile.save(ST).catch(function(e){ console.error('Livestock year end not saved to the server', e); if(typeof toast==='function') toast('Saved here, but it has not reached the server — try again','error'); }); }catch(e){}
+  try{ if(typeof dataChanged==='function') dataChanged('livestock'); }catch(e){}
+  if(msg && typeof toast==='function') toast(msg,'success');
+}
+function _lsSp(h){ return animalBase(h.type)||h.type||''; }
+function lsAcctValue(sp,k){ var a=_lsY().acct||{}, v=+a[sp+'|'+k]; return v>0?v:null; }
+function lsHbElection(sp,k){ return (_lsY().hb||[]).filter(function(e){ return e && e.sp===sp && e.k===k; })[0]||null; }
+function lsHbElected(sp,k){ return !!lsHbElection(sp,k); }
+/* The existing balance-sheet and ratio reads look at ST_LS.herdBasis.elected - fed from here. */
+function _lsHbSync(){ try{ var hb=(_lsY().hb||[]); ST_LS.herdBasis={ elected:hb.length>0, classes:hb.slice(), electedOn:(hb[0]&&hb[0].date)||null }; }catch(e){} }
+/* What a herd's classes are worth on the balance sheet under the herd basis (production herd)
+   and outside it (trading livestock) - the same class values as lsHerdValue, split. */
+function lsHerdBasisSplit(){
+  _lsHbSync(); var prod=0, trade=0;
+  ((typeof ST_LS!=='undefined'&&ST_LS.herd)||[]).forEach(function(h){ if(!h||h.planned) return; var sp=_lsSp(h);
+    if(lsHasClasses(h)) (h.classes||[]).forEach(function(c){ var v=(c.n||0)*(c.v||0); if(lsHbElected(sp,c.k)) prod+=v; else trade+=v; });
+    else trade+=lsHerdValue(h); });
+  return { production:Math.round(prod), trading:Math.round(trade) };
+}
+/* The class a movement touched. Movements from before -388 may carry none; they are read with
+   the same rule _lsAutoCls applies to a new one. */
+function _lsMoveClsFor(h, m){
+  if(m.cls) return m.cls;
+  if(m.reason==='born') return lsYoungClass(h.type)||'';
+  if(m.reason==='bought'||m.reason==='moved_in') return lsBreedingClass(h.type)||'';
+  return _lsAutoCls(h, m.reason);
+}
+/* Class counts at the start of the tax year: today's classes worked back through this year's moves. */
+function _lsClassOpening(h, hmFy){
+  var o={}; (h.classes||[]).forEach(function(c){ o[c.k]=(c.n||0); });
+  (hmFy||[]).forEach(function(m){ var q=+m.qty||0; if(!q) return;
+    if(m.reason==='promote'){ if(m.cls) o[m.cls]=(o[m.cls]||0)+q; if(m.toCls) o[m.toCls]=(o[m.toCls]||0)-q; return; }
+    var k=_lsMoveClsFor(h,m); if(!k) return;
+    if(m.reason==='born'||m.reason==='bought'||m.reason==='moved_in') o[k]=(o[k]||0)-q;
+    else if(['sold','died','stolen','missing','slaughter','moved_out'].indexOf(m.reason)>=0) o[k]=(o[k]||0)+q;
+  });
+  Object.keys(o).forEach(function(k){ if(!(o[k]>0)) delete o[k]; });
+  return o;
+}
+/* Bought-in animals of a class still on hand: the newest purchases are the ones still here (the
+   oldest are the first to have been sold). `before` limits it to purchases before a date. */
+function _lsBoughtOnHand(h, k, n, before){
+  var left=Math.max(0,n||0), cnt=0, cost=0;
+  (ST_LS.moves||[]).filter(function(m){ return m && String(m.herd)===String(h.id) && m.reason==='bought' && (k==='_all' || _lsMoveClsFor(h,m)===k) && (!before || _lsMoveISO(m)<before); })
+    .sort(function(a,b){ return _lsMoveISO(a)<_lsMoveISO(b)?1:-1; })
+    .forEach(function(m){ if(left<=0) return; var q=Math.min(left, +m.qty||0); if(!q) return;
+      var paid=(+m.money>0)?(+m.money/(+m.qty||1)):0;
+      if(!(paid>0) && m.txnRef){ var t=(ST.txns||[]).filter(function(x){ return x && x.moveRef===m.id; })[0]; if(t && +t.amt>0) paid=(typeof ukExVat==='function'?ukExVat(t):+t.amt)/(+m.qty||1); }
+      if(!(paid>0)) paid=+h.buy||0;
+      if(!(paid>0)) return;
+      cnt+=q; cost+=q*paid; left-=q; });
+  return { n:cnt, cost:cost, per:cnt?cost/cnt:0 };
+}
+/* The value of n head of one class: [{n, v (a head), b (basis code)}]. */
+function lsClassYearParts(h, k, n, before){
+  var sp=_lsSp(h), mkt=0;
+  if(k==='_all') mkt=(h.qty>0)?lsHerdValue(h)/h.qty:(+h.sell||0);
+  else { var co=_lsClassObj(h,k); mkt=co?(+co.v||0):0; }
+  var acct=lsAcctValue(sp,k); if(acct) return [{n:n, v:Math.round(acct), b:'a'}];
+  var deemed=Math.round(mkt*(UK_DEEMED_RATE[sp]||0.75)), parts=[];
+  var bi=_lsBoughtOnHand(h, k, n, before);
+  if(bi.n>0){ var per=Math.round(bi.per), low=(mkt>0 && mkt<per); parts.push({n:bi.n, v:low?Math.round(mkt):per, b:low?'m':'c'}); }
+  if(n-bi.n>0) parts.push({n:n-bi.n, v:deemed, b:'d'});
+  return parts;
+}
+/* Every herd and class at the year end ('close') or worked back to the start of the year ('open'). */
+function lsYearEndRows(which){
+  var rows=[], from=lsFyStartISO();
+  (ST_LS.herd||[]).filter(function(h){ return h && !h.planned; }).forEach(function(h){
+    var sp=_lsSp(h), hmFy=lsHerdMovesFy(h.id);
+    if(lsHasClasses(h)){
+      var cnt=(which==='open')?_lsClassOpening(h,hmFy):null, keys=(which==='open')?Object.keys(cnt):(h.classes||[]).map(function(c){ return c.k; });
+      keys.forEach(function(k){ var n=(which==='open')?cnt[k]:((_lsClassObj(h,k)||{}).n||0); if(!(n>0)) return;
+        var lbl=sp+': '+lsClassMeta(h.type,k).label;
+        lsClassYearParts(h, k, n, which==='open'?from:null).forEach(function(p){ rows.push({h:h.id, hn:lsHerdName(h), sp:sp, k:k, l:lbl, n:p.n, v:p.v, b:p.b}); }); });
+    } else {
+      var n0=(which==='open')?Math.max(0,lsReconHerd(h,{moves:hmFy}).opening):(h.qty||0); if(!(n0>0)) return;
+      lsClassYearParts(h, '_all', n0, which==='open'?from:null).forEach(function(p){ rows.push({h:h.id, hn:lsHerdName(h), sp:sp, k:'_all', l:sp+' · herd not split by class', n:p.n, v:p.v, b:p.b}); });
+    }
+  });
+  return rows;
+}
+function _lsRowsTotal(rows, withHb){ return Math.round((rows||[]).reduce(function(s,r){ return s+((withHb || !lsHbElected(r.sp,r.k))?(r.n||0)*(r.v||0):0); },0)); }
+/* Last year's closing (this year's opening): the saved statement, or the worked-back pre-fill. */
+function lsOpeningStock(fy){
+  fy=(fy!=null)?fy:getCurrentFY();
+  var snap=(_lsY().close||{})[String(fy-1)];
+  if(snap && Array.isArray(snap.rows)) return { rows:snap.rows, saved:true, at:snap.at||'', src:snap.src||'saved', total:_lsRowsTotal(snap.rows) };
+  var rows=lsYearEndRows('open'); return { rows:rows, saved:false, at:'', src:'worked', total:_lsRowsTotal(rows) };
+}
+/* Save a year's closing statement (head, value a head, basis, per herd and class). */
+function lsYearCloseSave(fy, rows, src){
+  fy=(fy!=null)?fy:getCurrentFY();
+  var y=_lsYW(); rows=rows||lsYearEndRows('close');
+  y.close[String(fy)]={ fy:fy, at:new Date().toISOString(), src:src||'saved', rows:rows.map(function(r){ return {h:r.h, hn:r.hn, sp:r.sp, k:r.k, l:r.l, n:+r.n||0, v:+r.v||0, b:r.b}; }) };
+  _lsYPersist(src==='entered'?'Last year’s closing livestock saved — it is this year’s opening stock':('Closing livestock for '+getFYLabel(fy)+' saved — it becomes next year’s opening stock'));
+  try{ var ov=document.getElementById('ls-report-overlay'); if(ov && ov.style.display!=='none') openHmrcLivestockReport(); }catch(e){}
+  return y.close[String(fy)];
+}
+/* The one-off "Last year's closing livestock" entry: what the farmer confirmed or corrected. */
+function lsOpeningConfirm(){
+  var fy=getCurrentFY(), pre=lsOpeningStock(fy).rows, out=[], bad=false;
+  pre.forEach(function(r,i){ var ne=document.getElementById('lsop-n-'+i), ve=document.getElementById('lsop-v-'+i);
+    var n=ne?parseInt(ne.value,10):r.n, v=ve?parseFloat(String(ve.value).replace(/[£,\s]/g,'')):r.v;
+    if(!isFinite(n)||n<0||!isFinite(v)||v<0){ bad=true; return; }
+    if(n>0) out.push(Object.assign({}, r, {n:n, v:Math.round(v*100)/100, b:(ve && Math.round(v)!==Math.round(r.v))?'a':r.b})); });
+  if(bad){ if(typeof toast==='function') toast('Head and value a head need to be numbers','error'); return; }
+  lsYearCloseSave(fy-1, out, 'entered');
+}
+function lsAcctSave(){
+  var y=_lsYW(), keys=[];
+  document.querySelectorAll('[data-lsacct]').forEach(function(el){ var k=el.getAttribute('data-lsacct'), v=parseFloat(String(el.value||'').replace(/[£,\s]/g,''));
+    if(v>0) y.acct[k]=Math.round(v*100)/100; else delete y.acct[k]; keys.push(k); });
+  _lsYPersist('Your accountant’s values saved');
+  try{ openHmrcLivestockReport(); }catch(e){}
+}
+/* D5: record a herd basis election for one class (irrevocable - it is added, never edited away). */
+function lsHbAdd(){
+  var sel=document.getElementById('lshb-cls'), dt=document.getElementById('lshb-date');
+  var v=sel?String(sel.value||''):'', d=dt?String(dt.value||''):'';
+  if(!v){ if(typeof toast==='function') toast('Pick the class the election covers','error'); return; }
+  if(!d){ if(typeof toast==='function') toast('Enter the date you made the election','error'); return; }
+  var p=v.split('|'); if(lsHbElected(p[0],p[1])){ if(typeof toast==='function') toast('That class is already on the herd basis','info'); return; }
+  var go=function(){ var y=_lsYW(); y.hb.push({sp:p[0], k:p[1], date:d, at:new Date().toISOString()}); _lsYPersist('Herd basis election recorded for '+p[0].toLowerCase()+' · '+lsClassMeta(_lsSpType(p[0]),p[1]).label.toLowerCase());
+    try{ if(typeof renderStockRegister==='function') renderStockRegister(); }catch(e){} };
+  if(typeof appConfirm==='function') appConfirm('A herd basis election cannot be withdrawn while you keep the herd. Record it for '+p[0].toLowerCase()+' · '+lsClassMeta(_lsSpType(p[0]),p[1]).label.toLowerCase()+'?',{okLabel:'Record it'}).then(function(ok){ if(ok) go(); });
+  else go();
+}
+function _lsSpType(sp){ var t=(ANIMAL_TYPES||[]).filter(function(a){ return a.b===sp; })[0]; return t?t.t:sp; }
+/* D5: the elected classes' purchases, sales and losses this year, for the accountant to mark as
+   an addition, a replacement or a disposal - the app does not work out herd basis profit. */
+function lsHbSchedule(){
+  var out=[], from=lsFyStartISO();
+  (ST_LS.moves||[]).forEach(function(m){ if(!m) return; var h=lsHerdById(m.herd); if(!h) return;
+    if(['bought','sold','died','stolen','missing','slaughter'].indexOf(m.reason)<0) return;
+    if(_lsMoveISO(m)<from) return; var sp=_lsSp(h), k=_lsMoveClsFor(h,m); if(!lsHbElected(sp,k)) return;
+    out.push({date:_lsMoveISO(m), herd:lsHerdName(h), sp:sp, k:k, cls:lsClassMeta(h.type,k).label, reason:m.reason, qty:+m.qty||0, money:+m.money||0}); });
+  return out.sort(function(a,b){ return a.date<b.date?-1:1; });
 }
 // Deaths/losses THIS FY, broken out by class (only counts moves that carried a class tag).
-function _lsHerdClassDied(hm){ var out={}; hm.forEach(function(m){ if(m.reason==='died'||m.reason==='stolen'||m.reason==='missing'){ var k=m.cls||''; if(k) out[k]=(out[k]||0)+(m.qty||0); } }); return out; }
-// Single pass over every herd building both the farm-wide HMRC totals AND a per-classification value table
-// (aggregated across herds — two Cattle herds' "cows" merge into one row, as HMRC' own return would). Classless
-// mobs (and poultry, which has no LS_CLASSES breakdown) fall back to one row at the flat species standard value.
+function _lsHerdClassDied(hm){ var out={}; hm.forEach(function(m){ if(m.reason==='died'||m.reason==='stolen'||m.reason==='missing'){ var _h=lsHerdById(m.herd), k=m.cls||(_h?_lsMoveClsFor(_h,m):''); if(k) out[k]=(out[k]||0)+(m.qty||0); } }); return out; }
 /* U26 (step 5, A): what a herd's sales brought in this tax year - the Livestock Sales entries
    in the ledger tagged to the herd, without VAT, plus any sale movement that no entry is tied
    to. The statement read only the money typed on movements, so sales entered as income never
@@ -36334,38 +36665,40 @@ function _lsHmrcUntaggedSales(){
 }
 function _lsHmrcCompute(){
   var herds=ST_LS.herd.filter(function(h){return !h.planned;});
-  var T={op:0,born:0,bought:0,sold:0,died:0,own:0,close:0,openV:0,closeV:0,sales:0,purch:0,cons:0,market:0,salesUntagged:0};
-  var classAgg={}, recRows=[];
+  var T={op:0,born:0,bought:0,sold:0,died:0,own:0,close:0,openV:0,closeV:0,sales:0,purch:0,cons:0,market:0,salesUntagged:0,hbClose:0,hbOpen:0};
+  var classAgg={}, recRows=[], died={};
   herds.forEach(function(h){
     var hmFy=lsHerdMovesFy(h.id);
     var r=lsReconHerd(h,{moves:hmFy});
     r.soldCash=_lsHmrcSales(h, hmFy);   /* U26 */
-    var sc=lsHmrcClass(h.type);
+    var sp=_lsSp(h), sc={cls:sp+(lsHasClasses(h)?'':' · not split by class')};
     T.op+=r.opening; T.born+=r.born; T.bought+=r.bought; T.sold+=r.sold; T.died+=r.died; T.own+=r.own; T.close+=r.closing;
-    T.openV+=r.opening*sc.val;   // opening value: no per-class snapshot exists from last year, so kept at the flat rate
-    T.sales+=r.soldCash; T.purch+=r.purchCost; T.cons+=r.own*(h.buy||sc.val);
-    T.market+=(lsHerdMarketVal(h)||r.closing*(h.sell||0));
+    T.sales+=r.soldCash; T.purch+=r.purchCost;
+    /* Own use at cost: the class's own year-end value a head (-388; was the national cow rate). */
+    hmFy.forEach(function(m){ if(m.reason!=='slaughter') return; var k=lsHasClasses(h)?_lsMoveClsFor(h,m):'_all'; var p=lsClassYearParts(h,k,1)[0]; T.cons+=(+m.qty||0)*((h.buy>0)?h.buy:(p?p.v:0)); });
+    T.market+=lsHerdValue(h);   /* U25: one herd value */
     recRows.push({h:h, r:r, sc:sc});
-    if(lsHasClasses(h)){
-      var diedByCls=_lsHerdClassDied(hmFy);
-      (h.classes||[]).forEach(function(c){
-        if(!c.n) return;
-        var scv=lsHmrcClassValue(h.type,c.k);
-        var key=animalBase(h.type)+'|'+c.k;
-        var row=classAgg[key]||(classAgg[key]={label:scv.label,val:scv.val,head:0,died:0});
-        row.head+=c.n; row.died+=(diedByCls[c.k]||0);
-      });
-    } else {
-      var key2=animalBase(h.type)+'|_all';
-      /* -384: a herd not split by class is valued at the species' default; say so, or it printed a
-         second "Cattle: Cows" row under the herd that IS split. */
-      var row2=classAgg[key2]||(classAgg[key2]={label:sc.cls+' \u00b7 herd not split by class',val:sc.val,head:0,died:0});
-      row2.head+=r.closing; row2.died+=r.died;
-    }
+    var dc=lsHasClasses(h)?_lsHerdClassDied(hmFy):{'_all':r.died};
+    Object.keys(dc).forEach(function(k){ var key=sp+'|'+k; died[key]=(died[key]||0)+dc[k]; });
   });
-  T.closeV=Object.keys(classAgg).reduce(function(s,k){return s+classAgg[k].head*classAgg[k].val;},0);
+  var close=lsYearEndRows('close');
+  close.forEach(function(r){
+    if(lsHbElected(r.sp,r.k)){ T.hbClose+=r.n*r.v; return; }
+    /* one row per class and basis across herds (as the return lists them); each herd's own class
+       value, so the value a head shown is the average and the total is exact */
+    var key=r.sp+'|'+r.k+'|'+(r.b==='d'?'d':(r.b==='a'?'a':'c'));
+    var row=classAgg[key]||(classAgg[key]={label:r.l+(r.b==='d'?'':(' · '+(r.b==='a'?'your accountant’s value':'bought in'))), val:0, head:0, died:0, basis:r.b, sp:r.sp, k:r.k, total:0});
+    row.head+=r.n; row.total+=r.n*r.v; row.val=row.head?Math.round(row.total/row.head):0; if(row.basis!==r.b && r.b==='m') row.basis='m';
+  });
+  /* deaths by class on the first row of that class */
+  Object.keys(died).forEach(function(key){ var hit=Object.keys(classAgg).filter(function(x){ return x.indexOf(key+'|')===0; })[0];
+    if(hit) classAgg[hit].died+=died[key]; else if(died[key]>0 && !lsHbElected(key.split('|')[0], key.split('|')[1])){ var p=key.split('|'); classAgg[key+'|d']={label:p[0]+': '+(p[1]==='_all'?'herd not split by class':lsClassMeta(_lsSpType(p[0]),p[1]).label), val:0, head:0, died:died[key], basis:'d', sp:p[0], k:p[1], total:0}; } });
+  T.closeV=Math.round(Object.keys(classAgg).reduce(function(s,k){return s+(classAgg[k].total||0);},0));
+  var op=lsOpeningStock();
+  T.openV=op.total; T.openSaved=op.saved; T.openAt=op.at; T.openSrc=op.src;
+  T.hbOpen=_lsRowsTotal(op.rows,true)-op.total;
   T.salesUntagged=_lsHmrcUntaggedSales(); T.sales+=T.salesUntagged;   /* U26: livestock sales not tagged to a herd still count */
-  return {herds:herds, T:T, classAgg:classAgg, recRows:recRows};
+  return {herds:herds, T:T, classAgg:classAgg, recRows:recRows, open:op, closeRows:close};
 }
 
 // opts.moves lets a caller override the move list (e.g. the movement drawer walks full history); the default is
@@ -36415,6 +36748,9 @@ var LS_RPT_EXTRA_CSS =
   '.lsr-disc{margin-top:10px;font-size:11px;color:#6b7280;background:#FFFBEB;border:1px solid #FDE68A;border-radius:8px;padding:11px 13px;line-height:1.55}' +
   '.lsr-keep{font-size:12px;color:#374151;line-height:1.7;padding-left:18px;margin:6px 0 0}' +
   '.lsr-sub{font-size:11px;font-weight:800;color:#1B4332;text-transform:uppercase;letter-spacing:.04em;margin:14px 0 4px}' +
+  '.lsr-yearend{margin-top:22px;padding:14px 16px;border:1px solid #d8e7dd;border-radius:10px;background:#F7FBF8}.lsr-yearend h2{margin-top:0}'+
+  '.lsr-btn{font:inherit;font-size:13px;font-weight:700;border:0;border-radius:9px;padding:9px 14px;background:#1B4332;color:#fff;cursor:pointer}.lsr-btn.sec{background:#fff;color:#1B4332;border:1px solid #1B4332}'+
+  '@media print{.lsr-noprint{display:none}}'+
   '.pos{color:#16a34a}.neg{color:#E74C3C}';
 var LS_RPT_SCREEN_CSS =
   '#ls-report-body{font-family:"Plus Jakarta Sans",system-ui,sans-serif;background:#fff;max-width:880px;margin:0 auto;padding:28px 32px;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,.07);color:#1a1a1a}' +
@@ -36475,39 +36811,49 @@ function _ukLsSections(){
   var recRows = comp.recRows.map(function(x){ var h=x.h, r=x.r, sc=x.sc;
     return '<tr><td>'+escTxHtml(lsHerdName(h))+' <span style="color:#9ca3af;font-size:11px">('+escTxHtml(sc.cls)+')</span></td><td class="amt">'+r.opening+'</td><td class="amt">'+r.born+'</td><td class="amt">'+r.bought+'</td><td class="amt">'+r.sold+'</td><td class="amt">'+r.died+'</td><td class="amt">'+r.own+'</td><td class="amt">'+r.closing+'</td></tr>';
   }).join('');
-  var valRows = Object.keys(classAgg).map(function(k){ var c=classAgg[k];
-    return '<tr><td>'+escTxHtml(c.label)+'</td><td class="amt">'+lsRand(c.val)+'</td><td class="amt">'+c.head+'</td><td class="amt">'+c.died+'</td><td class="amt">'+lsRand(c.head*c.val)+'</td></tr>';
+  var valRows = Object.keys(classAgg).filter(function(k){ return classAgg[k].head>0 || classAgg[k].died>0; }).map(function(k){ var c=classAgg[k];
+    return '<tr><td>'+escTxHtml(c.label)+'</td><td>'+escTxHtml(UK_LS_BASIS_LBL[c.basis]||'')+'</td><td class="amt">'+lsRand(c.val)+'</td><td class="amt">'+c.head+'</td><td class="amt">'+c.died+'</td><td class="amt">'+lsRand(c.total||0)+'</td></tr>';
   }).join('');
   var result = T.sales + T.closeV + T.cons - T.openV - T.purch;
+  var hb=(_lsY().hb||[]), anyTrading=Object.keys(classAgg).some(function(k){ return classAgg[k].head>0; }) || T.openV>0;
+  var hbList=hb.map(function(e){ return escTxHtml(e.sp+' · '+lsClassMeta(_lsSpType(e.sp),e.k).label.toLowerCase()+' (elected '+_ukDmy(e.date)+')'); }).join(', ');
+  var sch=lsHbSchedule();
+  var schHtml = hb.length ? ('<h2>Herd basis schedule</h2>'+
+      '<div class="lsr-lead">Animals of '+hbList+' bought, sold or lost this year. Your accountant marks each as an addition to the herd, a replacement or a disposal.</div>'+
+      '<table><thead><tr><th>Date</th><th>Herd</th><th>Class</th><th>What happened</th><th class="amt">Head</th><th class="amt">Amount</th><th>Addition / replacement / disposal</th></tr></thead><tbody>'+
+      (sch.length?sch.map(function(r){ return '<tr><td>'+escTxHtml(_ukDmy(r.date))+'</td><td>'+escTxHtml(r.herd)+'</td><td>'+escTxHtml(r.cls)+'</td><td>'+escTxHtml({bought:'Bought',sold:'Sold',died:'Died',stolen:'Stolen',missing:'Missing',slaughter:'Own use'}[r.reason]||r.reason)+'</td><td class="amt">'+r.qty+'</td><td class="amt">'+(r.money?lsRand(r.money):'—')+'</td><td></td></tr>'; }).join(''):'<tr><td colspan="7" style="color:#6b7280">Nothing bought, sold or lost in these classes this year.</td></tr>')+
+      '</tbody></table>') : '';
+  var openNote = T.openSaved ? ('last year’s closing statement'+(T.openAt?(', saved '+_ukDmy(String(T.openAt).slice(0,10))):''))
+                             : 'worked back from this year’s movements at this year’s values — not confirmed yet';
   return '<h2>1 · Reconciliation of livestock numbers</h2>'+
     '<div class="lsr-lead">Opening + born + bought − sold − died − own use = closing. Numbers must balance per class.</div>'+
     '<table><thead><tr><th>Class</th><th class="amt">Opening</th><th class="amt">Born</th><th class="amt">Bought</th><th class="amt">Sold</th><th class="amt">Died</th><th class="amt">Own use</th><th class="amt">Closing</th></tr></thead><tbody>'+recRows+'</tbody>'+
       '<tfoot><tr class="total"><td>Total head</td><td class="amt">'+T.op+'</td><td class="amt">'+T.born+'</td><td class="amt">'+T.bought+'</td><td class="amt">'+T.sold+'</td><td class="amt">'+T.died+'</td><td class="amt">'+T.own+'</td><td class="amt">'+T.close+'</td></tr></tfoot></table>'+
     '<h2>2 · Year-end valuation of trading stock</h2>'+
-    '<div class="lsr-lead">There is no standard-value table in the UK. Animals that are not on the herd basis are trading stock, valued at the lower of what they cost you and what they would fetch \u2014 or, by long-standing HMRC practice, at <b>deemed cost</b>: 60% of open market value for cattle, 75% for sheep and pigs (BIM55410). Deemed cost applies to home-bred and home-reared animals \u2014 for bought-in stock it cannot bring the value below what you paid plus rearing costs since. Whichever basis you use, use it consistently. Valued per class (cows, bulls, heifers, calves and so on) from your herd\u2019s recorded make-up \u2014 confirm the per-head figures with your accountant.</div>'+
-    '<table><thead><tr><th>Class</th><th class="amt">Value per head</th><th class="amt">Number on hand</th><th class="amt">Deaths in year</th><th class="amt">Total value</th></tr></thead><tbody>'+valRows+'</tbody>'+
-      '<tfoot><tr class="total"><td colspan="4">TOTAL value of livestock on hand (closing stock)</td><td class="amt">'+lsRand(T.closeV)+'</td></tr></tfoot></table>'+
-    '<div class="lsr-note">Memo — economic / market value of the herd ≈ '+lsRand(T.market)+'. For your management only; it does not go on the HMRC return. Opening stock value (below, section 3) uses last year’s flat per-species rate — no per-class snapshot is available from a prior year — while closing stock above is broken down by class.</div>'+
+    '<div class="lsr-lead">Home-bred and home-reared animals at <b>deemed cost</b>: 60% of the class’s market value on your herd for cattle, 75% for sheep and pigs (goats at 75% too — agree it with your accountant). Animals <b>bought in</b> and still on hand at what you paid, or their market value if that is lower. Where your accountant gives a value for a class, that is used instead. BIM55410.'+(hb.length?(' Classes on the herd basis ('+hbList+') are not trading stock and are left out.'):'')+'</div>'+
+    '<table><thead><tr><th>Class</th><th>Basis</th><th class="amt">Value per head</th><th class="amt">Number on hand</th><th class="amt">Deaths in year</th><th class="amt">Total value</th></tr></thead><tbody>'+valRows+'</tbody>'+
+      '<tfoot><tr class="total"><td colspan="5">TOTAL value of livestock on hand (closing stock)</td><td class="amt">'+lsRand(T.closeV)+'</td></tr></tfoot></table>'+
+    '<div class="lsr-note">Memo — market value of the herd ≈ '+lsRand(T.market)+'. For your management only; it does not go on the HMRC return.</div>'+
     '<h2>3 · Livestock result for your tax return</h2>'+
     '<table><tbody>'+
       '<tr><td>Livestock sales (proceeds)</td><td class="amt pos">+ '+lsRand(T.sales)+'</td></tr>'+
       '<tr><td>Closing stock at valuation</td><td class="amt pos">+ '+lsRand(T.closeV)+'</td></tr>'+
       '<tr><td>Private consumption / rations added back (at cost)</td><td class="amt pos">+ '+lsRand(T.cons)+'</td></tr>'+
-      '<tr><td>Less: opening stock at valuation</td><td class="amt neg">− '+lsRand(T.openV)+'</td></tr>'+
+      '<tr><td>Less: opening stock at valuation <span style="color:#9ca3af;font-size:11px">('+openNote+')</span></td><td class="amt neg">− '+lsRand(T.openV)+'</td></tr>'+
       '<tr><td>Less: livestock purchased</td><td class="amt neg">− '+lsRand(T.purch)+'</td></tr>'+
       '<tr class="total"><td>Livestock contribution to farming income</td><td class="amt">'+lsRand(result)+'</td></tr>'+
     '</tbody></table>'+
-    '<div class="lsr-note"><b>Stock valuation:</b> livestock bought is carried as trading stock and relieved through the year-end valuation, unless you have elected the herd basis for the breeding herd. Feed, vet and running costs are ordinary allowable business expenses, not stock value.</div>'+
     '<h2>4 · Basis of valuation</h2>'+
     '<div class="lsr-lead">Basis used for this statement:</div>'+
     '<table><tbody>'+
-      '<tr><td style="width:34px;font-size:15px">\u2611</td><td><b>(a) Trading stock</b> \u2014 valued at the lower of what they cost you and what they would fetch, or at deemed cost.</td></tr>'+
-      '<tr><td style="font-size:15px">\u2610</td><td><b>(b) Herd basis</b> \u2014 elected for the production herd, which is then carried at cost and left out of the stock valuation.</td></tr>'+
+      '<tr><td style="width:34px;font-size:15px">'+(anyTrading?'☑':'☐')+'</td><td><b>(a) Trading stock</b> — valued at the lower of what they cost you and what they would fetch, or at deemed cost.</td></tr>'+
+      '<tr><td style="font-size:15px">'+(hb.length?'☑':'☐')+'</td><td><b>(b) Herd basis</b> — '+(hb.length?('elected for '+hbList+'; carried at cost and left out of the stock valuation.'):'elected for a production herd, which is then carried at cost and left out of the stock valuation.')+'</td></tr>'+
       '</tbody></table>'+
-    '<div class="lsr-lead">A herd basis election is <b>irrevocable</b> and must be made in writing. A sole trader has until the first anniversary of the normal filing date for the tax year containing the end of the first period of account in which the herd is kept \u2014 the second anniversary if it is the first year of the trade. A partnership has twelve months from that filing date; a company, two years from the end of the accounting period. Keep this statement with your records.</div>'+
+    '<div class="lsr-lead">A herd basis election is made for a <b>class</b> of production animal, in writing, and is <b>irrevocable</b> (ITTOIA 2005 s124). A sole trader has until the first anniversary of the normal filing date for the tax year in which the first period of account in which the herd is kept ends — the second anniversary for a new farmer who is not in a partnership. A partnership has twelve months from that filing date; a company, two years from the end of the accounting period. Keep this statement with your records.</div>'+
+    schHtml+
     '<h2>5 · Records to keep</h2>'+
     '<ul class="lsr-keep"><li>Sales &amp; purchases: names/addresses, descriptions, amounts.</li><li>Private consumption: family &amp; worker numbers and estimated cost/value consumed.</li><li>Animals given away or taken for private use: recipient, description, market value.</li><li>Compulsory slaughter for disease: the compensation, and the replacement animals bought - on the herd basis the receipt waits for the replacements (BIM55535).</li><li>Deaths by class.</li></ul>'+
-    '<div class="lsr-disc"><b>Not tax advice.</b> Compiled from your records to help you and your accountant. Classification, any own-value election and the final return remain your responsibility. Please have it reviewed by your accountant before it goes to HMRC.</div>';
+    '<div class="lsr-disc"><b>Not tax advice.</b> Compiled from your records to help you and your accountant. Classification, any herd basis election and the final return remain your responsibility. Please have it reviewed by your accountant before it goes to HMRC.</div>';
 }
 /* For the year-end pack. Nothing to say on a farm with no animals. */
 function ukLivestockValuationHTML(){
@@ -36518,23 +36864,53 @@ function ukLivestockValuationHTML(){
       'figures to '+lsFmtDate(LS_TODAY)+'</div>'+_ukLsSections()+'</div>';
   }catch(e){ return ''; }
 }
+/* -388: what the farmer does at the year end, on the Livestock screen only (not printed):
+   confirm last year's closing (once), keep an accountant's value per class, save this year's
+   closing statement. */
+function _ukLsYearEndTools(comp){
+  var fy=getCurrentFY(), T=comp.T, op=comp.open, inp='width:92px;text-align:right;padding:5px 7px;border:1px solid #d1d5db;border-radius:7px;font:inherit;font-size:12.5px';
+  var h='';
+  if(!op.saved){
+    var rows=op.rows.map(function(r,i){ return '<tr><td>'+escTxHtml(r.hn)+'</td><td>'+escTxHtml(r.l)+(r.b==='d'?'':' <span style="color:#9ca3af;font-size:11px">· '+escTxHtml(UK_LS_BASIS_LBL[r.b]||'')+'</span>')+'</td>'+
+      '<td class="amt"><input id="lsop-n-'+i+'" type="number" min="0" step="1" value="'+r.n+'" style="'+inp+'"></td>'+
+      '<td class="amt"><input id="lsop-v-'+i+'" type="number" min="0" step="1" value="'+Math.round(r.v)+'" style="'+inp+'"></td>'+
+      '<td class="amt">'+lsRand(r.n*r.v)+'</td></tr>'; }).join('');
+    h+='<div class="lsr-yearend" id="ls-open-entry"><h2>Last year’s closing livestock · '+escTxHtml(getFYLabel(fy-1))+'</h2>'+
+      '<div class="lsr-lead">This year’s opening stock. Filled in by working your classes back through this year’s movements at this year’s values — check it against last year’s accounts and correct it once.</div>'+
+      '<table><thead><tr><th>Herd</th><th>Class</th><th class="amt">Head</th><th class="amt">Value per head</th><th class="amt">Total</th></tr></thead><tbody>'+rows+'</tbody>'+
+      '<tfoot><tr class="total"><td colspan="4">Opening stock</td><td class="amt">'+lsRand(op.total)+'</td></tr></tfoot></table>'+
+      '<div style="margin-top:10px"><button class="lsr-btn" onclick="lsOpeningConfirm()">Confirm last year’s closing</button></div></div>';
+  }
+  var keys={}; comp.closeRows.forEach(function(r){ keys[r.sp+'|'+r.k]={sp:r.sp,k:r.k,l:r.l}; }); (op.rows||[]).forEach(function(r){ keys[r.sp+'|'+r.k]=keys[r.sp+'|'+r.k]||{sp:r.sp,k:r.k,l:r.l}; });
+  var acctRows=Object.keys(keys).map(function(k){ var x=keys[k], v=lsAcctValue(x.sp,x.k);
+    return '<tr><td>'+escTxHtml(x.l)+(lsHbElected(x.sp,x.k)?' <span style="color:#9ca3af;font-size:11px">· herd basis</span>':'')+'</td><td class="amt"><input data-lsacct="'+escTxHtml(k)+'" type="number" min="0" step="1" value="'+(v?Math.round(v):'')+'" placeholder="—" style="'+inp+'"></td></tr>'; }).join('');
+  h+='<div class="lsr-yearend"><h2>Your accountant’s value per head <span style="font-weight:600;color:#6b7280;font-size:12px">optional</span></h2>'+
+    '<table><thead><tr><th>Class</th><th class="amt">Value per head</th></tr></thead><tbody>'+acctRows+'</tbody></table>'+
+    '<div style="margin-top:10px"><button class="lsr-btn sec" onclick="lsAcctSave()">Save accountant’s values</button></div></div>';
+  var saved=(_lsY().close||{})[String(fy)];
+  h+='<div class="lsr-yearend"><h2>Closing stock for '+escTxHtml(getFYLabel(fy))+'</h2>'+
+    '<div class="lsr-lead">'+(saved?('Saved '+_ukDmy(String(saved.at).slice(0,10))+' at '+lsRand(_lsRowsTotal(saved.rows))+'. Save it again at your year end if anything has changed.'):'Save it at your year end: it becomes next year’s opening stock, on the same basis.')+'</div>'+
+    '<button class="lsr-btn" onclick="lsYearCloseSave()">Save as closing stock · '+lsRand(T.closeV)+'</button></div>';
+  return h;
+}
 function openHmrcLivestockReport(){
   var comp=_lsHmrcCompute(); var T=comp.T, classAgg=comp.classAgg;
   var result = T.sales + T.closeV + T.cons - T.openV - T.purch;
   var html =
     '<h1>Livestock Trading Statement &amp; Valuation</h1>'+
     '<div class="lsr-meta">'+escTxHtml(FARM.name||'Farm')+' · Tax year '+lsYoaLabel()+' · figures to '+lsFmtDate(LS_TODAY)+' · trading stock and herd basis under ITTOIA 2005</div>'+
-    _ukLsSections();
+    _ukLsSections()+
+    '<div class="lsr-noprint">'+_ukLsYearEndTools(comp)+'</div>';
   var csv = lsCsvRow(['HMRC Livestock Trading Statement & Valuation']) + lsCsvRow([FARM.name||'Farm','Tax year',lsYoaLabel()]) + lsCsvRow([]) +
     lsCsvRow(['Reconciliation (head)']) + lsCsvRow(['Class','Opening','Born','Bought','Sold','Died','Own use','Closing']);
   comp.recRows.forEach(function(x){ var h=x.h,r=x.r,sc=x.sc; csv+=lsCsvRow([lsHerdName(h)+' ('+sc.cls+')',r.opening,r.born,r.bought,r.sold,r.died,r.own,r.closing]); });
   csv += lsCsvRow(['Total',T.op,T.born,T.bought,T.sold,T.died,T.own,T.close]) + lsCsvRow([]) +
-    lsCsvRow(['Year-end valuation of trading stock (per class)']) + lsCsvRow(['Class','Value per head','On hand','Deaths','Total value']);
-  Object.keys(classAgg).forEach(function(k){ var c=classAgg[k]; csv+=lsCsvRow([c.label,c.val,c.head,c.died,c.head*c.val]); });
-  csv += lsCsvRow(['TOTAL value of livestock on hand','','','',T.closeV]) + lsCsvRow([]) +
+    lsCsvRow(['Year-end valuation of trading stock (per class)']) + lsCsvRow(['Class','Basis','Value per head','On hand','Deaths','Total value']);
+  Object.keys(classAgg).forEach(function(k){ var c=classAgg[k]; if(!(c.head>0||c.died>0)) return; csv+=lsCsvRow([c.label,UK_LS_BASIS_LBL[c.basis]||'',c.val,c.head,c.died,Math.round(c.total||0)]); });
+  csv += lsCsvRow(['TOTAL value of livestock on hand','','','','',T.closeV]) + lsCsvRow([]) +
     lsCsvRow(['Livestock result']) +
-    lsCsvRow(['Sales proceeds',T.sales]) + lsCsvRow(['Closing stock (standard value)',T.closeV]) + lsCsvRow(['Consumption added back (cost)',T.cons]) +
-    lsCsvRow(['Less opening stock (standard value)',-T.openV]) + lsCsvRow(['Less livestock purchased',-T.purch]) + lsCsvRow(['Livestock contribution to income',result]);
+    lsCsvRow(['Sales proceeds',T.sales]) + lsCsvRow(['Closing stock at valuation',T.closeV]) + lsCsvRow(['Consumption added back (cost)',T.cons]) +
+    lsCsvRow(['Less opening stock at valuation',-T.openV]) + lsCsvRow(['Less livestock purchased',-T.purch]) + lsCsvRow(['Livestock contribution to income',result]);
   lsShowReport('HMRC livestock valuation', 'linear-gradient(135deg,#2D6A4F,#1B4332)', html, csv, 'hmrc-livestock-valuation.csv');
 }
 
@@ -36660,7 +37036,7 @@ function _lsMktValue(h){
   if(lsHasClasses(h)) return (h.classes||[]).reduce(function(s,c){ return s+(c.n||0)*((c.v>0)?c.v:est); },0);
   return (h.qty||0)*((h.sell>0)?h.sell:est);
 }
-function _lsRegIsDairy(h){ return String(h.type||'').toLowerCase().indexOf('dairy')>=0; }
+function _lsRegIsDairy(h){ return String(h.type||'').toLowerCase().indexOf('dairy')>=0 && animalBase(h.type)==='Cattle'; }   /* -388: goats were listed under "Dairy cattle" */
 function _lsRegHasDairy(){ return (ST_LS.herd||[]).some(function(h){ return !h.planned && _lsRegIsDairy(h); }); }
 function _lsRegSpecies(h){
   if(_lsRegIsDairy(h)) return 'Dairy cattle';
@@ -36705,9 +37081,9 @@ function _lsRegBanner(){
   // DO — withdrawal holds
   var held=herds.filter(function(h){ return _lsHerdWd(h.id).wd; });
   if(held.length){
-    var latest=null; held.forEach(function(h){ var w=_lsHerdWd(h.id); if(w.safe&&(!latest||w.safe>latest)) latest=w.safe; });
-    var nm=held.map(function(h){return esc(lsHerdName(h));}).slice(0,2).join(' & ')+(held.length>2?' +'+(held.length-2):'');
-    items.push({sev:'do', t:'<b>'+nm+' '+(held.length===1?'is':'are')+' under a medicine withdrawal'+(latest?' until '+lsFmtDate(latest):'')+'.</b> Don’t sell or slaughter them yet — residues aren’t clear.', go:'See', act:"_lsRegGoHerd("+ST_LS.herd.indexOf(held[0])+")"});
+    /* -388 B3-05: each hold with its own date - one merged "until" showed the latest date for every herd. */
+    var nm=held.slice(0,3).map(function(h){ var w=_lsHerdWd(h.id); return esc(lsHerdName(h))+(w.safe?' until '+lsFmtDate(w.safe):''); }).join('; ')+(held.length>3?' +'+(held.length-3)+' more':'');
+    items.push({sev:'do', t:'<b>Under a medicine withdrawal: '+nm+'.</b> Don’t sell or slaughter '+(held.length===1?'it':'them')+' yet — residues aren’t clear.', go:'See', act:"_lsRegGoHerd("+ST_LS.herd.indexOf(held[0])+")"});
   }
   // DO — herds not split into classes (HMRC needs the breakdown)
   var unsplit=herds.filter(function(h){ return !lsHasClasses(h) && (h.qty||0)>1; });
@@ -36735,7 +37111,7 @@ function _lsRegBanner(){
   }catch(e){}
   // KNOW — herd change this season
   var net=(d.T.born+d.T.bought)-(d.T.sold+d.T.lost);
-  if(net!==0) items.push({sev:'info', t:'Herd is <b>'+(net>0?'up ':'down ')+Math.abs(net)+' this season</b> ('+d.T.born+' born, '+d.T.sold+' sold, '+d.T.lost+' lost) — '+d.T.close+' head now.', go:'', act:''});
+  if(net!==0) items.push({sev:'info', t:'Herd is <b>'+(net>0?'up ':'down ')+Math.abs(net)+' this season</b> ('+d.T.born+' born, '+d.T.bought+' bought, '+d.T.sold+' sold, '+d.T.lost+' lost) — '+d.T.close+' head now.', go:'', act:''});   /* -388 B3-05: the bracket adds up */
 
   if(!items.length) return '<div class="lsreg-ban ok"><div class="rb-ic">✅</div><div style="flex:1"><div class="rb-h">You’re up to date</div><div class="rb-i"><span class="d info"></span><div>Your records reconcile and every group is priced with your own figures.</div></div></div></div>';
   var doN=items.filter(function(i){return i.sev==='do';}).length, knowN=items.length-doN;
@@ -36840,6 +37216,8 @@ function lsReconTakeOut(txnIdx){
   setTimeout(function(){
     try{
       lsMoveOpen(hid,'sold');
+      /* -388 B3-05: the animals left on the day of the sale, not today. */
+      var _sd=(typeof _lsTxnDateISO==='function')?_lsTxnDateISO(t.date):''; if(_sd){ LS_MV_STATE.date=_sd; var _de=document.getElementById('ls-mv-date'); if(_de) _de.value=_sd; }
       var q=document.getElementById('ls-mv-qty');
       if(q && t.unit==='head' && t.qty) q.value=t.qty;
       var mn=document.getElementById('ls-mv-money');
@@ -47102,11 +47480,11 @@ function markEventDone(idx, opts){
   var uid=Date.now();
   var _ent = h ? ('ls:'+h.id) : undefined;
   if(e.type==='sell'){
-    if(h){ _lsAdjustHead(h,'sold',e.qty||0,e.cls); ST_LS.moves=ST_LS.moves||[]; ST_LS.moves.unshift({id:'m'+uid,herd:h.id,reason:'sold',qty:e.qty||0,date:iso,note:e.notes||e.desc,money:amount}); }
+    if(h){ var _pc=_lsAdjustHead(h,'sold',e.qty||0,e.cls); ST_LS.moves=ST_LS.moves||[]; ST_LS.moves.unshift({id:'m'+uid,herd:h.id,reason:'sold',cls:_pc||undefined,qty:e.qty||0,date:iso,note:e.notes||e.desc,money:amount}); }
     ST.txns.unshift({date:disp,desc:e.desc,cat:'Livestock Sales',type:'income',amt:amount,method:'Bank Debit',source:'Plan',ent:_ent});
     var _lsPa=ST.txns[0]; try{ if(window.AI&&AI.farm&&AI.farm.active()){ txnWriteThrough(_lsPa, {date:_lsTxnISO(iso),amt:amount,cat:'Livestock Sales',type:'income',desc:e.desc,method:'Bank Debit',ent:_ent,source:'Plan'}); } }catch(er){}
   } else if(e.type==='buy'){
-    if(h){ _lsAdjustHead(h,'bought',e.qty||0,e.cls); ST_LS.moves=ST_LS.moves||[]; ST_LS.moves.unshift({id:'m'+uid,herd:h.id,reason:'bought',qty:e.qty||0,date:iso,note:e.notes||e.desc,money:amount}); }
+    if(h){ var _pb=_lsAdjustHead(h,'bought',e.qty||0,e.cls); ST_LS.moves=ST_LS.moves||[]; ST_LS.moves.unshift({id:'m'+uid,herd:h.id,reason:'bought',cls:_pb||undefined,qty:e.qty||0,date:iso,note:e.notes||e.desc,money:amount}); }
     ST.txns.unshift({date:disp,desc:e.desc,cat:'Livestock Purchases',type:'expense',amt:amount,method:'Bank Debit',source:'Plan',ent:_ent});
     var _lsPb=ST.txns[0]; try{ if(window.AI&&AI.farm&&AI.farm.active()){ txnWriteThrough(_lsPb, {date:_lsTxnISO(iso),amt:amount,cat:'Livestock Purchases',type:'expense',desc:e.desc,method:'Bank Debit',ent:_ent,source:'Plan'}); } }catch(er){}
   } else if(e.type==='cost'){
@@ -53223,8 +53601,12 @@ function ukTrialBalance(fy){
   /* ── livestock ── */
   var herd=0;
   (((typeof ST_LS!=='undefined'&&ST_LS)?ST_LS.herd:null)||[]).forEach(function(h){ if(h && !h.planned) herd+=(typeof lsHerdValue==='function')?lsHerdValue(h):(Number(h.qty)||0)*(Number(h.sell)||0); });   /* U25 */
-  var onHerdBasis=!!((typeof ST_LS!=='undefined'&&ST_LS&&ST_LS.herdBasis&&ST_LS.herdBasis.elected));
-  if(herd) add(onHerdBasis?'Fixed assets':'Current assets', onHerdBasis?'Breeding herd (herd basis)':'Livestock', herd, 0, 'market value');
+  /* -388 D5: the classes under a herd basis election are the production herd (a fixed asset);
+     the rest is trading livestock. Same class values as the herd value, split. */
+  var _hbs=(typeof lsHerdBasisSplit==='function')?lsHerdBasisSplit():{production:0,trading:herd};
+  if(_hbs.production) add('Fixed assets','Production herd (herd basis)', _hbs.production, 0, 'market value');
+  if(herd-_hbs.production) add('Current assets','Livestock', herd-_hbs.production, 0, 'market value');
+  var onHerdBasis=_hbs.production>0;
 
   /* ── bank ── */
   var bank=(typeof ST!=='undefined'&&ST.bankBalance!=null)?Number(ST.bankBalance):null;
@@ -54787,9 +55169,9 @@ function ukMovementSystem(species){
   var r=ukRegion(), k=String(species||'').toLowerCase();
   if(/pig/.test(k)) return 'eAML2';
   if(/sheep|goat|lamb|ewe|ram/.test(k)){
-    return r==='Wales' ? 'EIDCymru' : r==='Scotland' ? 'ScotEID' : r==='Northern Ireland' ? 'APHIS' : 'ARAMS';
+    return r==='Wales' ? 'EIDCymru' : r==='Scotland' ? 'ScotEID' : r==='Northern Ireland' ? 'APHIS' : 'LIS';   /* -388: LIS replaced ARAMS in England, March 2022 */
   }
-  return r==='Scotland' ? 'ScotEID / BCMS' : r==='Northern Ireland' ? 'APHIS' : 'BCMS (moving to LIS)';
+  return r==='Scotland' ? 'ScotEID / BCMS' : r==='Northern Ireland' ? 'APHIS' : 'BCMS';
 }
 /* Is the holding under standstill today, and until when? Reads the movement log the
    app already keeps. Returns null when clear - a truthy return always means BLOCKED,
@@ -58583,10 +58965,10 @@ var UK_MOVE_SERVICES = {
           fields:['date','qty','otherCph'],
           cols:['Movement date','Departure CPH','Destination CPH','Number of animals','Species','Haulier'],
           note:'Cattle, sheep and goats in Scotland.' },
-  ARAMS: { nm:'ARAMS', method:'upload', deadlineDays:3,
+  LIS: { nm:'LIS', method:'upload', deadlineDays:3,
           fields:['date','qty','otherCph'],
           cols:['Movement date','Departure CPH','Destination CPH','Number of animals','Haulier','Transport document'],
-          note:'Sheep and goats in England.' },
+          note:'Sheep and goats in England - the Livestock Information Service, which replaced ARAMS in March 2022 (paper form LIS-1).' },
   EIDCymru: { nm:'EIDCymru', method:'upload', deadlineDays:3,
           fields:['date','qty','otherCph'],
           cols:['Movement date','Departure CPH','Destination CPH','Number of animals','Haulier'],
@@ -58608,7 +58990,7 @@ function ukMoveService(rec){
   if(sp==='pigs') return 'eAML2';
   var r=(typeof ukRegion==='function')?ukRegion():'England';
   if(sp==='sheep'||sp==='goats'){
-    return r==='Wales'?'EIDCymru':r==='Scotland'?'ScotEID':r==='Northern Ireland'?'APHIS':'ARAMS';
+    return r==='Wales'?'EIDCymru':r==='Scotland'?'ScotEID':r==='Northern Ireland'?'APHIS':'LIS';
   }
   return r==='Northern Ireland'?'APHIS':'BCMS';
 }
@@ -58767,69 +59149,97 @@ window.ukMoveQueueHTML=ukMoveQueueHTML;
    IRREVOCABLE while the herd is kept. That makes it exactly the kind of decision the
    app should surface early rather than let a farmer discover too late. */
 var UK_MED_RETENTION_YEARS = 5;
+/* -388: an explainer icon beside a heading (owner rule: no explanatory sentence under a box). */
+function _ukI(t){ return '<span class="kpi-i" style="position:static;display:inline-grid;vertical-align:middle;margin-left:6px;cursor:help" title="'+String(t||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;')+'">&#9432;</span>'; }
+/* -388 B3-U6: the medicine book is what the Veterinary Medicines Regulations 2013 (reg 19) and
+   VMGN 14 ask a keeper to record when a medicine is GIVEN: the product, the date, the quantity,
+   the withdrawal period and which animals were treated - plus the batch, which the purchase
+   record carries. A procedure with no product (a hoof trim, a check-up) is not a medicine and is
+   not in the book, so it is no longer flagged for a missing batch. Dates in UK form. */
+function _ukIsMedicine(t){ if(!t) return false; var k=String(t.kind||'').toLowerCase();
+  return k==='vaccine'||k==='vet'||k==='dose'||k==='dip'||k==='mineral'||!!t.abx||!!t.reg; }
+function _ukDmy(iso){ if(!iso) return ''; var d=new Date(String(iso).slice(0,10)+'T00:00:00'); return isNaN(d)?String(iso):lsFmtDate(d); }
+function _ukMedAnimals(t){ var h=(typeof lsHerdById==='function')?lsHerdById(t.herd):null, nm=h?lsHerdName(h):'';
+  if(t.target==='whole') return (nm?nm+' — ':'')+'whole group'+(h&&h.qty?(' ('+h.qty+' head)'):'');
+  if(t.target==='tags') return (t.tags&&t.tags.length)?((nm?nm+' — ':'')+'tags '+t.tags.join(', ')):'';
+  return (+t.head>0)?((nm?nm+' — ':'')+t.head+' head'):''; }
+function _ukMedWithdrawal(t){ var m=+t.meat||0, k=+t.milk||0; return 'meat '+(m?m+' d':'nil')+' · milk '+(k?k+' d':'nil'); }
 function ukMedicineBook(fromDate){
-  var rows=((window.ST_LS&&ST_LS.treatments)||[]).slice();
-  if(fromDate) rows=rows.filter(function(r){ return r && r.date>=fromDate; });
+  var all=((window.ST_LS&&ST_LS.treatments)||[]).slice();
+  if(fromDate) all=all.filter(function(r){ return r && r.date>=fromDate; });
+  var rows=all.filter(_ukIsMedicine);
   rows.sort(function(a,b){ return (a.date<b.date)?1:(a.date>b.date?-1:0); });
   var today=(typeof APP_TODAY!=='undefined'&&APP_TODAY)?new Date(APP_TODAY):new Date();
   var cutoff=new Date(today.getFullYear()-UK_MED_RETENTION_YEARS, today.getMonth(), today.getDate());
   var gaps=[];
   rows.forEach(function(r){
     var missing=[];
-    if(!r.batch) missing.push('batch number');
-    if(!r.by) missing.push('who gave it');
     if(!r.product) missing.push('product');
     if(!r.date) missing.push('date');
+    if(!r.batch) missing.push('batch number');
+    if(!String(r.dose||'').trim()) missing.push('quantity given');
+    if(!_ukMedAnimals(r)) missing.push('animals treated');
     if(missing.length) gaps.push({ rec:r, missing:missing });
   });
-  return { rows:rows, count:rows.length, gaps:gaps,
-           retentionYears:UK_MED_RETENTION_YEARS, keepFrom:_ukDateStr(cutoff),
+  return { rows:rows, count:rows.length, gaps:gaps, procedures:all.length-rows.length,
+           cols:['Date','Product','Batch','Quantity','Animals treated','Withdrawal (meat/milk)','Given by'],
+           table:rows.map(function(r){ return [_ukDmy(r.date), r.product||'', r.batch||'', r.dose||'', _ukMedAnimals(r), _ukMedWithdrawal(r), r.by||'']; }),
+           retentionYears:UK_MED_RETENTION_YEARS, keepFrom:_ukDateStr(cutoff), keepFromTxt:lsFmtDate(cutoff),
            complete:gaps.length===0 };
 }
-/* Herd basis: eligibility and what it would mean. Deliberately does not "recommend" -
-   it is irrevocable and turns on facts the app cannot see. */
+/* Herd basis: what has been elected, and a way to record an election (-388 D5, option A).
+   Per CLASS (ITTOIA 2005 s124(1)), irrevocable (s124(5)); time limit s124(2): the first
+   anniversary of the normal filing date for the tax year in which the first period of account
+   in which the herd is kept ends - the second for a new farmer who is not in a partnership; a
+   company has two years from the end of the accounting period. The old card said "within two
+   years of starting to keep the herd". Deliberately does not recommend one. */
 function ukHerdBasis(){
-  var st=(window.ST_LS)||{}, hb=st.herdBasis||{};
-  var breeding=((st.herd||[]).filter(function(h){
-    return /cow|ewe|sow|breed|dairy|suckler/i.test((h.name||'')+' '+(h.type||''));
-  }));
-  var head=breeding.reduce(function(a,h){ return a+(Number(h.qty)||0); },0);
-  var value=breeding.reduce(function(a,h){ return a+((Number(h.qty)||0)*(Number(h.sell)||0)); },0);
+  _lsHbSync();
+  var hb=(_lsY().hb||[]), st=(window.ST_LS)||{}, classes={};
+  (st.herd||[]).forEach(function(h){ if(!h||h.planned||!lsHasClasses(h)) return; var sp=_lsSp(h);
+    (h.classes||[]).forEach(function(c){ var key=sp+'|'+c.k; var x=classes[key]||(classes[key]={sp:sp,k:c.k,label:sp+' · '+lsClassMeta(h.type,c.k).label.toLowerCase(),head:0,value:0}); x.head+=(c.n||0); x.value+=(c.n||0)*(c.v||0); }); });
+  var split=lsHerdBasisSplit();
   return {
-    elected:!!hb.elected, electedOn:hb.electedOn||null,
-    eligibleHerds:breeding.map(function(h){ return h.name||h.type; }),
-    head:head, estimatedValue:Math.round(value),
-    irrevocable:true, windowYears:2,
-    effect: hb.elected
-      ? 'The breeding herd is outside trading stock: its cost is not deducted and its sale is not taxed as trading income.'
-      : 'Without the election the breeding herd stays in trading stock, so rearing costs are deducted and sales are taxed as income.',
-    caution:'The election is made once, within two years of starting to keep the herd, and cannot be reversed while you keep it. Worth an accountant\u2019s view before you decide.'
+    elected:hb.length>0, electedOn:(hb[0]&&hb[0].date)||null, elections:hb.slice(),
+    classes:Object.keys(classes).map(function(k){ return classes[k]; }),
+    productionValue:split.production,
+    irrevocable:true, timeLimit:'s124(2)',
+    caution:'An election is made for a class of production animal, in writing, and cannot be withdrawn while you keep the herd (ITTOIA 2005 s124). Time limit (s124(2)): a sole trader has until the first anniversary of the normal filing date for the tax year in which the first period of account in which the herd is kept ends — the second anniversary for a new farmer who is not in a partnership; a partnership twelve months from that filing date; a company two years from the end of the accounting period. Worth an accountant’s view before you decide.'
   };
+}
+function ukHerdBasisCardHTML(){
+  var hb=ukHerdBasis(), esc=(typeof wkE==='function')?wkE:function(x){return x;};
+  var money=function(v){ return (typeof fmt==='function')?fmt(v):v; };
+  var list=hb.elections.map(function(e){ return '<div style="font-size:12.5px;padding:5px 0;border-bottom:1px solid var(--br2)"><b>'+esc(e.sp+' · '+lsClassMeta(_lsSpType(e.sp),e.k).label.toLowerCase())+'</b> · elected '+esc(_ukDmy(e.date))+'</div>'; }).join('');
+  var avail=hb.classes.filter(function(c){ return !lsHbElected(c.sp,c.k); });
+  var today=_ukDateStr((typeof APP_TODAY!=='undefined'&&APP_TODAY)?new Date(APP_TODAY):new Date());
+  var inp='height:34px;border:1px solid var(--br);border-radius:9px;padding:0 9px;font:inherit;font-size:12.5px;box-sizing:border-box';
+  var form=avail.length?('<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-top:10px">'+
+      '<div style="flex:1;min-width:170px"><div style="font-size:11px;font-weight:800;color:var(--t3);margin-bottom:3px">Class</div><select id="lshb-cls" style="'+inp+';width:100%"><option value="">Pick a class</option>'+
+        avail.map(function(c){ return '<option value="'+esc(c.sp+'|'+c.k)+'">'+esc(c.label)+' · '+c.head+' head</option>'; }).join('')+'</select></div>'+
+      '<div><div style="font-size:11px;font-weight:800;color:var(--t3);margin-bottom:3px">Date elected</div><input id="lshb-date" type="date" value="'+today+'" style="'+inp+'"></div>'+
+      '<button class="rc-btn" onclick="lsHbAdd()">Record the election</button></div>'):'';
+  var sch=lsHbSchedule();
+  return '<div class="wk-card" style="margin-top:14px"><div class="wk-ct">Herd basis '+(hb.elected?'· elected':'· not elected')+_ukI(hb.caution)+'</div>'+
+    (hb.elected?(list+'<div style="font-size:12px;margin-top:8px">Production herd on the balance sheet: <b>'+money(hb.productionValue)+'</b> · '+sch.length+' movement'+(sch.length===1?'':'s')+' this year on the herd basis schedule.</div>'):'')+
+    form+'</div>';
 }
 window.ukMedicineBook=ukMedicineBook; window.ukHerdBasis=ukHerdBasis;
 
 function ukMedicineHTML(){
   if(typeof ukMedicineBook!=='function') return '';
-  var mb=ukMedicineBook(), hb=ukHerdBasis();
+  var mb=ukMedicineBook();
   var esc=(typeof wkE==='function')?wkE:function(x){return x;};
-  var money=function(v){ return (typeof fmt==='function')?fmt(v):v; };
-  var rows=mb.rows.slice(0,8).map(function(r){
-    return '<tr><td>'+esc(r.date||'')+'</td><td>'+esc(r.product||'')+'</td>'+
-      '<td style="font-size:11px">'+esc(r.batch||'\u2014')+'</td>'+
-      '<td style="font-size:11px">'+esc(r.by||'\u2014')+'</td></tr>';
-  }).join('') || '<tr><td colspan="4" style="color:var(--t4)">No treatments recorded.</td></tr>';
+  var rows=mb.table.slice(0,8).map(function(c){
+    return '<tr>'+c.map(function(v,i){ return '<td'+(i>=2?' style="font-size:11px"':'')+'>'+esc(v||'—')+'</td>'; }).join('')+'</tr>';
+  }).join('') || '<tr><td colspan="7" style="color:var(--t4)">No medicines recorded.</td></tr>';
   var gapNote = mb.complete
-    ? '<div style="font-size:11px;color:var(--gm);font-weight:700;margin-top:8px">\u2713 Every treatment carries a product, batch, date and who gave it.</div>'
-    : '<div style="font-size:11px;color:var(--rd);font-weight:700;margin-top:8px">\u26a0 '+mb.gaps.length+' treatment'+(mb.gaps.length===1?'':'s')+' missing '+esc([].concat.apply([],mb.gaps.map(function(g){return g.missing;})).filter(function(v,i,a){return a.indexOf(v)===i;}).join(', '))+'.</div>';
-  var med='<div class="wk-card" style="margin-top:14px"><div class="wk-ct">Medicine book</div>'+
-    '<p class="wk-cw">Kept '+mb.retentionYears+' years \u2014 longer than anything else here, so nothing before '+esc(mb.keepFrom)+' should be deleted. Withdrawal periods already block sales on the herd screen.</p>'+
-    '<div style="overflow-x:auto"><table class="wk-ptbl" style="width:100%"><thead><tr><th>Date</th><th>Product</th><th>Batch</th><th>Given by</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
+    ? '<div style="font-size:11px;color:var(--gm);font-weight:700;margin-top:8px">✓ Every medicine given carries the product, batch, quantity, animals treated and withdrawal.</div>'
+    : '<div style="font-size:11px;color:var(--rd);font-weight:700;margin-top:8px">⚠ '+mb.gaps.length+' entr'+(mb.gaps.length===1?'y':'ies')+' missing '+esc([].concat.apply([],mb.gaps.map(function(g){return g.missing;})).filter(function(v,i,a){return a.indexOf(v)===i;}).join(', '))+'.</div>';
+  var med='<div class="wk-card" style="margin-top:14px"><div class="wk-ct">Medicine book'+_ukI('Veterinary Medicines Regulations 2013, reg 19 and VMGN 14: kept '+mb.retentionYears+' years, so nothing given since '+mb.keepFromTxt+' may be deleted. Procedures with no medicine are not listed.')+'</div>'+
+    '<div style="overflow-x:auto"><table class="wk-ptbl" style="width:100%"><thead><tr>'+mb.cols.map(function(c){ return '<th>'+esc(c)+'</th>'; }).join('')+'</tr></thead><tbody>'+rows+'</tbody></table></div>'+
     gapNote+'</div>';
-  var hbHtml='<div class="wk-card" style="margin-top:14px"><div class="wk-ct">Herd basis '+(hb.elected?'\u00b7 elected':'\u00b7 not elected')+'</div>'+
-    '<p class="wk-cw">'+esc(hb.effect)+'</p>'+
-    (hb.eligibleHerds.length? ('<div style="font-size:12px"><b>Could apply to:</b> '+esc(hb.eligibleHerds.join(', '))+' \u2014 '+hb.head+' head, roughly '+money(hb.estimatedValue)+'.</div>'):'')+
-    '<div style="font-size:11px;color:var(--t4);margin-top:8px;line-height:1.5">'+esc(hb.caution)+'</div></div>';
-  return med+hbHtml;
+  return med+ukHerdBasisCardHTML();
 }
 window.ukMedicineHTML=ukMedicineHTML;
 
@@ -58890,22 +59300,25 @@ function ukMovementRecord(mv){
   return { saved:true, record:rec, check:chk };
 }
 /* Step 2: herd sales and purchases logged in Livestock (and on the phone) are movements off and
-   on the holding too. The register only read its own list, so a farm that sold 40 head at market
-   showed nothing leaving. They are shown from the herd records, marked as such; a movement also
-   entered here for the same day, direction and head count is not shown twice. */
+   on the holding too. -388 B3-U5: a row entered on the register's own list hides a herd movement
+   only when it is LINKED to it (fromMove) - never by date and head count, which hid a 2-head
+   market sale behind a 2-head abattoir movement the same day. The two holdings' CPH ride in the
+   movement's place fields ("Name · CPH 12/345/6789"). */
 function ukHerdRegRows(){
   var own=ukMovements(), out=[];
   ((typeof ST_LS!=='undefined' && ST_LS.moves)||[]).forEach(function(m){
     if(!m || !m.date) return;
     var dir = m.reason==='sold' ? 'off' : (m.reason==='bought' ? 'on' : null);
     if(!dir) return;
-    if(dir==='off' && m.leaving===false) return;               /* sold, but the stock stayed */
+    if(m.leaving===false) return;                               /* sold or bought, but the stock did not cross the boundary */
     var d=String(m.date).slice(0,10), q=Number(m.qty)||0;
-    if(own.some(function(r){ return r.fromMove===m.id || (r.date===d && r.dir===dir && (Number(r.qty)||0)===q); })) return;
+    if(own.some(function(r){ return r.fromMove===m.id; })) return;
     var h=(typeof lsHerdById==='function')?lsHerdById(m.herd):null;
-    out.push({ id:'hx'+m.id, date:d, dir:dir, species:(h?ukSpeciesOf(h.type):''), qty:q, tags:[],
-               otherCph:m.otherCph||'', otherName:(dir==='off'?(m.toPlace||m.note||''):(m.fromPlace||m.note||'')),
-               haulier:m.transporter||'', docRef:m.vehReg||'', reason:m.reason, src:'herd', fromMove:m.id, reportedAt:m.reportedAt||null });
+    var other=_ukPlaceCph(dir==='off'?m.toPlace:m.fromPlace), mine=_ukPlaceCph(dir==='off'?m.fromPlace:m.toPlace);
+    out.push({ id:'hx'+m.id, date:d, dir:dir, species:(h?ukSpeciesOf(h.type):''), qty:q, tags:[], cls:m.cls||'',
+               otherCph:other.cph, otherName:other.name||(m.leaving?'':(m.note||'')), ownCph:mine.cph||((window.ST&&ST.cphNumber)||''),
+               haulier:m.transporter||'', vehReg:m.vehReg||'', docRef:m.vehReg||'', idMark:_ukMoveIdMark(m), forSlaughter:_ukMoveForSlaughter(m),
+               reason:m.reason, src:'herd', fromMove:m.id, reportedAt:m.reportedAt||null });
   });
   return out;
 }
@@ -58932,8 +59345,8 @@ function ukRegisterHTML(){
     return '<tr><td>'+esc(txDispDate(r.date))+'</td>'+
       '<td style="font-weight:700;color:'+(r.dir==='on'?'var(--gm)':'var(--t2)')+'">'+(r.dir==='on'?'On':'Off')+'</td>'+
       '<td>'+esc(r.species||'')+(r.qty?(' \u00b7 '+r.qty):'')+'</td>'+
-      '<td>'+esc(r.otherName||r.otherCph||'\u2014')+(r.src==='herd'?'<div style="font-size:11px;color:var(--t4)">From your herd records'+(r.otherCph?'':' \u00b7 add the CPH')+'</div>':'')+'</td>'+
-      '<td style="font-size:11px;color:var(--t4)">'+esc(r.docRef||'')+'</td></tr>';
+      '<td>'+esc(r.otherName||'\u2014')+'<div style="font-size:11px;color:var(--t4)">'+(r.otherCph?('CPH '+esc(r.otherCph)):'add the CPH')+'</div></td>'+
+      '<td style="font-size:11px;color:var(--t4)">'+esc([r.haulier,r.vehReg||(r.src==='herd'?'':r.docRef)].filter(Boolean).join(' \u00b7 ')||'\u2014')+'</td></tr>';
   }).join('') || '<tr><td colspan="5" style="color:var(--t4)">No movements recorded yet.</td></tr>';
   return '<div class="wk-card" style="margin-top:14px"><div class="wk-ct">Holding register</div>'+
     '<p class="wk-cw">Every animal on and off the holding \u2014 the first record asked for at an inspection. '+reg.movedOn+' on, '+reg.movedOff+' off.</p>'+
@@ -58941,7 +59354,7 @@ function ukRegisterHTML(){
       '<button class="rc-btn" onclick="ukMovementAdd(\'on\')">Record stock arriving</button>'+
       '<button class="rc-btn" onclick="ukMovementAdd(\'off\')">Record stock leaving</button>'+
     '</div>'+
-    '<div style="overflow-x:auto"><table class="wk-ptbl" style="width:100%"><thead><tr><th>Date</th><th>Direction</th><th>Stock</th><th>From / to</th><th>Document</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
+    '<div style="overflow-x:auto"><table class="wk-ptbl" style="width:100%"><thead><tr><th>Date</th><th>Direction</th><th>Stock</th><th>From / to</th><th>Haulier \u00b7 vehicle</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
     (reg.unreported? ('<div style="font-size:11px;color:var(--t4);margin-top:8px">'+reg.unreported+' movement'+(reg.unreported===1?'':'s')+' not yet reported to '+esc((reg.rows[0]&&reg.rows[0].system)||'the movement service')+'. Submitting from here is not built \u2014 report them as you do now.</div>'):'')+
     '</div>';
 }
@@ -58951,26 +59364,16 @@ window.ukRegisterHTML=ukRegisterHTML;
    lets ukMovementRecord accept or refuse. A refusal explains which rule bit and does
    NOT write the record, which is the whole point of checking first. */
 function ukMovementAdd(dir){
-  /* Step 2: one form, not five pop-ups in a row that lost everything on a slip of Cancel. */
+  /* -388 B3-U5: ONE door. Stock leaving or arriving is recorded on the herd it left or joined -
+     the movement form asks which herd and class, stops a sale for slaughter while a withdrawal
+     runs, and takes both holdings' CPH - so the register and the herd can never disagree. The
+     register's own list (a movement with no herd) stays readable but is not added to. */
   dir=(dir==='on')?'on':'off';
-  var today=_ukDateStr((typeof APP_TODAY!=='undefined'&&APP_TODAY)?new Date(APP_TODAY):new Date());
-  var inp='width:100%;height:36px;border:1px solid var(--br);border-radius:9px;padding:0 10px;font:inherit;font-size:13px;box-sizing:border-box';
-  var lb=function(t){ return '<label style="display:block;font-size:11px;font-weight:800;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;margin:0 0 4px">'+t+'</label>'; };
-  var f=function(t,h){ return '<div style="margin-bottom:10px">'+lb(t)+h+'</div>'; };
-  var two=function(a,b){ return '<div style="display:flex;gap:10px">'+'<div style="flex:1">'+a+'</div><div style="flex:1">'+b+'</div></div>'; };
-  var body=
-    two(f('Date','<input id="umv-date" type="date" value="'+today+'" style="'+inp+'">'),
-        f('Stock','<select id="umv-sp" style="'+inp+'"><option value="cattle">Cattle</option><option value="sheep">Sheep</option><option value="goats">Goats</option><option value="pigs">Pigs</option></select>'))+
-    two(f('How many head','<input id="umv-qty" type="number" min="1" value="1" style="'+inp+'">'),
-        f((dir==='off'?'Destination':'Source')+' CPH','<input id="umv-cph" placeholder="12/345/6789" style="'+inp+'">'))+
-    f((dir==='off'?'Going to':'Coming from'),'<input id="umv-who" placeholder="market, farm or abattoir" style="'+inp+'">')+
-    two(f('Haulier <span style="text-transform:none;font-weight:600;color:var(--t4)">optional</span>','<input id="umv-haul" style="'+inp+'">'),
-        f('Movement document <span style="text-transform:none;font-weight:600;color:var(--t4)">optional</span>','<input id="umv-doc" placeholder="licence or ARAMS ref" style="'+inp+'">'))+
-    (dir==='off'?'<label style="display:flex;gap:9px;align-items:center;font-size:13px;margin:2px 0 10px;cursor:pointer"><input id="umv-slt" type="checkbox" style="width:auto;height:auto;margin:0"> Going direct to slaughter <span style="color:var(--t4)">(no pre-movement TB test needed)</span></label>':'')+
-    '<div id="umv-err" style="display:none;background:#FDECEA;border:1px solid #F3C9C4;color:#8A1C12;border-radius:9px;padding:9px 11px;font-size:12.5px;margin-bottom:10px;line-height:1.45"></div>'+
-    '<div style="display:flex;gap:8px"><button type="button" onclick="fixClose()" style="flex:1;padding:10px;border:1px solid var(--br);border-radius:10px;background:#fff;font:inherit;font-size:13px;font-weight:700;cursor:pointer">Cancel</button>'+
-    '<button type="button" onclick="ukMovementSave(\''+dir+'\')" style="flex:1;padding:10px;border:0;border-radius:10px;background:var(--gd);color:#fff;font:inherit;font-size:13px;font-weight:700;cursor:pointer">Record movement</button></div>';
-  fixSheet(dir==='off'?'Stock leaving the holding':'Stock arriving on the holding','The register needs these for an inspection.', body);
+  var act=((typeof ST_LS!=='undefined'&&ST_LS.herd)||[]).filter(function(h){ return !h.planned; });
+  if(!act.length){ if(typeof toast==='function') toast('Add a herd first \u2014 a movement is recorded on the herd the animals left or joined.','info'); return; }
+  lsMoveOpen(act[0].id, dir==='on'?'bought':'sold');
+  LS_MV_STATE.leaving=true; LS_MV_STATE.fromRegister=true;
+  lsMoveRender();
 }
 function ukMovementSave(dir){
   var v=function(id){ var e=$(id); return e?String(e.value||'').trim():''; };
@@ -59304,23 +59707,21 @@ function ukBalanceSheet(onDate){
   });
   /* Livestock is a current asset for a trading herd, or a fixed asset under the herd
      basis - which is exactly why the herd basis election matters here. */
-  var herdValue=0;
-  ((window.ST_LS&&ST_LS.herd)||[]).forEach(function(h){ herdValue += (Number(h.qty)||0)*(Number(h.sell)||0); });
-  var onHerdBasis=!!((window.ST_LS&&ST_LS.herdBasis&&ST_LS.herdBasis.elected));
+  var _hbs=(typeof lsHerdBasisSplit==='function')?lsHerdBasisSplit():{production:0,trading:0};   /* -388 D5 + U25 one herd value */
   var bank=(window.ST&&ST.bankBalance!=null)?Number(ST.bankBalance):null;
   var L=(window.ST_LOANS)||{};
   var loans=((L.loans)||[]).reduce(function(t,l){ return t+(Number(l.balance||l.outstanding||0)||0); },0);
   var od=((L.overdrafts)||[]).reduce(function(t,o){ return t+(Number(o.used||0)||0); },0);
   var coop=((L.coopAccounts)||[]).reduce(function(t,o){ return t+(Number(o.owing||o.used||0)||0); },0);
-  var fixedAssets = fixed + (onHerdBasis? herdValue : 0);
-  var currentAssets = (onHerdBasis? 0 : herdValue) + (bank!=null && bank>0 ? bank : 0);
+  var fixedAssets = fixed + _hbs.production;
+  var currentAssets = _hbs.trading + (bank!=null && bank>0 ? bank : 0);
   var currentLiabs = od + coop + (bank!=null && bank<0 ? -bank : 0);
   var longLiabs = loans;
   var netAssets = fixedAssets + currentAssets - currentLiabs - longLiabs;
   return {
     fixedAssets:Math.round(fixedAssets), fixedAtCost:Math.round(fixedCost),
     underConstruction:Math.round(wip),
-    herdValue:Math.round(herdValue), onHerdBasis:onHerdBasis,
+    herdValue:Math.round(_hbs.production+_hbs.trading), prodHerd:_hbs.production, tradeHerd:_hbs.trading, onHerdBasis:_hbs.production>0,
     currentAssets:Math.round(currentAssets), bank:bank,
     currentLiabilities:Math.round(currentLiabs), overdraft:Math.round(od), merchantCredit:Math.round(coop),
     longTermLiabilities:Math.round(longLiabs),
@@ -59350,14 +59751,14 @@ function ukBalanceSheetReportHTML(){
   body+='<div class="rpt-sec"><div class="rpt-h2">Statement of financial position<small>UK statutory order</small></div>'+
     '<div class="rpt-tw"><table class="rpt-t"><tbody>'+
       row('<b>Fixed assets</b>', b.fixedAssets, true)+
-      row('Machinery, buildings and land at written-down value', b.fixedAssets-(b.onHerdBasis?b.herdValue:0)-(b.underConstruction||0), false, true)+
+      row('Machinery, buildings and land at written-down value', b.fixedAssets-(b.prodHerd||0)-(b.underConstruction||0), false, true)+
       /* E9 - the conventional separate line, in both the printed statement and the
          on-screen card so the two never disagree. Shown only when there is something in
          it, so a farm with nothing being built never meets the idea. */
       (b.underConstruction? row('Assets in the course of construction', b.underConstruction, false, true):'')+
-      (b.onHerdBasis? row('Breeding herd (herd basis)', b.herdValue, false, true):'')+
+      (b.prodHerd? row('Production herd (herd basis)', b.prodHerd, false, true):'')+
       row('<b>Current assets</b>', b.currentAssets, true)+
-      (b.onHerdBasis? '' : row('Livestock held for sale', b.herdValue, false, true))+
+      (b.tradeHerd? row('Livestock held for sale', b.tradeHerd, false, true):'')+
       (b.bank!=null && b.bank>0 ? row('Bank', b.bank, false, true) : '')+
       row('<b>Current liabilities</b>', b.currentLiabilities, true)+
       (b.overdraft? row('Overdraft drawn', b.overdraft, false, true):'')+
@@ -59404,14 +59805,14 @@ function ukBalanceSheetHTML(){
     ((typeof fyLabel==='function')?fyLabel():'')+'</div></div></div><div class="txb-bd">'+
     '<div style="overflow-x:auto"><table class="wk-ptbl" style="width:100%"><tbody>'+
       row('Fixed assets', b.fixedAssets, true)+
-      row('Machinery, buildings and land at written-down value', b.fixedAssets-(b.onHerdBasis?b.herdValue:0)-(b.underConstruction||0), false, true)+
+      row('Machinery, buildings and land at written-down value', b.fixedAssets-(b.prodHerd||0)-(b.underConstruction||0), false, true)+
       /* E9 - the conventional separate line, in both the printed statement and the
          on-screen card so the two never disagree. Shown only when there is something in
          it, so a farm with nothing being built never meets the idea. */
       (b.underConstruction? row('Assets in the course of construction', b.underConstruction, false, true):'')+
-      (b.onHerdBasis? row('Breeding herd (herd basis)', b.herdValue, false, true):'')+
+      (b.prodHerd? row('Production herd (herd basis)', b.prodHerd, false, true):'')+
       row('Current assets', b.currentAssets, true)+
-      (b.onHerdBasis? '' : row('Livestock held for sale', b.herdValue, false, true))+
+      (b.tradeHerd? row('Livestock held for sale', b.tradeHerd, false, true):'')+
       (b.bank!=null && b.bank>0 ? row('Bank', b.bank, false, true) : '')+
       row('Current liabilities', b.currentLiabilities, true)+
       (b.overdraft? row('Overdraft drawn', b.overdraft, false, true):'')+
@@ -60477,16 +60878,21 @@ function taxWhatIfHTML(){
      farmer enters capex on the next slider — seeding with a profit that already had
      capex taken out would deduct it twice. This is also the figure with income tax and
      HMRC penalties already stripped, so What-if agrees with the Glance tab. */
-  var prov=taxProvEstimate(); var p0=prov.ok?Math.max(0,(prov.ringFence?prov.ringFence.base:prov.annualProfit)):500000; if(p0>2000000)p0=2000000;
+  /* -388 B3-06: seeded from the Tax page's OWN figure (ukYearTaxEstimate().taxable) and shown
+     exactly - it opened on the old plan projection (£740,000 against the Tax page's £377,677).
+     At the seed the What-if tax IS the Tax page tax; the equipment and pension sliders are extra
+     on top of what is already in the figures. */
+  var _te=null; try{ _te=ukYearTaxEstimate(getCurrentFY()); }catch(e){ _te=null; }
+  var p0=(_te && isFinite(_te.taxable))?Math.max(0,Math.round(_te.taxable)):0; if(p0>2000000)p0=2000000;
   var curEnt=ukEntityType(ST.entityType); TAX_WI_ENT=curEnt;
   TAX_WI_VAT=(typeof FARM!=='undefined'&&FARM.vat)?'yes':'no';
   var ents=[['sole','Sole trader'],['partnership','Partnership'],['company','Ltd company'],['trust','Trust']];
   var eb='style="flex:1;border:0;border-radius:9px;padding:9px 4px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--fn)"';
   // ── ONE income-tax calculator: profit − deductions = taxable income → tax ──
   var h='<div class="tx-card" style="margin-bottom:12px"><div class="tx-h">Work out this year’s income tax</div>'+
-    '<div class="pf-sl" style="margin-top:0"><div class="pf-sllab"><span>Your taxable profit for the year</span><span class="pf-slval" id="tax-wi-pv">'+_curSym()+_grpInt(p0)+'</span></div>'+_pfSlider('tax-wi-profit',0,2000000,20000,p0,'taxWhatIf')+'<div class="pf-slends"><span>£0</span><span>income − running costs</span><span>£2m</span></div></div>'+
-    '<div class="pf-sl"><div class="pf-sllab"><span>Equipment or machinery bought this year <small style="color:var(--t4);font-weight:600">deductible</small></span><span class="pf-slval" style="color:#B45309" id="tax-wi-cv">£0</span></div>'+_pfSlider('tax-wi-capex',0,1000000,25000,0,'taxWhatIf')+'<div class="pf-slends"><span>£0</span><span>Annual Investment Allowance — full cost in year 1</span><span>£1m</span></div></div>'+
-    '<div class="pf-sl"><div class="pf-sllab"><span>Pension contributions <small style="color:var(--t4);font-weight:600">deductible</small></span><span class="pf-slval" style="color:#B45309" id="tax-wi-rv">£0</span></div>'+_pfSlider('tax-wi-ra',0,60000,1000,0,'taxWhatIf')+'<div class="pf-slends"><span>£0</span><span id="tax-wi-racap">annual allowance £60,000, and no more than your profit</span><span>£60k</span></div></div>'+
+    '<div class="pf-sl" style="margin-top:0"><div class="pf-sllab"><span>Your taxable profit for the year <small style="color:var(--t4);font-weight:600">as on the Tax page</small></span><span class="pf-slval" id="tax-wi-pv">'+_curSym()+_grpInt(p0)+'</span></div>'+_pfSlider('tax-wi-profit',0,2000000,1,p0,'taxWhatIf')+'<div class="pf-slends"><span>£0</span><span>income − running costs</span><span>£2m</span></div></div>'+
+    '<div class="pf-sl"><div class="pf-sllab"><span>Extra equipment or machinery <small style="color:var(--t4);font-weight:600">on top \u00b7 deductible</small></span><span class="pf-slval" style="color:#B45309" id="tax-wi-cv">£0</span></div>'+_pfSlider('tax-wi-capex',0,1000000,25000,0,'taxWhatIf')+'<div class="pf-slends"><span>£0</span><span>Annual Investment Allowance — full cost in year 1</span><span>£1m</span></div></div>'+
+    '<div class="pf-sl"><div class="pf-sllab"><span>Extra pension contributions <small style="color:var(--t4);font-weight:600">on top \u00b7 deductible</small></span><span class="pf-slval" style="color:#B45309" id="tax-wi-rv">£0</span></div>'+_pfSlider('tax-wi-ra',0,60000,1000,0,'taxWhatIf')+'<div class="pf-slends"><span>£0</span><span id="tax-wi-racap">annual allowance £60,000, and no more than your profit</span><span>£60k</span></div></div>'+
     '<div style="display:flex;justify-content:space-between;align-items:center;background:var(--br2);border-radius:10px;padding:10px 13px;margin:14px 0"><span style="font-size:12.5px;font-weight:700;color:var(--t2)">= Taxable income</span><span style="font-size:18px;font-weight:800" id="tax-wi-taxable">'+_curSym()+_grpInt(p0)+'</span></div>'+
     '<div style="font-size:12px;font-weight:700;color:var(--t2);margin-bottom:7px">How you’re registered</div>'+
     '<div id="tax-wi-ents" style="display:flex;gap:5px">'+ents.map(function(e){return '<button data-e="'+e[0]+'" class="'+(e[0]===curEnt?'on':'')+'" onclick="taxWiEnt(\''+e[0]+'\')" '+eb+'>'+e[1]+'</button>';}).join('')+'</div></div>';
@@ -60495,7 +60901,7 @@ function taxWhatIfHTML(){
     '<div style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;opacity:.72">Income tax for the year</div>'+
     '<div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap"><div id="tax-wi-ann" style="font-size:40px;font-weight:800;line-height:1.05">'+_curSym()+'—</div><div id="tax-wi-eff" style="font-size:11.5px;font-weight:700;background:rgba(255,255,255,.16);border-radius:999px;padding:3px 10px">—</div></div>'+
     '<div style="margin-top:14px"><div style="display:flex;height:12px;border-radius:6px;overflow:hidden;background:rgba(255,255,255,.12)"><div id="tax-wi-bartax" style="width:0;background:#E8A33D"></div><div id="tax-wi-barkeep" style="flex:1;background:#5FBE85"></div></div>'+
-      '<div style="display:flex;justify-content:space-between;font-size:11px;margin-top:6px"><span>🟠 To HMRC <b id="tax-wi-bartaxv">'+_curSym()+'—</b></span><span>🟢 You keep <b id="tax-wi-barkeepv">'+_curSym()+'—</b></span></div></div>'+
+      '<div style="display:flex;justify-content:space-between;font-size:11px;margin-top:6px"><span><i style="display:inline-block;width:9px;height:9px;border-radius:50%;background:#E8A33D;margin-right:5px"></i>To HMRC <b id="tax-wi-bartaxv">'+_curSym()+'—</b></span><span><i style="display:inline-block;width:9px;height:9px;border-radius:50%;background:#5FBE85;margin-right:5px"></i>You keep <b id="tax-wi-barkeepv">'+_curSym()+'—</b></span></div></div>'+
     '<div style="display:flex;justify-content:space-between;gap:8px;margin-top:16px;padding-top:14px;border-top:1px solid rgba(255,255,255,.16)">'+
       ['1st · 31 Jan|tax-wi-p1','2nd · 31 Jul|tax-wi-p2','Average per month over a year|tax-wi-mo','Next £100k|tax-wi-marg'].map(function(s){var a=s.split('|');return '<div style="text-align:center"><div id="'+a[1]+'lbl" style="font-size:11px;text-transform:uppercase;letter-spacing:.04em;opacity:.72">'+a[0]+'</div><div style="font-size:15px;font-weight:800" id="'+a[1]+'">'+_curSym()+'—</div></div>';}).join('')+
     '</div>'+
@@ -66698,7 +67104,7 @@ function computeNotifications(){
           n.push({ color:'var(--gd)', score:72, title:term.ev+' approaching — '+nm,
             body:'Expected from '+_brDisp(_brExpectedFrom(b))+'. Booster vaccinations and a clean '+term.ev.toLowerCase()+' field now.',
             time:'Upcoming', action:function(){ nav('livestock'); if(typeof lsTab==='function') lsTab('breeding'); } });
-        } else if(idx===4 && !(b.born>0)){
+        } else if(idx===4 && !(brSeasonBorn(b).born>0)){
           n.push({ color:'var(--gd)', score:80, title:term.ev+' window open — '+nm,
             body:'Record each '+term.single+' as it drops — your herd count updates automatically.',
             time:'Now', action:function(){ nav('livestock'); if(typeof lsTab==='function') lsTab('breeding'); } });
@@ -73237,7 +73643,7 @@ function _aiRcDrawV1(doc, cert, L, logo){
     doc.rect(RW-58, 34, 58, 14);
     doc.setFont('helvetica','normal'); doc.setFontSize(6.5);
     doc.setTextColor(AI_DOC.GREY[0],AI_DOC.GREY[1],AI_DOC.GREY[2]);
-    doc.text('CERTIFICATE No.', RW-55, 39);
+    doc.text('RECORD No.', RW-55, 39);
     doc.setFont('helvetica','bold'); doc.setFontSize(11);
     doc.setTextColor(AI_DOC.INK[0],AI_DOC.INK[1],AI_DOC.INK[2]);
     doc.text(cert.no, RW-55, 45.5);
@@ -73304,12 +73710,12 @@ function aiRcFile(cert){ return 'movement-document-'+cert.no+'.pdf'; }
 function aiRcShare(no){
   var cert=aiRcGet(no); if(!cert) return;
   aiRcBuild(cert).then(function(doc){ aiDocPreview(doc, aiRcFile(cert), 'Movement document '+cert.no); })
-                 .catch(function(e){ toast('Could not build the certificate: '+e.message,'error'); });
+                 .catch(function(e){ toast('Could not build the movement record: '+e.message,'error'); });
 }
 function aiRcPrint(no){
   var cert=aiRcGet(no); if(!cert) return;
   aiRcBuild(cert).then(function(doc){ doc.autoPrint(); window.open(doc.output('bloburl'),'_blank'); })
-                 .catch(function(e){ toast('Could not build the certificate: '+e.message,'error'); });
+                 .catch(function(e){ toast('Could not build the movement record: '+e.message,'error'); });
 }
 
 /* ====================================================================
@@ -74436,7 +74842,7 @@ function rcShowCert(no){
 function rcIssueNow(){
   var r=aiRcIssue(RC_STATE.moveId, RC_STATE.supersedes);
   if(r && r.error==='incomplete'){ RC_STATE.view='blocked'; RC_STATE.missing=r.missing; rcRender(); return; }
-  if(!r || r.error){ toast('Could not issue the certificate.','error'); return; }
+  if(!r || r.error){ toast('Could not save the movement record.','error'); return; }
   RC_STATE.cert=r; RC_STATE.view='issued'; rcRender();
   try{ if(typeof renderStockRegister==='function') renderStockRegister(); }catch(e){}
 }
@@ -74459,7 +74865,7 @@ function rcRender(){
 
   if(RC_STATE.view==='issued' && RC_STATE.cert){
     var c=RC_STATE.cert, s=c.snap||{};
-    if(t) t.textContent='Certificate issued';
+    if(t) t.textContent='Movement document';
     b.innerHTML=
       '<div class="rc-no">'+esc(c.no)+(c.status==='superseded'?' <span class="rc-pill rc-sup">Superseded</span>':' <span class="rc-pill rc-ok">Issued</span>')+'</div>'+
       '<div class="rc-sub">'+esc(s.qty+' head · '+(s.herdName||''))+' → '+esc(s.toPlace||'')+'</div>'+
@@ -74467,74 +74873,89 @@ function rcRender(){
         '<button class="ls-mv-save" style="margin:0" onclick="aiRcShare(\''+esc(c.no)+'\')">Preview &amp; send</button>'+
         '<button class="rc-btn" onclick="aiRcPrint(\''+esc(c.no)+'\')">Print</button>'+
       '</div>'+
-      '<div class="rc-note">Keep for at least six months and record the movement in your holding register within 36 hours. This does not replace notification to BCMS, ARAMS, ScotEID, EIDCymru or eAML2.</div>';
+      '<div class="rc-note">Kept with your movement record. Report the movement to BCMS, LIS, ScotEID, EIDCymru or eAML2 as the animals require.</div>';
     return;
   }
 
   if(RC_STATE.view==='blocked'){
-    if(t) t.textContent='Can’t issue yet';
+    if(t) t.textContent='Details still needed';
     var items=(RC_STATE.missing||[]).map(function(f){
       return '<li>'+esc(f.label)+' <button class="rc-fix" onclick="rcFix(\''+f.where+'\')">Add it</button></li>';
     }).join('');
     b.innerHTML=
-      '<div class="rc-warn"><b>'+(RC_STATE.missing||[]).length+' particular'+((RC_STATE.missing||[]).length===1?'':'s')+' missing.</b>'+
+      '<div class="rc-warn"><b>'+(RC_STATE.missing||[]).length+' detail'+((RC_STATE.missing||[]).length===1?'':'s')+' missing.</b>'+
       '<ul>'+items+'</ul></div>'+
       '<div class="rc-note">A movement document needs each of these. One missing field makes it worthless on inspection — it looks complete and is not.</div>';
     return;
   }
 
-  /* offer */
-  if(t) t.textContent=RC_STATE.supersedes?'Reissue certificate':'Issue movement document';
+  /* -388 D6 (option A): the MOVEMENT RECORD - the register entry with everything the official
+     report asks for - and a "Report it" step naming the service. No document is issued here. */
+  if(t) t.textContent='Movement record';
   if(!mv){ b.innerHTML='<div class="rc-note">That movement is no longer available.</div>'; return; }
-  var s2=aiRcSnap(mv), chk=aiRcCheck(mv);
+  var r=ukMovementRecordView(mv);
   var kv=function(k,v){ return '<div><div class="rc-k">'+esc(k)+'</div><div class="rc-v">'+esc(v||'—')+'</div></div>'; };
   b.innerHTML=
-    (RC_STATE.supersedes?'<div class="rc-note" style="margin-top:0">Replaces '+esc(RC_STATE.supersedes)+'. The old certificate is kept and marked superseded.</div>':'')+
-    '<div class="rc-sub" style="margin-top:0">'+esc(s2.qty+' head · '+(s2.herdName||''))+' left the farm</div>'+
+    '<div class="rc-sub" style="margin-top:0">'+esc(r.summary)+'</div>'+
     '<div class="rc-grid">'+
-      kv('Stock', s2.qty+' head'+(s2.breed?' · '+s2.breed:''))+
-      kv('Mark', [s2.mark,s2.markType].filter(Boolean).join(' · '))+
-      kv('Place to', s2.toPlace)+
-      kv('Transporter', s2.transporter)+
-      kv('Vehicle', [s2.vehReg,s2.vehMake].filter(Boolean).join(' · '))+
-      kv('Date', aiRcDate(s2.moveDate))+
+      kv('Date', r.dateTxt)+
+      kv('Number', r.numberTxt)+
+      kv('Departure holding', r.fromTxt)+
+      kv('Destination holding', r.toTxt)+
+      kv('Tag numbers or mark', r.idMark)+
+      kv('Haulier', r.haulier)+
+      kv('Vehicle', r.vehicle)+
     '</div>'+
-    '<div class="rc-acts">'+
-      '<button class="ls-mv-save" style="margin:0'+(chk.ok?'':';opacity:.45;cursor:not-allowed')+'" onclick="rcIssueNow()">'+(RC_STATE.supersedes?'Reissue':'Issue certificate')+'</button>'+
-      '<button class="rc-btn" onclick="rcClose()">Not now</button>'+
-    '</div>'+
-    (chk.ok?'':'<div class="rc-note">'+chk.missing.length+' prescribed particular'+(chk.missing.length===1?'':'s')+' still missing — the button will tell you which.</div>');
+    (r.blank.length?'<div class="rc-note">Not recorded yet: '+esc(r.blank.join(', '))+'.</div>':'')+
+    '<div class="rc-report"><div class="rc-k">Report it</div><div class="rc-v">'+esc(r.report.svc)+'</div><div class="rc-rhow">'+esc(r.report.how)+'</div></div>'+
+    '<div class="rc-acts"><button class="ls-mv-save" style="margin:0" onclick="rcClose()">Done</button></div>';
+}
+/* What the movement record shows, worked out once so the sheet and the register card agree. */
+function ukReportStep(sp){
+  var r=(typeof ukRegion==='function')?ukRegion():'England';
+  if(sp==='pigs') return {svc:'eAML2', how:'Pigs need a movement licence through eAML2 before they travel; the keeper receiving them confirms arrival within 3 days.'};
+  if(sp==='sheep'||sp==='goats'){
+    var svc=r==='Wales'?'EIDCymru':r==='Scotland'?'ScotEID':r==='Northern Ireland'?'APHIS':'LIS';
+    return {svc:svc, how:(svc==='LIS'?'Report it to the Livestock Information Service (LIS) within 3 days — online, or on the paper form LIS-1 that travels with the animals.':'Report it to '+svc+' within 3 days.')};
+  }
+  var svc2=r==='Northern Ireland'?'APHIS':'BCMS';
+  return {svc:svc2, how:'Cattle travel with their passports. Report the movement to '+(svc2==='BCMS'?'BCMS (the Cattle Tracing System)':svc2)+' within 3 days.'};
+}
+function ukMovementRecordView(mv){
+  var h=(typeof lsHerdById==='function')?lsHerdById(mv.herd):null, on=(mv.reason==='bought');
+  var fr=_ukPlaceCph(mv.fromPlace), to=_ukPlaceCph(mv.toPlace), sp=(typeof ukSpeciesOf==='function')?ukSpeciesOf(h?h.type:''):'cattle';
+  var place=function(p){ return [p.name, p.cph?('CPH '+p.cph):''].filter(Boolean).join(' · '); };
+  var idm=_ukMoveIdMark(mv)||((window.ST&&ST.stockMark)?('mark '+ST.stockMark):'');
+  var clsTxt=(h && mv.cls)?(' '+lsClassMeta(h.type,mv.cls).label.toLowerCase()):'';
+  var blank=[]; if(!fr.cph) blank.push('departure CPH'); if(!to.cph) blank.push('destination CPH'); if(!idm) blank.push('tag numbers or mark'); if(!mv.transporter) blank.push('haulier'); if(!mv.vehReg) blank.push('vehicle');
+  return { summary:(mv.qty||0)+' head · '+(h?lsHerdName(h):'')+(on?(' arrived from '+(fr.name||'another holding')):(' left for '+(to.name||'another holding')))+(_ukMoveForSlaughter(mv)?' (slaughter)':''),
+           dateTxt:aiRcDate(mv.date), numberTxt:(mv.qty||0)+clsTxt, fromTxt:place(fr), toTxt:place(to), idMark:idm,
+           haulier:mv.transporter||'', vehicle:[mv.vehReg,mv.vehMake].filter(Boolean).join(' · '), blank:blank, report:ukReportStep(sp), species:sp };
 }
 
 /* ---------- register card (inside the existing Register view) ---------- */
 function _lsRegCertsCard(){
+  /* -388 D6: movements across the holding boundary in the last fortnight, each with its
+     "Report it" step; documents issued by older versions stay reprintable underneath. */
   var docs=(ST.docs||[]).filter(function(d){ return d.type==='RC'; });
-  var pend=(ST_LS.moves||[]).filter(function(m){
-    return m.leaving && !docs.some(function(d){ return d.moveId===m.id && d.status==='issued'; });
-  });
-  if(!docs.length && !pend.length) return '';
-  var rows=docs.slice(0,25).map(function(d){
-    var s=d.snap||{}, sup=(d.status==='superseded');
-    return '<tr>'+
-      '<td class="rc-t-no'+(sup?' rc-t-sup':'')+'">'+esc(d.no)+'</td>'+
-      '<td>'+esc(aiRcDate(d.date))+'</td>'+
-      '<td>'+esc(s.qty+' · '+(s.herdName||''))+'</td>'+
-      '<td>'+esc(s.toPlace||'')+'</td>'+
-      '<td>'+(sup?'<span class="rc-pill rc-sup">Superseded by '+esc(d.supersededBy||'')+'</span>':'<span class="rc-pill rc-ok">Issued</span>')+'</td>'+
-      '<td class="rc-t-act">'+
-        '<button class="rc-fix" onclick="rcShowCert(\''+esc(d.no)+'\')">Reprint</button>'+
-        (sup?'':' <button class="rc-fix" onclick="rcReissue(\''+esc(d.no)+'\')">Reissue</button>')+
-      '</td></tr>';
+  var from=_brAddDays(_brTodayISO(),-14);
+  var recent=(ST_LS.moves||[]).filter(function(m){ return m && m.leaving && (m.reason==='sold'||m.reason==='bought') && _lsMoveISO(m)>=from; })
+    .sort(function(a,b){ return _lsMoveISO(a)<_lsMoveISO(b)?1:-1; });
+  if(!docs.length && !recent.length) return '';
+  var recHtml=recent.slice(0,5).map(function(m){
+    var r=ukMovementRecordView(m);
+    return '<div class="rc-pend"><div><b>'+esc(r.summary)+'</b> · '+esc(r.dateTxt)+'<div style="font-size:11px;color:var(--t4)">Report it: '+esc(r.report.svc)+(r.blank.length?(' · not recorded yet: '+esc(r.blank.join(', '))):'')+'</div></div>'+
+           '<button class="rc-fix" onclick="rcOpen(\''+esc(m.id)+'\')">Report it</button></div>';
   }).join('');
-  var pendHtml=pend.slice(0,5).map(function(m){
-    var s=aiRcSnap(m);
-    return '<div class="rc-pend"><div><b>'+esc(s.qty+' head')+'</b> to '+esc(s.toPlace||'—')+' · '+esc(aiRcDate(m.date))+'</div>'+
-           '<button class="rc-fix" onclick="rcOpen(\''+esc(m.id)+'\')">Issue certificate</button></div>';
+  var rows=docs.slice(0,25).map(function(d){
+    var s=d.snap||{};
+    return '<tr><td class="rc-t-no">'+esc(d.no)+'</td><td>'+esc(aiRcDate(d.date))+'</td><td>'+esc(s.qty+' · '+(s.herdName||''))+'</td><td>'+esc(s.toPlace||'')+'</td>'+
+      '<td class="rc-t-act"><button class="rc-fix" onclick="rcShowCert(\''+esc(d.no)+'\')">Reprint</button></td></tr>';
   }).join('');
   return '<div class="card" style="margin-bottom:16px">'+
-    '<div class="rc-hd">Movement documents</div>'+
-    (pendHtml?'<div class="rc-pends">'+pendHtml+'</div>':'')+
-    (rows?'<div class="rc-tw"><table class="rc-t"><thead><tr><th>Number</th><th>Date</th><th>Stock</th><th>To</th><th>Status</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>':'')+
+    '<div class="rc-hd">Movement record · report it</div>'+
+    (recHtml?'<div class="rc-pends">'+recHtml+'</div>':'')+
+    (rows?'<div class="rc-sub" style="margin:10px 0 6px">Earlier movement documents</div><div class="rc-tw"><table class="rc-t"><thead><tr><th>Number</th><th>Date</th><th>Stock</th><th>To</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>':'')+
     '</div>';
 }
 
@@ -74875,7 +75296,7 @@ function _lsRegCertsCard(){
   <!-- ── REMOVAL CERTIFICATE ── -->
   <div class="ls-mv-bg" id="rc-bg">
     <div class="ls-mv-shell">
-      <div class="ls-mv-hdr"><div class="ls-mv-h" id="rc-title">Movement document</div><button class="ls-mv-x" onclick="rcClose()">&times;</button></div>
+      <div class="ls-mv-hdr"><div class="ls-mv-h" id="rc-title">Movement record</div><button class="ls-mv-x" onclick="rcClose()">&times;</button></div>
       <div class="ls-mv-body" id="rc-body"></div>
     </div>
   </div>

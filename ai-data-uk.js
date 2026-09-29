@@ -1735,7 +1735,7 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
   function campToDb(c,fid){ return { farm_id:fid, local_id:String(c.id), name:c.name||null, ha:(c.ha!=null&&c.ha!=='')?Number(c.ha):null, since:c.since||null, notes:c.notes||null }; }
   function campFromDb(r){ return { id:r.local_id, name:r.name||'', ha:(r.ha!=null)?Number(r.ha):0, since:r.since||'', notes:r.notes||'' }; }
   function herdToDb(h,fid){ return { farm_id:fid, local_id:String(h.id), type:h.type||null, name:h.name||null, breed:h.breed||null,
-    field:h.field||null, field_id:h.fieldId||null, track:!!h.track, planned:!!h.planned, qty:(h.qty!=null)?parseInt(h.qty,10):0,
+    field:h.field||null, field_id:(h.campId!=null)?(h.campId||null):(h.fieldId||null), track:!!h.track, planned:!!h.planned, qty:(h.qty!=null)?parseInt(h.qty,10):0,
     buy:(h.buy!=null&&h.buy!=='')?Number(h.buy):null, feed:(h.feed!=null&&h.feed!=='')?Number(h.feed):null,
     vet:(h.vet!=null&&h.vet!=='')?Number(h.vet):null, sell:(h.sell!=null&&h.sell!=='')?Number(h.sell):null,
     months:(h.months!=null&&h.months!=='')?parseInt(h.months,10):null, notes:h.notes||null,
@@ -1745,6 +1745,7 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
   function herdFromDb(r){ var h={ id:_numIf(r.local_id), type:r.type||'', name:r.name||'', qty:Number(r.qty)||0,
     buy:Number(r.buy)||0, feed:Number(r.feed)||0, vet:Number(r.vet)||0, sell:Number(r.sell)||0,
     months:(r.months!=null)?Number(r.months):0, notes:r.notes||'', field:r.field||'', fieldId:r.field_id||'', track:!!r.track };
+    if(r.field_id) h.campId=r.field_id;   /* -388: the field a herd is in (the app groups by campId) */
     if(r.planned) h.planned=true; if(r.breed) h.breed=r.breed;
     if(r.ages){ try{ h.ages=(typeof r.ages==='string'?JSON.parse(r.ages):r.ages); }catch(e){} }
     if(r.removed) h.removed=true;
@@ -2865,6 +2866,10 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
        different tax for the same farm. */
     if(prefs.yearEnd==='31mar' || prefs.yearEnd==='5apr') p.fyYearEnd = prefs.yearEnd;
     if(typeof prefs.cashBasis==='boolean') p.cashBasis = prefs.cashBasis;
+    /* -388 batch 3 (D3/D4/D5): the livestock year end - each year's closing stock by herd and
+       class (next year's opening), herd basis elections by class and an accountant's value per
+       class. Farm-level and not queried relationally, so it rides in prefs like the stock count. */
+    if(prefs.ls && typeof prefs.ls==='object') p.lsYear = prefs.ls;
     return p;
   }
   function _profPrefsNext(prev, st){
@@ -2873,6 +2878,7 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     if(st && st.stockCounts && typeof st.stockCounts==='object'){ next.stock = st.stockCounts; has=true; }
     if(st && (st.fyYearEnd==='31mar' || st.fyYearEnd==='5apr')){ next.yearEnd = st.fyYearEnd; has=true; }
     if(st && typeof st.cashBasis==='boolean'){ next.cashBasis = st.cashBasis; has=true; }
+    if(st && st.lsYear && typeof st.lsYear==='object'){ next.ls = st.lsYear; has=true; }   /* -388 */
     return has ? next : null;
   }
 
@@ -3460,6 +3466,8 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
                 storage: storage,
                 importBatch: importBatch,
                 _map: { catToId, catToCode, appToDb, dbToApp },
+                _prefs: { apply: _profPrefsApply, next: _profPrefsNext },   /* -388: harness access to the prefs whitelist */
+                _ls: { herdToDb: herdToDb, herdFromDb: herdFromDb, moveToDb: moveToDb, moveFromDb: moveFromDb },
                 _util: { selectAll: selectAll, SELECT_ALL_MAX_ROWS: SELECT_ALL_MAX_ROWS } };
 
 })(window);
