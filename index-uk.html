@@ -4993,6 +4993,7 @@ select.tx-fctl{padding-right:30px}
 .imp-hist-more a{font-size:11.5px;color:var(--gd);font-weight:600;cursor:pointer}
 .imp-hist-toggle{width:100%;text-align:center;padding:10px;border:none;border-top:1px solid #f0f0f0;background:#FAFAFA;color:var(--gd);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit}
 .imp-prev-tbl tr.imp-warn td{background:#FDF3E2}
+.imp-prev-tbl tr.imp-bad td{background:#FEF3F2}
 .imp-summary{display:flex;gap:14px;padding:10px 12px;background:var(--gb);border:1px solid var(--gp);border-radius:var(--rs);margin-bottom:10px;font-size:12.5px;flex-wrap:wrap;align-items:center}
 .imp-summary b{color:var(--gd);font-weight:800}
 .imp-result{padding:18px;text-align:center}
@@ -6409,6 +6410,7 @@ button.rn-gchip{border:0;font-family:inherit;cursor:pointer}
 .ln-prow{padding:13px 2px;border-bottom:1px solid var(--br2)}.ln-prow:last-child{border-bottom:0}
 .ln-ptop{display:flex;align-items:center;gap:11px;margin-bottom:10px}.ln-ptop .ic{font-size:20px;flex:none}.ln-ptop .nm{font-size:13.5px;font-weight:800;color:var(--t1)}.ln-ptop .am{font-size:11px;color:var(--t3);margin-top:1px}
 .ln-seg3{display:flex;background:var(--br2);border-radius:10px;padding:3px;gap:2px}
+.ln-seg3{display:grid;grid-template-columns:repeat(3,1fr);gap:2px}.ln-seg3 button{width:100%;min-width:0;white-space:nowrap}.ln-prow .ln-ptop .nm{font-size:15px;line-height:1.3}.ln-prow .ln-ptop .am{font-size:12.5px;line-height:1.45;margin-top:2px}.ln-prow .ln-ptop{margin-bottom:10px}.ln-inb{display:flex;align-items:center;gap:6px;margin-top:4px;font-size:12.5px;font-weight:700;color:var(--gd)}.ln-inb .kpi-i{position:static;cursor:help}
 .ln-seg3 button{flex:1;border:0;background:transparent;font-family:inherit;font-size:11.5px;font-weight:700;color:var(--t3);padding:8px 4px;border-radius:7px;cursor:pointer}
 .ln-seg3 button.paid.on{background:var(--gm);color:#fff}.ln-seg3 button.diff.on{background:var(--or);color:#fff}.ln-seg3 button.no.on{background:#fff;color:var(--rd);box-shadow:0 1px 2px rgba(0,0,0,.1)}
 .ln-amtrow{margin-top:10px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
@@ -7146,22 +7148,16 @@ button.rn-gchip{border:0;font-family:inherit;cursor:pointer}
         <div class="ob-p">Choose how you'd like to use AgriInsights today.</div>
 
         <div class="ob-mode-list">
-          <div class="ob-mode on" id="ob-mode-demo" onclick="obPickMode(this)">
-            <div class="ob-mode-radio"></div>
-            <div>
-              <div class="ob-mode-title">🔍 Show me around with demo data</div>
-              <div class="ob-mode-sub">Load a sample farm so you can explore all the features before adding your own numbers. Demo data can be cleared anytime.</div>
-              <div class="ob-mode-badge">Recommended for new users</div>
-            </div>
-          </div>
-          <div class="ob-mode" id="ob-mode-fresh" onclick="obPickMode(this)">
+          <!-- -392 D8: an account starts with its own farm. Demo is the second choice, with no
+               "Recommended"; the no-login guest demo keeps demo data (obStep3Default). -->
+          <div class="ob-mode on" id="ob-mode-fresh" onclick="obPickMode(this)">
             <div class="ob-mode-radio"></div>
             <div>
               <div class="ob-mode-title">✍️ Start with my own data</div>
-              <div class="ob-mode-sub" id="ob-mode-fresh-sub">Clear the demo data and start recording your real farm income and expenses from today. You'll be guided on what to add first.</div>
+              <div class="ob-mode-sub" id="ob-mode-fresh-sub">Start recording your real farm income and expenses from today. You'll be guided on what to add first.</div>
             </div>
           </div>
-          <div class="ob-followup" id="ob-followup">
+          <div class="ob-followup show" id="ob-followup">
             <div class="ob-fu-inner">
               <div class="ob-fu-q"><span>📥</span><span id="ob-fu-q-txt">Do you have last season's records to bring in?</span></div>
               <div class="ob-fu-opt on" id="ob-fu-import" onclick="obSetImport(true, event)">
@@ -7174,6 +7170,14 @@ button.rn-gchip{border:0;font-family:inherit;cursor:pointer}
                 <div class="ob-fu-tx"><b id="ob-fu-later-t">No — I'll add as I go</b><small id="ob-fu-later-s">Start fresh; bring in history anytime later.</small></div>
                 <div class="ob-fu-e">✏️</div>
               </div>
+            </div>
+          </div>
+          <div class="ob-mode" id="ob-mode-demo" onclick="obPickMode(this)">
+            <div class="ob-mode-radio"></div>
+            <div>
+              <div class="ob-mode-title">🔍 Show me around with demo data</div>
+              <div class="ob-mode-sub">Load a sample farm so you can explore all the features before adding your own numbers. Demo data can be cleared anytime.</div>
+              <div class="ob-mode-badge" style="display:none"></div>
             </div>
           </div>
         </div>
@@ -7764,9 +7768,10 @@ button.rn-gchip{border:0;font-family:inherit;cursor:pointer}
       <div class="add-form">
         <div class="form-h" id="ai-heading">Record Sale</div>
         <div class="form-sh" id="ai-subhead">Record crops, livestock or other goods your farm has sold.</div>
+        <div class="kind-seg" id="ai-kind" role="group" aria-label="What kind of entry"><button type="button" data-k="sale" class="on" onclick="aiSetKind('sale')">Money in</button><button type="button" data-k="returned" onclick="aiSetKind('returned')">Money returned to a buyer</button></div>
         <div class="form-step">1. What type of income is this?</div>
         <div class="type-cards" id="ai-type-cards">
-          <div class="tc on" data-st="Crops" onclick="setSaleType('Crops')"><div class="tc-icon g"><svg viewBox="0 0 24 24"><path d="M12 4v17"/><path d="M12 9c0-2.6 2-4.4 4.6-4.4C16.6 7.2 14.6 9 12 9z"/><path d="M12 12c0-2.6-2-4.4-4.6-4.4C7.4 10.2 9.4 12 12 12z"/><path d="M12 15c0-2.6 2-4.4 4.6-4.4C16.6 13.2 14.6 15 12 15z"/><path d="M12 18c0-2.6-2-4.4-4.6-4.4C7.4 16.2 9.4 18 12 18z"/></svg></div><div class="tc-name">Crops</div><div class="tc-sub">Wheat, Wheat, Oilseed rapes</div></div>
+          <div class="tc on" data-st="Crops" onclick="setSaleType('Crops')"><div class="tc-icon g"><svg viewBox="0 0 24 24"><path d="M12 4v17"/><path d="M12 9c0-2.6 2-4.4 4.6-4.4C16.6 7.2 14.6 9 12 9z"/><path d="M12 12c0-2.6-2-4.4-4.6-4.4C7.4 10.2 9.4 12 12 12z"/><path d="M12 15c0-2.6 2-4.4 4.6-4.4C16.6 13.2 14.6 15 12 15z"/><path d="M12 18c0-2.6-2-4.4-4.6-4.4C7.4 16.2 9.4 18 12 18z"/></svg></div><div class="tc-name">Crops</div><div class="tc-sub">Wheat, barley, oilseed rape</div></div>
           <div class="tc" data-st="Fruit" onclick="setSaleType('Fruit')"><div class="tc-icon o"><svg viewBox="0 0 24 24"><circle cx="12" cy="14" r="7.5"/><path d="M12 6.5V14M5 11.5h14"/><path d="M12 6.5c.4-2.2 2.2-3.5 4.2-3.5-.2 2.1-1.8 3.4-3.6 3.6"/></svg></div><div class="tc-name">Fruit &amp; Veg</div><div class="tc-sub">Top fruit, apples, berries, veg</div></div>
           <div class="tc" data-st="Livestock" onclick="setSaleType('Livestock')"><div class="tc-icon br"><svg viewBox="0 0 24 24"><ellipse cx="13" cy="9.8" rx="6.2" ry="3.5"/><ellipse cx="5.3" cy="9" rx="2.8" ry="2.4"/><ellipse cx="3.1" cy="10.7" rx="1.5" ry="1.1"/><path d="M3.9 6.7C3.6 5.7 3.9 4.9 4.7 4.8"/><path d="M6.8 6.9C7.1 5.9 7.8 5.6 8.5 5.9"/><path d="M8.6 13.1V19M10.8 13.3V19M16 13.3V19M18.2 12.8V19"/><path d="M19.1 7.7C20.7 8.2 21.2 10.5 20 12.4"/></svg></div><div class="tc-name">Livestock</div><div class="tc-sub">Cattle, Sheep, Pigs</div></div>
           <div class="tc" data-st="Agritourism" onclick="setSaleType('Agritourism')"><div class="tc-icon b"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div><div class="tc-name">Agritourism</div><div class="tc-sub">Farm stays, Tours</div></div>
@@ -7782,7 +7787,7 @@ button.rn-gchip{border:0;font-family:inherit;cursor:pointer}
         <div style="margin-bottom:12px"><label id="ai-cust-lbl">Customer / Buyer (optional)</label><input id="ai-cust" placeholder="Customer name"/></div>
         <!-- Qty section (Crops/Livestock/Agritourism) -->
         <div id="ai-qty-sec" class="fg3">
-          <div><label id="ai-qty-lbl">Quantity</label><div style="display:flex;gap:6px"><input id="ai-qty" type="number" placeholder="0" style="flex:1" oninput="calcSaleTotal();lsLeaveRefresh()"/><select id="ai-unit" style="width:75px;flex:0"><option>tonne</option><option>kg</option><option>head</option></select></div></div>
+          <div><label id="ai-qty-lbl">Quantity</label><div style="display:flex;gap:6px"><input id="ai-qty" type="number" placeholder="0" style="flex:1" oninput="calcSaleTotal();lsLeaveRefresh()"/><select id="ai-unit" style="width:104px;flex:0 0 104px"><option>tonne</option><option>kg</option><option>head</option></select></div></div>
           <div><label id="ai-price-lbl">Price per unit (£)</label><input id="ai-price" type="number" placeholder="0" oninput="calcSaleTotal()"/></div>
           <div><label>Total Amount (£)</label><input id="ai-total" readonly style="background:var(--gb);font-weight:700;color:var(--gd)" placeholder="Auto-calculated"/></div>
         </div>
@@ -7801,7 +7806,7 @@ button.rn-gchip{border:0;font-family:inherit;cursor:pointer}
         </div>
         <div class="form-step">4. Payment details</div>
         <div class="fg2" style="margin-bottom:12px">
-          <div><label>Payment Method</label><select id="ai-method"><option>Bank Deposit</option><option>Cash</option><option>EFT</option></select></div>
+          <div><label>Payment Method</label><select id="ai-method"><option>Bank transfer</option><option>Card</option><option>Cash</option><option>Cheque</option><option>Direct Debit</option></select></div>
           <div><label>Reference / Notes (optional)</label><input id="ai-ref" placeholder="Invoice number or notes"/></div>
         </div>
         <div style="margin-bottom:12px"><label>For which enterprise? (optional) <span id="ai-ent-badge" style="display:none"></span></label><select id="ai-ent" onchange="ST._aiEntManual=true;_entBadgeSet('ai-ent-badge','none');lsLeaveRefresh()"><option value="">Whole farm</option></select><div id="ai-ent-hint" style="font-size:11px;color:var(--t4);margin-top:4px">Leave on &ldquo;Whole farm&rdquo; for general income. <span style="color:var(--gm);cursor:pointer;font-weight:700" onclick="nav('livestock')">Other animals not listed? Add them in Livestock first.</span></div>
@@ -8030,8 +8035,9 @@ button.rn-gchip{border:0;font-family:inherit;cursor:pointer}
   <div class="add-layout">
     <div>
       <div class="add-form">
-        <div class="form-h">Add Expense</div>
-        <div class="form-sh">Record any cost or expense you've paid for your farm.</div>
+        <div class="form-h" id="ae-heading">Add Expense</div>
+        <div class="form-sh" id="ae-subhead">Record any cost or expense you've paid for your farm.</div>
+        <div class="kind-seg" id="ae-kind" role="group" aria-label="What kind of entry"><button type="button" data-k="pay" class="on" onclick="aeSetKind('pay')">A payment</button><button type="button" data-k="refund" onclick="aeSetKind('refund')">A refund or credit note</button></div>
         <div class="form-step">1. What is this expense for?</div>
         <div class="type-cards" id="ae-type-cards">
           <div class="tc on" data-et="Seeds &amp; Planting" onclick="setExpType(this.dataset.et)"><div class="tc-icon g"><svg viewBox="0 0 24 24"><path d="M12 21V11"/><path d="M12 12.5C12 9 9.2 6.6 5.5 6.6 5.5 10 8 12.5 12 12.5z"/><path d="M12 11C12 7.8 14.6 5.6 18 5.6 18 8.8 15.6 11 12 11z"/><path d="M6 21h12"/></svg></div><div class="tc-name">Seeds &amp; Planting</div><div class="tc-sub">Certified seed, inoculants</div></div>
@@ -9932,7 +9938,7 @@ button.rn-gchip{border:0;font-family:inherit;cursor:pointer}
       </div>
       <div class="or-fg2">
         <div class="or-frow" id="or-cell-trees"><label class="or-flbl"><span id="or-lbl-count">Trees</span></label><input class="or-finp" id="or-f-trees" placeholder="e.g. 6930"></div>
-        <div class="or-frow" id="or-cell-space"><label class="or-flbl" data-t="or.add.spacing">Spacing</label><input class="or-finp" id="or-f-space" placeholder="e.g. 4m x 2m"></div>
+        <div class="or-frow" id="or-cell-space"><label class="or-flbl" data-t="or.add.spacing">Spacing</label><input class="or-finp" id="or-f-space" placeholder="row × tree, e.g. 3.2 × 1"></div>
       </div>
       <div class="or-frow" id="or-row-root"><label class="or-flbl"><span data-t="or.add.root">Rootstock</span> <span class="or-fh">what the tree is grafted onto</span></label><input class="or-finp" id="or-f-root" placeholder="e.g. M9, M26, MM106"></div>
       <div class="or-frow" id="or-row-carton"><label class="or-flbl"><span data-t="or.add.carton">Carton size</span> <span class="or-fh">how your fruit is packed</span> <span class="or-what" onclick="orToggleWhat('or-w-carton')">What's a carton?</span></label>
@@ -11044,6 +11050,7 @@ button.rn-gchip{border:0;font-family:inherit;cursor:pointer}
               I spent money
             </div>
           </div>
+          <label id="qc-refund-row" style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--t2);margin:-2px 0 10px;cursor:pointer"><input type="checkbox" id="qc-refund" onchange="qcRefundToggle()" style="width:16px;height:16px;flex:none;margin:0"/><span id="qc-refund-lbl">It&rsquo;s a refund of something I paid for</span></label>
 
           <!-- Fields -->
           <div class="qc-row">
@@ -11051,7 +11058,7 @@ button.rn-gchip{border:0;font-family:inherit;cursor:pointer}
               <label>Amount (£)</label>
               <div class="qc-amount-wrap">
                 <span>£</span>
-                <input id="qc-amt" type="number" placeholder="0" inputmode="numeric" style="width:100%;padding:10px 10px 10px 26px;border:1.5px solid var(--br);border-radius:var(--rs);font-size:16px;font-weight:700;color:var(--t1);background:#fff"/>
+                <input id="qc-amt" type="number" placeholder="0" inputmode="decimal" step="0.01" min="0" oninput="qcPriceHint()" style="width:100%;padding:10px 10px 10px 26px;border:1.5px solid var(--br);border-radius:var(--rs);font-size:16px;font-weight:700;color:var(--t1);background:#fff"/>
               </div>
             </div>
             <div class="qc-field">
@@ -11105,7 +11112,7 @@ button.rn-gchip{border:0;font-family:inherit;cursor:pointer}
             </div>
             <div class="qc-row">
               <div class="qc-field"><label>For which enterprise?</label><select id="qcd-ent" style="width:100%;padding:10px;border:1.5px solid var(--br);border-radius:var(--rs);font-size:13px;background:#fff"><option value="">Whole farm</option></select></div>
-              <div class="qc-field"><label>Payment method</label><select id="qcd-method" style="width:100%;padding:10px;border:1.5px solid var(--br);border-radius:var(--rs);font-size:13px;background:#fff"><option>Bank Deposit</option><option>Cash</option><option>EFT</option><option>Card</option></select></div>
+              <div class="qc-field"><label>Payment method</label><select id="qcd-method" style="width:100%;padding:10px;border:1.5px solid var(--br);border-radius:var(--rs);font-size:13px;background:#fff"><option>Bank transfer</option><option>Card</option><option>Cash</option><option>Cheque</option><option>Direct Debit</option></select></div>
             </div>
             <div onclick="qcOpenFull()" style="text-align:center;font-size:11.5px;color:var(--t3);cursor:pointer;text-decoration:underline;margin-top:2px">Need sale-type tiles, merchant or a photo? Open the full form →</div>
           </div>
@@ -13714,13 +13721,14 @@ function orSprayEditFill(id){
   set('or-sp-act', x.act); set('or-sp-water', x.water); set('or-sp-wind', x.wind); set('or-sp-time', x.time);
   /* The cost already posted to expenses when the spray was logged; changing it here would
      leave that expense saying something else. */
-  var c=$('or-sp-cost'); if(c){ c.value=''; c.disabled=true; c.placeholder=fixT('change it in Transactions','verander dit in Transaksies'); }
+  /* -392 B5-F20: show the cost that was posted - blank read as "no cost". */
+  var c=$('or-sp-cost'); if(c){ var _ot=(ST.txns||[]).filter(function(t){ return t && t._os===x.id; })[0]; c.value=_ot?String(Math.abs(+_ot.amt||0)):''; c.disabled=true; c.placeholder=fixT('no cost recorded','geen koste aangeteken'); c.title='The cost went to your expenses when the spray was logged — change it in Transactions.'; }
   var root=$('or-modal-content');
   var t=root&&root.querySelector('.or-mt'); if(t) t.textContent=fixT('Correct this spray','Stel hierdie spuit reg');
   var s=root&&root.querySelector('.or-ms'); if(s) s.textContent=fixT('Change what was wrong. The record keeps this entry and notes what changed.','Verander wat verkeerd was. Die rekord hou hierdie inskrywing en teken aan wat verander het.');
   var b=root&&root.querySelector('.btn-pri'); if(b) b.textContent=fixT('Save correction','Stoor regstelling');
-  var me=$('nx-method'); if(me) me.value=x.method||'';
-  nxFill(x);
+  nxUse('orchard'); var me=nxE('method'); if(me) me.value=x.method||'';
+  nxFill(x, false, 'or-nx-');
 }
 function orSaveSprayEdit(id){
   if(!fixReady('spray')){ fixNotReady(); return; }
@@ -13735,7 +13743,7 @@ function orSaveSprayEdit(id){
   n+=fixLog(x,'dateISO',x.dateISO,dateISO); n+=fixLog(x,'phi',oldDays,days);
   n+=fixLog(x,'bid', oldB?oldB.name:x.bid, b.name);
   ['reg','rate','batch','by','cert','act','water','wind','time'].forEach(function(k){ n+=fixLog(x,k,x[k]||'',v('or-sp-'+k)); });
-  var nx=nxRead(); if(nx.err){ toast(nx.err,'error'); return; }
+  var nx=nxRead('or-nx-'); if(nx.err){ toast(nx.err,'error'); return; }
   n+=fixLog(x,'bbch',x.bbch||'',nx.bbch||''); n+=fixLog(x,'method',x.method||'',nx.method||''); n+=fixLog(x,'eamu',x.eamu||'',nx.eamu||'');
   n+=fixLog(x,'situation',x.situation||'',nx.situation||''); n+=fixLog(x,'timeEnd',x.timeEnd||'',nx.timeEnd||''); n+=fixLog(x,'weather',x.weather||'',nx.weather||'');
   n+=fixLog(x,'buffer',nxLerapText(x.buffer)||nxBufText(x.buffer),nxLerapText(nx.buffer)||nxBufText(nx.buffer));
@@ -13772,12 +13780,13 @@ function cropInputEditFill(id){
   set('ci-product',x.product); set('ci-reg',x.reg); set('ci-kind',x.kind); set('ci-rate',x.rate); set('ci-batch',x.batch);
   set('ci-by',x.by); set('ci-cert',x.operatorCert); set('ci-for',x.targetFor); set('ci-phi',x.phi);
   set('ci-date',x.date); set('ci-time',x.time); set('ci-act',x.act); set('ci-water',x.water); set('ci-wind',x.wind);
-  var c=$('ci-cost'); if(c){ c.value=''; c.disabled=true; c.placeholder=fixT('change it in Transactions','verander dit in Transaksies'); }
+  /* -392 B5-F20: show the cost per hectare that was posted - blank read as "no cost". */
+  var c=$('ci-cost'); if(c){ c.value=(x.costPerHa!=null && x.costPerHa!=='')?String(x.costPerHa):''; c.disabled=true; c.placeholder=fixT('no cost recorded','geen koste aangeteken'); c.title='The cost went to your expenses when this was logged — change it in Transactions.'; }
   var card=$('crop-comply-card');
   var t=card && card.firstElementChild && card.firstElementChild.firstElementChild; if(t) t.textContent=fixT('Correct this application','Stel hierdie toediening reg');
   var sv=card && card.querySelector('.crop-formbtn'); if(sv) sv.textContent=fixT('Save correction','Stoor regstelling');
-  var me=$('nx-method'); if(me) me.value=x.method||'';
-  nxFill(x);
+  nxUse('crop'); var me=nxE('method'); if(me) me.value=x.method||'';
+  nxFill(x, false, 'cr-nx-');
 }
 function cropInputEditSave(id){
   CROP_INPUT_EDIT=null;
@@ -13789,7 +13798,7 @@ function cropInputEditSave(id){
            by:v('ci-by')||x.by, operatorCert:v('ci-cert'), targetFor:v('ci-for'), phi:parseInt(v('ci-phi'),10)||0,
            date:v('ci-date')||x.date, time:v('ci-time'), act:v('ci-act'), water:v('ci-water'), wind:v('ci-wind') };
   var ppp=!/^(seed|fertiliser)$/.test(nv.kind||'');
-  var nx=ppp?nxRead():{}; if(nx.err){ toast(nx.err,'error'); CROP_INPUT_EDIT=id; return; }
+  var nx=ppp?nxRead('cr-nx-'):{}; if(nx.err){ toast(nx.err,'error'); CROP_INPUT_EDIT=id; return; }
   if(ppp){ nv.bbch=nx.bbch||''; nv.method=nx.method||''; nv.eamu=nx.eamu||''; nv.situation=nx.situation||''; nv.timeEnd=nx.timeEnd||''; nv.weather=nx.weather||''; }
   var n=0; Object.keys(nv).forEach(function(k){ n+=fixLog(x,k,x[k]==null?'':x[k],nv[k]); });
   var bOld=nxBufText(x.buffer), bNew=ppp?nxBufText(nx.buffer):bOld;
@@ -14691,7 +14700,15 @@ var NX_SIT=[['outdoor','Outdoors (field or orchard)','Treatment of agricultural 
             ['glass','Glasshouse','Treament of crops in greenhouses'],
             ['store','Store, after harvest','Post Harvest Treatment (storage)']];
 function nxSitDaera(k){ for(var i=0;i<NX_SIT.length;i++) if(NX_SIT[i][0]===(k||'outdoor')) return NX_SIT[i][2]; return NX_SIT[0][2]; }
-var NX_CTX=null;   /* {kind:'crop'|'orchard', date(), reg(), crop(), land()} set by the open form */
+var NX_CTX=null;
+/* -392 B5-F23: the crop and the orchard spray forms each build the "for the record" fields.
+   They shared ids, so with both on the page a save could read the other form. Each form now
+   has its own prefix - cr-nx-* and or-nx-* - and every reader works in the form it is given. */
+var NX_PF='cr-nx-';
+function nxPf(kind){ return kind==='orchard'?'or-nx-':'cr-nx-'; }
+function nxE(id){ return document.getElementById(NX_PF+id); }
+function nxUse(kind){ NX_PF=nxPf(kind); return NX_PF; }
+window.nxUse=nxUse;   /* {kind:'crop'|'orchard', date(), reg(), crop(), land()} set by the open form */
 function _nxLbl(a,v){ for(var i=0;i<a.length;i++) if(a[i][0]===String(v)) return a[i][1]; return ''; }
 function nxCss(){
   if(document.getElementById('nx-css')) return;
@@ -14724,41 +14741,41 @@ function nxDefaultMethod(ctx){
   return 'Boom Sprayer';
 }
 function nxHTML(ctx){
-  nxCss(); NX_CTX=ctx||{kind:'crop'};
+  nxCss(); NX_CTX=ctx||{kind:'crop'}; var P=NX_PF=nxPf(NX_CTX.kind);
   var dm=nxDefaultMethod(NX_CTX);
   var opt=function(a,sel){ return a.map(function(o){ return '<option value="'+o[0]+'"'+(o[0]===sel?' selected':'')+'>'+o[1]+'</option>'; }).join(''); };
-  return '<div class="nx'+(NX_CTX.kind==='orchard'?' nx-or':'')+'" id="nx-box">'+
+  return '<div class="nx'+(NX_CTX.kind==='orchard'?' nx-or':'')+'" id="'+P+'box">'+
     '<div class="nx-h">For the record <span>· growth stage, water buffer, off-label permit</span></div>'+
-    '<div class="nx-two"><div><label class="nx-l" for="nx-bbch">Growth stage <i>optional</i></label><input type="text" id="nx-bbch" placeholder="e.g. 32" inputmode="numeric" autocomplete="off">'+
+    '<div class="nx-two"><div><label class="nx-l" for="'+P+'bbch">Growth stage <i>optional</i></label><input type="text" id="'+P+'bbch" placeholder="e.g. 32" inputmode="numeric" autocomplete="off">'+
       '<small>The stage number your agronomist gives, e.g. GS 32 is 32. Northern Ireland asks for it when the label says which stages you can spray.</small></div>'+
-    '<div><label class="nx-l" for="nx-method">Sprayed with</label><select id="nx-method" onchange="nxLerapHint()">'+(NX_CTX.edit?'<option value="">not recorded</option>':'')+
+    '<div><label class="nx-l" for="'+P+'method">Sprayed with</label><select id="'+P+'method" onchange="nxLerapHint(\''+P+'\')">'+(NX_CTX.edit?'<option value="">not recorded</option>':'')+
       NX_METHODS.map(function(m){ return '<option'+(m===dm?' selected':'')+'>'+m+'</option>'; }).join('')+'</select></div></div>'+
-    '<div class="nx-two"><div><label class="nx-l" for="nx-sit">Where</label><select id="nx-sit">'+
+    '<div class="nx-two"><div><label class="nx-l" for="'+P+'sit">Where</label><select id="'+P+'sit">'+
       NX_SIT.map(function(o){ return '<option value="'+o[0]+'"'+(o[0]===(NX_CTX.sit||'outdoor')?' selected':'')+'>'+o[1]+'</option>'; }).join('')+'</select></div>'+
-      '<div><label class="nx-l" for="nx-tend">Finished spraying at <i>optional</i></label><input type="time" id="nx-tend"></div></div>'+
-    '<div class="nx-two"><div><label class="nx-l" for="nx-weather">Weather <i>optional</i></label><input type="text" id="nx-weather" placeholder="e.g. dry, 12°C" autocomplete="off"></div><div></div></div>'+
+      '<div><label class="nx-l" for="'+P+'tend">Finished spraying at <i>optional</i></label><input type="time" id="'+P+'tend"></div></div>'+
+    '<div class="nx-two"><div><label class="nx-l" for="'+P+'weather">Weather <i>optional</i></label><input type="text" id="'+P+'weather" placeholder="e.g. dry, 12°C" autocomplete="off"></div><div></div></div>'+
     '<label class="nx-l">Unsprayed strip next to water</label>'+
-    NX_BUF.map(function(b){ return '<label class="nx-opt"><input type="radio" name="nx-buf" value="'+b[0]+'" onchange="nxShow()">'+b[1]+'</label>'; }).join('')+
-    '<div class="nx-sub" id="nx-sub-full" hidden><div class="nx-two" style="margin-bottom:0"><div><label class="nx-l" for="nx-bufm-full">Strip left (metres)</label><input type="number" id="nx-bufm-full" min="0" step="0.5" placeholder="e.g. 5"></div><div></div></div></div>'+
-    '<div class="nx-sub" id="nx-sub-lerap" hidden>'+
+    NX_BUF.map(function(b){ return '<label class="nx-opt"><input type="radio" name="'+P+'buf" value="'+b[0]+'" onchange="nxShow(\''+P+'\')">'+b[1]+'</label>'; }).join('')+
+    '<div class="nx-sub" id="'+P+'sub-full" hidden><div class="nx-two" style="margin-bottom:0"><div><label class="nx-l" for="'+P+'bufm-full">Strip left (metres)</label><input type="number" id="'+P+'bufm-full" min="0" step="0.5" placeholder="e.g. 5"></div><div></div></div></div>'+
+    '<div class="nx-sub" id="'+P+'sub-lerap" hidden>'+
       '<div class="nx-four">'+
-        '<div><label class="nx-l" for="nx-stars">Sprayer stars</label><select id="nx-stars">'+opt(NX_STARS,'0')+'</select></div>'+
-        '<div><label class="nx-l" for="nx-dose">Rate used</label><select id="nx-dose">'+opt(NX_DOSE,'1')+'</select></div>'+
-        '<div><label class="nx-l" for="nx-ww">Water width</label><select id="nx-ww"><option value="">—</option>'+opt(NX_WW,'')+'</select></div>'+
-        '<div><label class="nx-l" for="nx-bufm-lerap">Strip left (m)</label><input type="number" id="nx-bufm-lerap" min="0" step="0.5" placeholder="m"></div>'+
+        '<div><label class="nx-l" for="'+P+'stars">Sprayer stars</label><select id="'+P+'stars">'+opt(NX_STARS,'0')+'</select></div>'+
+        '<div><label class="nx-l" for="'+P+'dose">Rate used</label><select id="'+P+'dose">'+opt(NX_DOSE,'1')+'</select></div>'+
+        '<div><label class="nx-l" for="'+P+'ww">Water width</label><select id="'+P+'ww"><option value="">—</option>'+opt(NX_WW,'')+'</select></div>'+
+        '<div><label class="nx-l" for="'+P+'bufm-lerap">Strip left (m)</label><input type="number" id="'+P+'bufm-lerap" min="0" step="0.5" placeholder="m"></div>'+
       '</div>'+
-      '<div class="nx-two" style="margin:6px 0 0"><div><label class="nx-l" for="nx-lerap-by">Worked out by <i>optional</i></label><input type="text" id="nx-lerap-by" placeholder="if not the operator"></div></div>'+
-      '<small id="nx-lerap-hint"></small>'+
+      '<div class="nx-two" style="margin:6px 0 0"><div><label class="nx-l" for="'+P+'lerap-by">Worked out by <i>optional</i></label><input type="text" id="'+P+'lerap-by" placeholder="if not the operator"></div></div>'+
+      '<small id="'+P+'lerap-hint"></small>'+
     '</div>'+
-    '<label class="nx-chk"><input type="checkbox" id="nx-eamu-on" onchange="nxShow()">Sprayed under an off-label permit (EAMU)</label>'+
-    '<div class="nx-sub" id="nx-sub-eamu" hidden><input type="text" id="nx-eamu" placeholder="permit number, e.g. 1309/2024" oninput="nxEamuCheck()" autocomplete="off"><div id="nx-eamu-res"></div></div>'+
+    '<label class="nx-chk"><input type="checkbox" id="'+P+'eamu-on" onchange="nxShow(\''+P+'\')">Sprayed under an off-label permit (EAMU)</label>'+
+    '<div class="nx-sub" id="'+P+'sub-eamu" hidden><input type="text" id="'+P+'eamu" placeholder="permit number, e.g. 1309/2024" oninput="nxEamuCheck(\''+P+'\')" autocomplete="off"><div id="'+P+'eamu-res"></div></div>'+
   '</div>';
 }
-function nxBufPick(){ var r=document.querySelector('input[name="nx-buf"]:checked'); return r?r.value:''; }
-function nxShow(){
-  var k=nxBufPick(), f=$('nx-sub-full'), l=$('nx-sub-lerap'), e=$('nx-sub-eamu'), on=$('nx-eamu-on');
+function nxBufPick(pf){ if(pf) NX_PF=pf; var r=document.querySelector('input[name="'+NX_PF+'buf"]:checked'); return r?r.value:''; }
+function nxShow(pf){ if(pf) NX_PF=pf;
+  var k=nxBufPick(), f=nxE('sub-full'), l=nxE('sub-lerap'), e=nxE('sub-eamu'), on=nxE('eamu-on');
   if(f) f.hidden=(k!=='full'); if(l) l.hidden=(k!=='lerap');
-  Array.prototype.forEach.call(document.querySelectorAll('#nx-box .nx-opt'), function(o){
+  Array.prototype.forEach.call(document.querySelectorAll('#'+NX_PF+'box .nx-opt'), function(o){
     var i=o.querySelector('input'); o.style.borderColor=(i&&i.checked)?'var(--gm,#2D6A4F)':''; o.style.background=(i&&i.checked)?'#eef4ec':''; });
   if(e) e.hidden=!(on&&on.checked);
   nxLerapHint();
@@ -14766,9 +14783,9 @@ function nxShow(){
 }
 /* HSE's rules, as reminders, never as a calculation (D8). Verified 23 Sep 2026 against the
    LERAP booklets for horizontal boom and broadcast air-assisted sprayers. */
-function nxLerapHint(){
-  var h=$('nx-lerap-hint'); if(!h) return;
-  var m=($('nx-method')||{}).value||'';
+function nxLerapHint(pf){ if(pf) NX_PF=pf;
+  var h=nxE('lerap-hint'); if(!h) return;
+  var m=(nxE('method')||{}).value||'';
   h.textContent = m==='Broadcast Sprayer'
     ? 'HSE rules for orchard sprayers: next to a dry ditch, leave 5 m. Cutting the rate on its own gets you down to 7 m at the least; 5 m is the least with a low-drift sprayer or a windbreak. Keep this for three years.'
     : m.indexOf('Knapsack')===0
@@ -14776,52 +14793,52 @@ function nxLerapHint(){
     : 'HSE rules for boom sprayers: a 5 m strip can come down to 1 m at the least, and next to a dry ditch 1 m is enough. A 6, 12 or 18 m strip can’t be made narrower. Keep this for three years.';
 }
 /* Read the fields. Returns {err} for a value the record cannot keep as typed. */
-function nxRead(){
+function nxRead(pf){ if(pf) NX_PF=pf;
   var g=function(id){ var e=$(id); return e?String(e.value||'').trim():''; };
   var out={};
-  var bb=g('nx-bbch').replace(/[–—]/g,'-');
+  var bb=g(NX_PF+'bbch').replace(/[–—]/g,'-');
   if(bb){ if(!/^\d{1,2}(\s*[-\/]\s*\d{1,2})?$/.test(bb)) return {err:'Growth stage is a number, such as 32 or 31-32.'}; out.bbch=bb.replace(/\s+/g,''); }
-  out.method=g('nx-method')||'';
-  var sit=g('nx-sit'); if(sit && sit!=='outdoor') out.situation=sit;
-  var te=g('nx-tend'); if(te) out.timeEnd=te;
-  var we=g('nx-weather'); if(we) out.weather=we;
+  out.method=g(NX_PF+'method')||'';
+  var sit=g(NX_PF+'sit'); if(sit && sit!=='outdoor') out.situation=sit;
+  var te=g(NX_PF+'tend'); if(te) out.timeEnd=te;
+  var we=g(NX_PF+'weather'); if(we) out.weather=we;
   var k=nxBufPick();
   if(k){
     var b={k:k};
     if(k==='full'||k==='lerap'){
-      var mv=g(k==='full'?'nx-bufm-full':'nx-bufm-lerap');
+      var mv=g(NX_PF+(k==='full'?'bufm-full':'bufm-lerap'));
       var m=parseFloat(mv);
       if(mv===''||isNaN(m)||m<0||m>100) return {err: k==='full'?'How wide a strip did you leave next to the water? Put it in metres.':'How wide a strip did the LERAP give? Put it in metres.'};
       b.m=m;
     }
     if(k==='lerap'){
-      b.stars=parseInt(g('nx-stars'),10)||0; b.dose=parseFloat(g('nx-dose'))||1; b.ww=g('nx-ww');
+      b.stars=parseInt(g(NX_PF+'stars'),10)||0; b.dose=parseFloat(g(NX_PF+'dose'))||1; b.ww=g(NX_PF+'ww');
       if(!b.ww) return {err:'How wide is the water? The LERAP needs it; pick “Dry ditch” if it was dry.'};
-      var by=g('nx-lerap-by'); if(by) b.by=by;
+      var by=g(NX_PF+'lerap-by'); if(by) b.by=by;
     }
     out.buffer=b;
   }
-  var on=$('nx-eamu-on');
+  var on=nxE('eamu-on');
   if(on && on.checked){
-    var n=eamuNorm(g('nx-eamu'));
+    var n=eamuNorm(g(NX_PF+'eamu'));
     if(!n) return {err:'Permit numbers look like 1309/2024 (the permit says “1309 of 2024”).'};
     out.eamu=n;
   }
   return out;
 }
-function nxFill(x, onlyCarry){
+function nxFill(x, onlyCarry, pf){ if(pf) NX_PF=pf;
   if(!x) return;
   var set=function(id,v){ var e=$(id); if(e && v!=null && v!=='') e.value=v; };
-  if(!onlyCarry){ set('nx-bbch', x.bbch); set('nx-tend', x.timeEnd); set('nx-weather', x.weather); }
-  if(x.situation || !onlyCarry){ var si=$('nx-sit'); if(si) si.value=x.situation||'outdoor'; }
-  set('nx-method', x.method);
+  if(!onlyCarry){ set(NX_PF+'bbch', x.bbch); set(NX_PF+'tend', x.timeEnd); set(NX_PF+'weather', x.weather); }
+  if(x.situation || !onlyCarry){ var si=nxE('sit'); if(si) si.value=x.situation||'outdoor'; }
+  set(NX_PF+'method', x.method);
   var b=x.buffer;
   if(b && b.k){
-    var r=document.querySelector('input[name="nx-buf"][value="'+b.k+'"]'); if(r) r.checked=true;
-    if(b.k==='full') set('nx-bufm-full', b.m);
-    if(b.k==='lerap'){ set('nx-bufm-lerap', b.m); set('nx-stars', String(b.stars||0)); set('nx-dose', String(b.dose||1)); set('nx-ww', b.ww); set('nx-lerap-by', b.by); }
+    var r=document.querySelector('input[name="'+NX_PF+'buf"][value="'+b.k+'"]'); if(r) r.checked=true;
+    if(b.k==='full') set(NX_PF+'bufm-full', b.m);
+    if(b.k==='lerap'){ set(NX_PF+'bufm-lerap', b.m); set(NX_PF+'stars', String(b.stars||0)); set(NX_PF+'dose', String(b.dose||1)); set(NX_PF+'ww', b.ww); set(NX_PF+'lerap-by', b.by); }
   }
-  if(x.eamu){ var on=$('nx-eamu-on'); if(on) on.checked=true; set('nx-eamu', x.eamu); }
+  if(x.eamu){ var on=nxE('eamu-on'); if(on) on.checked=true; set(NX_PF+'eamu', x.eamu); }
   nxShow();
 }
 /* A repeat spray of the same product on the same field needs no new LERAP, but the
@@ -14837,18 +14854,18 @@ function nxLast(product, where){
            .sort(function(a,b){ return (a.d||'')<(b.d||'')?1:-1; });
   return pool.length?pool[0].x:null;
 }
-function nxCarry(product, where){
-  if(nxBufPick() || (($('nx-eamu')||{}).value)) return;          /* never overwrite what they chose */
+function nxCarry(product, where, pf){ if(pf) NX_PF=pf;
+  if(nxBufPick() || ((nxE('eamu')||{}).value)) return;          /* never overwrite what they chose */
   var last=nxLast(product, where); if(last) nxFill(last, true);
 }
-function nxEamuCheck(){
-  var box=$('nx-eamu-res'); if(!box) return;
-  var raw=(($('nx-eamu')||{}).value||'').trim();
+function nxEamuCheck(pf){ if(pf) NX_PF=pf;
+  var box=nxE('eamu-res'); if(!box) return;
+  var raw=((nxE('eamu')||{}).value||'').trim();
   if(!raw){ box.innerHTML=''; return; }
   var n=eamuNorm(raw);
   if(!n){ box.innerHTML='<div class="nx-res"><span class="warn">Permit numbers look like 1309/2024</span> — the permit says “1309 of 2024”.</div>'; return; }
   ukEamuLoad().then(function(L){
-    if((($('nx-eamu')||{}).value||'').trim()!==raw) return;        /* typed on since */
+    if(((nxE('eamu')||{}).value||'').trim()!==raw) return;        /* typed on since */
     if(!L || !L.length){ box.innerHTML='<div class="nx-res">Couldn’t reach HSE’s list just now. The number is still saved.</div>'; return; }
     var key=eamuKey(n), hit=null;
     for(var i=0;i<L.length;i++){ if(L[i][0]===key){ hit=L[i]; break; } }
@@ -15014,11 +15031,11 @@ function cropLogInput(editId){
   ukProdAttach('ci-product', function(name, act, reg){
     var a=$('ci-act'); if(a && !a.value) a.value=act;
     var r=$('ci-reg'); if(r && !r.value) r.value=reg;
-    if(!editId) nxCarry(name, _ciWhere());
+    if(!editId) nxCarry(name, _ciWhere(), 'cr-nx-');
   });
-  var _cp=$('ci-product'); if(_cp && !editId) _cp.addEventListener('change', function(){ nxCarry(_cp.value, _ciWhere()); });
+  var _cp=$('ci-product'); if(_cp && !editId) _cp.addEventListener('change', function(){ nxCarry(_cp.value, _ciWhere(), 'cr-nx-'); });
   /* Fertiliser and seed are not plant protection products: no buffer, no EAMU, no stage. */
-  var _ck=$('ci-kind'); if(_ck){ var _nxTg=function(){ var bx=$('nx-box'); if(bx) bx.hidden=/^(seed|fertiliser)$/.test(_ck.value); }; _ck.addEventListener('change',_nxTg); _nxTg(); }
+  var _ck=$('ci-kind'); if(_ck){ var _nxTg=function(){ var bx=$('cr-nx-box'); if(bx) bx.hidden=/^(seed|fertiliser)$/.test(_ck.value); }; _ck.addEventListener('change',_nxTg); _nxTg(); }
   if(editId) cropInputEditFill(editId);
 }
 async function cropInputFormSave(){
@@ -15037,7 +15054,7 @@ async function cropInputFormSave(){
   var reg=(($('ci-reg')||{}).value||'').trim(), rate=(($('ci-rate')||{}).value||'').trim(),
       batch=(($('ci-batch')||{}).value||'').trim(), by=(($('ci-by')||{}).value||'').trim()||(FARM.owner||''),
       cert=(($('ci-cert')||{}).value||'').trim();
-  var nx=/^(seed|fertiliser)$/.test(kind) ? {} : nxRead();
+  var nx=/^(seed|fertiliser)$/.test(kind) ? {} : nxRead('cr-nx-');
   if(nx.err){ toast(nx.err,'error'); return; }
   /* B4-13 (-390): a spray dated before the field is planted is usually a pre-plant
      burn-down, which is normal - so it asks, and never refuses. */
@@ -18379,7 +18396,7 @@ rows += '<tr class="tx-month-row"><td colspan="6" style="padding:0">' +
         '<td class="tx-catcell" onclick="event.stopPropagation(); txCatOpen(' + ri + ', this, \'income\')">' +
           '<span class="tag tx-tag-btn ' + tag + '" title="Click to change category">' + esc(t.cat||'None') + '<i class="tx-caret">\u25be</i></span>' +
           '</td>' +
-        '<td style="font-weight:700;color:var(--gd);text-align:right">+' + fmt(t.amt) + '</td>' +
+        '<td style="font-weight:700;color:' + txAmtShow(t).col + ';text-align:right">' + txAmtShow(t).sign + fmt(Math.abs(+t.amt || 0)) + txKindChip(t) + '</td>' +
         '<td style="color:var(--t3);font-size:12px">' + (t.method || '') + '</td>' +
       '</tr>';
     });
@@ -18631,12 +18648,37 @@ function _txNeedsLook(t){
   /* Cloud-synced data can arrive AFTER the boot migrations ran, still carrying spelling
      variants ('CropSales'). Same category, different spelling — not a finding. */
   try{ if (typeof normalizeCat==='function' && normalizeCat(t.cat) === guess) return null; }catch(e){}
+  /* -392 D11: some lines honestly fit two categories on the same return box - field veg
+     is crops or fruit & veg, an abstraction charge is water or a licence. Filed either
+     way, it is not wrong. */
+  try{ if (inferCategoryAlso(t.desc, isInc).indexOf(filed) >= 0) return null; }catch(e){}
   if (guess === 'Other Expenses' || guess === 'Other Income') return null;  // a shrug, not a finding
   return guess;
 }
 function _txNeedList(kind){
   return (ST.txns||[]).filter(function(t){ return t.type===kind && _txNeedsLook(t); });
 }
+/* -392 B5-F06: the farm year's "need a look" rows of one kind - the list the Dashboard row
+   counts and opens. */
+function attnNeedLookList(kind){
+  var r=_txRangeFor('fy'), f=r.from?r.from.replace(/-/g,''):'', to=r.to?r.to.replace(/-/g,''):'';
+  return _txNeedList(kind).filter(function(t){
+    var d=parseDate(String(t.date||'')); if(!d) return false;
+    var n=String(d.y*10000+(d.m+1)*100+(d.d||1));
+    return (!f || n>=f) && (!to || n<=to);
+  });
+}
+function attnNeedLookCount(kind){ try{ return attnNeedLookList(kind).length; }catch(e){ return 0; } }
+function attnOpenNeedLook(kind){
+  nav('transactions');
+  try{ txClearFilters(); }catch(e){}
+  TX_TYPE_FILTER = kind;
+  ['all','income','expense'].forEach(function(x){ var b=$('txf-'+x); if(b) b.className='pill'+(x===kind?' on':''); });
+  ST.txNeedOnly = true;
+  try{ txUpdateClearBtn(); }catch(e){}
+  txRender();
+}
+window.attnNeedLookList=attnNeedLookList; window.attnOpenNeedLook=attnOpenNeedLook;
 function txNeedToggle(kind){
   var k = (kind==='income') ? 'inc' : 'exp';
   ST[k+'NeedOnly'] = !ST[k+'NeedOnly'];
@@ -18970,7 +19012,7 @@ var months = [];
         '<td class="tx-catcell" onclick="event.stopPropagation(); txCatOpen(' + ri + ', this, \'expense\')">' +
           '<span class="tag tx-tag-btn ' + tag + '" title="Click to change category">' + esc(t.cat||'None') + '<i class="tx-caret">\u25be</i></span>' +
           '</td>' +
-        '<td style="font-weight:700;color:var(--rd);text-align:right">− ' + fmt(t.amt) + '</td>' +
+        '<td style="font-weight:700;color:' + txAmtShow(t).col + ';text-align:right">' + txAmtShow(t).sign + ' ' + fmt(Math.abs(+t.amt || 0)) + txKindChip(t) + '</td>' +
         '<td style="color:var(--t3);font-size:12px">' + (t.method || '') + '</td>' +
       '</tr>';
     });
@@ -19868,6 +19910,11 @@ function dataChanged(event) {
   switch (event) {
     case 'transaction':
       // A transaction was added, edited or deleted
+      /* -392 B5-F08: the Income and Expenses charts kept their old totals after a delete
+         until a range button was pressed. Any change draws them again. */
+      try { CHARTS_INITED['income'] = false; CHARTS_INITED['expenses'] = false; } catch (e) {}
+      if (pageId === 'income')   { try { lazyInitCharts('income'); } catch (e) {} }
+      if (pageId === 'expenses') { try { lazyInitCharts('expenses'); } catch (e) {} }
       if (pageId === 'income')       { safeCall(window.renderTable, 'income');  safeCall(window.renderTargetBar); safeCall(window.updateIncPage); }
       if (pageId === 'expenses')     { safeCall(window.renderTable, 'expense'); safeCall(window.renderExpBar);    safeCall(window.updateExpPage); }
       if (pageId === 'budgets')      { safeCall(window.renderBudgetsPage); }
@@ -20414,6 +20461,12 @@ function sa103Disposition(catName){
   if (/split it/i.test(ss))
     return { kind:'split', tag:'49 or 53', title:'This invoice needs splitting.', detail:sd };
 
+    /* -392 B5-F20: money in is turnover or other income - "Deducted in full this year"
+       was said under a sale. */
+    if (m && c.t==='inc' && (m[1]==='15' || m[1]==='16'))
+      return { kind:'ok', tag:'box '+m[1], title:(SA103_BOX_NAME[m[1]]||'Reported')+'.',
+               detail:(m[1]==='15' ? 'Counts as turnover (box 15).' : 'Counts as other business income (box 16).') };
+
   if (m && (m[1]==='49' || m[1]==='53'))
     return { kind:'cap', tag:'box '+m[1],
       title:(m[1]==='53' ? 'Structures &amp; Buildings Allowance, 3% a year.'
@@ -20525,7 +20578,7 @@ function _fcFillAllSelects(){
   try{
     _fcFillSelect('inc-cat-filter', 'inc', false);
     _fcFillSelect('exp-cat-filter', 'exp', false);
-    _fcFillSelect('qc-cat', null, true);
+    if (typeof qcFillCats === 'function') qcFillCats(); else _fcFillSelect('qc-cat', null, true);
   }catch(e){}
 }
 function _fcColors(kind){
@@ -21372,29 +21425,142 @@ function clearData() {
   try { location.reload(); } catch(e){}
 }
 
+/* ── -392 B5-F01 / D1: ONE check for every door money comes in by ─────────────────────
+   Quick capture, a line edited in the list, the transaction drawer, the full income and
+   expense forms and the import review all ask the same three things: an amount more than
+   0 in pounds and pence, a description, and a date. What went wrong is said under the box
+   it is about (GOV.UK error message, WCAG 3.3.1), never only in a toast that fades.
+   A minus sign is never typed (D1): money back is its own kind of entry. It is stored as
+   the same category with the amount the other way round, so it reduces that category and
+   reverses its VAT in every total without a new column:
+     expense with amt < 0  = a refund or credit note from a supplier (money in)
+     income  with amt < 0  = money returned to a buyer (money out)                      */
+function txAmtParse(v){
+  var s=String(v==null?'':v).trim().replace(/[£,\s]/g,'');
+  if(s==='') return {blank:true, n:NaN};
+  if(/^-/.test(s)) return {neg:true, n:parseFloat(s)};
+  if(!/^(\d+(\.\d*)?|\.\d+)$/.test(s)) return {bad:true, n:NaN};
+  var n=parseFloat(s), dp=(s.split('.')[1]||'').length;
+  return {n:n, dp:dp};
+}
+function txAmtError(v, what){
+  var p=txAmtParse(v), w=what||'an amount';
+  if(p.blank) return 'Enter '+w;
+  if(p.neg) return 'Enter '+w+' more than 0';
+  if(p.bad) return 'Enter '+w+' in pounds and pence, like 50 or 50.25';
+  if(!(p.n>0)) return 'Enter '+w+' more than 0';
+  if(p.dp>2) return 'Enter '+w+' to the nearest penny, like 50.25';
+  return '';
+}
+function txDateOk(v){ var d=parseDate(String(v||'').trim()); return !!(d && d.y>1900 && d.m>=0 && d.m<=11 && d.d>=1 && d.d<=31); }
+/* {amt, desc, date} -> {field: message}. Empty object = fine. */
+function txCheck(v){
+  var e={}, a=txAmtError(v.amt);
+  if(a) e.amt=a;
+  if(!String(v.desc==null?'':v.desc).trim()) e.desc='Enter a description';
+  if(!String(v.date==null?'':v.date).trim()) e.date='Enter the date';
+  else if(!txDateOk(v.date)) e.date='Enter a real date, like 12 May 2026';
+  return e;
+}
+/* Money back (D1). */
+function txIsRefund(t){ return !!t && (t.type==='income'||t.type==='expense') && (+t.amt||0)<0; }
+function txKind(t){ if(!t) return 'out'; var neg=(+t.amt||0)<0; if(t.type==='income') return neg?'returned':'in'; return neg?'refund':'out'; }
+function txKindLabel(t){ var k=txKind(t); return k==='refund'?'Refund':(k==='returned'?'Money returned':''); }
+function txMoneyIn(t){ var k=txKind(t); return k==='in'||k==='refund'; }
+/* What a list shows: the sign of the money through the bank, the size, and the colour. */
+function txAmtShow(t){ var inn=txMoneyIn(t), a=Math.abs(+t.amt||0); return {inn:inn, sign:inn?'+':'−', abs:a, col:inn?'var(--gd)':'var(--rd)', lbl:txKindLabel(t)}; }
+function txKindChip(t){ var l=txKindLabel(t); return l?'<span class="tx-kind-chip">'+l+'</span>':''; }
+/* Pounds and pence, for a statement. */
+function txMoney2(n){ var v=Number(n)||0; return (v<0?'−':'')+_curSym()+_grp2(v); }
+/* The message under the box. The box itself turns red and says so to a screen reader. */
+function fieldErr(el, msg){
+  if(typeof el==='string') el=document.getElementById(el);
+  if(!el) return;
+  fieldErrClear(el);
+  el.classList.add('fe-bad'); el.setAttribute('aria-invalid','true');
+  var host=(el.closest && (el.closest('.qc-amount-wrap')||el.closest('.imp-amt')))||el;
+  var m=document.createElement('div'); m.className='fe-msg'; m.id=(el.id||('fe'+Date.now()))+'-err'; m.setAttribute('role','alert');
+  m.textContent=msg; host.insertAdjacentElement('afterend', m);
+  el.setAttribute('aria-describedby', m.id);
+  el._feMsg=m;
+  var off=function(){ fieldErrClear(el); el.removeEventListener('input',off); el.removeEventListener('change',off); };
+  el.addEventListener('input',off); el.addEventListener('change',off);
+}
+function fieldErrClear(el){
+  if(typeof el==='string') el=document.getElementById(el);
+  if(!el) return;
+  el.classList.remove('fe-bad'); el.removeAttribute('aria-invalid');
+  if(el._feMsg && el._feMsg.parentNode) el._feMsg.parentNode.removeChild(el._feMsg);
+  el._feMsg=null;
+}
+function fieldErrsClear(root){
+  root=(typeof root==='string')?document.getElementById(root):(root||document);
+  if(!root) return;
+  Array.prototype.forEach.call(root.querySelectorAll('.fe-bad'), function(e){ fieldErrClear(e); });
+  Array.prototype.forEach.call(root.querySelectorAll('.fe-msg'), function(m){ if(m.parentNode) m.parentNode.removeChild(m); });
+}
+/* errs {key: msg}, ids {key: element id}. Shows each under its box, focuses the first.
+   Returns how many there were. */
+function fieldErrShow(errs, ids){
+  var n=0, first=null;
+  Object.keys(ids).forEach(function(k){
+    var el=document.getElementById(ids[k]); if(!el) return;
+    if(errs[k]){ fieldErr(el, errs[k]); n++; if(!first) first=el; } else fieldErrClear(el);
+  });
+  if(first){ try{ first.focus(); }catch(e){} }
+  return n;
+}
+(function(){
+  try{
+    if(document.getElementById('fe-css')) return;
+    var s=document.createElement('style'); s.id='fe-css';
+    s.textContent='.fe-bad{border-color:#B42318!important;box-shadow:0 0 0 1px #B42318!important}'+
+      '.fe-msg{color:#B42318;font-size:12px;font-weight:700;line-height:1.35;margin:5px 0 2px}'+
+      '.tx-kind-chip{display:inline-block;margin-left:6px;font-size:11px;font-weight:800;padding:1px 7px;border-radius:9px;background:var(--gb);color:var(--gd);border:1px solid var(--gp);vertical-align:1px}'+
+      '.kind-seg{display:inline-flex;gap:4px;background:var(--bg);border:1px solid var(--br);border-radius:11px;padding:3px;margin:0 0 14px}'+
+      '.kind-seg button{border:none;background:transparent;border-radius:8px;padding:8px 14px;font-family:inherit;font-size:12.5px;font-weight:800;color:var(--t3);cursor:pointer}'+
+      '.kind-seg button.on{background:var(--gd);color:#fff}'+
+      '.kind-seg button:focus-visible{outline:2px solid var(--gd);outline-offset:2px}';
+    (document.head||document.documentElement).appendChild(s);
+  }catch(e){}
+})();
+window.txCheck=txCheck; window.txAmtError=txAmtError; window.txKind=txKind; window.txIsRefund=txIsRefund;
+window.fieldErr=fieldErr; window.fieldErrClear=fieldErrClear; window.fieldErrsClear=fieldErrsClear; window.fieldErrShow=fieldErrShow;
+
 function validateSaleForm() {
-  var desc = $('ai-desc') && $('ai-desc').value.trim();
-  var amt  = getAmt();
-  var date = $('ai-date') && $('ai-date').value;
-  var errors = [];
-  if (!desc)     errors.push('Please enter a description');
-  if (amt <= 0)  errors.push('Please enter an amount greater than 0');
-  if (!date)     errors.push('Please select a date');
-  if (errors.length) { toast(errors[0], 'error'); return false; }
-  return true;
+  var c = SALE_CFG[ST.saleType] || {};
+  var e = txCheck({ amt: c.qty ? '1' : ($('ai-amt') && $('ai-amt').value), desc: $('ai-desc') && $('ai-desc').value, date: $('ai-date') && $('ai-date').value });
+  var ids = { desc:'ai-desc', date:'ai-date' };
+  if (c.qty) {
+    var q = $('ai-qty') && $('ai-qty').value, p = $('ai-price') && $('ai-price').value;
+    var pq = txAmtParse(q), ep = txAmtError(p, 'a price');
+    if (pq.blank) e.qty = 'Enter a quantity';
+    else if (pq.neg || pq.bad || !(pq.n > 0)) e.qty = 'Enter a quantity more than 0';
+    if (ep) e.price = ep;
+    delete e.amt; ids.qty = 'ai-qty'; ids.price = 'ai-price';
+  } else { ids.amt = 'ai-amt'; }
+  return fieldErrShow(e, ids) === 0;
 }
 
 function validateExpenseForm() {
-  var desc = $('ae-desc')   && $('ae-desc').value.trim();
-  var amt  = parseFloat($('ae-amount') && $('ae-amount').value) || 0;
-  var date = $('ae-date')   && $('ae-date').value;
-  var errors = [];
-  if (!desc)     errors.push('Please enter a description');
-  if (amt <= 0)  errors.push('Please enter an amount greater than 0');
-  if (!date)     errors.push('Please select a date');
-  if (errors.length) { toast(errors[0], 'error'); return false; }
-  return true;
+  var e = txCheck({ amt: $('ae-amount') && $('ae-amount').value, desc: $('ae-desc') && $('ae-desc').value, date: $('ae-date') && $('ae-date').value });
+  return fieldErrShow(e, { desc:'ae-desc', date:'ae-date', amt:'ae-amount' }) === 0;
 }
+/* -392 B5-F02: the same date, amount and category within 3 days is most likely the same
+   payment entered twice. Asked, never refused - two identical bags of feed do happen. */
+function txLikelyDup(o){
+  var d0=parseDate(String(o.date||'')); if(!d0) return null;
+  var t0=new Date(d0.y, d0.m, d0.d||1).getTime(), a=Math.round(Math.abs(+o.amt||0)*100);
+  var list=(ST.txns||[]);
+  for(var i=0;i<list.length;i++){
+    var t=list[i]; if(!t || t.type!==o.type || t.cat!==o.cat) continue;
+    if(Math.round(Math.abs(+t.amt||0)*100)!==a || ((+t.amt||0)<0)!==((+o.amt||0)<0)) continue;
+    var d=parseDate(String(t.date||'')); if(!d) continue;
+    if(Math.abs(new Date(d.y, d.m, d.d||1).getTime()-t0) <= 3*86400000) return t;
+  }
+  return null;
+}
+window.txLikelyDup=txLikelyDup;
 
 // ============================================================
 
@@ -21532,7 +21698,18 @@ function nav(id) {
     var sen=$('set-entity'); if(sen) sen.value = ST.entityType || 'sole';
     /* The partners block only makes sense for a partnership, so it is shown by the
        business-type select rather than sitting there confusing a sole trader. */
-    if(sen && !sen._pwired){ sen._pwired=1; sen.addEventListener('change', function(){ if(typeof setPartnersRender==='function') setPartnersRender(); if(typeof setFyLock==='function') setFyLock(); }); }
+    /* -392 B5-F18: switching away from a partnership asks whether to keep the partners -
+       they stayed silently after a switch back to sole trader. */
+    if(sen) sen._prev = sen.value;
+    if(sen && !sen._pwired){ sen._pwired=1; sen.addEventListener('change', function(){
+      var was=sen._prev; sen._prev=sen.value;
+      if(was==='partnership' && sen.value!=='partnership' && typeof ukPartners==='function' && ukPartners().length){
+        var np=ukPartners().length;
+        appConfirm('Remove the '+np+' partner'+(np===1?'':'s')+'?\n\nYou are switching away from a partnership. Keep them if you might switch back; remove them if the partnership has ended.',
+                   {title:'Keep the partner list?', okLabel:'Remove them', cancelLabel:'Keep them', danger:true})
+          .then(function(ok){ if(ok){ ST.partners=[]; try{ saveState(); }catch(e){} } if(typeof setPartnersRender==='function') setPartnersRender(); });
+      }
+      if(typeof setPartnersRender==='function') setPartnersRender(); if(typeof setFyLock==='function') setFyLock(); }); }
     if(typeof setPartnersRender==='function') setPartnersRender();
     /* Both year selects were never populated from state — they always opened on
        their first option, so a farmer who had chosen July saw "March" staring
@@ -21885,6 +22062,9 @@ function toast(msg, type) {
 function openAddIncome(mode) {
   nav('add-income');
   setTimeout(function(){
+    try{ fieldErrsClear('pg-add-income'); }catch(e){}
+    ST._aiEntManual=false;
+    aiSetKind('sale');
     if (mode === 'sale') {
       var h = $('ai-heading'); if (h) h.textContent = 'Record Sale';
       var s = $('ai-subhead'); if (s) s.textContent = 'Record crops, livestock or other goods your farm has sold.';
@@ -21952,7 +22132,8 @@ function setSaleType(t) {
     var ai = $('ai-amt');       if (ai) ai.value = '';
   }
   setSaleFreq(c.freq);
-  var st = $('ss-type'); if (st) st.textContent = c.sslbl;
+  var st = $('ss-type'); if (st) st.textContent = (ST.aiKind === 'returned') ? 'Money returned' : c.sslbl;
+  if (di && ST.aiKind === 'returned') di.placeholder = 'e.g. Credit note to the buyer — rejected load';
   updateSaleSummary();
 }
 
@@ -21982,11 +22163,26 @@ function updateSaleSummary() {
   var desc = ($('ai-desc') && $('ai-desc').value) || '';
   var date = ($('ai-date') && $('ai-date').value) || '';
   var amt  = getAmt();
-  var el;
+  var el, ret = (ST.aiKind === 'returned');
   el = $('ss-desc');  if (el) el.textContent = desc || '—';
-  el = $('ss-date');  if (el) el.textContent = date || '—';
-  el = $('ss-total'); if (el) el.textContent = amt > 0 ? fmt(amt) : '—';
+  /* -392 B5-F20: the app's own date and money, not "2026-09-27" and whole pounds. */
+  el = $('ss-date');  if (el) el.textContent = date ? txDispDate(date) : '—';
+  el = $('ss-total'); if (el) el.textContent = amt > 0 ? ((ret ? '−' : '') + txMoney2(amt)) : '—';
+  if (!ST._aiEntManual) { try { aiApplyEntDefault(ST.saleType); } catch(e){} }
 }
+/* -392 D1: money returned to a buyer is its own entry - typed as a plain amount, stored as
+   the same income category the other way round, so it comes off that income and its VAT. */
+function aiSetKind(k){
+  ST.aiKind = (k === 'returned') ? 'returned' : 'sale';
+  var seg = $('ai-kind');
+  if (seg) Array.prototype.forEach.call(seg.querySelectorAll('button'), function(b){ var on=(b.getAttribute('data-k')===ST.aiKind); b.classList.toggle('on', on); b.setAttribute('aria-pressed', on?'true':'false'); });
+  var st = $('ss-type'); if (st) st.textContent = (ST.aiKind === 'returned') ? 'Money returned' : ((SALE_CFG[ST.saleType]||{}).sslbl || 'Sale');
+  var dl = $('ai-desc'); if (dl && ST.aiKind === 'returned') dl.placeholder = 'e.g. Credit note to the buyer — rejected load';
+  else if (dl) dl.placeholder = (SALE_CFG[ST.saleType]||SALE_CFG.Crops).desc;
+  if (ST.aiKind === 'returned') setSaleFreq('One-off');
+  updateSaleSummary();
+}
+window.aiSetKind = aiSetKind;
 
 // ============================================================
 // FILE UPLOAD DROPZONE — used on Add Income and Add Expense forms
@@ -22099,13 +22295,15 @@ function saveSale() {
   btnLoading(btn, 'Saving...');
   setTimeout(function() {
     var desc   = ($('ai-desc')   && $('ai-desc').value.trim())   || 'Sale';
-    var amt    = getAmt();
+    var _ret   = (ST.aiKind === 'returned');
+    var amt    = Math.round(getAmt() * 100) / 100;
+    if (_ret) amt = -amt;                                  /* D1: money returned, the other way round */
     var date   = ($('ai-date')   && $('ai-date').value)          || 'Today';
     var cat    = saleTypeCategory(ST.saleType);
     var scfg   = SALE_CFG[ST.saleType];
     var sqty   = (scfg && scfg.qty) ? (parseFloat($('ai-qty') && $('ai-qty').value) || 0) : 0;
     var sunit  = (sqty && $('ai-unit')) ? $('ai-unit').value : '';
-    var method = ($('ai-method') && $('ai-method').value)        || 'Bank Deposit';
+    var method = ($('ai-method') && $('ai-method').value)        || 'Bank transfer';
     var dateStr = date ? (function(){
       var d=new Date(date);
       var months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -22122,7 +22320,7 @@ function saveSale() {
     /* audit #3 — the money doors used to bank the cash and leave the herd untouched.
        lsSellFromTxn posts no money of its own; it records the movement and links the pair. */
     try{
-      if(cat==='Livestock Sales' && _leaveSnap.on && _aiEnt){
+      if(!_ret && cat==='Livestock Sales' && _leaveSnap.on && _aiEnt){
         /* qty here is a HEAD COUNT. The money form's quantity can be tonne/kg (carcass or
            weight sales), so only treat it as head when the unit says so — otherwise a
            "4 500 kg" sale would remove 4 500 head and zero the herd. When the count is
@@ -22143,7 +22341,7 @@ function saveSale() {
         txnWriteThrough(_aiInc, { date: (date && date !== 'Today' ? date : new Date().toISOString().slice(0,10)), amt: amt, cat: cat, type: 'income', desc: desc, method: method, qty: sqty||undefined, unit: (sqty&&sunit)?sunit:undefined, ent: _aiEnt||undefined, source: 'Income form' });
       }
     } catch(e){}
-    if (ST.saleFreq === 'Monthly' || ST.saleFreq === 'Yearly') {
+    if (!_ret && (ST.saleFreq === 'Monthly' || ST.saleFreq === 'Yearly')) {
       ST.recurring = ST.recurring || [];
       var rdup = ST.recurring.some(function(r){ return r.type === 'income' && r.name === desc && r.amt === Math.round(amt); });
       if (!rdup) {
@@ -22168,7 +22366,8 @@ function saveSale() {
     ST.lastActivity = Date.now(); updateSyncIndicator();
     CHARTS_INITED = {};
     btnDone(btn);
-    toast('Sale recorded — '+_curSym()+ _grpInt(amt), 'success');
+    toast((_ret ? 'Money returned recorded — ' : 'Sale recorded — ') + txMoney2(Math.abs(amt)), 'success');
+    ST.aiKind = 'sale';
     nav('income');
   }, 400);
 }
@@ -22241,20 +22440,37 @@ function _entBadgeSet(badgeId, kind){
   else if(kind==='guess'){ b.textContent='best guess — check it'; b.style.cssText='display:inline-block;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;background:var(--ap);color:var(--am);padding:2px 8px;border-radius:999px;margin-left:5px'; }
   else { b.style.display='none'; b.textContent=''; }
 }
+/* -392 B5-F05: no enterprise is guessed until the description gives something to go on.
+   One crop (or herd, or block) of the kind is not a guess. With several, the description
+   has to name one - "spring barley" picks Spring barley - or it stays Whole farm. */
+function entGuessFor(cat, desc){
+  var d=entSmartDefault(cat);
+  if(!d.code || d.confident) return d;
+  var w=String(desc||'').toLowerCase().trim();
+  if(!w) return {code:'', confident:true};
+  var kind=entKindForCat(cat), items=[]; try{ items=entList().filter(function(e){ return e.kind===kind; }); }catch(e){}
+  var full=items.filter(function(e){ var l=String(e.label||'').toLowerCase(); return l && w.indexOf(l)>=0; });
+  if(full.length===1) return {code:full[0].code, confident:true};
+  var GEN=/^(winter|spring|field|crop|crops|herd|flock|block|the|and|main|early|late|second|first)$/;
+  var part=items.filter(function(e){ return String(e.label||'').toLowerCase().split(/[^a-z]+/).some(function(x){ return x.length>=4 && !GEN.test(x) && new RegExp('\\b'+x).test(w); }); });
+  if(part.length===1) return {code:part[0].code, confident:true};
+  return {code:'', confident:true};
+}
 function aeApplyEntDefault(cat){
   var sel=$('ae-ent'); if(!sel) return;
   if(sel.options.length<=1) sel.innerHTML=entOptions('');
   if(ST._aeEntManual) return;
-  var d=entSmartDefault(cat); sel.value=d.code;
+  var d=entGuessFor(cat, ($('ae-desc')||{}).value); sel.value=d.code;
   _entBadgeSet('ae-ent-badge', d.code? (d.confident?'auto':'guess') : 'none');
 }
 function aiApplyEntDefault(saleType){
   var sel=$('ai-ent'); if(!sel) return;
   if(sel.options.length<=1) sel.innerHTML=entOptions('');
   if(ST._aiEntManual) return;
-  var d=entSmartDefault(saleType); sel.value=d.code;
+  var d=entGuessFor(saleType, ($('ai-desc')||{}).value); sel.value=d.code;
   _entBadgeSet('ai-ent-badge', d.code? (d.confident?'auto':'guess') : 'none');
 }
+window.entGuessFor=entGuessFor;
 function entOptions(sel){
   var list=entList();
   function grp(kind,label){
@@ -22277,7 +22493,33 @@ function aeFillEnt(){
   var sel=$('ae-ent'); if(!sel) return;
   sel.innerHTML=entOptions(''); sel.value='';
 }
-function openAddExpense() { nav('add-expense'); setTimeout(function(){ var d=$('ae-date'); if(d&&!d.value) d.value=new Date().toISOString().split('T')[0]; if(typeof setExpFreq==='function') setExpFreq('One-off'); ST._aeEntManual=false; aeFillEnt(); if(typeof aeApplyEntDefault==='function') aeApplyEntDefault(ST.expType||'Seeds & Planting'); },80); }
+function openAddExpense() { nav('add-expense'); setTimeout(function(){ aeResetForm(); if(typeof setExpFreq==='function') setExpFreq('One-off'); ST._aeEntManual=false; aeFillEnt(); if(typeof aeApplyEntDefault==='function') aeApplyEntDefault(ST.expType||'Seeds & Planting'); },80); }
+/* -392 B5-F02: the form opens empty. It kept the last entry, so opening it again and
+   pressing Save made a second copy with no warning. Run on open and after every save. */
+function aeResetForm(){
+  ['ae-desc','ae-amount','ae-qty','ae-supplier','ae-ref'].forEach(function(id){ var e=$(id); if(e) e.value=''; });
+  var d=$('ae-date'); if(d) d.value=(typeof _lsTxnISO==='function') ? _lsTxnISO() : new Date().toISOString().split('T')[0];
+  var u=$('ae-unit'); if(u) u.selectedIndex=0;
+  try{ var f=$('ae-file'); if(f) f.value=''; if(typeof _dzClear==='function') _dzClear('ae-upload','ae-preview'); }catch(e){}
+  try{ fieldErrsClear('pg-add-expense'); }catch(e){}
+  try{ aeResetPay(); }catch(e){}
+  aeSetKind('pay');
+  ST._aeEntManual=false;
+  try{ updateExpSummary(); }catch(e){}
+}
+/* -392 D1: a refund or credit note is its own entry - a plain amount, stored in the same
+   cost category the other way round, so it reduces that cost and gives back its VAT. */
+function aeSetKind(k){
+  ST.aeKind=(k==='refund')?'refund':'pay';
+  var r=(ST.aeKind==='refund');
+  var seg=$('ae-kind');
+  if(seg) Array.prototype.forEach.call(seg.querySelectorAll('button'), function(b){ var on=(b.getAttribute('data-k')===ST.aeKind); b.classList.toggle('on', on); b.setAttribute('aria-pressed', on?'true':'false'); });
+  var h=$('ae-heading'); if(h) h.textContent=r?'Record a refund':'Add Expense';
+  var s=$('ae-subhead'); if(s) s.textContent=r?'Money a supplier paid back, or a credit note. It comes off that cost and its VAT.':'Record any cost or expense you’ve paid for your farm.';
+  if(r && typeof setExpFreq==='function') setExpFreq('One-off');
+  try{ updateExpSummary(); }catch(e){}
+}
+window.aeSetKind=aeSetKind; window.aeResetForm=aeResetForm;
 
 /* Populates the fallback picker with every expense category that has no card of its own
    (the nine capital heads, loans, livestock purchases, tax, merchant imports). */
@@ -22316,7 +22558,8 @@ function updateExpSummary() {
   el = $('es-cat');  if (el) el.textContent = ST.expType;
   el = $('es-desc'); var d=$('ae-desc'); if (el) el.textContent = (d&&d.value)||'—';
   el = $('es-date'); var dt=$('ae-date'); if (el) el.textContent = (dt&&dt.value)?txDispDate(dt.value):'—';
-  el = $('es-amt');  var a=$('ae-amount'); if (el) { var v=parseFloat(a&&a.value)||0; el.textContent = v>0?fmt(v):'—'; }
+  el = $('es-amt');  var a=$('ae-amount'); if (el) { var v=parseFloat(a&&a.value)||0; el.textContent = v>0?((ST.aeKind==='refund'?'+':'')+txMoney2(v)+(ST.aeKind==='refund'?' back':'')):'—'; }
+  if (!ST._aeEntManual) { try { aeApplyEntDefault(ST.expType||'Seeds & Planting'); } catch(e){} }
 }
 
 // ---- Add-expense "Paid with" (Bank / Cash / Merchant) ----
@@ -22404,10 +22647,24 @@ function aeResetPay(){
 }
 
 function saveExpense() {
-  if (!validateExpenseForm()) return;
+  if (!validateExpenseForm()) { saveExpense._dupOk=false; return; }
   var meth = aeMethodSel();
   var coId = aeCoopIdSel();
   if (meth === 'coop' && !coId) { toast('Pick which merchant account', 'error'); return; }
+  var _refund = (ST.aeKind === 'refund');
+  if (_refund && meth === 'coop' && aeCoMode() === 'pay') { toast('A refund comes off the account — choose “Buy on account”, not a payment', 'error'); return; }
+  /* -392 B5-F02: ask before a likely second copy. */
+  if (!saveExpense._dupOk) {
+    var _dv = Math.round((parseFloat($('ae-amount') && $('ae-amount').value) || 0) * 100) / 100;
+    var _dup = txLikelyDup({ type:'expense', cat:(ST.expType || 'Seeds & Planting'), amt:(_refund ? -_dv : _dv), date:(($('ae-date') && $('ae-date').value) || '') });
+    if (_dup) {
+      appConfirm('You already have this — save anyway?\n\n' + (_dup.desc || 'An entry') + ' · ' + txDispDate(_dup.date) + ' · ' + txMoney2(Math.abs(+_dup.amt || 0)),
+                 { title:'Already recorded?', okLabel:'Save anyway', cancelLabel:'Don’t save', danger:false })
+        .then(function(ok){ if (ok) { saveExpense._dupOk = true; saveExpense(); } });
+      return;
+    }
+  }
+  saveExpense._dupOk = false;
   /* Supplier and Reference: shown on the form, filled in by farmers, never read until now. */
   var _aeSupplier = ($('ae-supplier') && $('ae-supplier').value.trim()) || '';
   var _aeRef      = ($('ae-ref')      && $('ae-ref').value.trim())      || '';
@@ -22415,7 +22672,8 @@ function saveExpense() {
   btnLoading(btn, 'Saving...');
   setTimeout(function() {
     var desc = ($('ae-desc') && $('ae-desc').value.trim()) || 'Expense';
-    var amt  = parseFloat($('ae-amount') && $('ae-amount').value) || 0;
+    var amt  = Math.round((parseFloat($('ae-amount') && $('ae-amount').value) || 0) * 100) / 100;
+    if (_refund) amt = -amt;                              /* D1: a refund, the other way round */
     var date = ($('ae-date') && $('ae-date').value) || '';
     var cat  = ST.expType || 'Seeds & Planting';
     var qty  = parseFloat($('ae-qty') && $('ae-qty').value) || 0;
@@ -22445,7 +22703,7 @@ function saveExpense() {
         return;
       }
       if (acct) {
-        acct.used = (acct.used||0) + amt;
+        acct.used = Math.max(0, (acct.used||0) + amt);
         if (acct.limit && acct.used > acct.limit) acct.used = acct.limit;
       }
       var entC=($('ae-ent')&&$('ae-ent').value)||'';
@@ -22471,7 +22729,7 @@ function saveExpense() {
       } catch(e){}
     }
 
-    if (ST.expFreq === 'Monthly' || ST.expFreq === 'Yearly') {
+    if (!_refund && (ST.expFreq === 'Monthly' || ST.expFreq === 'Yearly')) {
       ST.recurring = ST.recurring || [];
       var edup = ST.recurring.some(function(r){ return r.type === 'expense' && r.name === desc && r.amt === Math.round(amt); });
       if (!edup) {
@@ -22489,16 +22747,16 @@ function saveExpense() {
        silently discarded. ST.txns[0] is the expense just unshifted by whichever
        branch ran (bank, cash or merchant account). */
     _txnAttachFormReceipt('ae-file', ST.txns[0], 'ae-preview', 'ae-upload');
-    showUndoToast('Expense saved');
+    showUndoToast(_refund ? 'Refund saved' : 'Expense saved');
     ST.lastActivity = Date.now(); updateSyncIndicator();
     CHARTS_INITED = {};
     btnDone(btn);
-    toast('Expense saved — ' + fmt(amt), 'success');
-    aeResetPay();
+    toast((_refund ? 'Refund saved — ' : 'Expense saved — ') + txMoney2(Math.abs(amt)), 'success');
+    aeResetForm();
     /* Capital spend interception: a tractor typed into Expenses is still a tractor.
        The prompt runs after the expense is safely saved, so declining costs nothing. */
     var _capT = ST.txns[0];
-    if(!capMaybePrompt(_capT, function(){ nav('expenses'); })) nav('expenses');
+    if(_refund || !capMaybePrompt(_capT, function(){ nav('expenses'); })) nav('expenses');
   }, 400);
 }
 
@@ -23667,9 +23925,15 @@ function lnMyLoansHTML(){
     var pp=LN_paidPct(l), po=LN_payoff(l);
     var _la=(typeof LN_assetOf==='function')?LN_assetOf(l):null;
     var an=_la?(_la.name||''):'';
+    /* -392 B5-F21: "mainly covering interest" was said while the balance GREW. */
+    var _intM = LN_intM(l);
     var payoff = po.amortises
-      ? '\uD83C\uDFC1 At this rate it\u2019s <b>paid off by about '+LN_monthYear(po.date)+'</b>.'
-      : '\uD83C\uDFC1 At <b>'+LN_R(l.payment)+'/mo</b> you\u2019re mainly covering interest \u2014 the balance isn\u2019t coming down yet.';
+      ? '🏁 At this rate it’s <b>paid off by about '+LN_monthYear(po.date)+'</b>.'
+      : ((l.payment||0) < _intM - 0.5)
+        ? 'The payment is less than the interest — you owe more each month.'
+        : (Math.abs((l.payment||0) - _intM) <= 1)
+          ? 'You pay the interest only — the balance stays the same.'
+          : '🏁 At <b>'+LN_R(l.payment)+'/mo</b> you’re mainly covering interest — the balance isn’t coming down yet.';
     h+='<div class="ln-loan"'+(li===0?' id="ln-firstcard"':'')+'><div class="ln-top"><div><div class="ln-nm">'+l.icon+' '+esc(l.name)+'</div><div class="ln-badges"><span class="ln-bdg lender">'+esc(l.lender)+'</span><span class="ln-bdg type">'+esc(l.type)+'</span>'+(an?'<span class="ln-bdg asset">\uD83D\uDD17 '+esc(an)+'</span>':'')+'</div></div>'+
       '<div class="ln-bal"><div class="v">'+LN_Rk(l.balance)+'</div><div class="l">still owe</div></div></div>'+
       '<div style="font-size:13px;color:var(--t2);margin:2px 0 12px">You pay <b style="color:var(--t1)">'+LN_R(l.payment)+'</b> a month</div>'+
@@ -24043,7 +24307,8 @@ function lnOverdraftsHTML(){
       (preview?lnOdSimPanel(o):'')+
       '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-top:11px">'+
         '<div style="font-size:11px;color:var(--t4);line-height:1.5;flex:1">An overdraft has no set payoff date \u2014 dip in when cash is short, pay it back when income comes in. Only interest on what you\u2019ve drawn is a cost, and it\u2019s an allowable business expense.</div>'+
-        '<span onclick="lnAddOdEdit(\''+o.id+'\')" style="font-size:12px;font-weight:700;color:var(--bl);cursor:pointer;white-space:nowrap">Edit \u203A</span>'+
+        '<span style="white-space:nowrap"><span onclick="lnAddOdEdit(\''+o.id+'\')" style="font-size:12px;font-weight:700;color:var(--bl);cursor:pointer">Edit ›</span>'+
+        '<span onclick="lnRemoveOverdraft(\''+o.id+'\')" style="font-size:12px;font-weight:700;color:var(--rd);cursor:pointer;margin-left:14px">Remove</span></span>'+
       '</div>'+
       lnFFRow('od',o.id,o)+
     '</div>';
@@ -24091,11 +24356,30 @@ function lnAddOdHTML(){
   h+='</div>';
   return h;
 }
+/* -392 B5-F03 / F21: an overdraft needs a name and a limit; what is drawn is 0 or more.
+   Drawn above the limit is asked about - it quietly became the limit before. */
+function lnOdErrors(){
+  var e={}, raw=function(id){ return String((($(id)||{}).value)||'').trim().replace(/[£,\s%]/g,''); };
+  if(!String((($('odf-name')||{}).value)||'').trim()) e.name='Enter a name for the overdraft';
+  var l=raw('odf-limit'); if(l==='') e.limit='Enter the overdraft limit'; else if(/^-/.test(l) || !(parseFloat(l)>0)) e.limit='Enter the limit, more than 0';
+  var u=raw('odf-used'); if(u!=='' && (/^-/.test(u) || isNaN(parseFloat(u)))) e.used='Enter how much you have drawn, 0 or more';
+  var rateIds=(LN_OD_FORM_MODE==='flat')?['odf-flat']:['odf-prime','odf-margin'];
+  rateIds.forEach(function(id){ var v=raw(id); if(v!=='' && (/^-/.test(v) || isNaN(parseFloat(v)))) e[id]='Enter the rate as 0 or more'; });
+  return e;
+}
 function lnSaveOverdraft(){
+  var _ids={name:'odf-name', limit:'odf-limit', used:'odf-used', 'odf-flat':'odf-flat', 'odf-prime':'odf-prime', 'odf-margin':'odf-margin'};
+  if(fieldErrShow(lnOdErrors(), _ids)) return;
   var name=($('odf-name')&&$('odf-name').value||'').trim()||'Overdraft';
   var lender=($('odf-lender')&&$('odf-lender').value)||'Other';
   var limit=lnNum('odf-limit'), used=lnNum('odf-used');
-  if(used>limit) used=limit;
+  if(used>limit && !lnSaveOverdraft._overOk){
+    appConfirm('More than your limit — is the limit right?\n\nYou have put '+LN_R(used)+' drawn on a '+LN_R(limit)+' limit. If the bank let you go over, save it as it is; if not, change the limit.',
+               {title:'Over the limit', okLabel:'Save as it is', cancelLabel:'Change the limit', danger:false})
+      .then(function(ok){ if(ok){ lnSaveOverdraft._overOk=true; lnSaveOverdraft(); } else { var el=$('odf-limit'); if(el){ try{ el.focus(); el.select(); }catch(e){} } } });
+    return;
+  }
+  lnSaveOverdraft._overOk=false;
   var mode=LN_OD_FORM_MODE;
   var prime=mode==='prime'?(parseFloat(($('odf-prime')||{}).value)||0):laPrime();
   var margin=mode==='prime'?(parseFloat(($('odf-margin')||{}).value)||0):0;
@@ -24227,10 +24511,24 @@ function lnAddCoHTML(){
   return h;
 }
 function lnSaveCoopAcct(){
+  /* -392 B5-F03 / F21: the same checks as an overdraft - a limit more than 0, nothing
+     negative, and owed above the limit is asked about rather than quietly cut back. */
+  var _raw=function(id){ return String((($(id)||{}).value)||'').trim().replace(/[£,\s%]/g,''); }, _e={};
+  var _l=_raw('cof-limit'); if(_l==='') _e.limit='Enter the credit limit'; else if(/^-/.test(_l) || !(parseFloat(_l)>0)) _e.limit='Enter the limit, more than 0';
+  var _u=_raw('cof-used'); if(_u!=='' && (/^-/.test(_u) || isNaN(parseFloat(_u)))) _e.used='Enter what you owe, 0 or more';
+  ['cof-prime','cof-margin'].forEach(function(id){ var v=_raw(id); if(v!=='' && (/^-/.test(v) || isNaN(parseFloat(v)))) _e[id]='Enter the rate as 0 or more'; });
+  if(fieldErrShow(_e, {limit:'cof-limit', used:'cof-used', 'cof-prime':'cof-prime', 'cof-margin':'cof-margin'})) return;
   var name=($('cof-name')&&$('cof-name').value||'').trim();
   var coop=($('cof-coop')&&$('cof-coop').value)||'Other';
   if(!name) name=coop+' account';
-  var limit=lnNum('cof-limit'), used=lnNum('cof-used'); if(used>limit) used=limit;
+  var limit=lnNum('cof-limit'), used=lnNum('cof-used');
+  if(used>limit && !lnSaveCoopAcct._overOk){
+    appConfirm('More than your limit — is the limit right?\n\nYou have put '+LN_R(used)+' owed on a '+LN_R(limit)+' limit. If the merchant let you go over, save it as it is; if not, change the limit.',
+               {title:'Over the limit', okLabel:'Save as it is', cancelLabel:'Change the limit', danger:false})
+      .then(function(ok){ if(ok){ lnSaveCoopAcct._overOk=true; lnSaveCoopAcct(); } });
+    return;
+  }
+  lnSaveCoopAcct._overOk=false;
   var prime=parseFloat(($('cof-prime')||{}).value)||laPrime();
   var margin=parseFloat(($('cof-margin')||{}).value)||0;
   var o=LN_CO_EDIT_ID?LN_coAcct(LN_CO_EDIT_ID):null;
@@ -24296,8 +24594,10 @@ function lnAddHTML(){
     return '<div class="ln-frow"><label>When did the loan start? <small style="color:var(--t4);font-weight:600">optional — lets us work out the interest you paid in past months</small></label>'+
            '<div class="ln-two" style="margin-top:0">'+mo+yr+'</div></div>';
   })();
-  h+='<div class="ln-two"><div class="ln-frow"><label>Interest rate (% a year)</label><input id="ln-f-rate" class="ln-inp" inputmode="decimal" placeholder="e.g. 12.5"'+(L?av(L.rate):'')+'></div>'+
-     '<div class="ln-frow"><label>What do you pay a month?</label><input id="ln-f-pay" class="ln-inp" inputmode="numeric" placeholder="£0"'+(L?av(L.payment):'')+'></div></div>';
+  var _io = !!(L && L.rate>0 && Math.abs((L.payment||0) - LN_intM(L)) <= 1);
+  h+='<div class="ln-two"><div class="ln-frow"><label>Interest rate (% a year)</label><input id="ln-f-rate" class="ln-inp" inputmode="decimal" placeholder="e.g. 6.9"'+(L?av(L.rate):'')+' oninput="lnIntOnlySync()"></div>'+
+     '<div class="ln-frow"><label>What do you pay a month?</label><input id="ln-f-pay" class="ln-inp" inputmode="decimal" placeholder="£0"'+(L?av(L.payment):'')+(_io?' disabled':'')+'>'+
+     '<label style="display:flex;align-items:center;gap:7px;font-size:12px;font-weight:600;color:var(--t2);margin-top:7px;cursor:pointer"><input type="checkbox" id="ln-f-io" onchange="lnIntOnlySync()" style="width:15px;height:15px;margin:0"'+(_io?' checked':'')+'> Interest only</label></div></div>';
   h+='<div class="ln-frow"><label>Which asset did this pay for? <small style="color:var(--t4);font-weight:600">optional \u2014 links this loan to something on your Assets page</small></label><select id="ln-f-asset" class="ln-inp">'+_lnAssetOptions(L?L.assetId:null)+'</select></div>';
   h+='<div class="ln-hint">You already list your loan payments under monthly expenses \u2014 once this is set up we count only the interest as a cost, so nothing is counted twice.</div>';
   h+=lnFFFormRow('loan',null);
@@ -24382,13 +24682,38 @@ function astRepairIds(A){
   if(dup) { try{ console.warn(dup+' asset id(s) are used twice on this device; their links may be wrong.'); }catch(e){} }
 }
 /* ===== end facility ids ===== */
+/* -392 B5-F03: "Interest only" fills the payment with this month's interest. */
+function lnIntOnlySync(){
+  var io=$('ln-f-io'), pay=$('ln-f-pay'); if(!io||!pay) return;
+  if(io.checked){ var bal=lnNum('ln-f-balance'), r=lnNum('ln-f-rate'); pay.value=String(Math.round(bal*r/100/12)); pay.disabled=true; try{ fieldErrClear(pay); }catch(e){} }
+  else pay.disabled=false;
+}
+/* -392 B5-F03: a loan needs a name, what is still owed (more than 0), a rate of 0 or more
+   and a payment (or "interest only"), each with its own message. A lender pack cannot list
+   a loan with no balance - a named £0 loan at 0% used to reach it. */
+function lnLoanErrors(){
+  var e={}, raw=function(id){ return String((($(id)||{}).value)||'').trim(); };
+  if(!raw('ln-f-name')) e.name='Enter a name for the loan';
+  var b=raw('ln-f-balance').replace(/[£,\s]/g,'');
+  if(b==='') e.balance='Enter how much you still owe';
+  else if(/^-/.test(b) || !(parseFloat(b)>0)) e.balance='Enter how much you still owe, more than 0';
+  var r=raw('ln-f-rate').replace(/[%\s]/g,'');
+  if(r==='') e.rate='Enter the interest rate, or 0 if there is none';
+  else if(/^-/.test(r) || isNaN(parseFloat(r))) e.rate='Enter the interest rate as 0 or more';
+  var io=!!(($('ln-f-io')||{}).checked), p=raw('ln-f-pay').replace(/[£,\s]/g,'');
+  if(!io){
+    if(p==='') e.pay='Enter what you pay a month, or tick Interest only';
+    else if(/^-/.test(p) || !(parseFloat(p)>0)) e.pay='Enter what you pay a month, more than 0';
+  }
+  var bo=raw('ln-f-borrowed').replace(/[£,\s]/g,'');
+  if(bo!=='' && (/^-/.test(bo) || isNaN(parseFloat(bo)))) e.borrowed='Enter how much you borrowed, or leave it blank';
+  return e;
+}
 function lnSaveLoan(){
   /* A blank name means nothing was typed. Saving that used to write a "New loan"
      at zero onto the page - which is how a deleted facility came back as a ghost. */
-  if(!(($('ln-f-name')&&$('ln-f-name').value||'').trim())){
-    if(typeof toast==='function') toast('Give the loan a name first.','error');
-    return;
-  }
+  if(($('ln-f-io')||{}).checked) lnIntOnlySync();
+  if(fieldErrShow(lnLoanErrors(), {name:'ln-f-name', borrowed:'ln-f-borrowed', balance:'ln-f-balance', rate:'ln-f-rate', pay:'ln-f-pay'})) return;
   var name=($('ln-f-name')&&$('ln-f-name').value||'').trim()||'New loan';
   var editing = (typeof LN_LOAN_EDIT_ID!=='undefined' && LN_LOAN_EDIT_ID) ? lnLoan(LN_LOAN_EDIT_ID) : null;
   var assetIdRaw=($('ln-f-asset')&&$('ln-f-asset').value)||'';
@@ -24581,16 +24906,66 @@ function lnFFSave(){
 }
 
 /* ---------- Confirm payments pop-up ---------- */
+/* -392 D2 (B5-F04): match first. A repayment already in the books this month - tagged to
+   the loan, or naming its lender with the amount within 5%, or one "Loan Repayments" line
+   that is exactly this loan's payment or several loans' payments together (a single
+   "Machinery finance" debit for two agreements) - is shown as "Already in your books" and
+   is NOT booked again. The balance still moves, once. One payment, one record. */
+function lnMonthRepayLines(){
+  var cm=LN_currentMonthLabel(), out=[];
+  (ST.txns||[]).forEach(function(t, i){
+    if(!t || t.type!=='expense' || !((+t.amt||0)>0)) return;
+    var d=parseDate(String(t.date||'')); if(!d || (MONTHS_SHORT[d.m]+' '+d.y)!==cm) return;
+    out.push({t:t, i:i});
+  });
+  return out;
+}
+function lnMatchBooks(loans){
+  var lines=lnMonthRepayLines(), used={}, res={};
+  var near=function(a,b){ return b>0 && Math.abs(a-b)<=b*0.05; };
+  var txt=function(t){ return ((t.desc||'')+' '+(t.party||'')+' '+(t.ref||'')).toLowerCase(); };
+  var lenderHit=function(t,l){ var s=txt(t), ln=String(l.lender||'').toLowerCase().trim(), nm=String(l.name||'').toLowerCase().trim();
+    if(nm && nm.length>=4 && s.indexOf(nm)>=0) return true;
+    if(!ln || /^other$/.test(ln)) return false;
+    var w=ln.split(/[^a-z0-9]+/).filter(function(x){ return x.length>=3 && !/^(bank|the|and|plc|ltd|financial|finance|services)$/.test(x); });
+    return w.length ? w.every(function(x){ return s.indexOf(x)>=0; }) : s.indexOf(ln)>=0; };
+  var open=loans.filter(function(l){ return !LN_isConfirmed(l.id); });
+  /* 1 · tagged to the loan */
+  open.forEach(function(l){ if(res[l.id]) return; lines.some(function(x){ if(used[x.i] || x.t.ent!=='loan:'+l.id) return false; used[x.i]=1; res[l.id]={t:x.t, amt:+x.t.amt, how:'tagged'}; return true; }); });
+  /* 2 · same lender (or the loan's own name) and the amount within 5% */
+  open.forEach(function(l){ if(res[l.id]) return; lines.some(function(x){ if(used[x.i] || !near(+x.t.amt, +l.payment||0) || !lenderHit(x.t,l)) return false; used[x.i]=1; res[l.id]={t:x.t, amt:+x.t.amt, how:'lender'}; return true; }); });
+  /* 3 · a "Loan Repayments" line that is this loan's payment, or two or three loans' together */
+  var rest=function(){ return open.filter(function(l){ return !res[l.id] && (+l.payment||0)>0; }); };
+  lines.forEach(function(x){
+    if(used[x.i] || x.t.cat!=='Loan Repayments') return;
+    var r=rest(), a=+x.t.amt, hit=null;
+    var one=r.filter(function(l){ return near(a, +l.payment); }); if(one.length===1) hit=[one[0]];
+    for(var i=0;!hit && i<r.length;i++) for(var j=i+1;!hit && j<r.length;j++){
+      if(Math.abs(a-(r[i].payment+r[j].payment))<=Math.max(1,a*0.01)) hit=[r[i],r[j]];
+      for(var k=j+1;!hit && k<r.length;k++) if(Math.abs(a-(r[i].payment+r[j].payment+r[k].payment))<=Math.max(1,a*0.01)) hit=[r[i],r[j],r[k]];
+    }
+    if(!hit) return;
+    used[x.i]=1;
+    hit.forEach(function(l){ res[l.id]={t:x.t, amt:(hit.length===1?a:+l.payment), how:(hit.length===1?'amount':'together'), with:hit.length}; });
+  });
+  return res;
+}
+window.lnMatchBooks=lnMatchBooks;
 var LN_CONF=null;
 function lnOpenConfirm(){
-  LN_CONF={st:{},amt:{}};
-  ST_LOANS.loans.forEach(function(l){ if(LN_isConfirmed(l.id)) return; LN_CONF.st[l.id]='paid'; LN_CONF.amt[l.id]=l.payment; });
+  LN_CONF={st:{},amt:{},books:{}};
+  var _bk={}; try{ _bk=lnMatchBooks(ST_LOANS.loans||[]); }catch(e){ _bk={}; }
+  ST_LOANS.loans.forEach(function(l){ if(LN_isConfirmed(l.id)) return;
+    if(_bk[l.id]){ LN_CONF.books[l.id]=_bk[l.id]; LN_CONF.st[l.id]='books'; LN_CONF.amt[l.id]=Math.round(_bk[l.id].amt); return; }
+    LN_CONF.st[l.id]='paid'; LN_CONF.amt[l.id]=l.payment; });
   lnRenderConfirm();
   var m=$('ln-modal'); if(m) m.style.display='flex';
 }
 function lnCloseConfirm(){ var m=$('ln-modal'); if(m) m.style.display='none'; }
 function lnRowPaid(l){ var s=LN_CONF.st[l.id]; if(s==='no') return 0; if(s==='paid') return l.payment; return LN_CONF.amt[l.id]||0; }
 function lnRowOff(l){ var s=LN_CONF.st[l.id]; if(s==='no') return 0; var paid=(s==='paid')?(l.payment||0):(LN_CONF.amt[l.id]||0); if(paid>=(l.balance||0)) return (l.balance||0); return (s==='paid')?LN_capM(l):(paid-LN_intM(l)); }
+/* What will be booked as a new money-out line (not what is already in the books). */
+function lnRowBook(l){ var s=LN_CONF.st[l.id]; return (s==='paid'||s==='diff') ? lnRowPaid(l) : 0; }
 function lnSetSt(id,s){ LN_CONF.st[id]=s; if(s==='diff'&&!LN_CONF.amt[id]){ var l=lnLoan(id); LN_CONF.amt[id]=l?l.payment:0; } lnRenderConfirm(); }
 function lnOnAmt(id,v){ LN_CONF.amt[id]=parseInt((v||'').replace(/[^0-9]/g,''),10)||0; lnConfLive(); }
 function lnModalBackdrop(e){ if(e&&e.target&&e.target.id==='ln-modal') lnCloseConfirm(); }
@@ -24598,31 +24973,45 @@ function lnUndoPaid(id){
   var paid=LN_confirmedPaid(); if(!Object.prototype.hasOwnProperty.call(paid,id)) return;
   var l=lnLoan(id); if(l) l.balance += paid[id];
   delete ST_LOANS.confirmed.paid[id];
+  /* -392 D2: a payment that was already in the books stays - only the line this pop-up
+     booked is taken back out. */
+  var _wasBooks = !!(ST_LOANS.confirmed.inBooks && ST_LOANS.confirmed.inBooks[id]);
+  if(ST_LOANS.confirmed.inBooks) delete ST_LOANS.confirmed.inBooks[id];
   // Remove the Money Flow payment we logged for this loan (newest match).
-  try{ for(var _i=0;_i<ST.txns.length;_i++){ var _t=ST.txns[_i]; if(_t && _t.source==='Loan payment' && _t.ent==='loan:'+id){ ST.txns.splice(_i,1); if(typeof txnDeleteThrough==='function') txnDeleteThrough(_t); break; } } }catch(e){}
-  LN_CONF.st[id]='paid'; LN_CONF.amt[id]=l?l.payment:0;
+  if(!_wasBooks) try{ for(var _i=0;_i<ST.txns.length;_i++){ var _t=ST.txns[_i]; if(_t && _t.source==='Loan payment' && _t.ent==='loan:'+id){ ST.txns.splice(_i,1); if(typeof txnDeleteThrough==='function') txnDeleteThrough(_t); break; } } }catch(e){}
+  var _bk2={}; try{ _bk2=lnMatchBooks([l].filter(Boolean)); }catch(e){}
+  if(_bk2[id]){ LN_CONF.books[id]=_bk2[id]; LN_CONF.st[id]='books'; LN_CONF.amt[id]=Math.round(_bk2[id].amt); }
+  else { LN_CONF.st[id]='paid'; LN_CONF.amt[id]=l?l.payment:0; }
   lnRenderConfirm(); lnConfLive();
 }
 function lnAllNo(){ lnCloseConfirm(); if(typeof toast==='function') toast('No worries \u2014 kept on this month\u2019s list. We\u2019ll remind you.','info'); }
 function lnLoan(id){ return ST_LOANS.loans.filter(function(x){return x.id===id;})[0]; }
 function lnConfLive(){
-  var off=0; ST_LOANS.loans.forEach(function(l){ if(LN_isConfirmed(l.id)) return; off+=lnRowOff(l); });
+  var off=0, inb=0; ST_LOANS.loans.forEach(function(l){ if(LN_isConfirmed(l.id)) return; off+=lnRowOff(l); if(LN_CONF.st[l.id]==='books') inb++; });
   var el=$('ln-liveline'); if(!el) return;
-  if(off>0) el.innerHTML='<b>'+LN_R(off)+'</b> will come off what you owe';
+  if(off>0) el.innerHTML='<b>'+LN_R(off)+'</b> will come off what you owe'+(inb?'<div style="font-size:11.5px;font-weight:600;color:var(--t3);margin-top:3px">'+inb+(inb===1?' payment is':' payments are')+' already in your books — not booked again</div>':'');
   else if(off===0) el.innerHTML='Nothing marked paid yet';
   else el.innerHTML='Heads up \u2014 that\u2019s less than the interest, so the balance ticks up a little';
 }
 function lnRenderConfirm(){
   var m=$('ln-modal'); if(!m) return;
+  var MATCH=function(l){ var bk=LN_CONF.books&&LN_CONF.books[l.id]; if(!bk||!bk.t) return null;
+    var others=ST_LOANS.loans.filter(function(x){ return x.id!==l.id && LN_CONF.books[x.id] && LN_CONF.books[x.id].t===bk.t; }).map(function(x){ return x.name; });
+    return { amt:l.payment, day:txDispDate(bk.t.date).replace(/ \d{4}$/,'').replace(/^0/,''), tip:'Matched to \u201c'+(bk.t.desc||'repayment')+'\u201d, '+txDispDate(bk.t.date)+', '+LN_R(+bk.t.amt||0)+(others.length?' \u2014 paid together with '+others.join(' and '):'')+'. Not booked again.' }; };
+  var ea=function(t){ return String(t).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); };
   var rows='';
   ST_LOANS.loans.forEach(function(l){
     if(LN_isConfirmed(l.id)){
       rows+='<div class="ln-prow done"><div class="ln-ptop"><div class="ic">'+l.icon+'</div><div><div class="nm">'+esc(l.name)+'</div><div class="am" style="color:var(--gd)">\u2713 Paid this month</div></div></div><span class="ln-undo" onclick="lnUndoPaid(\''+l.id+'\')">Undo</span></div>';
       return;
     }
-    var s=LN_CONF.st[l.id];
-    rows+='<div class="ln-prow"><div class="ln-ptop"><div class="ic">'+l.icon+'</div><div><div class="nm">'+esc(l.name)+'</div><div class="am">'+esc(l.lender)+' \u00b7 usually '+LN_R(l.payment)+'</div></div></div>'+
-      '<div class="ln-seg3"><button class="paid'+(s==='paid'?' on':'')+'" onclick="lnSetSt(\''+l.id+'\',\'paid\')">Paid</button>'+
+    var s=LN_CONF.st[l.id], m=MATCH(l), first=m?'books':'paid';
+    /* One short status line; the matched entry's detail sits behind the i. Every row has the same
+       three equal buttons so the bars line up. */
+    rows+='<div class="ln-prow"><div class="ln-ptop"><div class="ic">'+l.icon+'</div><div><div class="nm">'+esc(l.name)+'</div><div class="am">'+esc(l.lender)+' \u00b7 usually '+LN_R(l.payment)+'</div>'+
+      (m?'<div class="ln-inb">\u2713 In your books \u00b7 '+esc(m.day)+'<span class="kpi-i" title="'+ea(m.tip)+'">&#9432;</span></div>':'')+
+      '</div></div>'+
+      '<div class="ln-seg3"><button class="paid'+(s===first?' on':'')+'" onclick="lnSetSt(\''+l.id+'\',\''+first+'\')">'+(m?'In the books':'Paid')+'</button>'+
       '<button class="diff'+(s==='diff'?' on':'')+'" onclick="lnSetSt(\''+l.id+'\',\'diff\')">Different</button>'+
       '<button class="no'+(s==='no'?' on':'')+'" onclick="lnSetSt(\''+l.id+'\',\'no\')">Not yet</button></div>';
     if(s==='diff') rows+='<div class="ln-amtrow"><span class="lab">What did you actually pay?</span><div class="field"><span class="cur">£</span><input id="ln-in-'+l.id+'" type="text" inputmode="numeric" value="'+(LN_CONF.amt[l.id]||0).toLocaleString('en-GB')+'" oninput="lnOnAmt(\''+l.id+'\',this.value)"></div><span class="exp">usually '+LN_R(l.payment)+'</span></div>';
@@ -24644,7 +25033,8 @@ function lnConfirmPayments(){
     if(LN_isConfirmed(l.id)) return;
     var s=LN_CONF.st[l.id]; if(s===undefined) return;
     var o=lnRowOff(l), p=lnRowPaid(l); totOff+=o; totPaid+=p; if(p>l.payment) anyExtra=true;
-    if(s==='no'){ rows+='<div class="ln-drow unpaid"><div class="l">'+l.icon+' '+esc(l.name)+'<small>not paid yet</small></div><div class="r"><div class="off">on your list</div><div class="now">we\u2019ll remind you</div></div></div>'; return; }
+    if(s==='no'){ rows+='<div class="ln-drow unpaid"><div class="l">'+l.icon+' '+esc(l.name)+'<small>not paid yet</small></div><div class="r"><div class="off">on your list</div><div class="now">we’ll remind you</div></div></div>'; return; }
+    if(s==='books'){ rows+='<div class="ln-drow"><div class="l">'+l.icon+' '+esc(l.name)+'<small>already in your books · not booked again</small></div><div class="r"><div class="off">− '+LN_R(o)+'</div><div class="now">now owe '+LN_Rk(Math.max(0,l.balance-o))+'</div></div></div>'; return; }
     var tag=p>l.payment?'<span class="ln-tag2">extra \uD83D\uDC4F</span>':(s==='diff'&&p<l.payment?'<span class="ln-tag2">part</span>':'');
     if(o>=0) rows+='<div class="ln-drow"><div class="l">'+l.icon+' '+esc(l.name)+tag+'<small>paid '+LN_R(p)+'</small></div><div class="r"><div class="off">\u2212 '+LN_R(o)+'</div><div class="now">now owe '+LN_Rk(Math.max(0,l.balance-o))+'</div></div></div>';
     else rows+='<div class="ln-drow up"><div class="l">'+l.icon+' '+esc(l.name)+'<small>paid '+LN_R(p)+'</small></div><div class="r"><div class="off">+ '+LN_R(-o)+'</div><div class="now">now owe '+LN_Rk(l.balance-o)+'</div></div></div>';
@@ -24657,6 +25047,7 @@ function lnConfirmPayments(){
     var s=LN_CONF.st[l.id]; if(s===undefined || s==='no') return;
     var o=lnRowOff(l); l.balance=Math.max(0,l.balance-o);
     ST_LOANS.confirmed.paid[l.id]=o;
+    if(s==='books'){ ST_LOANS.confirmed.inBooks=ST_LOANS.confirmed.inBooks||{}; ST_LOANS.confirmed.inBooks[l.id]=1; return; }   /* D2: balance moves once, nothing booked */
     // Record the cash leaving the farm in Money Flow. The full payment shows here;
     // Reports back out the capital and keep only the interest as the deductible cost
     // (cat 'Loan Repayments' is handled in the report builder), so no double-count.
@@ -47518,9 +47909,11 @@ function renderTxnDetail(){
   var t = ST.txns[TXD_IDX]; if(!t){ hideTxnDetail(); return; }
   if (TXD_EDIT) { renderTxnEdit(t); return; }
   var inc = t.type === 'income';
-  var headBg = inc ? 'linear-gradient(135deg,var(--gm),var(--gd))' : 'linear-gradient(135deg,#E74C3C,#c0392b)';
-  var pill   = inc ? 'Money in \u00b7 Income' : 'Money out \u00b7 Expense';
-  var sign   = inc ? '+' : '\u2212';
+  /* -392 D1: money back reads as what it is - "Money in · Refund", never "+ −£50". */
+  var _k = txKind(t), _in = txMoneyIn(t);
+  var headBg = _in ? 'linear-gradient(135deg,var(--gm),var(--gd))' : 'linear-gradient(135deg,#E74C3C,#c0392b)';
+  var pill   = {in:'Money in · Income', out:'Money out · Expense', refund:'Money in · Refund', returned:'Money out · Money returned'}[_k];
+  var sign   = _in ? '+' : '−';
   var tagBg  = inc ? 'var(--gp);color:var(--gd)' : 'var(--rp);color:var(--rd)';
   var DT = '<dt style="color:var(--t3);font-weight:600;margin:0">';
   var DD = '<dd style="margin:0;text-align:right;font-weight:700;color:var(--t1)">';
@@ -47565,7 +47958,7 @@ function renderTxnDetail(){
     '<div style="padding:18px 20px;color:#fff;position:relative;background:'+headBg+'">' +
       '<div onclick="hideTxnDetail()" style="position:absolute;top:14px;right:14px;width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.18);color:#fff;font-size:15px;display:flex;align-items:center;justify-content:center;cursor:pointer">\u2715</div>' +
       '<span style="display:inline-block;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;background:rgba(255,255,255,.22);padding:3px 9px;border-radius:20px">'+pill+'</span>' +
-      '<div style="font-size:30px;font-weight:800;margin-top:8px;letter-spacing:-.01em">'+sign+' '+fmt(t.amt)+'</div>' +
+      '<div style="font-size:30px;font-weight:800;margin-top:8px;letter-spacing:-.01em">'+sign+' '+txMoney2(Math.abs(+t.amt||0))+'</div>' +
       '<div style="font-size:12px;opacity:.9;margin-top:2px">'+txdEsc(txdLongDate(t.date))+'</div>' +
     '</div>' +
     '<div style="padding:18px 20px">' +
@@ -47727,13 +48120,13 @@ async function txdRemoveReceipt(){
 }
 
 var TXD_DRAFT = null;
-function txdEdit(){ var t=ST.txns[TXD_IDX]; if(!t) return; TXD_DRAFT={type:t.type,desc:t.desc,amt:t.amt,cat:t.cat,date:t.date,method:t.method}; TXD_EDIT=true; renderTxnDetail(); }
+function txdEdit(){ var t=ST.txns[TXD_IDX]; if(!t) return; TXD_DRAFT={kind:txKind(t),type:t.type,desc:t.desc,amt:Math.abs(+t.amt||0),amtRaw:String(Math.abs(+t.amt||0)),cat:t.cat,date:(txISODate(t.date)||''),method:t.method,ent:t.ent}; TXD_EDIT=true; renderTxnDetail(); }
 function txdCancelEdit(){ TXD_EDIT=false; TXD_DRAFT=null; renderTxnDetail(); }
 function txdCaptureEdit(){
   if(!TXD_DRAFT) return;
   var d=$('txde-desc'), a=$('txde-amt'), c=$('txde-cat'), dt=$('txde-date'), m=$('txde-method');
   if(d)  TXD_DRAFT.desc=d.value;
-  if(a)  { var v=parseFloat(a.value); if(!isNaN(v)) TXD_DRAFT.amt=v; }
+  if(a)  { TXD_DRAFT.amtRaw=a.value; var v=parseFloat(a.value); if(!isNaN(v)) TXD_DRAFT.amt=v; }
   if(c)  TXD_DRAFT.cat=c.value;
   if(dt) TXD_DRAFT.date=dt.value;
   if(m)  TXD_DRAFT.method=m.value;
@@ -47744,7 +48137,8 @@ function renderTxnEdit(t){
   var card = $('txd-modal-card'); if(!card) return;
   var dr = TXD_DRAFT || t;
   t = dr;
-  var inc = t.type === 'income';
+  var _kd = dr.kind || txKind(dr);
+  var inc = (_kd === 'in' || _kd === 'refund');   /* money into the bank */
   var headBg = inc ? 'linear-gradient(135deg,var(--gm),var(--gd))' : 'linear-gradient(135deg,#E74C3C,#c0392b)';
   var cats = (typeof txAllCats==='function') ? txAllCats() : [t.cat];
   var methods = ['Bank transfer','Cash','Cheque','Card','Direct Debit','Standing order','Other'];
@@ -47760,14 +48154,16 @@ function renderTxnEdit(t){
     '</div>' +
     '<div style="padding:18px 20px">' +
       '<div style="'+FLD+'"><div style="'+LB+'">Type</div>' +
-        '<div style="display:flex;gap:8px">' +
-          '<button onclick="txdSetType(\'income\')" id="txde-type-in" style="flex:1;padding:9px;border-radius:8px;font-weight:700;font-size:12.5px;cursor:pointer;border:1px solid '+(inc?'var(--gd)':'var(--br)')+';background:'+(inc?'var(--gd)':'#fff')+';color:'+(inc?'#fff':'var(--t3)')+'">Money in</button>' +
-          '<button onclick="txdSetType(\'expense\')" id="txde-type-ex" style="flex:1;padding:9px;border-radius:8px;font-weight:700;font-size:12.5px;cursor:pointer;border:1px solid '+(!inc?'var(--rd)':'var(--br)')+';background:'+(!inc?'var(--rd)':'#fff')+';color:'+(!inc?'#fff':'var(--t3)')+'">Money out</button>' +
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">' +
+          [['in','Money in','var(--gd)'],['out','Money out','var(--rd)'],['refund','Refund of a cost','var(--gd)'],['returned','Money returned to a buyer','var(--rd)']].map(function(o){
+            var on=(_kd===o[0]);
+            return '<button onclick="txdSetKind(\''+o[0]+'\')" id="txde-kind-'+o[0]+'" aria-pressed="'+(on?'true':'false')+'" style="padding:9px;border-radius:8px;font-weight:700;font-size:12.5px;cursor:pointer;font-family:inherit;border:1px solid '+(on?o[2]:'var(--br)')+';background:'+(on?o[2]:'#fff')+';color:'+(on?'#fff':'var(--t3)')+'">'+o[1]+'</button>';
+          }).join('') +
         '</div></div>' +
       '<div style="'+FLD+'"><div style="'+LB+'">Description</div><input id="txde-desc" style="'+IN+'" value="'+txdEsc(t.desc||'')+'"></div>' +
-      '<div style="'+FLD+'"><div style="'+LB+'">Amount (£)</div><input id="txde-amt" type="number" style="'+IN+'" value="'+(t.amt||0)+'"></div>' +
+      '<div style="'+FLD+'"><div style="'+LB+'">Amount (£)</div><input id="txde-amt" type="number" inputmode="decimal" step="0.01" min="0" style="'+IN+'" value="'+txdEsc(dr.amtRaw!=null?dr.amtRaw:Math.abs(+t.amt||0))+'"></div>' +
       '<div style="'+FLD+'"><div style="'+LB+'">Category</div><select id="txde-cat" style="'+IN+'">'+cats.map(function(c){return '<option'+(c===t.cat?' selected':'')+'>'+txdEsc(c)+'</option>';}).join('')+'</select></div>' +
-      '<div style="'+FLD+'"><div style="'+LB+'">Date</div><input id="txde-date" type="text" style="'+IN+'" value="'+txdEsc(t.date||'')+'" placeholder="e.g. 12 May 2024"></div>' +
+      '<div style="'+FLD+'"><div style="'+LB+'">Date</div><input id="txde-date" type="date" style="'+IN+'" value="'+txdEsc(/^\d{4}-\d{2}-\d{2}$/.test(String(t.date||''))?t.date:(txISODate(t.date)||''))+'"></div>' +
       '<div style="'+FLD+'"><div style="'+LB+'">'+(inc?'Received via':'Paid with')+'</div><select id="txde-method" style="'+IN+'">'+methods.map(function(m){return '<option'+(m===t.method?' selected':'')+'>'+txdEsc(m)+'</option>';}).join('')+'</select></div>' +
       '<div style="'+FLD+'"><div style="'+LB+'">For which enterprise?</div><select id="txde-ent" style="'+IN+'">'+entOptions(dr.ent||'')+'</select>'+entHintHTML()+'</div>' +
     '</div>' +
@@ -47776,16 +48172,23 @@ function renderTxnEdit(t){
       '<button onclick="txdCancelEdit()" style="flex:1;padding:10px;border-radius:9px;font-weight:700;font-size:13px;border:none;background:var(--br2);color:var(--t2);cursor:pointer">Cancel</button>' +
     '</div>';
 }
-function txdSetType(tp){ txdCaptureEdit(); if(TXD_DRAFT) TXD_DRAFT.type=tp; renderTxnEdit(TXD_DRAFT); }
+function txdSetType(tp){ txdSetKind(tp==='income'?'in':'out'); }
+/* -392 D1: four kinds, never a minus sign. A refund of a cost is money in against a cost
+   category; money returned to a buyer is money out against an income category. */
+function txdSetKind(k){ txdCaptureEdit(); if(TXD_DRAFT){ TXD_DRAFT.kind=k; TXD_DRAFT.type=(k==='in'||k==='returned')?'income':'expense'; } renderTxnEdit(TXD_DRAFT); }
 function txdSaveEdit(){
   var t = ST.txns[TXD_IDX]; if(!t) return;
   txdCaptureEdit();
   if(TXD_DRAFT){
-    t.type   = TXD_DRAFT.type;
+    /* -392 B5-F01: the drawer saved a minus, a zero, no description and no date. */
+    var _e = txCheck({ amt: TXD_DRAFT.amtRaw, desc: TXD_DRAFT.desc, date: TXD_DRAFT.date });
+    if (fieldErrShow(_e, { amt:'txde-amt', desc:'txde-desc', date:'txde-date' })) return;
+    var _k = TXD_DRAFT.kind || txKind(t), _a = Math.round(parseFloat(TXD_DRAFT.amtRaw) * 100) / 100;
+    t.type   = (_k==='in'||_k==='returned') ? 'income' : 'expense';
     t.desc   = (TXD_DRAFT.desc||'').trim();
-    t.amt    = TXD_DRAFT.amt;
+    t.amt    = (_k==='refund'||_k==='returned') ? -_a : _a;
     t.cat    = TXD_DRAFT.cat;
-    t.date   = (TXD_DRAFT.date||'').trim();
+    t.date   = /^\d{4}-\d{2}-\d{2}$/.test(String(TXD_DRAFT.date||'').trim()) ? txDateLike(t.date, String(TXD_DRAFT.date).trim()) : (TXD_DRAFT.date||'').trim();
     t.method = TXD_DRAFT.method;
     t.ent    = TXD_DRAFT.ent || undefined;
   }
@@ -50188,15 +50591,15 @@ function renderTable(type) {
   });
   var html = list.map(function(t){
     var tag    = CAT_TAG[t.cat] || 'tgr';
-    var acolor = t.type==='income' ? '#1B4332' : '#E74C3C';
-    var asign  = t.type==='income' ? '+' : '-';
+    var acolor = txMoneyIn(t) ? '#1B4332' : '#E74C3C';
+    var asign  = txMoneyIn(t) ? '+' : '-';
     if (type === 'all') {
       return '<tr><td>'+esc(txDispDate(t.date))+'</td><td>'+esc(t.desc)+'</td><td><span class="tag '+tag+'">'+esc(t.cat)+'</span></td>'+
         '<td><span class="tag '+(t.type==='income'?'tg':'tr')+'">'+t.type+'</span></td>'+
-        '<td style="font-weight:700;color:'+acolor+'">'+asign+fmt(t.amt)+'</td><td>'+t.method+'</td></tr>';
+        '<td style="font-weight:700;color:'+acolor+'">'+asign+fmt(Math.abs(+t.amt||0))+txKindChip(t)+'</td><td>'+t.method+'</td></tr>';
     }
     return '<tr><td>'+esc(txDispDate(t.date))+'</td><td>'+esc(t.desc)+'</td><td><span class="tag '+tag+'">'+esc(t.cat)+'</span></td>'+
-      '<td style="font-weight:700;color:'+acolor+'">'+asign+fmt(t.amt)+'</td><td>'+t.method+'</td></tr>';
+      '<td style="font-weight:700;color:'+acolor+'">'+asign+fmt(Math.abs(+t.amt||0))+txKindChip(t)+'</td><td>'+t.method+'</td></tr>';
   }).join('');
   if(!html) html='<tr><td colspan="6" style="text-align:center;color:var(--t3);padding:20px">No transactions yet.</td></tr>';
   var id = type==='all'?'all-tbody':type==='income'?'income-tbody':'expense-tbody';
@@ -54762,6 +55165,16 @@ function ukPartnerShareTotal(){
   var t=0; ukPartners().forEach(function(p){ t+=Number(p.share)||0; });
   return Math.round(t*100)/100;
 }
+/* -392 B5-F18: what a partnership still needs before its tax can be worked out ('' = none). */
+function ukPartnershipGap(){
+  var ent=''; try{ ent=(typeof ukEntityType==='function')?ukEntityType(ST.entityType):(ST.entityType||''); }catch(e){}
+  if(ent!=='partnership') return '';
+  var n=ukPartners().length, tot=ukPartnerShareTotal();
+  if(n<2) return n===0 ? 'Add at least two partners and the share of profit each takes.' : 'Add the other partner - a partnership has at least two - and each one’s share.';
+  if(Math.abs(tot-100)>0.01) return 'The shares add up to '+rptNum(tot,2)+'%. Make them add up to 100%.';
+  return '';
+}
+window.ukPartnershipGap=ukPartnershipGap;
 window.ukPartners=ukPartners; window.ukPartnerShareTotal=ukPartnerShareTotal;
 
 function ukProfitAllocation(fy, profitOverride){
@@ -54935,6 +55348,7 @@ function setPartnersRender(){
   if(warn){
     var tot=ukPartnerShareTotal();
     if(!ST.partners.length){ warn.innerHTML='<span style="color:var(--t4)">Add each partner and the share of profit they take. Shares should total 100%.</span>'; }
+    else if(ukPartners().length<2){ warn.innerHTML='<span style="color:#B45309;font-weight:700">A partnership has at least two partners.</span> <span style="color:var(--t4)">Tax shows a figure once each partner and share is here.</span>'; }
     else if(Math.abs(tot-100)>0.01){ warn.innerHTML='<span style="color:#B45309;font-weight:700">Shares total '+rptNum(tot,2)+'%, not 100%.</span> <span style="color:var(--t4)">We will scale the shares to fit until this is fixed.</span>'; }
     else { warn.innerHTML='<span style="color:#15803D;font-weight:700">&#10003; Shares total 100%.</span> <span style="color:var(--t4)">Salary and capital are optional prior shares taken before the balance is split.</span>'; }
   }
@@ -55745,7 +56159,8 @@ var UK_SCHEMES = {
   Scotland:[ { k:'bps', nm:'Basic Payment Scheme', pays:'annual', months:[12], note:'Continues, conditional on the Whole Farm Plan' } ],
   'Northern Ireland': [ { k:'fsp', nm:'Farm Sustainability Payment', pays:'annual', months:[10] } ]
 };
-function ukRegion(){ try{ return ST.region || ST.province || 'England'; }catch(e){ return 'England'; } }
+/* -392 B5-F19: the same nation as the Rainfall page and the spreading rules (ukNation). */
+function ukRegion(){ try{ return ((typeof ukNation==='function') && ukNation()) || ST.region || ST.province || 'England'; }catch(e){ return 'England'; } }
 function ukSchemesForRegion(){ return UK_SCHEMES[ukRegion()] || UK_SCHEMES.England; }
 function ukSchemeDef(k){ var l=ukSchemesForRegion(); for(var i=0;i<l.length;i++){ if(l[i].k===k) return l[i]; } return null; }
 
@@ -58974,6 +59389,16 @@ function taxGlanceHTML(){
      the working. Payable VAT is ink, not red. Payments on account are half of LAST year's
      bill, so they fall due even in a loss year; where the app cannot know them it asks for
      HMRC's figure instead of showing 0. A company pays corporation tax in one go. */
+  /* -392 B5-F18: a partnership is taxed partner by partner (SA800 lists every partner and
+     share). With no partners, or shares that do not add to 100%, it was taxed as one person;
+     now the page asks for them before it shows a figure. */
+  var _pg=(typeof ukPartnershipGap==='function')?ukPartnershipGap():'';
+  if(_pg){
+    return '<div class="tx-card" id="tax-partner-gate" style="margin-top:12px;border-left:4px solid #B45309">'+
+      '<div class="tx-h" style="color:#7a4a10">Add your partners to see the tax</div>'+
+      '<div style="font-size:13px;color:var(--t2);line-height:1.55">A partnership pays no income tax itself: each partner is taxed on their share. '+esc(_pg)+'</div>'+
+      '<button type="button" class="tx-eqbtn" style="margin-top:11px" onclick="nav(\'settings\');setTimeout(function(){ var w=document.getElementById(\'set-partners-wrap\'); if(w) w.scrollIntoView({block:\'center\'}); },350)">Add partners in Settings</button></div>';
+  }
   var prov=taxProvEstimate(), ytd=ytdSummary(), vat=taxVatPosition(), wk=taxWorkerSnapshot();
   var cap=taxCapitalAllowances(), pay=taxPayrollAnnual(), trend=taxVatTrend();
   var priorRF=taxRingFenceFY(((typeof getCurrentFY==='function')?getCurrentFY():2024)-1);
@@ -59772,10 +60197,9 @@ function ukMoveSubmit(serviceKey){
 /* Manual confirmation, for anyone who reports on the service's own website. */
 function ukMoveMarkReported(serviceKey){
   var nm=(UK_MOVE_SERVICES[serviceKey]||{}).nm||serviceKey;
-  var ask=(typeof appPrompt==='function')
-    ? appPrompt('Reported to '+nm+'?', '', {sub:'Enter the reference or receipt number, so the register shows how it was reported.', okLabel:'Mark reported'})
-    : Promise.resolve(window.prompt('Reported to '+nm+'?','')); 
-  ask.then(function(ref){ if(ref==null) return; _ukMoveMarkReportedDo(serviceKey, ref); });
+  /* -392 B5-F22: the app's own dialog only - the browser prompt froze the page in testing. */
+  appPrompt('Reported to '+nm+'?', '', {sub:'Enter the reference or receipt number, so the register shows how it was reported.', okLabel:'Mark reported'})
+    .then(function(ref){ if(ref==null) return; _ukMoveMarkReportedDo(serviceKey, ref); });
 }
 function _ukMoveMarkReportedDo(serviceKey, ref){
   var q=ukMoveQueue(), g=q.groups[serviceKey]; if(!g) return;
@@ -60337,15 +60761,20 @@ window.ukPricesHTML=ukPricesHTML;
 function ukPriceEdit(key){
   var def=(window.AHDB_SERIES||{})[key]; if(!def) return;
   var cur=(typeof ukPrice==='function')?ukPrice(key):null;
-  var v=window.prompt('Price for '+def.nm+' ('+def.unit+')\n\nEnter what you have been quoted. It will be saved as your own figure, dated today.',
-                      (cur&&cur.value!=null)?String(cur.value):'');
-  if(v==null) return;
-  v=String(v).replace(/[^0-9.\-]/g,'');
-  if(v===''){ if(typeof toast==='function') toast('No price entered.','info'); return; }
-  if(typeof ukSetPrice==='function' && ukSetPrice(key, parseFloat(v), null, true)){
-    var box=document.getElementById('mkt-ahdb'); if(box) box.innerHTML=ukPricesHTML();
-    if(typeof toast==='function') toast(def.nm+' set to '+_curSym()+v+'.','success');
-  }
+  /* -392 B5-F22: the app's own dialog (the browser prompt froze the page in testing); a
+     price is more than 0, and a bad one is said, not dropped. */
+  return appPrompt('Price for '+def.nm+' ('+def.unit+')', (cur&&cur.value!=null)?String(cur.value):'',
+                   {sub:'Enter what you have been quoted. It is saved as your own figure, dated today.', prefix:_curSym(), okLabel:'Save price'})
+    .then(function(v){
+      if(v==null) return;
+      var raw=String(v).trim(), er=txAmtError(raw, 'a price');
+      if(er){ if(typeof toast==='function') toast(er+'.','error'); return; }
+      var n=parseFloat(raw.replace(/[£,\s]/g,''));
+      if(typeof ukSetPrice==='function' && ukSetPrice(key, n, null, true)){
+        var box=document.getElementById('mkt-ahdb'); if(box) box.innerHTML=ukPricesHTML();
+        if(typeof toast==='function') toast(def.nm+' set to '+txMoney2(n)+'.','success');
+      }
+    });
 }
 window.ukPriceEdit=ukPriceEdit;
 
@@ -61872,19 +62301,28 @@ var QC_TYPE = 'income';
    this table; keep the longest, most specific phrases first within each row. */
 var QC_RULES = [
 
-  {words:['openfield','frontier','gleadell','camgrain','cefetra','wheat','barley','oats','oilseed rape','osr','rapeseed','field beans','combining peas','linseed','sugar beet','british sugar','grain','crop','harvest','weighbridge'], cat:'Crop Sales',               type:'income'},
-  {words:['berry gardens','worldwide fruit','goatham','apple','pear','cider','strawberr','raspberr','blackcurrant','cherr','plum','punnet','packhouse','orchard','vegetable','tomato','onion','leek','carrot','potato','brassica','cauliflower','asparagus','fresh produce'], cat:'Fruit Sales',                type:'income'},
+  /* -392 D11: fruit and veg before "crop" ("Soft fruit main crop" is fruit), and the
+     schemes before the support payment they were being filed under. */
+  {words:['vat repayment','vat refund','hmrc vat'], cat:'VAT repayment from HMRC', type:'income'},
+  {words:['sfi','sustainable farming incentive','sustainable farming scheme','countryside stewardship','stewardship','mid tier','higher tier','elms','environmental land management','glastir','aecs'], cat:'SFI & Stewardship', type:'income'},
+  {words:['contract combining','contract drilling','contract baling','contract spraying','contracting','custom work'], cat:'Contracting income', type:'income'},
+  {words:['berry gardens','worldwide fruit','goatham','apple','pear','cider','strawberr','raspberr','blackcurrant','cherr','plum','punnet','packhouse','orchard','soft fruit','top fruit','vegetable','tomato','onion','leek','carrot','brassica','cauliflower','asparagus','fresh produce'], cat:'Fruit Sales',                type:'income'},
+  {words:['openfield','frontier','gleadell','camgrain','cefetra','wheat','barley','oats','oilseed rape','osr','rapeseed','field beans','combining peas','linseed','sugar beet','british sugar','potato','grain','crop','harvest','weighbridge'], cat:'Crop Sales',               type:'income'},
   {words:['arla','muller','first milk','freshways','meadow foods','barbers','wyke','saputo','milk cheque','milk payment','milk','dairy','cream','cheese'], cat:'Milk & Dairy',              type:'income'},
   {words:['british wool','wool','shear','shearing','fleece','clip','fibre'],                                                                    cat:'Wool & Fibre',              type:'income'},
   {words:['sedgemoor','thainstone','melton mowbray','bakewell','skipton','ludlow','abp','dunbia','dawn meats','randall parker','cranswick','mart','abattoir','deadweight','store cattle','store lambs','cull cows','cull ewes','cattle','sheep','ewes','lambs','calves','heifer','bullock','steers','pigs','poultry','beef','livestock'], cat:'Livestock Sales',           type:'income'},
-  {words:['rpa','rural payments','basic payment','bps','delinked','sfi','sustainable farming incentive','countryside stewardship','elms','defra','daera','grant','subsidy'], cat:'Delinked payment',          type:'income'},
+  {words:['rpa','rural payments','basic payment','bps','delinked','defra','daera'], cat:'Delinked payment',          type:'income'},
+  {words:['grant','subsidy'], cat:'Subsidies', type:'income'},
   {words:['fbt','farm business tenancy','grazing licence','grass keep','wayleave','easement','solar lease','mast rent','holiday let','cottage rent','rental','rent ','lease'], cat:'Rental Income',             type:'income'},
 
+  /* -392 D11: contract work before feed, labour and machinery ("Silage contractor" was
+     Labour & Wages, a combine hire was Machinery & Repairs). */
+  {words:['contractor','contracting','contract silage','contract work','combine hire','shearing','hedge cutting','hedgecutting','muck spreading','baling','plant hire','machinery hire'], cat:'Contractors & hire', type:'expense'},
   {words:['limagrain','kws','elsoms','senova','seed potato','certified seed','seed','seedling','rootstock','transplant','inoculant'],           cat:'Seeds & Planting',          type:'expense'},
-  {words:['yara','cf fertilisers','nitram','ammonium nitrate','fertiliser','fertilizer','urea','npk','tsp','mop','potash','lime','digestate'],  cat:'Fertiliser',                type:'expense'},
+  {words:['yara','cf fertilisers','nitram','ammonium nitrate','fertiliser','fertilizer','fertigation','foliar feed','post-harvest feed','post harvest feed','liquid feed','urea','npk','tsp','mop','potash','lime','digestate'],  cat:'Fertiliser',                type:'expense'},
   {words:['bayer','syngenta','corteva','basf','adama','hutchinsons','agrii','agrovista','procam','herbicide','fungicide','insecticide','pesticide','slug pellet','glyphosate','roundup','spray','crop protection'], cat:'Crop Protection',           type:'expense'},
   {words:['certas','rix','watson fuels','crown oil','red diesel','gas oil','kerosene','adblue','diesel','petrol','fuel','lubricant','hydraulic oil'], cat:'Fuel & Oil',                type:'expense'},
-  {words:['gangmaster','glaa','labour provider','harvest crew','seasonal worker','labour','wages','salary','payroll','worker','casual','picking','contractor','contract silage','relief milking'], cat:'Labour & Wages',            type:'expense'},
+  {words:['gangmaster','glaa','labour provider','harvest crew','seasonal worker','labour','wages','salary','payroll','worker','casual','picking','relief milking'], cat:'Labour & Wages',            type:'expense'},
   {words:['john deere','claas','fendt','massey ferguson','new holland','case ih','jcb','kubota','manitou','krone','kuhn','amazone','vaderstad','tractor','combine','telehandler','repair','service','spares','parts','workshop','tyre','mot'], cat:'Machinery & Repairs',       type:'expense'},
   {words:['zoetis','msd','boehringer','elanco','xlvets','veterinary','vet','vaccine','antibiotic','wormer','drench','dose','footbath','scanning','foot trimming','semen'], cat:'Veterinary & Animal Health',type:'expense'},
   {words:['forfarmers','mole valley','wynnstay','harbro','trident','massey feeds','compound feed','blend','straights','cake','rolled barley','pellets','concentrate','minerals','lick','hay','straw','silage','haylage','forage','feed'], cat:'Animal Feed',               type:'expense'},
@@ -61941,7 +62379,7 @@ function qcDetectCategory(desc, type) {
 
 function qcAutoCategory() {
   var desc = $('qc-desc') && $('qc-desc').value;
-  var match = qcDetectCategory(desc);
+  var match = qcDetectCategory(desc, qcCatType());
   var catEl = $('qc-cat');
   var hint  = $('qc-cat-hint');
   /* Diesel litres are what the HMRC rebate is claimed on, and they were buried
@@ -61982,9 +62420,40 @@ function qcSetType(t) {
   if (incBtn)  incBtn.className  = 'qc-type inc' + (t === 'income'  ? ' on' : '');
   if (expBtn)  expBtn.className  = 'qc-type exp' + (t === 'expense' ? ' on' : '');
   if (saveBtn) saveBtn.className = 'qc-save ' + (t === 'income' ? 'inc' : 'exp');
-  if (saveBtn) saveBtn.textContent = t === 'income' ? 'Save income' : 'Save expense';
+  qcRefundPaint();
   if (typeof qcSyncDetailsType === 'function') qcSyncDetailsType();
 }
+/* -392 D1: money back is its own entry here too. "I received money" + refund is a supplier
+   paying back a cost; "I spent money" + refund is money returned to a buyer. Either way the
+   farmer types a plain amount and picks the category it came off. */
+var QC_REFUND = false;
+function qcCatType(){ var inc = (QC_TYPE === 'income'); if (QC_REFUND) inc = !inc; return inc ? 'income' : 'expense'; }
+function qcRefundPaint(){
+  var cb = $('qc-refund'); if (cb) cb.checked = !!QC_REFUND;
+  var lb = $('qc-refund-lbl'); if (lb) lb.textContent = (QC_TYPE === 'income') ? 'It’s a refund of something I paid for' : 'I’m paying back money I received';
+  var sb = $('qc-save');
+  if (sb) sb.textContent = QC_TYPE === 'income' ? (QC_REFUND ? 'Save refund' : 'Save income') : (QC_REFUND ? 'Save money returned' : 'Save expense');
+  qcFillCats();
+}
+function qcRefundToggle(){ var cb = $('qc-refund'); QC_REFUND = !!(cb && cb.checked); qcRefundPaint(); try{ qcAutoCategory(); }catch(e){} }
+/* -392 B5-F05: the category list follows money in or money out, with "Not farm" last - the
+   same shape as the bank-line menu. It was every income category and then every cost. */
+function qcFillCats(){
+  var el = $('qc-cat'); if (!el || typeof FARM_CATS === 'undefined') return;
+  var keep = el.value, t = (qcCatType() === 'income') ? 'inc' : 'exp';
+  var used = {}; try{ (ST.txns || []).forEach(function(x){ if (x && x.cat) used[x.cat] = (used[x.cat] || 0) + 1; }); }catch(e){}
+  var srt = function(a, b){ if (!!a.sys !== !!b.sys) return a.sys ? 1 : -1; var ua = used[a.n] || 0, ub = used[b.n] || 0; if (ua !== ub) return ub - ua; return a.n < b.n ? -1 : (a.n > b.n ? 1 : 0); };
+  var farm = FARM_CATS.filter(function(c){ return (c.t === t || c.t === 'both') && !c.nonop; }).sort(srt);
+  var notFarm = FARM_CATS.filter(function(c){ return c.t === t && c.nonop; }).sort(srt);
+  var opt = function(c){ return '<option>' + c.n.replace(/&/g,'&amp;') + '</option>'; };
+  el.innerHTML = '<option value="">Auto-detect</option>' +
+    '<optgroup label="' + (t === 'inc' ? 'Money in' : 'Money out') + '">' + farm.map(opt).join('') + '</optgroup>' +
+    (notFarm.length ? '<optgroup label="Not farm">' + notFarm.map(opt).join('') + '</optgroup>' : '');
+  var ok = false; for (var i = 0; i < el.options.length; i++) { if (el.options[i].value === keep) { ok = true; break; } }
+  el.value = ok ? keep : '';
+  try{ sa103RenderQc(); }catch(e){}
+}
+window.qcFillCats = qcFillCats; window.qcCatType = qcCatType; window.qcRefundToggle = qcRefundToggle;
 
 function qcOpen(type) {
   var bg   = $('qc-bg');
@@ -62031,6 +62500,7 @@ function qcBgClick(e) {
 var QC_FORM_HTML = null;
 function qcReset() {
   QC_TYPE = 'income';
+  QC_REFUND = false;
   var body = $('qc-body');
   if (body) {
     if (QC_FORM_HTML == null) QC_FORM_HTML = body.innerHTML;   // cache pristine form once
@@ -62060,18 +62530,19 @@ function qcFuelHint(){
 }
 function qcSave() {
   if (qcSave._busy) return;
-  var amt   = parseFloat($('qc-amt')  && $('qc-amt').value)  || 0;
   var desc  = ($('qc-desc') && $('qc-desc').value.trim())    || '';
   var catEl = $('qc-cat');
   var date  = ($('qc-date') && $('qc-date').value)           || '';
-
-  if (!amt)  { $('qc-amt')  && $('qc-amt').focus();  toast('Please enter an amount', 'error'); return; }
-  if (!desc) { $('qc-desc') && $('qc-desc').focus(); toast('Please enter a description', 'error'); return; }
+  /* -392 B5-F01: it checked only that the amount was not 0, so -50 saved as income. */
+  var _qe = txCheck({ amt: $('qc-amt') && $('qc-amt').value, desc: desc, date: date });
+  if (fieldErrShow(_qe, { amt:'qc-amt', desc:'qc-desc', date:'qc-date' })) return;
+  var amt   = Math.round((parseFloat($('qc-amt').value) || 0) * 100) / 100;
   qcSave._busy = true; setTimeout(function(){ qcSave._busy = false; }, 2000);
 
-var match = qcDetectCategory(desc);
-  var cat   = (catEl && catEl.value) || (match && match.cat) || (QC_TYPE === 'income' ? 'Crop Sales' : 'Other Expenses');
-  var type  = QC_TYPE;
+  var type  = qcCatType(), inflow = (QC_TYPE === 'income'), _kindLbl = QC_REFUND ? (inflow ? 'Refund' : 'Money returned') : '';
+var match = qcDetectCategory(desc, type);
+  var cat   = (catEl && catEl.value) || (match && match.cat) || (type === 'income' ? (QC_REFUND ? 'Other Income' : 'Crop Sales') : 'Other Expenses');
+  if (QC_REFUND) amt = -amt;                            /* D1: stored the other way round */
 
   var det = $('qc-details'), detOpen = !!(det && det.style.display && det.style.display !== 'none');
   var method = 'Quick Capture', ent, qty, unit, note, party;
@@ -62107,27 +62578,36 @@ var body = $('qc-body');
       '<div class="qc-success">' +
         '<div class="qc-tick">' + (type === 'income' ? '💰' : '✅') + '</div>' +
         '<div class="qc-ok">Saved!</div>' +
-        '<div class="qc-sub">' + (type === 'income' ? '+' : '-') + fmt(amt) + ' &nbsp;·&nbsp; ' + cat + '</div>' +
+        '<div class="qc-sub">' + (inflow ? '+' : '−') + txMoney2(Math.abs(amt)) + ' &nbsp;·&nbsp; ' + (_kindLbl ? _kindLbl + ' · ' : '') + cat + '</div>' +
         '<div class="qc-sub" style="margin-top:4px;font-size:11px">' + dateStr + ' &nbsp;·&nbsp; Dashboard updated</div>' +
       '</div>';
   }
 
   setTimeout(function() {
     qcClose();
-    var undoMsg = (type === 'income' ? 'Income saved: ' : 'Expense saved: ') + fmt(amt);
+    var undoMsg = (_kindLbl ? _kindLbl + ' saved: ' : (type === 'income' ? 'Income saved: ' : 'Expense saved: ')) + txMoney2(Math.abs(amt));
     showUndoToast(undoMsg);
   }, 1600);
 }
 
+/* -392 B5-F05: quantity x price fills the amount to the penny, and an amount with a
+   quantity shows what that is a unit - for money in and money out alike. */
 function qcCalcTotal() {
   var q = parseFloat($('qcd-qty') && $('qcd-qty').value) || 0;
   var pr = parseFloat($('qcd-price') && $('qcd-price').value) || 0;
-  if (q && pr) { var a = $('qc-amt'); if (a) a.value = Math.round(q * pr); }
+  if (q > 0 && pr > 0) { var a = $('qc-amt'); if (a) { a.value = String(Math.round(q * pr * 100) / 100); try{ fieldErrClear(a); }catch(e){} } }
+  else qcPriceHint();
+}
+function qcPriceHint() {
+  var q = parseFloat($('qcd-qty') && $('qcd-qty').value) || 0;
+  var a = parseFloat($('qc-amt') && $('qc-amt').value) || 0;
+  var p = $('qcd-price'); if (!p) return;
+  p.placeholder = (q > 0 && a > 0 && !p.value) ? (Math.round(a / q * 100) / 100).toFixed(2) : '0';
 }
 function qcSyncDetailsType() {
   var isInc = (QC_TYPE === 'income');
   var pl = $('qcd-party-lbl'); if (pl) pl.textContent = (isInc ? 'Buyer' : 'Supplier') + ' (optional)';
-  var pw = $('qcd-price-wrap'); if (pw) pw.style.display = isInc ? '' : 'none';
+  var pw = $('qcd-price-wrap'); if (pw) pw.style.display = '';
   var ent = $('qcd-ent');
   if (ent && ent.options.length <= 1 && typeof entOptions === 'function') { try { ent.innerHTML = entOptions(''); } catch(e){} }
 }
@@ -62197,8 +62677,8 @@ var OB_STRINGS = {
     step4h:' is ready, ',
     step4sub_demo:"Here's a guided tour of what to explore first in the demo farm.",
     step4sub_fresh:"Here's your quick-start checklist — follow these steps to get up and running.",
-    modeDemo:['🔍 Show me around with demo data','Load a sample farm so you can explore all the features. Demo data can be cleared anytime.','Recommended for new users'],
-    modeFresh:['✍️ Start with my own data','Clear the demo data and start recording your real farm income and expenses from today.'],
+    modeDemo:['🔍 Show me around with demo data','Load a sample farm so you can explore all the features. Demo data can be cleared anytime.',''],
+    modeFresh:['✍️ Start with my own data','Start recording your real farm income and expenses from today.'],
     nextBtn:'Next ⟶', backBtn:'← Back',
     finishBtnDemo:'Explore the Demo →', finishBtnFresh:'Start recording my farm →',
     fuQ:'Do you have last season\u2019s records to bring in?',
@@ -62307,7 +62787,14 @@ setQ('#ob-step-3 .ob-h1', s.step3h);
 var OB_STEP  = 1;      /* step 0 was Language and no longer exists */
 var OB_TOTAL = 5;      /* the loop still spans 0-4; obNav guards a missing step 0 */
 var OB_TYPE  = 'grain';
-var OB_MODE  = 'demo';
+var OB_MODE  = 'fresh';   /* -392 D8: an account starts with its own data */
+var OB_MODE_PICKED = false;
+/* The no-login ?demo=1 guest is exploring the sample farm - the guest demo keeps demo data. */
+function obStep3Default(){
+  if (OB_MODE_PICKED) return;
+  var el = $(window.__AI_GUEST ? 'ob-mode-demo' : 'ob-mode-fresh');
+  if (el) { obPickMode(el); OB_MODE_PICKED = false; }
+}
 
 function obNav(n) {
   for (var i = 0; i < OB_TOTAL; i++) {
@@ -62319,6 +62806,7 @@ function obNav(n) {
     }
   }
   OB_STEP = n;
+  if (n === 3) { try { obStep3Default(); } catch(e){} }
 }
 
 /* A required box that is empty says so beneath itself and stays red until it has text.
@@ -62392,6 +62880,7 @@ function obPickMode(el) {
   });
   el.className = 'ob-mode on';
   OB_MODE = el.id.replace('ob-mode-','');
+  OB_MODE_PICKED = true;
   // The import question is a property of the fresh path — reveal it only then.
   var fu = $('ob-followup');
   if (fu) fu.classList.toggle('show', OB_MODE === 'fresh');
@@ -67220,7 +67709,7 @@ function txClearFilters() {
 function txAllSummary(list){
   var el=$('txall-summary'); if(!el) return;
   var net=list.reduce(function(a,t){ return a+(t.type==='income'?t.amt:-t.amt); },0);
-  var inc=list.filter(function(t){ return t.type==='income'; }).length;
+  var inc=list.filter(function(t){ return txMoneyIn(t); }).length;   /* -392 D1: by money in, so a refund counts as in */
   var filtered = TX_TYPE_FILTER!=='all' || !!TX_CAT_FILTER || !!(($('tx-search')||{}).value||'') || !!ST.txNeedOnly;
   el.innerHTML='<b>'+list.length+'</b> transaction'+(list.length===1?'':'s')+
     ' \u00b7 '+inc+' in, '+(list.length-inc)+' out \u00b7 net '+(net<0?'\u2212':'')+fmt(Math.abs(net))+
@@ -67284,6 +67773,33 @@ function txUpdateSummary() {
 }
 
 // ── Main render ────────────────────────────────────────────────
+/* -392: the rows the Transactions page shows, with every filter applied - one function for
+   the page, its print and anything that must match them. Stamps _idx. */
+function txVisibleList(){
+  var list = _txFilterBase();
+  if (ST.txNeedOnly) list = list.filter(function(t){ return !!_txNeedsLook(t); });
+  return list;
+}
+function _txFilterBase(){
+  var q = ($('tx-search')||{}).value || '';
+  var lo = q.toLowerCase();
+  return ST.txns.filter(function(t, i) {
+    t._idx = i;
+    if (TX_TYPE_FILTER !== 'all' && t.type !== TX_TYPE_FILTER) return false;
+    if (TX_BATCH_FILTER && t.batch !== TX_BATCH_FILTER && t._autoBatch !== TX_BATCH_FILTER) return false;
+    if (TX_CAT_FILTER && t.cat !== TX_CAT_FILTER) return false;
+    if (TX_FROM || TX_TO) {
+      var dd = parseDate(t.date);
+      if (!dd) return false;
+      var dn = dd.y*10000 + (dd.m+1)*100 + (dd.d||1);
+      if (TX_FROM) { var fp = TX_FROM.split('-'); if (dn < (+fp[0]*10000 + +fp[1]*100 + +fp[2])) return false; }
+      if (TX_TO)   { var tp = TX_TO.split('-');   if (dn > (+tp[0]*10000 + +tp[1]*100 + +tp[2])) return false; }
+    }
+    if (lo && (t.desc+' '+t.cat+' '+t.date+' '+t.amt).toLowerCase().indexOf(lo) < 0) return false;
+    return true;
+  });
+}
+window.txVisibleList = txVisibleList;
 function txRender() {
   try{ catRuleRenderList(); }catch(e){}
   try{ _txMigrateIfNeeded(); }catch(e){}
@@ -67371,8 +67887,9 @@ function txRender() {
   function monthHdrHtml(mo) {
       var rows = '';
       var moTxns = byMonth[mo];
-      var moInc  = moTxns.reduce(function(s,t){ return s+(t.type==='income'?t.amt:0);},0);
-      var moExp  = moTxns.reduce(function(s,t){ return s+(t.type==='expense'?t.amt:0);},0);
+      /* -392 D1: money through the bank - a refund is money in, money returned is money out. */
+      var moInc  = moTxns.reduce(function(s,t){ var a=txAmtShow(t); return s+(a.inn?a.abs:0);},0);
+      var moExp  = moTxns.reduce(function(s,t){ var a=txAmtShow(t); return s+(a.inn?0:a.abs);},0);
       /* -386 rule 2: net cash of the rows shown - in less out - so a search or filter moves all three
          figures together. It was the whole month's profit beside the filtered in and out. */
       var moPro  = (moInc || moExp) ? (moInc - moExp) : null;
@@ -67395,8 +67912,9 @@ function txRender() {
         var rows = '';
         var ri       = t._realIdx;
         var isIncome = t.type === 'income';
-        var amtCol   = isIncome ? 'var(--gd)' : 'var(--rd)';
-        var amtSign  = isIncome ? '+' : '−';
+        var _as      = txAmtShow(t);                  /* -392 D1: a refund reads as money back, not "+-£50" */
+        var amtCol   = _as.col;
+        var amtSign  = _as.sign;
         var source   = t.source || (t.method === 'Quick Capture' ? 'Quick Add' : 'Manual entry');
         var isEven   = ti % 2 === 0;
         var bgStyle  = isEven ? '' : 'background:var(--bg)';
@@ -67412,7 +67930,7 @@ function txRender() {
           '<td class="tx-catcell" onclick="event.stopPropagation(); txAllCatOpen('+ri+', this)">' +
             (need ? '<span class="tag tx-warnchip" title="Needs a look \u2014 click to choose">'+escHtml(t.cat||'None')+'<i>\u25be</i></span>'
                   : catTag(t.cat||'Uncategorised')) + '</td>' +
-          '<td style="text-align:right;font-weight:700;white-space:nowrap;color:'+amtCol+'">'+amtSign+fmt(t.amt)+'</td>' +
+          '<td style="text-align:right;font-weight:700;white-space:nowrap;color:'+amtCol+'">'+amtSign+fmt(Math.abs(+t.amt||0))+txKindChip(t)+'</td>' +
           '<td style="font-size:12px;color:var(--t3);white-space:nowrap">'+escHtml(t.method||'')+'</td>' +
           '<td><button class="tx-edit-btn" onclick="event.stopPropagation();txStartEdit('+ri+')">✏ Edit</button></td>' +
         '</tr>';
@@ -67422,7 +67940,7 @@ function txRender() {
           rows += '<tr class="tx-edit-row-tr"><td colspan="7" style="padding:0">' +
             '<div class="tx-edit-row">' +
               '<div><div class="tx-edit-lbl">Description</div><input id="txe-desc" value="'+escHtml(t.desc||'')+'"/></div>' +
-              '<div><div class="tx-edit-lbl">Amount (£)</div><input id="txe-amt" type="number" value="'+t.amt+'"/></div>' +
+              '<div><div class="tx-edit-lbl">Amount (£)'+(txKindLabel(t)?' · '+txKindLabel(t).toLowerCase():'')+'</div><input id="txe-amt" type="number" inputmode="decimal" step="0.01" min="0" value="'+Math.abs(+t.amt||0)+'"/></div>' +
               '<div><div class="tx-edit-lbl">Category</div>' +
                 '<select id="txe-cat">'+cats.map(function(c){ return '<option'+(c===t.cat?' selected':'')+'>'+escHtml(c)+'</option>'; }).join('')+'</select></div>' +
               '<div><div class="tx-edit-lbl">Date</div><input id="txe-date" type="date" value="'+txISODate(t.date)+'"/></div>' +
@@ -67501,6 +68019,12 @@ function txDateLike(old, iso){
 function txSaveEdit(idx) {
   var t = ST.txns[idx]; if (!t) return;
   var descEl = $('txe-desc'), amtEl  = $('txe-amt'), catEl  = $('txe-cat'), dateEl = $('txe-date');
+  /* -392 B5-F01: an emptied box kept the old amount and still said "updated"; -50 went in.
+     The same check as every other door; the sign stays what the entry is (D1). */
+  var _te = txCheck({ amt: amtEl ? amtEl.value : Math.abs(+t.amt||0), desc: descEl ? descEl.value : t.desc, date: dateEl ? dateEl.value : t.date });
+  if (fieldErrShow(_te, { amt:'txe-amt', desc:'txe-desc', date:'txe-date' })) return;
+  var _sgn = ((+t.amt||0) < 0) ? -1 : 1;
+  var _newAmt = amtEl ? _sgn * Math.round(parseFloat(amtEl.value) * 100) / 100 : t.amt;
   /* Changing the category of a linked livestock sale would orphan its movement silently. */
   if (catEl && catEl.value !== t.cat && t.moveRef && _lsMoveByRef(t.moveRef)){
     var _m=_lsMoveByRef(t.moveRef);
@@ -67515,8 +68039,8 @@ function txSaveEdit(idx) {
     }
     var _catOk=(TX_SAVE_CAT_OK===null) ? true : TX_SAVE_CAT_OK; TX_SAVE_CAT_OK=null;
     if(!_catOk){
-      if (descEl) t.desc = descEl.value;
-      if (amtEl)  t.amt  = parseFloat(amtEl.value) || t.amt;
+      if (descEl) t.desc = descEl.value.trim();
+      t.amt = _newAmt;
       if (dateEl && dateEl.value) t.date = txDateLike(t.date, dateEl.value);
       TX_EDIT_IDX=-1;
       try{ txnUpdateThrough(t); }catch(e){}
@@ -67527,8 +68051,8 @@ function txSaveEdit(idx) {
     }
     _m.txnRef=null; delete t.moveRef;
   }
-  if (descEl) t.desc   = descEl.value;
-  if (amtEl)  t.amt    = parseFloat(amtEl.value) || t.amt;
+  if (descEl) t.desc   = descEl.value.trim();
+  t.amt = _newAmt;
   if (catEl)  t.cat    = catEl.value;
   if (dateEl && dateEl.value) t.date   = txDateLike(t.date, dateEl.value);
   TX_EDIT_IDX = -1;
@@ -67549,7 +68073,7 @@ function txCancelEdit() {
 // ── CSV Export ─────────────────────────────────────────────────
 function txExportCSV() {
   var rows = ST.txns.map(function(t) {
-    return [t.date, t.desc||'', t.cat||'', t.type, (t.type==='income'?'+':'-')+(t.amt||0), t.method||''];
+    return [t.date, t.desc||'', t.cat||'', txKindLabel(t)||t.type, (txMoneyIn(t)?'':'-')+(Math.abs(+t.amt||0)).toFixed(2), t.method||''];
   });
   var csv = toCSV(['Date','Description','Category','Type','Amount','Method'], rows);
   downloadFile((FARM.name||'Farm')+'_Transactions.csv', csv);
@@ -67557,31 +68081,51 @@ function txExportCSV() {
 }
 
 // ── Print statement ─────────────────────────────────────────────
+/* -392 B5-F07: the rows on screen, not the whole ledger. It printed every transaction ever,
+   in storage order, rounded to whole pounds, with no period and no totals, and a refund as
+   "+£-50". Now: the filtered rows, oldest first, with the period, money in, money out and
+   net, in pounds and pence. The filter is txVisibleList - the same one the page draws. */
 function txPrint() {
-  var rows = ST.txns.map(function(t) {
-    var sign = t.type==='income'?'+':'-';
+  var list = txVisibleList().slice();
+  var _k = function(t){ var d = parseDate(String(t.date||'')); return (d && d.y) ? (d.y*10000 + (d.m+1)*100 + (d.d||1)) : 0; };
+  list.sort(function(a, b){ return (_k(a) - _k(b)) || (b._idx - a._idx); });
+  var inn = 0, out = 0, TD = 'padding:7px 10px;font-size:13px';
+  var rows = list.map(function(t) {
+    var s = txAmtShow(t); if (s.inn) inn += s.abs; else out += s.abs;
     return '<tr style="border-bottom:1px solid #E5E7EB">'+
-      /* Format the date: this document goes to a bank or HMRC, and stored dates are ISO
-         (2026-07-17), which printed raw. txDispDate handles both stored formats. */
-      '<td style="padding:7px 10px;font-size:13px">'+((typeof txDispDate==='function')?txDispDate(t.date):t.date)+'</td>'+
-      '<td style="padding:7px 10px;font-size:13px">'+escTxHtml(t.desc||'')+'</td>'+
-      '<td style="padding:7px 10px;font-size:13px">'+escTxHtml(t.cat||'')+'</td>'+
-      '<td style="padding:7px 10px;font-size:13px;text-align:right;font-weight:600;color:'+(t.type==='income'?'#1B4332':'#DC2626')+'">'+sign+_curSym()+Math.round(t.amt).toLocaleString('en-GB')+'</td>'+
-      '<td style="padding:7px 10px;font-size:13px;color:#6B7280">'+escTxHtml(t.method||'')+'</td>'+
+      '<td style="'+TD+';white-space:nowrap">'+txDispDate(t.date)+'</td>'+
+      '<td style="'+TD+'">'+escTxHtml(t.desc||'')+(s.lbl?' <span style="color:#6B7280">('+s.lbl.toLowerCase()+')</span>':'')+'</td>'+
+      '<td style="'+TD+'">'+escTxHtml(t.cat||'')+'</td>'+
+      '<td style="'+TD+';text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;color:#1B4332">'+(s.inn?txMoney2(s.abs):'')+'</td>'+
+      '<td style="'+TD+';text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;color:#B42318">'+(s.inn?'':txMoney2(s.abs))+'</td>'+
+      '<td style="'+TD+';color:#6B7280">'+escTxHtml(t.method||'')+'</td>'+
     '</tr>';
   }).join('');
-
+  var net = Math.round((inn - out) * 100) / 100;
+  var per = (TX_FROM || TX_TO) ? ((TX_FROM ? txDispDate(TX_FROM) : 'the first entry') + ' to ' + (TX_TO ? txDispDate(TX_TO) : 'today')) : 'All dates';
+  var q = (($('tx-search')||{}).value||'').trim(), filt = [];
+  if (TX_TYPE_FILTER !== 'all') filt.push(TX_TYPE_FILTER === 'income' ? 'money in only' : 'money out only');
+  if (TX_CAT_FILTER) filt.push(TX_CAT_FILTER);
+  if (q) filt.push('matching “' + q + '”');
+  if (ST.txNeedOnly) filt.push('needing a look');
+  var TOT = 'padding:8px 10px;font-size:13px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap';
   var html = '<h2 style="font-family:sans-serif;font-size:18px;margin-bottom:4px">'+escTxHtml(FARM.name||'Farm')+' — Transaction Statement</h2>'+
-    '<p style="font-family:sans-serif;font-size:13px;color:#6B7280;margin-bottom:20px">Printed '+new Date().toLocaleDateString('en-GB')+'</p>'+
+    '<p style="font-family:sans-serif;font-size:13px;color:#374151;margin:0 0 2px"><b>Period:</b> '+per+(filt.length?' · '+escTxHtml(filt.join(', ')):'')+' · '+list.length+' transaction'+(list.length===1?'':'s')+'</p>'+
+    '<p style="font-family:sans-serif;font-size:12px;color:#6B7280;margin-bottom:16px">Printed '+_dmy3(new Date())+'</p>'+
     '<table style="width:100%;border-collapse:collapse;font-family:sans-serif">'+
     '<thead><tr style="border-bottom:2px solid #1B4332">'+
     '<th style="padding:8px 10px;text-align:left;font-size:12px;color:#6B7280">Date</th>'+
     '<th style="padding:8px 10px;text-align:left;font-size:12px;color:#6B7280">Description</th>'+
     '<th style="padding:8px 10px;text-align:left;font-size:12px;color:#6B7280">Category</th>'+
-    '<th style="padding:8px 10px;text-align:right;font-size:12px;color:#6B7280">Amount</th>'+
+    '<th style="padding:8px 10px;text-align:right;font-size:12px;color:#6B7280">Money in</th>'+
+    '<th style="padding:8px 10px;text-align:right;font-size:12px;color:#6B7280">Money out</th>'+
     '<th style="padding:8px 10px;text-align:left;font-size:12px;color:#6B7280">Method</th>'+
-    '</tr></thead><tbody>'+rows+'</tbody></table>'+
-    '<button onclick="window.print()" style="margin-top:20px;background:#1B4332;color:#fff;border:none;padding:9px 20px;border-radius:8px;font-size:14px;cursor:pointer">🖨 Print</button>';
+    '</tr></thead><tbody>'+(rows||'<tr><td colspan="6" style="'+TD+';color:#6B7280">No transactions in this view.</td></tr>')+'</tbody>'+
+    '<tfoot><tr style="border-top:2px solid #1B4332"><td colspan="3" style="padding:8px 10px;font-size:13px;font-weight:700">Totals</td>'+
+      '<td style="'+TOT+';color:#1B4332">'+txMoney2(inn)+'</td><td style="'+TOT+';color:#B42318">'+txMoney2(out)+'</td><td></td></tr>'+
+    '<tr><td colspan="3" style="padding:8px 10px;font-size:13px;font-weight:700">Net (money in less money out)</td>'+
+      '<td colspan="2" style="'+TOT+'">'+txMoney2(net)+'</td><td></td></tr></tfoot></table>'+
+    '<button onclick="window.print()" style="margin-top:20px;background:#1B4332;color:#fff;border:none;padding:9px 20px;border-radius:8px;font-size:14px;cursor:pointer">Print</button>';
 
   printWindow('Transaction Statement', html);
 }
@@ -68598,16 +69142,16 @@ function attnItems(){
     }
   }catch(e){}
 
-  /* 6 · Expenses with no category — they quietly break every split in the reports. */
+  /* 6 · Expenses to sort. -392 B5-F06: the count is the Transactions page's own "need a
+     look" list for the farm year, and the button opens that list - it was every "Other"
+     line from every year, and "Sort them" opened Expenses unfiltered (5 here, 9 there). */
   try{
-    var un2 = (ST.txns || []).filter(function(x){
-      return x && x.type === 'expense' && /^(other|uncategori)/i.test(_catOf(x));
-    }).length;
+    var un2 = attnNeedLookCount('expense');
     if(un2 > 0){
       out.push({tier:'house', sev:40, nm:'Expenses to sort',
-        lead: _attnPlural(un2, 'expense', 'expenses') + ' still need a category',
+        lead: _attnPlural(un2, 'expense', 'expenses') + (un2 === 1 ? ' needs a look' : ' need a look'),
         sub:'So your reports add up properly', st:un2 + (un2===1?' item':' items'), cta:'Sort them', when:9999,
-        action: function(){ nav('expenses'); }});
+        action: function(){ attnOpenNeedLook('expense'); }});
     }
   }catch(e){}
 
@@ -69824,11 +70368,18 @@ function inferCategory(desc, isIncome, _skipRules){
     if(_rule){ _rule.hits=(_rule.hits||0)+1; _rule.lastFired=_catRuleToday(); return _rule.cat; }
   }
   if(isIncome){
+    /* -392 D11: HMRC paying back VAT is not income at all. */
+    if(/vat (repayment|refund)|hmrc.{0,12}\bvat\b|\bvat\b.{0,12}hmrc/.test(d)) return 'VAT repayment from HMRC';
+    /* -392 D11: the schemes before the support payment they were being filed under - the
+       engine could never say SFI & Stewardship, so every SFI line was flagged wrong. */
+    if(/\bsfi\b|sustainable farming (incentive|scheme)|countryside stewardship|\bstewardship\b|\bcs\b (mid|higher)|mid tier|higher tier|environmental land management|\belm(s)?\b|glastir|\baecs\b|agri.?environment/.test(d)) return 'SFI & Stewardship';
+    /* Work done for others with the farm's own kit. */
+    if(/\bcontracting\b|contract (combining|drilling|baling|spraying|harvesting|work|silage|hedge)|custom (work|harvest)/.test(d)) return 'Contracting income';
+    /* Top fruit, soft fruit and field veg - before "crop", so "Soft fruit main crop" is fruit. */
+    if(/berry gardens|worldwide fruit|goatham|angus soft|orchard world|\bapple(s)?\b|\bpear(s)?\b|cider|strawberr|raspberr|blackcurrant|blackberr|cherr|plum|punnet|packhouse|pack house|top fruit|soft fruit|orchard|vining pea|brassica|cauliflower|broccoli|cabbage|carrot|onion|leek|asparagus|fresh produce|veg pack|field veg/.test(d)) return 'Fruit Sales';
     /* Grain and combinable crops. The merchant names are the reliable signal — a
        settlement line often carries nothing else useful. */
     if(/openfield|frontier ag|gleadell|camgrain|adm agri|cefetra|saxon agri|glencore agri|dalmark|weighbridge|grain pass|silo|grain store|\bgrain\b|wheat|barley|\boat(s)?\b|oilseed|\bosr\b|rapeseed|field bean|combining pea|linseed|\bmaize\b|sugar beet|british sugar|potato|\bcrop\b/.test(d)) return 'Crop Sales';
-    /* Top fruit, soft fruit and field veg. */
-    if(/berry gardens|worldwide fruit|goatham|angus soft|orchard world|\bapple(s)?\b|\bpear(s)?\b|cider|strawberr|raspberr|blackcurrant|blackberr|cherr|plum|punnet|packhouse|pack house|top fruit|soft fruit|orchard|vining pea|brassica|cauliflower|broccoli|cabbage|carrot|onion|leek|asparagus|fresh produce|veg pack/.test(d)) return 'Fruit Sales';
     /* Milk buyers pay monthly and the line is usually just the processor. */
     if(/\barla\b|m[uü]ller|first milk|freshways|meadow foods|barbers|wyke|saputo|yew tree|belton|dairy crest|milk cheque|milk payment|\bmilk\b|dairy|cream|cheese|whey/.test(d)) return 'Milk & Dairy';
     if(/british wool|wool|shear|fleece|clip/.test(d)) return 'Wool & Fibre';
@@ -69836,7 +70387,8 @@ function inferCategory(desc, isIncome, _skipRules){
     if(/sedgemoor|thainstone|caledonian mart|harrison.*hetherington|carlisle mart|melton mowbray|bakewell|ashford market|skipton auction|ludlow|frome market|hereford market|exeter livestock|\bmart\b|livestock (market|centre)|\babp\b|dunbia|dawn meats|randall parker|woodhead|pilgrim.s|cranswick|\b2 sisters\b|abattoir|deadweight|store (cattle|lamb|sale)|breeding sale|cull (cow|ewe)|finished (cattle|lamb|pig)|livestock|cattle|sheep|\bewe(s)?\b|\blamb(s)?\b|\bcalf\b|calves|weaner|heifer|bullock|\bsteer(s)?\b|\bpig(s)?\b|poultry|\bbeef\b/.test(d)) return 'Livestock Sales';
     /* Support payments. Delinked and the schemes are separate lines on a return, so
        keep them apart from a plain subsidy. */
-    if(/\brpa\b|rural payments|basic payment|\bbps\b|delinked|\bsfi\b|sustainable farming incentive|countryside stewardship|\bcs\b higher|environmental land management|\belm(s)?\b|welsh government|scottish government|\brpid\b|\bdaera\b|defra|woodland grant|capital grant|\bgrant\b/.test(d)) return 'Delinked payment';
+    if(/woodland grant|capital grant|\bgrant\b/.test(d)) return 'Subsidies';
+    if(/\brpa\b|rural payments|basic payment|\bbps\b|delinked|welsh government|scottish government|\brpid\b|\bdaera\b|defra/.test(d)) return 'Delinked payment';
     if(/subsid/.test(d)) return 'Subsidies';
     /* Land let out, plus the standing payments that come with owning it. */
     if(/\bfbt\b|farm business tenanc|grazing licen[cs]e|grass keep|wayleave|easement|servitude|solar lease|wind (farm|turbine) (rent|lease)|mast (rent|lease)|telecoms (rent|lease)|cottage rent|holiday let|rental|\brent\b|lease/.test(d)) return 'Rental Income';
@@ -69846,13 +70398,19 @@ function inferCategory(desc, isIncome, _skipRules){
 
   /* Fuel. "Total" is a fuel brand AND an ordinary English word, so it is only taken
      with a fuel word beside it — "Total charges" is not a diesel delivery. */
+  /* -392 D11: contract work first - before feed ("Silage contractor" was Animal Feed),
+     labour and machinery (shearing, combine hire and drilling contractors were Machinery
+     & Repairs). The engine could never say Contractors & hire. */
+  if(/contractor|\bcontracting\b|contract (work|lift|spray|silage|hedge|combin|drill|bal|harvest)|combine hire|(machinery|plant|equipment|tractor|digger|telehandler|sprayer) hire|\bshearing\b|hedge ?cutting|hedge ?trimming|muck spreading|slurry spreading|\bbaling\b/.test(d)) return 'Contractors & hire';
   if(/certas|rix (petroleum|fuel)|watson fuels|standard fuel|crown oil|highland fuels|nwf fuels|moto\b|\besso\b|\btexaco\b|\bshell\b|\bbp\b|total (fuel|oil|energies)|red diesel|gas oil|kerosene|derv|adblue|\bdiesel\b|\bpetrol\b|\bfuel\b|lubricant/.test(d)) return 'Fuel & Oil';
-  if(/\byara\b|cf fertilis|origin fertilis|nitram|ammonium nitrate|\bmop\b|\btsp\b|muriate|potash|fertilis|\burea\b|\bnpk\b|\bdap\b|lime spread|\blime\b|compost|digestate|slurry (import|export)/.test(d)) return 'Fertiliser';
+  /* -392 D11: feeding a crop is fertiliser - "fertigation feed" and "post-harvest feed"
+     were Animal Feed. */
+  if(/\byara\b|cf fertilis|origin fertilis|nitram|ammonium nitrate|\bmop\b|\btsp\b|muriate|potash|fertilis|fertigation|foliar (feed|nutri)|leaf feed|post.?harvest feed|liquid feed|trace element|biostimulant|\burea\b|\bnpk\b|\bdap\b|lime spread|\blime\b|compost|digestate|slurry (import|export)/.test(d)) return 'Fertiliser';
   if(/limagrain|\bkws\b|elsoms|senova|\bdsv\b|seed (potato|corn|dressing)|certified seed|\bseed(s)?\b|seedling|rootstock|transplant/.test(d)) return 'Seeds & Planting';
   if(/bayer|syngenta|corteva|\bbasf\b|adama|hutchinsons|agrii|agrovista|\bprocam\b|herbicide|fungicide|insecticide|pesticide|molluscicide|slug pellet|glyphosate|round\s*up|crop protect|\bspray(s|ing)?\b|plant protection/.test(d)) return 'Crop Protection';
   if(/zoetis|\bmsd\b|boehringer|ceva|elanco|\bxlvets\b|vet(erinary)? (group|practice|services|centre)|\bvets?\b|vaccin|antibiot|wormer|drench|dose|footbath|\bdip\b|medicat|semen|\bai\b service|scanning|foot trim/.test(d)) return 'Veterinary & Animal Health';
   if(/forfarmers|mole valley|wynnstay|massey (feeds|bros)|harbro|davidsons|trident feeds|countrywide|\bkw\b feeds|animal feed|compound feed|\bblend\b|straights|\bcake\b|rolled barley|\bpellets?\b|concentrate|mineral(s)? (lick|bucket)|\blick\b|\bhay\b|\bstraw\b|silage|haylage|forage|\bfeed\b/.test(d)) return 'Animal Feed';
-  if(/gangmaster|\bglaa\b|labour (provider|agency)|agri.?labour|harvest (crew|team|labour)|seasonal worker|\bwage(s)?\b|salar|payroll|casual labour|\blabour\b|contract(or)? (work|lift|spray|silage|hedge)|relief milk/.test(d)) return 'Labour & Wages';
+  if(/gangmaster|\bglaa\b|labour (provider|agency)|agri.?labour|harvest (crew|team|labour)|seasonal worker|\bwage(s)?\b|salar|payroll|casual labour|\blabour\b|relief milk/.test(d)) return 'Labour & Wages';
   if(/john\s*deere|\bclaas\b|\bfendt\b|massey ferguson|new\s*holland|case\s*ih|\bjcb\b|kubota|manitou|merlo|\bkrone\b|\bkuhn\b|amazone|v[aä]derstad|horsch|\bkverneland\b|agco|tractor|combine|telehandler|\bspares?\b|\bpart(s)?\b|workshop|mechanic|\brepair(s)?\b|\bservice\b|tyre|\bmot\b/.test(d)) return 'Machinery & Repairs';
 
   /* Money to HMRC and the council. Above irrigation and admin on purpose: "munic"
@@ -69870,9 +70428,22 @@ function inferCategory(desc, isIncome, _skipRules){
   if(/nfu mutual|cornish mutual|lycetts|\bh&h\b|farmers.{0,3}mercantile|aviva|\baxa\b|allianz|\brsa\b|zurich|hiscox|insurance|premium/.test(d)) return 'Insurance';
   if(/\bfbt\b|\baha\b tenanc|farm rent|land rent|\brent\b|rental|lease|tenanc/.test(d)) return 'Land & Rental';
   if(/\bamc\b|agricultural mortgage|oxbury|lombard|close brothers|\bdll\b|john deere financial|asset finance|hire\s*purchase|\bhp\b agreement|\bloan\b|instal|overdraft|interest on|mortgage/.test(d)) return 'Loan Repayments';
-  if(/\bnfu\b (membership|subscription)|\bahdb\b|red tractor|\bbt\b |\bee\b |vodafone|\bo2\b|\bthree\b mobile|broadband|internet|mobile|telephone|\bphone\b|xero|\bsage\b|quickbooks|farmplan|gatekeeper|accountant|bookkeep|auditor|solicitor|legal fee|bank charge|bank fee|banking fee|account fee|subscription|licen[cs]e fee|\badmin\b|stationery|postage/.test(d)) return 'Admin & Professional Fees';
+  if(/\bnfu\b (membership|subscription)|\bahdb\b|red tractor|\bbt\b |\bee\b |vodafone|\bo2\b|\bthree\b mobile|broadband|internet|mobile|telephone|\bphone\b|xero|\bsage\b|quickbooks|farmplan|gatekeeper|accountan|bookkeep|auditor|solicitor|legal fee|bank charge|bank fee|banking fee|account fee|subscription|licen[cs]e fee|\badmin\b|stationery|postage/.test(d)) return 'Admin & Professional Fees';
   return 'Other Expenses';
 }
+
+/* -392 D11: the categories a line may honestly be filed under besides the engine's own
+   answer - the same return box either way. */
+function inferCategoryAlso(desc, isIncome){
+  var d=String(desc||'').toLowerCase();
+  if(isIncome){
+    if(/field veg|brassica|cauliflower|broccoli|cabbage|carrot|onion|leek|vining pea|potato|vegetable/.test(d)) return ['Crop Sales','Fruit Sales'];
+    return [];
+  }
+  if(/abstraction/.test(d)) return ['Irrigation & Water','Rates & licences'];
+  return [];
+}
+window.inferCategoryAlso=inferCategoryAlso;
 
 // Date parsing helpers for various bank formats
 function parseFlexDate(s){
@@ -70835,8 +71406,37 @@ function bankRenderPreview(){
   bankRecompute();
 }
 
+/* -392 D1 / B5-F01: the import review asks the same as every other door - an amount more
+   than 0, a description and a date - on each ticked row, said in the row itself. The
+   direction is the +/− button, never a typed minus. */
+function bankRowErr(r){
+  if(!r) return '';
+  if(!((+r.amt||0)>0)) return 'Enter an amount more than 0';
+  if(!String(r.desc||'').trim()) return 'Enter a description';
+  if(!txDateOk(r.date)) return 'Enter the date';
+  return '';
+}
+function bankMarkRows(){
+  var bad=0;
+  (BANK.parsed||[]).forEach(function(r, i){
+    var tr=document.getElementById('bank-row-'+i); var e=r.include?bankRowErr(r):'';
+    if(e) bad++;
+    if(!tr) return;
+    tr.classList.toggle('imp-bad', !!e);
+    var m=tr.querySelector('.imp-row-err');
+    if(e){ if(!m){ var td=tr.children[2]; if(td){ m=document.createElement('div'); m.className='fe-msg imp-row-err'; m.setAttribute('role','alert'); td.appendChild(m); } } if(m) m.textContent=e; }
+    else if(m) m.parentNode.removeChild(m);
+    var nm=tr.querySelector('.imp-num'), ds=tr.children[2]&&tr.children[2].querySelector('input'), dt=tr.querySelector('.imp-edit-dt');
+    if(nm) nm.classList.toggle('fe-bad', !!e && /amount/.test(e));
+    if(ds) ds.classList.toggle('fe-bad', !!e && /description/.test(e));
+    if(dt) dt.classList.toggle('fe-bad', !!e && /date/.test(e));
+  });
+  return bad;
+}
+window.bankRowErr=bankRowErr;
 function bankUpdateSummary(){
   var sel = BANK.parsed.filter(function(r){return r.include;});
+  var _bad = bankMarkRows();
   var inc = sel.filter(function(r){return r.type==='income'}).reduce(function(s,r){return s+r.amt;},0);
   var exp = sel.filter(function(r){return r.type==='expense'}).reduce(function(s,r){return s+r.amt;},0);
   document.getElementById('bank-imp-summary').innerHTML =
@@ -70845,9 +71445,10 @@ function bankUpdateSummary(){
     '<div>Selected: <b>'+sel.length+'</b></div>' +
     '<div>Income: <b style="color:var(--gm)">'+fmtMoney(inc)+'</b></div>' +
     '<div>Expenses: <b style="color:var(--rd)">'+fmtMoney(exp)+'</b></div>' +
-    '<div>Net: <b>'+fmtMoney(inc-exp)+'</b></div>';
+    '<div>Net: <b>'+fmtMoney(inc-exp)+'</b></div>' +
+    (_bad ? '<div id="bank-imp-bad" style="color:#B42318;font-weight:700">'+_bad+' ticked row'+(_bad===1?' needs':'s need')+' an amount, a description or a date — fix '+(_bad===1?'it':'them')+' or untick '+(_bad===1?'it':'them')+'</div>' : '');
   var nb = document.getElementById('bank-imp-next');
-  nb.disabled = !sel.length || (BANK.recon && !BANK.recon.ok && !BANK.allowAnyway);
+  nb.disabled = !sel.length || !!_bad || (BANK.recon && !BANK.recon.ok && !BANK.allowAnyway);
 }
 
 function bankToggleRow(i, on){
@@ -70862,14 +71463,15 @@ function bankToggleRow(i, on){
 function bankAmtGrouped(n){ var p=Math.abs(Number(n)||0).toFixed(2).split('.'); p[0]=p[0].replace(/\B(?=(\d{3})+(?!\d))/g,','); return p.join('.'); }
 function bankMoney2(n){ n=Number(n)||0; return (n<0?'-'+_curSym():_curSym())+bankAmtGrouped(n); }
 function bankEscAttr(s){ return escTxHtml(s).replace(/"/g,'&quot;'); }
-function bankSetDate(i,v){ if(BANK.parsed[i]) BANK.parsed[i].date=v; }
-function bankSetDesc(i,v){ if(BANK.parsed[i]) BANK.parsed[i].desc=v; }
+function bankSetDate(i,v){ if(BANK.parsed[i]){ BANK.parsed[i].date=v; bankUpdateSummary(); } }
+function bankSetDesc(i,v){ if(BANK.parsed[i]){ BANK.parsed[i].desc=v; bankUpdateSummary(); } }
 function bankSetBal(i,v){ var r=BANK.parsed[i]; if(!r) return; var x=String(v).replace(/[^\d.\-]/g,''); var f=parseFloat(x); if(isNaN(f)) f=null; r._bal=f; if(BANK.recon && i===BANK.parsed.length-1 && f!=null) BANK.recon.closing=f; bankRecompute(); }
 function bankAmtFocus(i,el){ var r=BANK.parsed[i]; if(!r) return; el.value = r.amt ? Number(r.amt).toFixed(2) : ''; el.select(); }
 function bankAmtBlur(i,el){ var r=BANK.parsed[i]; if(!r) return; el.value = bankAmtGrouped(r.amt); }
 function bankSetAmt(i,v){ var r=BANK.parsed[i]; if(!r) return;
-  var neg=/-/.test(v); var mag=parseFloat(String(v).replace(/[^\d.]/g,'')); if(isNaN(mag)) mag=0;
-  r.amt=mag; if(neg) r.type='expense';
+  /* -392 D1: a typed minus no longer turns the row round - the +/− button does that. */
+  var mag=parseFloat(String(v).replace(/[^\d.]/g,'')); if(isNaN(mag)) mag=0;
+  r.amt=Math.round(mag*100)/100;
   bankPaintAmt(i); bankRecompute(); }
 function bankFlipDir(i){ var r=BANK.parsed[i]; if(!r) return; r.type=(r.type==='income'?'expense':'income'); bankPaintAmt(i); bankRecompute(); }
 function bankPaintAmt(i){ var tr=document.getElementById('bank-row-'+i); if(!tr) return;
@@ -71304,6 +71906,7 @@ function hubPick(which){
 function bankCommitImport(){
   var sel = BANK.parsed.filter(function(r){return r.include;});
   if(!sel.length){ toast('Nothing selected','error'); return; }
+  if(sel.some(function(r){ return !!bankRowErr(r); })){ bankUpdateSummary(); toast('Some ticked rows need an amount, a description or a date','error'); return; }
   if(typeof ST === 'undefined' || !ST.txns){ toast('App state not ready','error'); return; }
   var added=[], dupes=0;
   sel.forEach(function(r){
@@ -73769,10 +74372,10 @@ function orOpenSprayForm(editId){
   ukProdAttach('or-sp-prod', function(name, act, reg){
     var a=$('or-sp-act'); if(a && !a.value) a.value=act;
     var r=$('or-sp-reg'); if(r && !r.value) r.value=reg;
-    if(!editId) nxCarry(name, {bid:(($('or-sp-block')||{}).value)||null});
+    if(!editId) nxCarry(name, {bid:(($('or-sp-block')||{}).value)||null}, 'or-nx-');
   });
-  var _ob=$('or-sp-block'); if(_ob && !editId) _ob.addEventListener('change', function(){ var bb=orBlockById(_ob.value), si=$('nx-sit'); if(bb && si) si.value=/tunnel|poly/i.test(bb.cover||'')?'tunnel':'outdoor'; });
-  var _op=$('or-sp-prod'); if(_op && !editId) _op.addEventListener('change', function(){ nxCarry(_op.value, {bid:(($('or-sp-block')||{}).value)||null}); });
+  var _ob=$('or-sp-block'); if(_ob && !editId) _ob.addEventListener('change', function(){ var bb=orBlockById(_ob.value), si=$('or-nx-sit'); if(bb && si) si.value=/tunnel|poly/i.test(bb.cover||'')?'tunnel':'outdoor'; });
+  var _op=$('or-sp-prod'); if(_op && !editId) _op.addEventListener('change', function(){ nxCarry(_op.value, {bid:(($('or-sp-block')||{}).value)||null}, 'or-nx-'); });
   var di=$('or-sp-date'); if(di&&!di.value) di.value=new Date().toISOString().split('T')[0];
   if(editId) orSprayEditFill(editId);
 }
@@ -73785,7 +74388,7 @@ function orSaveSpray(){
   var act=g('or-sp-act'), reg=g('or-sp-reg'), rate=g('or-sp-rate'), batch=g('or-sp-batch'),
       cert=g('or-sp-cert'), water=g('or-sp-water'), wind=g('or-sp-wind'),
       atime=g('or-sp-time'), by=g('or-sp-by')||(window.FARM&&FARM.owner)||'';
-  var nx=nxRead(); if(nx.err){ toast(nx.err,'error'); return; }
+  var nx=nxRead('or-nx-'); if(nx.err){ toast(nx.err,'error'); return; }
   var dt=new Date($('or-sp-date').value||new Date()); var cat=b.cat;
   ST_FRUIT.sprayDiary[cat]=ST_FRUIT.sprayDiary[cat]||[];
   ST_FRUIT.sprayDiary[cat].unshift({id:'os'+Date.now().toString(36),ic:'\uD83E\uDDEA',t:prod+(forx?' — for '+forx:''),s:b.name+' · '+orFmtDM(dt)+' · '+(forx||'spray'),phi:orPhiObj(days),bid:b.id,product:prod,forx:forx,dateISO:dt.toISOString().slice(0,10),att:orAttachTake('sp'),
@@ -73975,6 +74578,16 @@ function orSetStyle(s){
   orAutoApply();
 }
 function orValNum(id){ var e=$(id); if(!e) return 0; var v=parseFloat(String(e.value).replace(/[^0-9.\-]/g,'')); return isNaN(v)?0:v; }
+/* -392 B5-F14: spacing is two numbers, row × tree. "3.2m x 1m" was read as 3.21. */
+function orSpacingParse(s){
+  var t=String(s||'').trim(); if(!t) return null;
+  var n=t.replace(/,/g,'.').match(/\d+(\.\d+)?/g);
+  if(!n || n.length!==2) return {err:'Enter the spacing as row × tree in metres, like 3.2 × 1'};
+  var r=parseFloat(n[0]), tr=parseFloat(n[1]);
+  if(!(r>0) || !(tr>0)) return {err:'Enter the spacing as row × tree in metres, like 3.2 × 1'};
+  return {row:r, tree:tr, text:r+' m × '+tr+' m'};
+}
+window.orSpacingParse=orSpacingParse;
 /* Home market ticked, EU not. This is a UK product: the old default had a Kent apple
    grower exporting to the EU and not selling at home, which also switched on the stricter
    export safe-to-pick rules and certificates for every new block. */
@@ -73986,6 +74599,8 @@ function orAddToggleMkt(m){ OR_ADD.markets[m]=!OR_ADD.markets[m]; var c=document
 function orAddResetInputs(){ OR_ADD={sprays:true, markets:{eu:false,uk:true,us:false,local:true}}; var seg=$('or-f-spray'); if(seg) seg.querySelectorAll('button').forEach(function(bn,i){ bn.classList.toggle('on',i===0); }); document.querySelectorAll('#or-f-markets .or-mktchip').forEach(function(c){ c.classList.toggle('on',!!OR_ADD.markets[c.getAttribute('data-m')]); }); orAddSprayNote(); }
 function orSaveBlock(){
   var style=(document.querySelector('#or-style-tog .or-stylebtn.on')||{}).getAttribute?document.querySelector('#or-style-tog .or-stylebtn.on').getAttribute('data-s'):'tree';
+  var _sp=(style==='veg')?null:orSpacingParse(($('or-f-space')||{}).value);
+  if(_sp && _sp.err){ fieldErr('or-f-space', _sp.err); try{ $('or-f-space').focus(); }catch(e){} return; }
   var name=($('or-f-name')||{}).value||'New block';
   var crop=($('or-f-type')||{}).value||'';
   var ha=orValNum('or-f-ha')||1;
@@ -74011,7 +74626,7 @@ function orSaveBlock(){
     var ck=orParseCartonKg(prof.sold); var cval=$('or-f-carton')?$('or-f-carton').value:''; if(cval==='custom') cval=orValNum('or-f-carton-custom'); var cartonKg=parseFloat(cval)||ck||15;
     var bearing=age>=3;
     b={id:id,cat:cat,icon:icon,name:name,cultivar:crop.replace(/\s*—\s*/,' · '),root:($('or-f-root')||{}).value||'',plant:yr,age:age,ha:ha,
-       trees:orValNum('or-f-trees')||0,space:orValNum('or-f-space')||undefined,status:bearing?'Bearing':(age>=1?'Not bearing':'Just planted'),statusTag:bearing?'green':'gray',
+       trees:orValNum('or-f-trees')||0,space:(_sp?_sp.text:undefined),spaceRow:(_sp?_sp.row:undefined),spaceTree:(_sp?_sp.tree:undefined),status:bearing?'Bearing':(age>=1?'Not bearing':'Just planted'),statusTag:bearing?'green':'gray',
        tons:bearing?orValNum('or-f-yield'):0,exp:bearing?70:0,cartonKg:(cat==='berry'?0:cartonKg),unit:(cat==='berry'?'kg':undefined),
        margin:0,estab:($('or-f-estab')||{}).value||'\u2014',estabYr:yr,writeoff:0,perUnit:0,unitWord:(style==='berry'?'bush':'tree'),
        curve:(cat==='berry'?'berry':(/bramley|biennial/i.test(crop)?'biennial':'topfruit')),plan:!bearing,docs:[]};
@@ -78020,14 +78635,40 @@ function rnTownSearch(q){
       });
     });
 }
-function rnNation(){
-  var n = (ST_RAIN.loc && ST_RAIN.loc.nation) || '';
-  if (!n){ try { n = (ST && (ST.region || '')) || ''; } catch(e){} }
+/* -392 B5-F19: ONE nation for the farm. Tax took it from Settings and the rainfall and
+   spreading rules from the postcode, so Scotland in Settings with an HR6 postcode showed
+   England's Farming Rules for Water. Settings is the one answer; when the postcode says
+   otherwise, the Rainfall page asks once which is right (ukNationClash). */
+function ukNationNorm(n){
+  n = String(n || '');
   if (/scot/i.test(n)) return 'Scotland';
   if (/wales|cymru/i.test(n)) return 'Wales';
   if (/northern ireland/i.test(n)) return 'Northern Ireland';
-  return n ? 'England' : '';
+  if (/england/i.test(n)) return 'England';
+  return '';
 }
+function ukSettingsNation(){ try { return ukNationNorm(ST.region) || ukNationNorm(ST.province); } catch(e){ return ''; } }
+function ukPostcodeNation(){ var l = (typeof ST_RAIN !== 'undefined' && ST_RAIN.loc) || null; if (!l || !l.nation) return ''; return ukNationNorm(l.nation) || 'England'; }
+function ukNation(){ return ukSettingsNation() || ukPostcodeNation(); }
+function ukNationClash(){
+  var st = ukSettingsNation(), pc = ukPostcodeNation();
+  if (!st || !pc || st === pc) return null;
+  var l = ST_RAIN.loc || {}, key = (l.postcode || l.town || '') + '|' + st;
+  if (ST.nationAsked === key) return null;
+  return { settings:st, postcode:pc, where:(l.postcode || l.town || 'your postcode') };
+}
+function ukNationPick(n){
+  n = ukNationNorm(n); if (!n) return;
+  var l = ST_RAIN.loc || {};
+  ST.region = n; ST.province = n; ST.nationAsked = (l.postcode || l.town || '') + '|' + n;
+  try { var sc = document.getElementById('set-country'); if (sc) sc.value = n; } catch(e){}
+  try { saveState(); } catch(e){}
+  try { if (!window.__AI_GUEST && window.AI && AI.farm && AI.farm.active() && AI.profile && AI.profile.save) AI.profile.save(ST).catch(function(){}); } catch(e){}
+  try { if (typeof toast === 'function') toast('The farm is in ' + n + ' everywhere in the app.', 'success'); } catch(e){}
+  try { renderRainfall(); } catch(e){}
+}
+window.ukNation = ukNation; window.ukNationClash = ukNationClash; window.ukNationPick = ukNationPick;
+function rnNation(){ return ukNation(); }
 
 /* ── the nearest official gauge (England) ────────────────────────────────────
    Environment Agency Hydrology API, Open Government Licence ("Uses
@@ -78430,6 +79071,12 @@ function rnRenderHeader(){
 function rnRenderStrips(){
   var host = rnEl('rn-strips'); if (!host) return;
   var h = '', mine = rnYourReadings();
+  var _nc = (typeof ukNationClash === 'function') ? ukNationClash() : null;
+  if (_nc){
+    h += '<div class="rn-strip warn" id="rn-nation-ask"><span class="gr"><b>Which nation is the farm in?</b> ' + esc(_nc.where) + ' is in ' + _nc.postcode + ', but Settings says ' + _nc.settings + '. The spreading rules and record periods differ.</span>' +
+         '<button class="lnk" onclick="ukNationPick(\'' + _nc.postcode + '\')">' + _nc.postcode + '</button>' +
+         '<button class="lnk" onclick="ukNationPick(\'' + _nc.settings + '\')">' + _nc.settings + '</button></div>';
+  }
   if (!rnHas()){
     h += '<div class="rn-strip info"><span class="ic">&#128167;</span><span class="gr"><b>Tell us where the farm is and this page fills itself in.</b> ' +
          'A postcode, or just its first half.</span><button class="lnk" onclick="nav(\'settings\')">Set it in Settings</button></div>';
@@ -79262,10 +79909,15 @@ function rnGaugeAdd(){
 }
 function rnGaugeSet(i, k, v){ if (!ST_RAIN.gauges[i]) return; ST_RAIN.gauges[i][k] = String(v).slice(0, 60); rnPersist(); }
 function rnGaugeDefault(i){ (ST_RAIN.gauges || []).forEach(function(g, j){ g.isDefault = (j === i); }); rnPersist(); rnSettingsRender(); }
-function rnGaugeRemove(i){
+function rnGaugeRemove(i, _ok){
   var g = (ST_RAIN.gauges || [])[i]; if (!g) return;
   var n = rnLog().filter(function(r){ return r.gaugeId === g.id; }).length;
-  if (n && !confirm('Remove ' + g.name + '? Its ' + rnNum(n) + ' ' + rnPl(n,'reading','readings') + ' will be removed with it.')) return;
+  /* -392 B5-F22: the app's own dialog, not the browser's confirm. */
+  if (n && !_ok) {
+    appConfirm('Remove ' + g.name + '? Its ' + rnNum(n) + ' ' + rnPl(n,'reading','readings') + ' will be removed with it.', {okLabel:'Remove gauge'})
+      .then(function(ok){ if (ok) rnGaugeRemove(i, true); });
+    return;
+  }
   /* On the server too (the SA build left a removed gauge's rows behind, so they came back on the
      next device), and durably: the gauge and its readings stay on the removal lists until a save
      confirms them gone, so a removal made offline is sent later rather than forgotten. */
