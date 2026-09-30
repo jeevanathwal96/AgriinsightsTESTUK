@@ -416,6 +416,14 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
      Sunday, bank holiday and overtime hours, and the contract builder's switches, as JSON.
      Probed like every late column, so a project without it still saves the rest. */
   let CAN_WKS_EXTRA    = false;
+  /* -394 (pilot follow-up, tools/uk-pilot-followup-columns.sql - run and verified by the owner
+     30 Sep 2026): the columns batches 4 and 5 were waiting on. Each is probed like every late
+     column, so a project without one still saves everything else exactly as before. */
+  let CAN_WKR_END       = false;   /* workers.end_date - the leaving date (last month paid by working days) */
+  let CAN_PE_PARTDAYS   = false;   /* payroll_entries.part_days - a typed part-month day count (null = worked out / full month) */
+  let CAN_BLOCK_SPACING = false;   /* orchard_blocks.spacing - row x tree, as text */
+  let CAN_FARM_ALERTS   = false;   /* farms.price_alerts - Market price alerts on every device */
+  let CAN_PLANEVT_FC    = false;   /* plan_events.in_forecast - a herd plan line not confirmed yet (null = in the forecast) */
   /* ---- what this database actually has, asked once ------------------------
      Ported from SA -438, same reasoning. Every late-added column is gated on a
      CAN_* flag, and each flag cost its own round trip in series on every
@@ -481,7 +489,8 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     ['orchard_harvest','removed_at'], ['livestock_treatments','removed_at'],
     ['crop_inputs','bbch'], ['orchard_sprays','bbch'], ['crop_lands','field_ref'], ['orchard_blocks','field_ref'],
     ['crop_inputs','situation'], ['orchard_sprays','situation'],
-    ['workers','tax_code'], ['pay_runs','lines'], ['workers','p45_pay'], ['worker_settings','contract_extra']
+    ['workers','tax_code'], ['pay_runs','lines'], ['workers','p45_pay'], ['worker_settings','contract_extra'],
+    ['workers','end_date'], ['payroll_entries','part_days'], ['orchard_blocks','spacing'], ['farms','price_alerts'], ['plan_events','in_forecast']
   ];
 
   async function probeCaps(farmId){
@@ -547,9 +556,90 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     CAN_PR_LINES      = keep(CAN_PR_LINES,      'pay_runs','lines');
     CAN_WKR_P45       = keep(CAN_WKR_P45,       'workers','p45_pay');
     CAN_WKS_EXTRA     = keep(CAN_WKS_EXTRA,     'worker_settings','contract_extra');
+    CAN_WKR_END       = keep(CAN_WKR_END,       'workers','end_date');
+    CAN_PE_PARTDAYS   = keep(CAN_PE_PARTDAYS,   'payroll_entries','part_days');
+    CAN_BLOCK_SPACING = keep(CAN_BLOCK_SPACING, 'orchard_blocks','spacing');
+    CAN_FARM_ALERTS   = keep(CAN_FARM_ALERTS,   'farms','price_alerts');
+    CAN_PLANEVT_FC    = keep(CAN_PLANEVT_FC,    'plan_events','in_forecast');
   }
   probeCaps.reset = function(){ _colCache = Object.create(null); _colRpcDead = false; };
   probeCaps.seen  = function(){ return _colCache; };
+
+  /* ---- -394: values this device kept before their column existed ----------------------
+     Orchard spacing and Market price alerts lived only in this browser. The first load after
+     the column is known to exist carries this device's value onto the server's copy where the
+     server has none, once per farm on this device (a marker in localStorage), and the areas it
+     touched are named in load.healed() so the sign-in load saves them straight after it has
+     applied the server's data - the same path the doubling clean-up uses. */
+  var _MIGRATED = Object.create(null);
+  function _migKey(what, fid){ return 'ai_uk_mig394_' + what + '_' + fid; }
+  function _migDone(what, fid){ try{ return !!(fid && localStorage.getItem(_migKey(what, fid))); }catch(e){ return false; } }
+  function _migMark(what, fid, n){ try{ if(fid) localStorage.setItem(_migKey(what, fid), JSON.stringify({ n:n||0, at:new Date().toISOString() })); }catch(e){} }
+  /* Spacing is row x tree in metres ("3.2 m × 1 m"). A block saved before -392 may hold the old
+     single number (3.2m x 1m read as 3.21); it is carried as it was typed, never re-guessed. */
+  function _spParse(s){
+    var n = String(s == null ? '' : s).replace(/,/g, '.').match(/\d+(\.\d+)?/g);
+    if(!n || n.length !== 2) return null;
+    var r = parseFloat(n[0]), t = parseFloat(n[1]);
+    return (r > 0 && t > 0) ? { row:r, tree:t } : null;
+  }
+  function _obSpacingText(b){
+    if(!b) return null;
+    var r = Number(b.spaceRow), t = Number(b.spaceTree);
+    if(r > 0 && t > 0) return r + ' m × ' + t + ' m';
+    if(b.space != null && String(b.space).trim() !== '') return String(b.space).trim();
+    return null;
+  }
+  function _migSpacing(server, local, fid){
+    if(!CAN_BLOCK_SPACING || !fid || _migDone('spacing', fid)) return 0;
+    var byId = {}; (local || []).forEach(function(b){ if(b && b.id != null) byId[String(b.id)] = b; });
+    var n = 0;
+    (server || []).forEach(function(b){
+      if(!b || (b.space != null && b.space !== '')) return;
+      var t = _obSpacingText(byId[String(b.id)]); if(!t) return;
+      b.space = t; var sp = _spParse(t); if(sp){ b.spaceRow = sp.row; b.spaceTree = sp.tree; }
+      n++;
+    });
+    _migMark('spacing', fid, n); if(n) _MIGRATED['orchard_blocks.spacing'] = n;
+    return n;
+  }
+  /* A price alert: what, above or below, the price, a note, and the day it was set. */
+  function _alertsClean(v){
+    if(typeof v === 'string'){ try{ v = JSON.parse(v); }catch(e){ v = null; } }
+    if(!Array.isArray(v)) return [];
+    return v.filter(function(a){ return a && typeof a === 'object' && a.commodity; }).map(function(a){
+      return { commodity:String(a.commodity), direction:(a.direction === 'below') ? 'below' : 'above', price:Number(a.price) || 0,
+               notes:a.notes ? String(a.notes) : '', triggered:!!a.triggered, set:a.set ? String(a.set) : '' }; });
+  }
+  function _alertKey(a){ return a.commodity + '|' + a.direction + '|' + a.price; }
+  /* The server's list plus any alert only this device had; null when there is nothing to add. */
+  function _migAlerts(server, local, fid){
+    if(!CAN_FARM_ALERTS || !fid || _migDone('alerts', fid)) return null;
+    var have = {}; (server || []).forEach(function(a){ have[_alertKey(a)] = 1; });
+    var add = _alertsClean(local).filter(function(a){ return !have[_alertKey(a)]; });
+    _migMark('alerts', fid, add.length);
+    if(!add.length) return null;
+    _MIGRATED['farms.price_alerts'] = add.length;
+    return (server || []).concat(add);
+  }
+  /* Red Tractor had been kept under the South African 'siza' key. It has its own key now
+     ('redtractor'); both are read - the new one first - so the app works before and after
+     tools/uk-redtractor-key.sql moves the rows, and every write uses the new key. */
+  function _complyRtKey(comply, titles){
+    if(!comply || !comply.siza) return comply;
+    var t = String((titles && titles.siza) || '');
+    if(t && !/red\s*tractor/i.test(t)) return comply;
+    var old = comply.siza;
+    if(!comply.redtractor) comply.redtractor = old;
+    else ['docs', 'checks', 'readings'].forEach(function(f){
+      if(!Array.isArray(old[f]) || !old[f].length) return;
+      var cur = comply.redtractor[f] = Array.isArray(comply.redtractor[f]) ? comply.redtractor[f] : [];
+      var seen = {}; cur.forEach(function(x){ seen[JSON.stringify(x)] = 1; });
+      old[f].forEach(function(x){ if(!seen[JSON.stringify(x)]) cur.push(x); });
+    });
+    delete comply.siza;
+    return comply;
+  }
 
   /* ================== ROW MEMORY - two-device safety ===========================
      Ported from the SA build (Mobile Phase 0, -373), live with it since 11 Sep.
@@ -2360,10 +2450,12 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
   function _n(v){ return (v!=null&&v!=='')?Number(v):null; }
   function obToDb(b,fid){ var row = { farm_id:fid, local_id:String(b.id), cat:b.cat||null, icon:b.icon||null, name:b.name||null, cultivar:b.cultivar||null, root:b.root||null, plant:(b.plant!=null)?String(b.plant):null, age:(b.age!=null&&b.age!=='')?parseInt(b.age,10):null, ha:_n(b.ha), trees:(b.trees!=null&&b.trees!=='')?parseInt(b.trees,10):null, status:b.status||null, status_tag:b.statusTag||null, tons:_n(b.tons), exp:_n(b.exp), carton_kg:_n(b.cartonKg), margin:_n(b.margin), estab:b.estab||null, estab_yr:(b.estabYr!=null&&b.estabYr!=='')?parseInt(b.estabYr,10):null, writeoff:_n(b.writeoff), per_unit:_n(b.perUnit), unit_word:b.unitWord||null, curve:b.curve||null, cover:b.cover||null, plan:(b.plan!=null)?!!b.plan:null, grade:_n(b.grade), unit:b.unit||null, days:(b.days!=null&&b.days!=='')?parseInt(b.days,10):null, pick_from:b.pickFrom||null, cycle:b.cycle||null, removed:(b.removed!=null)?!!b.removed:null };
     if(CAN_BLOCK_NI){ row.field_ref=b.fieldRef||null; row.eppo=b.eppo||null; }
+    if(CAN_BLOCK_SPACING) row.spacing=_obSpacingText(b);   /* -394 B5-F14 */
     return row; }
   function obFromDb(r){ var b={ id:r.local_id, cat:r.cat||'', icon:r.icon||'', name:r.name||'', cultivar:r.cultivar||'', status:r.status||'', statusTag:r.status_tag||'' };
     if(r.root!=null) b.root=r.root; if(r.plant!=null) b.plant=_numIf(r.plant); if(r.age!=null) b.age=Number(r.age); if(r.ha!=null) b.ha=Number(r.ha); if(r.trees!=null) b.trees=Number(r.trees); if(r.tons!=null) b.tons=Number(r.tons); if(r.exp!=null) b.exp=Number(r.exp); if(r.carton_kg!=null) b.cartonKg=Number(r.carton_kg); if(r.margin!=null) b.margin=Number(r.margin); if(r.estab!=null) b.estab=r.estab; if(r.estab_yr!=null) b.estabYr=Number(r.estab_yr); if(r.writeoff!=null) b.writeoff=Number(r.writeoff); if(r.per_unit!=null) b.perUnit=Number(r.per_unit); if(r.unit_word!=null) b.unitWord=r.unit_word; if(r.curve!=null) b.curve=r.curve; if(r.cover!=null) b.cover=r.cover; if(r.plan!=null) b.plan=!!r.plan; if(r.grade!=null) b.grade=Number(r.grade); if(r.unit!=null) b.unit=r.unit; if(r.days!=null) b.days=Number(r.days); if(r.pick_from!=null) b.pickFrom=r.pick_from; if(r.cycle!=null) b.cycle=r.cycle; if(r.removed!=null) b.removed=!!r.removed;
     if(r.field_ref) b.fieldRef=r.field_ref; if(r.eppo) b.eppo=r.eppo;
+    if(r.spacing!=null && r.spacing!==''){ b.space=String(r.spacing); var _sp=_spParse(r.spacing); if(_sp){ b.spaceRow=_sp.row; b.spaceTree=_sp.tree; } }   /* -394 */
     return b; }
   // compliance item: persist full item (queryable) ; load overlays user fields onto app defaults
   function ociToDb(key,c,fid){ c=c||{}; return { farm_id:fid, item_key:String(key), kind:c.type||null, icon:c.ic||null, title:c.title||null, what:c.what||null, status:c.status||null, status_tag:c.statusTag||null, expiry:c.expiry||null, cropcat:c.cropcat||null, log:(c.log!=null)?String(c.log):null }; }
@@ -2410,6 +2502,7 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     _srvNote('orchard_compliance_checks', cc.data);    _srvNote('orchard_compliance_readings', cr.data);
     var docsByBlock={}; (dc.data||[]).forEach(function(d){ (docsByBlock[d.block_local_id]=docsByBlock[d.block_local_id]||[]).push({name:d.name,kind:d.kind,added:d.added,id:d.local_id||undefined,path:d.path||undefined}); });
     var blocks=(bl.data||[]).map(function(r){ var b=obFromDb(r); b.docs=docsByBlock[b.id]||[]; return b; });
+    try{ _migSpacing(blocks, global.ST_FRUIT && global.ST_FRUIT.blocks, farmId); }catch(e){}   /* -394: once */
     var othByBlock={}; (po.data||[]).forEach(function(o){ (othByBlock[o.block_local_id]=othByBlock[o.block_local_id]||[]).push({label:o.label||'',amt:Number(o.amt)||0}); });
     var pricing={}; (pr.data||[]).forEach(function(r){ pricing[r.block_local_id]=opFromDb(r,othByBlock[r.block_local_id]||[]); });
     /* A removed spray is held apart from the diary, so every reader of sprayDiary is right
@@ -2425,6 +2518,8 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     (ci.data||[]).forEach(function(r){ var o={status:r.status||'',statusTag:r.status_tag||'',expiry:r.expiry||''}; if(r.log!=null) o.log=r.log;
       if(cDocs[r.item_key]) o.docs=cDocs[r.item_key]; if(cChecks[r.item_key]) o.checks=cChecks[r.item_key]; if(cReads[r.item_key]) o.readings=cReads[r.item_key];
       comply[r.item_key]=o; });
+    var _ciTitle={}; (ci.data||[]).forEach(function(r){ _ciTitle[r.item_key]=r.title||''; });
+    _complyRtKey(comply, _ciTitle);   /* -394: Red Tractor under its own key */
     return { blocks:blocks, pricing:pricing, sprayDiary:sprayDiary, removedSprays:removedSprays, harvest:harvest, removedHarvest:removedHarvest, comply:comply, market:(cfg.data&&cfg.data.orchard_market)||null };
   };
 
@@ -2515,11 +2610,20 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
   // pattern as livestock_moves/treatments. UI state (view/tab/months) is transient.
   function planCropToDb(c,fid,i){ return { farm_id:fid, crop:c.crop||null, field:c.field||null, ha:(c.ha!=null&&c.ha!=='')?Number(c.ha):null, plant:c.plant||null, harvest:c.harvest||null, yield_val:(c.yield!=null&&c.yield!=='')?Number(c.yield):null, price:(c.price!=null&&c.price!=='')?Number(c.price):null, input_cost:(c.inputCost!=null&&c.inputCost!=='')?Number(c.inputCost):null, other_cost:(c.otherCost!=null&&c.otherCost!=='')?Number(c.otherCost):null, repeat:c.repeat||null, link_id:c.linkId||null, in_forecast:(c.inForecast===false)?false:true, sort_idx:i }; }
   function planCropFromDb(r){ var c={ crop:r.crop||'', field:r.field||'', ha:Number(r.ha)||0, plant:r.plant||'', harvest:r.harvest||'', yield:Number(r.yield_val)||0, price:Number(r.price)||0, inputCost:Number(r.input_cost)||0, otherCost:Number(r.other_cost)||0, repeat:r.repeat||'none' }; if(r.link_id) c.linkId=r.link_id; if(r.in_forecast===false) c.inForecast=false; return c; }
-  function planEvtToDb(e,fid,i){ return { farm_id:fid, herd_local_id:(e.herdId!=null)?String(e.herdId):null, species:e.species||null, animal:e.animal||null, icon:e.icon||null, descr:e.desc||null, type:e.type||null, month:e.month||null, qty:(e.qty!=null&&e.qty!=='')?Number(e.qty):null, unit:e.unit||null, price:(e.price!=null&&e.price!=='')?Number(e.price):null, recur:e.recur||null, notes:e.notes||null, use_market:!!e.useMarket, done:!!e.done, sort_idx:i }; }
-  function planEvtFromDb(r){ return { herdId:_numIf(r.herd_local_id), species:r.species||'', animal:r.animal||'', icon:r.icon||'', desc:r.descr||'', type:r.type||'sell', month:r.month||'', qty:Number(r.qty)||0, unit:r.unit||'head', price:Number(r.price)||0, recur:r.recur||'annual', notes:r.notes||'', useMarket:!!r.use_market, done:!!r.done }; }
+  function planEvtToDb(e,fid,i){ var row={ farm_id:fid, herd_local_id:(e.herdId!=null)?String(e.herdId):null, species:e.species||null, animal:e.animal||null, icon:e.icon||null, descr:e.desc||null, type:e.type||null, month:e.month||null, qty:(e.qty!=null&&e.qty!=='')?Number(e.qty):null, unit:e.unit||null, price:(e.price!=null&&e.price!=='')?Number(e.price):null, recur:e.recur||null, notes:e.notes||null, use_market:!!e.useMarket, done:!!e.done, sort_idx:i };
+    /* -394 (B4 D5): a herd plan line stays out of the forecast until the farmer confirms it.
+       Always sent as true or false; a row written before -394 holds null, which reads as
+       "in the forecast" - what every such row has always meant. */
+    if(CAN_PLANEVT_FC) row.in_forecast=(e.inForecast===false)?false:true;
+    return row; }
+  function planEvtFromDb(r){ var e={ herdId:_numIf(r.herd_local_id), species:r.species||'', animal:r.animal||'', icon:r.icon||'', desc:r.descr||'', type:r.type||'sell', month:r.month||'', qty:Number(r.qty)||0, unit:r.unit||'head', price:Number(r.price)||0, recur:r.recur||'annual', notes:r.notes||'', useMarket:!!r.use_market, done:!!r.done };
+    if(r.in_forecast===false) e.inForecast=false;   /* -394 */
+    return e; }
   /* Tables whose load dropped repeated copies: the caller saves once after the first
      load so the server loses them too, instead of waiting for the farmer's next edit. */
-  load.healed = function(){ var o={}; Object.keys(_HEALED).forEach(function(k){ o[k]=_HEALED[k]; }); return o; };
+  load.healed = function(){ var o={}; Object.keys(_HEALED).forEach(function(k){ o[k]=_HEALED[k]; });
+    Object.keys(_MIGRATED).forEach(function(k){ o[k]=_MIGRATED[k]; });   /* -394: a local value carried to the server once */
+    return o; };
   load.plan = async function(farmId){
     farmId = farmId || farm.active();
     const [pc,pe] = await Promise.all([
@@ -2607,6 +2711,8 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
       r.apprentice=!!w.apprentice; r.visa_worker=!!w.visaWorker; r.pension_out=!!w.pensionOut;
     }
     if(CAN_WKR_P45){ var p=w.p45||null; r.p45_year=p?(parseInt(p.sy,10)||null):null; r.p45_pay=p?(Number(p.pay)||0):null; r.p45_tax=p?(Number(p.tax)||0):null; }
+    /* -394: the leaving date. A cleared date is sent as null so the server forgets it too. */
+    if(CAN_WKR_END){ var _e=String(w.end||''); r.end_date=/^\d{4}-\d\d-\d\d/.test(_e)?_e.slice(0,10):null; }
     return r; }
   function wkrFromDb(r){ var w={ id:r.local_id, name:r.name||'', role:r.role||'', type:r.worker_type||'',
     start:r.start_date||'', onFarm:!!r.on_farm, niNo:r.ni_no||'', basis:r.basis||'month',
@@ -2619,6 +2725,7 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
       w.apprentice=!!r.apprentice; w.visaWorker=!!r.visa_worker; w.pensionOut=!!r.pension_out;
     }
     if(r.p45_year!=null) w.p45={ sy:Number(r.p45_year), pay:Number(r.p45_pay)||0, tax:Number(r.p45_tax)||0 };
+    if(r.end_date) w.end=String(r.end_date).slice(0,10);   /* -394 */
     if(r.leave_annual!=null||r.leave_sick!=null||r.leave_family!=null){ w.leave={annual:Number(r.leave_annual)||0,sick:Number(r.leave_sick)||0,family:(r.leave_family!=null)?Number(r.leave_family):3}; }
     if(r.housing_deduction!=null) w.housing={deduction:Number(r.housing_deduction)};
     if(r.adv_owing!=null||r.adv_per_pay!=null||r.adv_reason||r.adv_consent!=null){ w.adv={owing:Number(r.adv_owing)||0,perPay:Number(r.adv_per_pay)||0,reason:r.adv_reason||'',consent:!!r.adv_consent}; } else { w.adv=null; }
@@ -2651,17 +2758,20 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
   function wkLeaveRows(stw, fid){ var rows=[]; (stw.workers||[]).forEach(function(w){ (w.leaveLog||[]).forEach(function(e,i){ rows.push({ farm_id:fid, worker_local_id:String(w.id), leave_type:e.type||null, days:(e.days!=null)?Number(e.days):null, log_date:e.date||null, sort_idx:i }); }); }); return rows; }
   function wkDocRows(stw, fid){ var rows=[]; (stw.workers||[]).forEach(function(w){ (w.docs||[]).forEach(function(d,i){ rows.push({ farm_id:fid, worker_local_id:String(w.id), doc_id:d.id||null, name:d.name||null, doc_type:d.type||null, mime:d.mime||null, size:(d.size!=null)?parseInt(d.size,10):null, added_date:d.date||null, url:d.url||null, sort_idx:i }); }); }); return rows; }   // metadata only; blob deferred to Storage
   function wkPayrollRows(stw, fid){ var by={};
-    function ensure(L,wid){ var k=L+'\u0000'+wid; var r=by[k]; if(!r){ r=by[k]={ farm_id:fid, period_label:L, worker_local_id:String(wid), paye:0, bonus:0, sunday:0, holiday:0, seasonal_days:0 }; } return r; }
+    function ensure(L,wid){ var k=L+'\u0000'+wid; var r=by[k]; if(!r){ r=by[k]={ farm_id:fid, period_label:L, worker_local_id:String(wid), paye:0, bonus:0, sunday:0, holiday:0, seasonal_days:0 }; if(CAN_PE_PARTDAYS) r.part_days=null; } return r; }
     var P=stw.paye||{}; Object.keys(P).forEach(function(L){ var m=P[L]||{}; Object.keys(m).forEach(function(wid){ ensure(L,wid).paye=Number(m[wid])||0; }); });
     var B=stw.bonus||{}; Object.keys(B).forEach(function(L){ var m=B[L]||{}; Object.keys(m).forEach(function(wid){ ensure(L,wid).bonus=Number(m[wid])||0; }); });
-    var E=stw.extra||{}; Object.keys(E).forEach(function(L){ var m=E[L]||{}; Object.keys(m).forEach(function(wid){ var e=m[wid]||{}; var r=ensure(L,wid); r.sunday=Number(e.sun)||0; r.holiday=Number(e.ph)||0; }); });
+    /* -394: extra[L][wid].pd is the part-month day count the farmer typed for that month
+       (payroll_entries.part_days; none = worked out from the start and leaving dates). */
+    var E=stw.extra||{}; Object.keys(E).forEach(function(L){ var m=E[L]||{}; Object.keys(m).forEach(function(wid){ var e=m[wid]||{}; var r=ensure(L,wid); r.sunday=Number(e.sun)||0; r.holiday=Number(e.ph)||0;
+      if(CAN_PE_PARTDAYS){ var _pd=parseInt(e.pd,10); r.part_days=(e.pd!=null && e.pd!=='' && isFinite(_pd) && _pd>=0)?_pd:null; } }); });
     var S=stw.seasonal||{}; Object.keys(S).forEach(function(L){ var m=S[L]||{}; Object.keys(m).forEach(function(wid){ ensure(L,wid).seasonal_days=Number(m[wid])||0; }); });
     return Object.keys(by).map(function(k){ return by[k]; }); }
   function wkPayrollToMaps(rows){ var paye={},bonus={},extra={},seasonal={};
     (rows||[]).forEach(function(r){ var L=r.period_label, wid=r.worker_local_id;
       if(r.paye){ (paye[L]=paye[L]||{})[wid]=Number(r.paye); }
       if(r.bonus){ (bonus[L]=bonus[L]||{})[wid]=Number(r.bonus); }
-      if(r.sunday||r.holiday){ var e=(extra[L]=extra[L]||{})[wid]=(extra[L][wid]||{}); if(r.sunday)e.sun=Number(r.sunday); if(r.holiday)e.ph=Number(r.holiday); }
+      if(r.sunday||r.holiday||r.part_days!=null){ var e=(extra[L]=extra[L]||{})[wid]=(extra[L][wid]||{}); if(r.sunday)e.sun=Number(r.sunday); if(r.holiday)e.ph=Number(r.holiday); if(r.part_days!=null) e.pd=Number(r.part_days); }
       if(r.seasonal_days){ (seasonal[L]=seasonal[L]||{})[wid]=Number(r.seasonal_days); } });
     return { paye:paye, bonus:bonus, extra:extra, seasonal:seasonal }; }
   function payRunToDb(r, fid){ var o={ farm_id:fid, local_id:String(r.id), label:r.label||null, kind:r.kind||null, net:(r.net!=null)?Number(r.net):null, gross:(r.gross!=null)?Number(r.gross):null, employee_ni:(r.ni!=null)?Number(r.ni):((r.uif!=null)?Number(r.uif):null), run_date:r.date||null, seasonal:!!r.seasonal };
@@ -2816,7 +2926,8 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     farm_address: 'farmAddr', paye_ref: 'payeRef', stock_mark: 'stockMark',
     stock_mark_type: 'stockMarkType', herd_mark: 'stockMark',
     bank_balance: 'bankBalance', bank_balance_at: 'bankBalanceAt',
-    season_start_month: 'seasonStartMonth', budget_expense_target: 'budgetExpenseTarget'
+    season_start_month: 'seasonStartMonth', budget_expense_target: 'budgetExpenseTarget',
+    price_alerts: 'priceAlerts'   /* -394 */
   };
   function _profAdopt(st, mine){
     var ack = _profAckGet();
@@ -2828,6 +2939,7 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
       var v = ack[col];
       if(v === undefined) return;
       if(col === 'partners'){ try{ v = (typeof v === 'string') ? JSON.parse(v) : v; }catch(e){ return; } }
+      if(col === 'price_alerts') v = _alertsClean(v);
       st[key] = v;
     });
     /* Settings may be on screen with the OLD value still in its inputs - and Save settings reads the
@@ -2966,6 +3078,18 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
           p.consent={ policyVersion:String(rc.data.consent_version), acceptedAt:rc.data.consent_accepted_at||null };
       }catch(e){}
     }
+    /* -394 (B4-17): Market price alerts, on every device. Its own request behind the probe;
+       the first load after the column exists carries this device's own alerts across once. */
+    if(CAN_FARM_ALERTS){
+      try{
+        const ra=await client().from('farms').select('price_alerts').eq('id',farmId).single();
+        if(!ra.error && ra.data){
+          _profNoteAck({ price_alerts: ra.data.price_alerts });
+          var _pa=_alertsClean(ra.data.price_alerts), _pm=_migAlerts(_pa, global.ST && global.ST.priceAlerts, farmId);
+          if(p) p.priceAlerts=_pm || _pa;
+        }
+      }catch(e){}
+    }
     global.__AI_PROFILE_LOADED = true;   /* -391: the consent check waits for this */
     return p;
   };
@@ -3037,14 +3161,17 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
           }
         }catch(e){}
       }
-      var snap=JSON.stringify({c:core,e:extra,k:cons,p:pref,r:rainc}); if(snap===_profSnap) return;
+      /* -394: the Market price alerts, their own statement behind their own probe. */
+      var alerts=(CAN_FARM_ALERTS && Array.isArray(st.priceAlerts)) ? { price_alerts: _alertsClean(st.priceAlerts) } : {};
+      var snap=JSON.stringify({c:core,e:extra,k:cons,p:pref,r:rainc,a:alerts}); if(snap===_profSnap) return;
       /* Only what differs from the row the server last confirmed. */
       var groups = [
         { all: core,  fatal: true },
         { all: extra, warn: 'Profile: optional fields (VAT/tax/business-type) not saved \u2014 run the profile-schema migrations in Supabase.' },
         { all: cons,  warn: 'Profile: privacy consent not recorded \u2014 run the consent migration in Supabase.' },
         { all: (pref ? { prefs: pref } : {}), warn: 'Profile: payments on account and year-end stock not saved', done: function(){ _farmPrefs = pref; } },
-        { all: rainc, warn: 'Profile: rainfall location and settings not saved \u2014 run tools/uk-rainfall-schema.sql in Supabase.' }
+        { all: rainc, warn: 'Profile: rainfall location and settings not saved \u2014 run tools/uk-rainfall-schema.sql in Supabase.' },
+        { all: alerts, warn: 'Profile: price alerts not saved \u2014 run tools/uk-pilot-followup-columns.sql in Supabase.' }
       ];
       var extraOk = true, firstErr = null, stale = [];
       for(var gi = 0; gi < groups.length; gi++){
@@ -3497,6 +3624,14 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
                 importBatch: importBatch,
                 _map: { catToId, catToCode, appToDb, dbToApp },
                 _prefs: { apply: _profPrefsApply, next: _profPrefsNext },   /* -388: harness access to the prefs whitelist */
+                /* -394: harness access to the follow-up columns' whitelists, probes and one-time moves. */
+                _f394: { capCols: CAP_COLS,
+                         caps: function(){ return { CAN_WKR_END:CAN_WKR_END, CAN_PE_PARTDAYS:CAN_PE_PARTDAYS, CAN_BLOCK_SPACING:CAN_BLOCK_SPACING, CAN_FARM_ALERTS:CAN_FARM_ALERTS, CAN_PLANEVT_FC:CAN_PLANEVT_FC, CAN_WKS_EXTRA:CAN_WKS_EXTRA }; },
+                         wkrToDb: wkrToDbFull, wkrFromDb: wkrFromDb, payrollRows: wkPayrollRows, payrollMaps: wkPayrollToMaps,
+                         settToDb: wkSettToDb, settApply: wkSettApply, obToDb: obToDb, obFromDb: obFromDb,
+                         evtToDb: planEvtToDb, evtFromDb: planEvtFromDb, alertsClean: _alertsClean,
+                         migSpacing: _migSpacing, migAlerts: _migAlerts, migKey: _migKey, complyRtKey: _complyRtKey,
+                         profileSnapFields: function(st){ return (CAN_FARM_ALERTS && Array.isArray(st && st.priceAlerts)) ? { price_alerts: _alertsClean(st.priceAlerts) } : {}; } },
                 _ls: { herdToDb: herdToDb, herdFromDb: herdFromDb, moveToDb: moveToDb, moveFromDb: moveFromDb },
                 _util: { selectAll: selectAll, SELECT_ALL_MAX_ROWS: SELECT_ALL_MAX_ROWS } };
 

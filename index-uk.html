@@ -33,7 +33,7 @@
 <script defer src="vendor/chart.umd.js"></script>
 <!-- AgriInsights backend: Supabase client + data service (load order matters) -->
 <script src="vendor/supabase.js"></script>
-<script src="ai-data-uk.js?v=uk130"></script>
+<script src="ai-data-uk.js?v=uk131"></script>
 <script src="ai-auth-uk.js?v=uk110"></script>
 <link rel="stylesheet" href="fonts.css"/>
 <style>
@@ -28734,20 +28734,82 @@ function wkMonthLabel(){ var d=(typeof APP_TODAY!=='undefined'&&APP_TODAY)?APP_T
 /* -391 (B5-F11, D12 option A): the first month is paid for the working days employed -
    contract pay x working days from the start date to the month end / working days in the
    month (Monday to Friday). A worker who starts after the month is not in its run. The
-   payslip names the basis. (A LAST month needs a leaving date, which the worker record
-   does not hold - see the build notes.) */
+   payslip names the basis.
+   -394: the LAST month too - the working days from the month start to the leaving date
+   (workers.end_date), and a worker who left before the month is not in its run. The day
+   count can be typed on the payslip (payroll_entries.part_days); the typed figure wins over
+   the one worked out from the dates, and the payslip says which it is. */
 function wkWorkdays(a, b){ var n=0, d=new Date(a.getFullYear(),a.getMonth(),a.getDate()); while(d<=b){ var g=d.getDay(); if(g!==0&&g!==6) n++; d.setDate(d.getDate()+1); } return n; }
-function wkPartMonth(w, label){
-  if(!w || !w.start || !label) return null;
-  var p=/^(\d{4})-(\d{2})-(\d{2})/.exec(String(w.start)); if(!p) return null;
-  var st=new Date(+p[1], +p[2]-1, +p[3]);
-  var m0=wkLabelToDate(label), m1=new Date(m0.getFullYear(), m0.getMonth()+1, 0);
-  if(st<=m0) return null;
-  var of=wkWorkdays(m0,m1);
-  if(st>m1) return { days:0, of:of, from:String(w.start).slice(0,10), share:0, notStarted:true };
-  var days=wkWorkdays(st,m1);
-  return { days:days, of:of, from:String(w.start).slice(0,10), share:(of?days/of:0) };
+function wkIsoDay(s){ var p=/^(\d{4})-(\d{2})-(\d{2})/.exec(String(s||'')); return p?new Date(+p[1], +p[2]-1, +p[3]):null; }
+/* The day count the farmer typed for this worker and month, or null (worked out from dates). */
+function wkPartDaysTyped(wid, label){
+  var e=(typeof ST_WORK!=='undefined'&&ST_WORK.extra&&ST_WORK.extra[label]&&ST_WORK.extra[label][wid])||null;
+  if(!e || e.pd==null || e.pd==='') return null;
+  var n=parseInt(e.pd,10); return (isFinite(n)&&n>=0)?n:null;
 }
+function wkPartMonth(w, label){
+  if(!w || !label) return null;
+  var st=wkIsoDay(w.start), en=wkIsoDay(w.end);
+  var m0=wkLabelToDate(label), m1=new Date(m0.getFullYear(), m0.getMonth()+1, 0);
+  var of=wkWorkdays(m0,m1);
+  if(st && st>m1) return { days:0, of:of, from:String(w.start).slice(0,10), share:0, notStarted:true };
+  if(en && en<m0) return { days:0, of:of, to:String(w.end).slice(0,10), share:0, left:true };
+  var a=(st && st>m0)?st:m0, b=(en && en<m1)?en:m1;
+  var typed=wkPartDaysTyped(w.id, label);
+  if(a===m0 && b===m1 && typed==null) return null;          /* a whole month */
+  var auto=(b<a)?0:wkWorkdays(a,b), days=(typed!=null)?Math.min(typed,of):auto;
+  var r={ days:days, of:of, share:(of?days/of:0), auto:auto };
+  if(a!==m0) r.from=String(w.start).slice(0,10);
+  if(b!==m1) r.to=String(w.end).slice(0,10);
+  if(typed!=null) r.typed=true;
+  return r;
+}
+/* How a part month was worked out, in the payslip's words. */
+function wkPartMonthBasis(pm){
+  if(!pm) return '';
+  var s=[];
+  if(pm.from) s.push('started '+cropDispDate(pm.from));
+  if(pm.to) s.push('last day '+cropDispDate(pm.to));
+  if(pm.typed) s.push('days set by you');
+  return s.join(' · ');
+}
+/* -394: the day count typed on the payslip. Blank goes back to the dates. Kept with the
+   month's other extras (ST_WORK.extra[label][worker].pd) and synced as part_days; a blank is
+   kept as null so the server forgets the typed figure too. */
+function wkSetPartDays(wid, val){
+  var label=wkMonthLabel(), w=wkFind(wid); if(!w) return;
+  if((ST_WORK.payRuns||[]).some(function(r){ return r.label===label && !r.seasonal; })){ if(typeof toast==='function') toast('This month is already posted — undo the pay run to change it.','info'); return; }
+  var s=String(val==null?'':val).trim(), of=wkWorkdays(wkLabelToDate(label), new Date(wkLabelToDate(label).getFullYear(), wkLabelToDate(label).getMonth()+1, 0));
+  var n=parseInt(s,10);
+  if(s!=='' && (!/^\d+$/.test(s) || n>of)){ var el=$('wk-pd-in'); if(el && typeof fieldErr==='function') fieldErr(el, 'Enter the working days to pay, 0 to '+of); else if(typeof toast==='function') toast('Enter the working days to pay, 0 to '+of+'.','error'); return; }
+  ST_WORK.extra=ST_WORK.extra||{}; ST_WORK.extra[label]=ST_WORK.extra[label]||{};
+  var e=ST_WORK.extra[label][wid]=ST_WORK.extra[label][wid]||{};
+  e.pd=(s==='')?null:n;
+  if(typeof saveState==='function') saveState();
+  if(typeof wkSync==='function') wkSync();
+  wkPayslip(wid);
+}
+/* -394: the leaving date (workers.end_date). Their last month is paid by working days to it,
+   and they leave the pay runs after it. */
+function wkSetEnd(wid, v){
+  var w=wkFind(wid); if(!w) return;
+  v=String(v||'').trim();
+  if(v && !/^\d{4}-\d{2}-\d{2}$/.test(v)){ if(typeof toast==='function') toast('Enter the last day as a date.','error'); return; }
+  if(v && w.start && v<String(w.start).slice(0,10)){ var el=$('wk-end-in'); if(el && typeof fieldErr==='function') fieldErr(el, 'The last day is before they started'); return; }
+  if(v) w.end=v; else delete w.end;
+  if(typeof saveState==='function') saveState();
+  if(typeof wkSync==='function') wkSync();
+  try{ renderWkDetail(wid); }catch(e){}
+  if(typeof toast==='function') toast(v?((w.name||'Worker').split(' ')[0]+'’s last day is '+dispDate(v)+'.'):'Leaving date cleared.','success');
+}
+function wkLeaveCard(w){
+  return '<div class="wk-card" id="wk-leave-card"><div style="font-size:13px;font-weight:800;color:var(--gd);margin-bottom:10px">Leaving <span class="wk-info" title="Their last month is paid for the working days up to this date, and they are not in the pay runs after it." style="cursor:help;color:var(--t4);font-weight:700">ⓘ</span></div>'
+    +'<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><label for="wk-end-in" style="font-size:12px;color:var(--t3);font-weight:700">Last day at work</label>'
+    +'<input type="date" id="wk-end-in" value="'+wkE(w.end||'')+'"'+(w.start?(' min="'+wkE(String(w.start).slice(0,10))+'"'):'')+' onchange="wkSetEnd(\''+w.id+'\',this.value)" style="width:auto;max-width:200px;padding:7px 10px;font-size:13px;border:1.5px solid var(--br2);border-radius:9px;font-family:inherit">'
+    +(w.end?('<button class="wk-mini" onclick="wkSetEnd(\''+w.id+'\',\'\')">Clear</button>'):'')
+    +'</div></div>';
+}
+window.wkSetEnd=wkSetEnd; window.wkSetPartDays=wkSetPartDays; window.wkPartDaysTyped=wkPartDaysTyped; window.wkPartMonthBasis=wkPartMonthBasis;
 /* -391 (B5-C17): Sunday and bank holiday hours are paid at the rate in the worker's own
    contract, starting at x1. Great Britain sets no statutory premium for either; pay only
    has to meet the minimum wage over the pay period. Kept per worker in
@@ -28770,7 +28832,7 @@ function wkPayRows(labelOverride){
   var label=labelOverride||((typeof wkMonthLabel==='function')?wkMonthLabel():'');
   var bonusMap=(ST_WORK.bonus&&ST_WORK.bonus[label])||{};
   var extraMap=(ST_WORK.extra&&ST_WORK.extra[label])||{};
-  return wkList().filter(function(w){ if(w.basis!=='month') return false; var pm=wkPartMonth(w,label); return !(pm&&pm.notStarted); }).map(function(w){
+  return wkList().filter(function(w){ if(w.basis!=='month') return false; var pm=wkPartMonth(w,label); return !(pm&&(pm.notStarted||pm.left)); }).map(function(w){
     var pm=wkPartMonth(w,label);
     var base=pm ? Math.round((w.amt||0)*pm.share*100)/100 : (w.amt||0);
     var bonus=Math.round((bonusMap[w.id]||0)*100)/100;
@@ -29043,6 +29105,7 @@ function wkPayslip(id){
   for(var i=0;i<rows.length;i++){ if(rows[i].w.id===id){ r=rows[i]; break; } }
   if(!r){ renderWkPayroll(); return; }
   var w=r.w, label=wkMonthLabel();
+  var _posted=(ST_WORK.payRuns||[]).some(function(x){ return x.label===label && !x.seasonal; });   /* -394: the day count is typed only before the run is posted */
   var farm=(typeof ST!=='undefined'&&ST.farmName)?ST.farmName:'Your farm';
   var code=(w.taxCode||'1257L');
   var ded='';
@@ -29057,7 +29120,7 @@ function wkPayslip(id){
     + '<div class="wk-slip"><div class="sh"><div class="t">'+wkE(farm)+'</div><div class="s">Payslip \u00b7 '+wkE(w.name)+' \u00b7 '+wkE(label)+'</div></div><div class="sb">'
     + '<div class="wk-srow head"><span>What they earned</span><span></span></div>'
     + (r.partMonth
-        ? ('<div class="wk-srow"><span>Pay for '+r.partMonth.days+' of '+r.partMonth.of+' working days <span style="color:var(--t4)">· started '+wkE(cropDispDate(r.partMonth.from))+' · '+wkMoney2(w.amt||0)+' a month</span></span><span>'+wkMoney2(r.base)+'</span></div>')
+        ? ('<div class="wk-srow"><span>Pay for '+(_posted?r.partMonth.days:('<input type="number" id="wk-pd-in" min="0" max="'+r.partMonth.of+'" step="1" value="'+r.partMonth.days+'" aria-label="Working days to pay" onchange="wkSetPartDays(\''+w.id+'\',this.value)" style="width:52px;padding:3px 6px;font-size:12px;border:1.5px solid var(--br2);border-radius:7px;font-family:inherit;text-align:right;font-variant-numeric:tabular-nums">'))+' of '+r.partMonth.of+' working days <span style="color:var(--t4)">· '+wkE(wkPartMonthBasis(r.partMonth))+' · '+wkMoney2(w.amt||0)+' a month</span></span><span>'+wkMoney2(r.base)+'</span></div>')
         : ('<div class="wk-srow"><span>Pay for the month</span><span>'+wkMoney2(r.base!=null?r.base:r.gross)+'</span></div>'))
     + ((r.bonus)?('<div class="wk-srow"><span>Bonus</span><span>'+wkMoney2(r.bonus)+'</span></div>'):'')
     + ((r.premium)?('<div class="wk-srow"><span>Sunday / bank holiday pay <span style="color:var(--t4)">· '+[(r.sun?(r.sun+' h at ×'+r.sunRate):''),(r.ph?(r.ph+' h at ×'+r.phRate):'')].filter(Boolean).join(' + ')+'</span></span><span>'+wkMoney2(r.premium)+'</span></div>'):'')
@@ -30293,7 +30356,7 @@ function renderWkDetail(id){
 
   box.innerHTML='<div onclick="wkTab(\'wk\')" style="display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:800;color:var(--gm);cursor:pointer;margin-bottom:12px">&lsaquo; Back to workers</div>'
     +'<div class="wk-card">'
-    +'<div style="display:flex;gap:12px;align-items:center;margin-bottom:14px"><div class="wk-av" style="background:'+wkColor(idx)+';width:48px;height:48px">'+wkE(wkInitials(w.name))+'</div><div><div style="font-size:16px;font-weight:800">'+wkE(w.name)+'</div><div style="font-size:11.5px;color:var(--t3)">'+wkE(w.role)+(w.start?(' &middot; since '+wkE(dispDate(w.start))):'')+'</div></div></div>'
+    +'<div style="display:flex;gap:12px;align-items:center;margin-bottom:14px"><div class="wk-av" style="background:'+wkColor(idx)+';width:48px;height:48px">'+wkE(wkInitials(w.name))+'</div><div><div style="font-size:16px;font-weight:800">'+wkE(w.name)+'</div><div style="font-size:11.5px;color:var(--t3)" id="wk-detail-sub">'+wkE(w.role)+(w.start?(' &middot; since '+wkE(dispDate(w.start))):'')+(w.end?(' &middot; last day '+wkE(dispDate(w.end))):'')+'</div></div></div>'
     +'<div class="wk-detail-grid" style="margin-top:0">'
     +'<div class="wk-dbox"><div class="l">Pay</div><div class="v">'+wage+'</div></div>'
     +'<div class="wk-dbox"><div class="l">Minimum wage</div><div class="v" style="color:'+(ok?'var(--gm)':'var(--rd)')+'">'+(ok?d9Dot('g','Above'):d9Dot('r','Below'))+'</div></div>'
@@ -30307,7 +30370,7 @@ function renderWkDetail(id){
     + moneyBoxes + acts + forms + led
     + '<div style="font-size:11px;color:var(--t4);margin-top:11px;line-height:1.5">Anything taken off a wage needs the worker\u2019s written okay &mdash; we keep it on file for an inspection.</div>'
     +'</div>'
-    + wkDocsCard(w) + wkDangerCard(w);
+    + wkDocsCard(w) + wkLeaveCard(w) + wkDangerCard(w);
 }
 
 function wkFind(id){ var ws=wkList(); for(var i=0;i<ws.length;i++){ if(ws[i].id===id) return ws[i]; } return null; }
@@ -31813,7 +31876,7 @@ async function lsConfirmPlannedBuy(id){
   var buyTotal=0;
   if(typeof ST_PLAN!=='undefined' && ST_PLAN.events){
     ST_PLAN.events.forEach(function(e){
-      if(!(e._hp && e.herdId===id)) return;
+      if(!(hpIsPlanLine(e) && e.herdId===id)) return;   /* -394: known after a reload too (the note; in_forecast keeps the state) */
       e.inForecast=true; // now live
       if(e.type==='buy' && !e.done){
         e.done=true; // consumed here — Planning won't re-add it
@@ -31836,7 +31899,7 @@ async function lsRemovePlanned(id){
   var h=lsHerdById(id); if(!h) return;
   if(!(await appConfirm('Delete the plan for \u201c'+lsHerdName(h)+'\u201d? This deletes the planned line and its forecast entries.'))) return;
   ST_LS.herd=(ST_LS.herd||[]).filter(function(x){return x.id!==id;});
-  if(typeof ST_PLAN!=='undefined' && ST_PLAN.events){ ST_PLAN.events=ST_PLAN.events.filter(function(e){ return !(e._hp && e.herdId===id); }); }
+  if(typeof ST_PLAN!=='undefined' && ST_PLAN.events){ ST_PLAN.events=ST_PLAN.events.filter(function(e){ return !(hpIsPlanLine(e) && e.herdId===id); }); }
   try{ saveState&&saveState(); }catch(e){}
   try{ if(typeof dataChanged==='function') dataChanged('livestock'); }catch(e){}
   renderCamps();
@@ -41750,7 +41813,8 @@ function orpJuiceIncome(b){
    both wrong and quickly ignored. It states the exposure; the number stands. */
 function orpExportCertProblems(){
   var out=[], c=(typeof ST_FRUIT!=='undefined' && ST_FRUIT.comply) ? ST_FRUIT.comply : {};
-  ['gap','ppecb','phytclean','siza'].forEach(function(k){
+  if(typeof orComplyRtMove==='function') orComplyRtMove(c);
+  ['gap','ppecb','phytclean','redtractor'].forEach(function(k){
     var e=c[k]; if(!e || e.type!=='cert') return;
     var st=orCertState(e);
     if(st.expired || st.tag==='red') out.push({key:k, title:e.title||k, why:st.status});
@@ -47695,6 +47759,9 @@ function renderEventList() {
     var typeLabel = e.type.charAt(0).toUpperCase() + e.type.slice(1);
     var pips = '<span class="pip">' + (e.animal || '') + (e.qty ? ' \u00b7 ' + e.qty + ' ' + (e.unit || 'units') : '') + '</span>';
     if (e.notes) pips += '<span class="pip">' + e.notes + '</span>';
+    /* -394 (B4 D5): a herd plan line stays out of the forecast until the plan is confirmed;
+       plan_events.in_forecast keeps that across a reload and on every device. */
+    if (e.inForecast === false) pips += '<span class="pip plan-evt-nofc" title="Left out of your forecast until you confirm the plan">Not in your forecast yet</span>';
     pips += '<span class="pip recur">' + recurLabel + '</span>';
     if (e.useMarket) {
       pips += '<span class="pip market" title="Price linked to market — re-check if prices move">' +
@@ -50253,12 +50320,16 @@ function deleteAlert(idx) {
 }
 /* B4-17 (-390): a price alert is saved the moment it is set and shown in the bell. It lived
    only in memory, so it was gone on the next load and the bell never heard of it. Kept with
-   the farm's saved state on this device (ST.priceAlerts) - there is no cloud column for it. */
+   the farm's saved state (ST.priceAlerts).
+   -394: and on the farm's record (farms.price_alerts), so every device has them. ST.priceAlerts
+   is the one list; ST_ALERTS follows it, so alerts that arrive from the server show at once. */
 function alertsLoad(){
-  try{ if((!ST_ALERTS || !ST_ALERTS.length) && ST && Array.isArray(ST.priceAlerts) && ST.priceAlerts.length) ST_ALERTS=ST.priceAlerts.slice(); }catch(e){}
+  try{ if(ST && Array.isArray(ST.priceAlerts)) ST_ALERTS=ST.priceAlerts.slice(); }catch(e){}
 }
 function alertsPersist(){
   try{ ST.priceAlerts=ST_ALERTS.slice(); if(typeof saveState==='function') saveState(); }catch(e){}
+  try{ if(!window.__AI_GUEST && window.AI && AI.farm && AI.farm.active() && AI.profile && AI.profile.save)
+         AI.profile.save(ST).catch(function(e){ console.error('Price alerts not saved to the server', e); if(typeof toast==='function') toast('Saved here, but it has not reached the server — try again','error'); }); }catch(e){}
   try{ if(typeof renderNotifications==='function') renderNotifications(); }catch(e){}
 }
 
@@ -53709,6 +53780,9 @@ function flushRelationalToBackend(){
   try{ if(window.ST_FUEL && ST_FUEL.issues && ST_FUEL.issues.length && AI.fuel){ AI.fuel.saveAll(ST_FUEL.issues).catch(function(){}); } }catch(e){}
   try{ if(_fruitHas && AI.orchard){ AI.orchard.saveAll(ST_FRUIT).catch(function(){}); AI.orchard.saveConfig(ST_FRUIT).catch(function(){}); } }catch(e){}
   try{ if(_planHas && AI.plan){ AI.plan.saveAll(ST_PLAN).catch(function(){}); } }catch(e){}
+  /* -394: price alerts this device carried to the farm's record on its first load are sent
+     with the farm settings (the other one-time move, orchard spacing, rides the orchard save). */
+  try{ var _hl=(AI.load && AI.load.healed) ? AI.load.healed() : {}; if(_hl['farms.price_alerts'] && window.ST && AI.profile && !window.__AI_GUEST){ AI.profile.save(ST).catch(function(){}); } }catch(e){}
   try{ if(typeof wkSync==='function'){ wkSync(); } }catch(e){}
 }
 
@@ -54392,7 +54466,10 @@ function _rptTaxBody(fy, cls, R){
     /* -386 D3: while the year runs, the tax is the Tax page's estimate for the WHOLE year (SARS/HMRC
        estimates and IAS 34 all work on the full year) - the profit so far run through the annual
        tables understated the year and did not match the Tax page. */
-    (function(){ var te=cur?ukYearTaxEstimate(fy):null;
+    (function(){ var _pgT=(typeof ukPartnershipGap==='function')?ukPartnershipGap():'';
+      if(_pgT) return '<tr class="total" id="rpt-tax-partner-gate"><td>Tax — add your partners in Settings to see it</td><td class="amt">—</td></tr>'+
+        '<tr><td colspan="2" style="font-size:12px;color:#7a4a10">A partnership pays no income tax itself: each partner is taxed on their share. '+esc4Rpt(_pgT)+'</td></tr>';
+      var te=cur?ukYearTaxEstimate(fy):null;
       if(!te) return tr('Income tax — '+(F.scot?'Scottish':'rest-of-UK')+' rates, '+esc4Rpt(_entityTaxLabel(F.entity)), fmt(F.incomeTax))+
         (F.class4 ? tr('Class 4 National Insurance', fmt(F.class4)) : '')+
         '<tr class="total"><td>Tax on it</td><td class="amt">'+fmt(F.taxEst)+'</td></tr>';
@@ -55273,9 +55350,12 @@ function ukPartnerShareTotal(){
   var t=0; ukPartners().forEach(function(p){ t+=Number(p.share)||0; });
   return Math.round(t*100)/100;
 }
-/* -392 B5-F18: what a partnership still needs before its tax can be worked out ('' = none). */
-function ukPartnershipGap(){
-  var ent=''; try{ ent=(typeof ukEntityType==='function')?ukEntityType(ST.entityType):(ST.entityType||''); }catch(e){}
+/* -392 B5-F18: what a partnership still needs before its tax can be worked out ('' = none).
+   -394: the same rule everywhere a tax figure shows - Tax at a glance, the Tax reports, the
+   Reports page's Tax Summary, the Self Assessment pre-fill, the partnership allocation and the
+   What-if. `ent` is the business type to judge (the What-if's own choice); none = the farm's. */
+function ukPartnershipGap(ent){
+  if(ent==null){ ent=''; try{ ent=(typeof ukEntityType==='function')?ukEntityType(ST.entityType):(ST.entityType||''); }catch(e){} }
   if(ent!=='partnership') return '';
   var n=ukPartners().length, tot=ukPartnerShareTotal();
   if(n<2) return n===0 ? 'Add at least two partners and the share of profit each takes.' : 'Add the other partner - a partnership has at least two - and each one’s share.';
@@ -55283,6 +55363,15 @@ function ukPartnershipGap(){
   return '';
 }
 window.ukPartnershipGap=ukPartnershipGap;
+/* The one card that stands in for a tax figure until the partners are in. */
+function ukPartnerGateCard(id, gap){
+  var g=(gap!=null)?gap:ukPartnershipGap(); if(!g) return '';
+  return '<div class="tx-card" id="'+id+'" style="margin-top:12px;border-left:4px solid #B45309">'+
+    '<div class="tx-h" style="color:#7a4a10">Add your partners to see the tax</div>'+
+    '<div style="font-size:13px;color:var(--t2);line-height:1.55">A partnership pays no income tax itself: each partner is taxed on their share. '+esc(g)+'</div>'+
+    '<button type="button" class="tx-eqbtn" style="margin-top:11px" onclick="nav(\'settings\');setTimeout(function(){ var w=document.getElementById(\'set-partners-wrap\'); if(w) w.scrollIntoView({block:\'center\'}); },350)">Add partners in Settings</button></div>';
+}
+window.ukPartnerGateCard=ukPartnerGateCard;
 window.ukPartners=ukPartners; window.ukPartnerShareTotal=ukPartnerShareTotal;
 
 function ukProfitAllocation(fy, profitOverride){
@@ -55371,7 +55460,12 @@ function ukProfitAllocationHTML(fy){
     '<div class="rpt-note">Salaries and interest on capital are <b>prior shares</b>: they are allocated in full before anything is divided, and only the balance is split in the profit-sharing ratio. Each partner enters their <b>total share</b> on their own SA104 pages, and pays income tax and Class 4 National Insurance on it through their personal Self Assessment. The partnership itself pays no tax.</div>'+
   '</div>';
 
-  body+='<div class="rpt-sec"><div class="rpt-h2">What each partner declares</div>'+
+  /* -394 (5b gap): one partner, or shares that do not add to 100%, gives no tax estimate. */
+  var _pgA=(typeof ukPartnershipGap==='function')?ukPartnershipGap():'';
+  if(_pgA) body+='<div class="rpt-sec" id="ppa-partner-gate"><div class="rpt-h2">What each partner declares</div>'+
+    '<div class="rpt-chk bad">Add your partners to see the tax</div>'+
+    '<div class="rpt-note">'+esc4Rpt(_pgA)+' Each partner&rsquo;s tax is estimated once the partnership has at least two partners whose shares add up to 100%.</div></div>';
+  else body+='<div class="rpt-sec"><div class="rpt-h2">What each partner declares</div>'+
     '<div class="rpt-tw"><table class="rpt-t">'+
     '<thead><tr><th>Partner</th><th class="n">Taxable share</th><th class="n">Est. income tax</th><th class="n">Est. Class 4 NI</th><th class="n">Est. total</th></tr></thead><tbody>'+
     a.partners.map(function(p){
@@ -55580,11 +55674,14 @@ function buildPreviewTax(R, meta) {
   var eff = F.profit > 0 ? Math.round(F.taxEst / F.profit * 100) : 0;
   var _te = (fy === getCurrentFY()) ? ukYearTaxEstimate(fy) : null;   /* -386 D3: so far | the year */
   if (_te) eff = _te.taxable > 0 ? Math.round(_te.tax / _te.taxable * 100) : 0;
+  var _pgH = (typeof ukPartnershipGap === 'function') ? ukPartnershipGap() : '';   /* -394 */
   return meta +
     '<div class="pv-hero">'+
       '<div class="pv-card"><div class="pv-card-lbl">'+(F.profit<0?'Trading loss':'Taxable profit')+(_te?' so far':'')+'</div><div class="pv-card-val">'+fmt(Math.abs(F.profit))+'</div></div>'+
-      (_te?'<div class="pv-card"><div class="pv-card-lbl">Taxable profit \u2014 the year (estimate)</div><div class="pv-card-val">'+fmt(_te.taxable)+'</div></div>':'<div class="pv-card"><div class="pv-card-lbl">Works out at</div><div class="pv-card-val">'+eff+'%</div></div>')+
-      '<div class="pv-card"><div class="pv-card-lbl">'+(_te?'Tax for the year (estimate)':'Tax')+'</div><div class="pv-card-val">'+fmt(_te?_te.tax:F.taxEst)+'</div></div>'+
+      (_te?'<div class="pv-card"><div class="pv-card-lbl">Taxable profit \u2014 the year (estimate)</div><div class="pv-card-val">'+fmt(_te.taxable)+'</div></div>':(_pgH?'':'<div class="pv-card"><div class="pv-card-lbl">Works out at</div><div class="pv-card-val">'+eff+'%</div></div>'))+
+      (_pgH
+        ? '<div class="pv-card" id="rpt-tax-partner-card"><div class="pv-card-lbl">Tax</div><div class="pv-card-val" style="font-size:15px">Add your partners</div></div>'
+        : '<div class="pv-card"><div class="pv-card-lbl">'+(_te?'Tax for the year (estimate)':'Tax')+'</div><div class="pv-card-val">'+fmt(_te?_te.tax:F.taxEst)+'</div></div>')+
     '</div>'+
     T.html+
     '<div class="pv-disclaimer">The same figures as the Self Assessment pre-fill — income without VAT, the expenses HMRC allows and your capital allowances. An estimate on your own records, not a filed return; confirm with your accountant.</div>';
@@ -59236,6 +59333,18 @@ function taxWhatIf(){
     }
   } setEl('tax-wi-mo',_curSym()+_grpInt(Math.round(tot/12)));   /* U17: the year's tax / 12 - an average, not what to put aside (that is the months-left figure on each payment) */ setEl('tax-wi-marg',mrg+'%');
   var sv=$('tax-wi-save'), ded=t0-tot; if(sv){ if(ded>0){ sv.style.display='block'; sv.innerHTML='🛠️ Your deductions cut this year’s tax by about <b>'+_curSym()+_grpInt(ded)+'</b>.'; } else sv.style.display='none'; }
+  /* -394 (5b gap): the What-if gives no tax figure for a partnership until it has two partners
+     whose shares add to 100% - the same rule as Tax at a glance. Checked against the business
+     type picked here, so trying "Partnership" asks for the partners first. */
+  var _pgW=(typeof ukPartnershipGap==='function')?ukPartnershipGap(et):'';
+  var _wf=$('tax-wi-figs'), _wg=$('tax-wi-pgate');
+  if(_wf) _wf.style.display=_pgW?'none':'';
+  if(_wg){ _wg.style.display=_pgW?'block':'none';
+    _wg.innerHTML=_pgW?('<div style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;opacity:.72">Income tax for the year</div>'+
+      '<div style="font-size:19px;font-weight:800;margin:6px 0 4px">Add your partners to see the tax</div>'+
+      '<div style="font-size:12.5px;line-height:1.55;opacity:.9">A partnership pays no income tax itself: each partner is taxed on their share. '+esc(_pgW)+'</div>'+
+      '<button type="button" onclick="nav(\'settings\');setTimeout(function(){ var w=document.getElementById(\'set-partners-wrap\'); if(w) w.scrollIntoView({block:\'center\'}); },350)" style="margin-top:12px;border:0;border-radius:9px;padding:9px 14px;font-size:12.5px;font-weight:800;font-family:inherit;cursor:pointer;background:#fff;color:#1B4332">Add partners in Settings</button>'):''; }
+  if(_pgW){ ['tax-wi-ann','tax-wi-bartaxv','tax-wi-barkeepv','tax-wi-p1','tax-wi-p2','tax-wi-mo'].forEach(function(i){ setEl(i,_curSym()+'—'); }); setEl('tax-wi-eff','—'); setEl('tax-wi-marg','—'); var _sv=$('tax-wi-save'); if(_sv) _sv.style.display='none'; }
   var vo=$('tax-wi-vatout'); if(vo){ var vr=taxVatIfRegistered();
     if(TAX_WI_VAT==='yes') vo.innerHTML='<b style="color:var(--gm)">If you register:</b> reclaim about <b>'+_curSym()+_grpInt(vr.inputVat)+'</b> input VAT on your standard-rated costs (machinery, repairs, vet, admin)'+'. Most of what you sell is food, so it is zero-rated — you would charge nothing on it and still reclaim, which is why farms are usually owed money by HMRC'+(vr.outputVat>0?', though your standard-rated sales (wool, contracting, rent) would carry 20% — about '+_curSym()+_grpInt(vr.outputVat)+' of output VAT':'')+'. Below '+fmt(vatRegThreshold())+' turnover it is your choice.';
     else vo.innerHTML='<b>Not registered.</b> No VAT returns to file — but you can’t reclaim the ~<b>'+_curSym()+_grpInt(vr.inputVat)+'</b> input VAT on your standard-rated costs'+'. Tap “Registered” to weigh it up.';
@@ -59502,10 +59611,7 @@ function taxGlanceHTML(){
      now the page asks for them before it shows a figure. */
   var _pg=(typeof ukPartnershipGap==='function')?ukPartnershipGap():'';
   if(_pg){
-    return '<div class="tx-card" id="tax-partner-gate" style="margin-top:12px;border-left:4px solid #B45309">'+
-      '<div class="tx-h" style="color:#7a4a10">Add your partners to see the tax</div>'+
-      '<div style="font-size:13px;color:var(--t2);line-height:1.55">A partnership pays no income tax itself: each partner is taxed on their share. '+esc(_pg)+'</div>'+
-      '<button type="button" class="tx-eqbtn" style="margin-top:11px" onclick="nav(\'settings\');setTimeout(function(){ var w=document.getElementById(\'set-partners-wrap\'); if(w) w.scrollIntoView({block:\'center\'}); },350)">Add partners in Settings</button></div>';
+    return ukPartnerGateCard('tax-partner-gate', _pg);
   }
   var prov=taxProvEstimate(), ytd=ytdSummary(), vat=taxVatPosition(), wk=taxWorkerSnapshot();
   var cap=taxCapitalAllowances(), pay=taxPayrollAnnual(), trend=taxVatTrend();
@@ -61845,6 +61951,9 @@ function taxReportsHTML(){
      down. Two of those five - the VAT boxes and the balance sheet - were already cards
      elsewhere on the same tab, so the page printed them twice. */
   var h = '';   /* -371 (SA -452): the section headings say what each group is; no preamble */
+  /* -394 (5b gap): a partnership without its partners sees no tax figure here either. */
+  var _pgR=(typeof ukPartnershipGap==='function')?ukPartnershipGap():'';
+  if(_pgR) h += '<div style="margin-bottom:16px">'+ukPartnerGateCard('tax-partner-gate-rep', _pgR)+'</div>';
 
   /* Deadlines belong to the year the farm is IN. Stepping the year-end picker back to
      2025/26 emptied the strip and stripped the "Q1 overdue" pill off the quarterly row -
@@ -61951,7 +62060,7 @@ function taxReportsHTML(){
 
   h += '</div>';                                  /* close "Your reports" */
 
-  h += taxExplainersHTML(selFY);
+  if(!_pgR) h += taxExplainersHTML(selFY);   /* the rates, averaging and payments-on-account figures */
 
   h+='<div class="tx-disc" style="margin-top:8px">Built from the figures in your app — a guide for you and your accountant.</div>';
   return h;
@@ -62153,6 +62262,8 @@ function taxWhatIfHTML(){
     '<div id="tax-wi-ents" style="display:flex;gap:5px">'+ents.map(function(e){return '<button data-e="'+e[0]+'" class="'+(e[0]===curEnt?'on':'')+'" onclick="taxWiEnt(\''+e[0]+'\')" '+eb+'>'+e[1]+'</button>';}).join('')+'</div></div>';
   // ── redesigned result box: big tax + effective pill + tax-vs-keep split bar + stats ──
   h+='<div style="background:linear-gradient(150deg,#173a2c,#1B4332 60%,#245139);color:#fff;border-radius:16px;padding:18px 20px;margin-bottom:12px">'+
+    /* -394 (5b gap): taxWhatIf shows this instead of the figures for a partnership without its partners */
+    '<div id="tax-wi-pgate" style="display:none"></div><div id="tax-wi-figs">'+
     '<div style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;opacity:.72">Income tax for the year</div>'+
     '<div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap"><div id="tax-wi-ann" style="font-size:40px;font-weight:800;line-height:1.05">'+_curSym()+'—</div><div id="tax-wi-eff" style="font-size:11.5px;font-weight:700;background:rgba(255,255,255,.16);border-radius:999px;padding:3px 10px">—</div></div>'+
     '<div style="margin-top:14px"><div style="display:flex;height:12px;border-radius:6px;overflow:hidden;background:rgba(255,255,255,.12)"><div id="tax-wi-bartax" style="width:0;background:#E8A33D"></div><div id="tax-wi-barkeep" style="flex:1;background:#5FBE85"></div></div>'+
@@ -62160,7 +62271,7 @@ function taxWhatIfHTML(){
     '<div style="display:flex;justify-content:space-between;gap:8px;margin-top:16px;padding-top:14px;border-top:1px solid rgba(255,255,255,.16)">'+
       ['1st · 31 Jan|tax-wi-p1','2nd · 31 Jul|tax-wi-p2','Average per month over a year|tax-wi-mo','Next £100k|tax-wi-marg'].map(function(s){var a=s.split('|');return '<div style="text-align:center"><div id="'+a[1]+'lbl" style="font-size:11px;text-transform:uppercase;letter-spacing:.04em;opacity:.72">'+a[0]+'</div><div style="font-size:15px;font-weight:800" id="'+a[1]+'">'+_curSym()+'—</div></div>';}).join('')+
     '</div>'+
-    '<div id="tax-wi-save" style="font-size:12px;margin-top:14px;background:rgba(255,255,255,.1);border-radius:9px;padding:9px 12px;line-height:1.5;display:none"></div></div>';
+    '<div id="tax-wi-save" style="font-size:12px;margin-top:14px;background:rgba(255,255,255,.1);border-radius:9px;padding:9px 12px;line-height:1.5;display:none"></div></div></div>';
   // ── VAT registration helper (a separate tax) ──
   h+='<div class="tx-card"><div class="tx-h"><span class="tx-vaticon">%</span> Should you register for VAT? <small style="font-weight:600;color:var(--t4)">— a separate tax</small></div>'+
     '<div id="tax-wi-vatseg" style="display:flex;gap:5px;max-width:260px">'+
@@ -67066,7 +67177,12 @@ function buildHMRCPreviewHTML(fy) {
 
   /* Section E — what it is likely to cost */
   var parts=(F.partners&&F.partners.length) ? '<div class="rpt-note">A partnership pays no tax itself. This is the total for the partners, each taxed on their own share: '+F.partners.map(function(x){ return M(x); }).join(' + ')+'.</div>' : '';
-  body+='<div class="rpt-sec"><div class="rpt-h2">Section E &mdash; Estimated tax<small>'+(F.scot?'Scottish rates':'rest-of-UK rates')+'</small></div>'+
+  /* -394 (5b gap): no tax figure for a partnership until its partners and shares are in. */
+  var _pgE=(typeof ukPartnershipGap==='function')?ukPartnershipGap():'';
+  if(_pgE) body+='<div class="rpt-sec" id="sa-partner-gate"><div class="rpt-h2">Section E &mdash; Estimated tax</div>'+
+    '<div class="rpt-chk bad">Add your partners to see the tax</div>'+
+    '<div class="rpt-note">A partnership pays no income tax itself: each partner is taxed on their share. '+esc4Rpt(_pgE)+'</div></div>';
+  else body+='<div class="rpt-sec"><div class="rpt-h2">Section E &mdash; Estimated tax<small>'+(F.scot?'Scottish rates':'rest-of-UK rates')+'</small></div>'+
     '<div class="rpt-tw"><table class="rpt-t"><tbody>'+
     (function(){ var te=(fy===getCurrentFY())?ukYearTaxEstimate(fy):null;   /* -386 D3: recorded so far | estimate for the year */
       if(!te) return '<tr><td>Income tax on the farming profit</td><td class="n neg">'+M(F.incomeTax)+'</td></tr>'+
@@ -72872,7 +72988,7 @@ var ST_FRUIT = {
   },
   comply: {
     gap:{ic:'\uD83C\uDF0D',title:'GLOBALG.A.P. (food safety)',what:'Proves your fruit is safe and traceable. Required for EU & UK markets. Renewed by a yearly audit.',type:'cert',status:'Expires 12 Jul 2026',statusTag:'amber',expiry:'2026-07-12',docs:[{name:'GLOBALGAP-certificate-2024.pdf',kind:'pdf',added:'12 Jul 2024'}]},
-    siza:{ic:'\uD83D\uDE9C',title:'Red Tractor (farm assurance)',what:'The UK farm assurance standard most buyers ask for \u2014 food safety, traceability, environment and worker welfare. Renewed by an annual audit.',type:'cert',status:'Valid · Aug 2026',statusTag:'green',expiry:'2026-08-20',docs:[]},
+    redtractor:{ic:'\uD83D\uDE9C',title:'Red Tractor (farm assurance)',what:'The UK farm assurance standard most buyers ask for \u2014 food safety, traceability, environment and worker welfare. Renewed by an annual audit.',type:'cert',status:'Valid · Aug 2026',statusTag:'green',expiry:'2026-08-20',docs:[]},
     ppecb:{ic:'\uD83D\uDEA2',title:'Phytosanitary certificate (APHA)',what:'Issued by the Plant Health and Seeds Inspectorate for consignments that need one on export.',type:'cert',status:'Active',statusTag:'green',expiry:'2026-12-31',docs:[]},
     phytclean:{ic:'\uD83D\uDEC2',title:'APHA registration (plant health)',what:'Registered with APHA as a professional operator \u2014 needed before you can get phytosanitary certificates to export fruit.',type:'cert',status:'Registered',statusTag:'green',expiry:'',docs:[]},
     water:{ic:'\uD83D\uDCA7',title:'Water use licence',what:'Your legal right to use water. Read the meter monthly and keep within your authorised volume.',type:'record',status:'Valid',statusTag:'green',expiry:'2027-06-30',docs:[],log:'312,000 of 480,000 m\u00b3 used this year',readings:[]},
@@ -73486,8 +73602,8 @@ function orAttentionHTML(){
   var rows=[];
   // 1) cert expiring soonest within 90 days
   try{
-    var c=ST_FRUIT.comply||{}; var soon=null;
-    ['gap','siza','ppecb'].forEach(function(key){ var cert=c[key]; if(!cert||!cert.expiry) return; var d=orDaysUntil(cert.expiry); if(d!=null && d>=0 && d<=90 && (!soon||d<soon.d)) soon={d:d,cert:cert}; });
+    var c=ST_FRUIT.comply||{}; var soon=null; orComplyRtMove(c);
+    ['gap','redtractor','ppecb'].forEach(function(key){ var cert=c[key]; if(!cert||!cert.expiry) return; var d=orDaysUntil(cert.expiry); if(d!=null && d>=0 && d<=90 && (!soon||d<soon.d)) soon={d:d,cert:cert}; });
     if(soon){ var wks=Math.max(1,Math.round(soon.d/7)); rows.push(['amber','\uD83D\uDCCB','<b>'+esc(soon.cert.title.split(' (')[0].split(' \u2014 ')[0])+' renews in ~'+wks+' week'+(wks>1?'s':'')+'</b> \u2014 book your audit to keep selling to EU &amp; UK.']); }
   }catch(e){}
   // 2) weakest block within a fruit type that has 2+ producing blocks
@@ -73878,8 +73994,28 @@ function orComplyScaffold(){
     else { c.status='Set up'; c.statusTag='gray'; c.expiry=''; if('log' in c) c.log=''; } });
   return t;
 }
+/* -394: Red Tractor has its own key ('redtractor'). It had been kept under the South African
+   'siza' key; an item still under that key (this device's saved state, or a server row the
+   data move has not reached yet) is read as Red Tractor - the new key first - and written
+   back under the new one. Anything else that ever sat under 'siza' is left where it is. */
+function orComplyRtMove(c){
+  if(!c || !c.siza) return c;
+  var old=c.siza, t=String(old.title||'');
+  if(t && !/red\s*tractor/i.test(t)) return c;
+  if(!c.redtractor) c.redtractor=old;
+  else ['docs','checks','readings'].forEach(function(f){
+    if(!Array.isArray(old[f]) || !old[f].length) return;
+    var cur=c.redtractor[f]=Array.isArray(c.redtractor[f])?c.redtractor[f]:[];
+    var seen={}; cur.forEach(function(x){ seen[JSON.stringify(x)]=1; });
+    old[f].forEach(function(x){ if(!seen[JSON.stringify(x)]) cur.push(x); });
+  });
+  delete c.siza;
+  return c;
+}
+window.orComplyRtMove=orComplyRtMove;
 function orComplyEnsure(){
   if(!ST_FRUIT.comply) ST_FRUIT.comply={};
+  orComplyRtMove(ST_FRUIT.comply);
   var t=OR_COMPLY_TEMPLATE||{};
   Object.keys(t).forEach(function(k){
     var c=ST_FRUIT.comply[k]; if(!c){ c=ST_FRUIT.comply[k]={}; }
@@ -74189,7 +74325,7 @@ function orRenderComply(){
   var exp=orHasExport(); var cats=orActiveCats();
   var certs=$('or-cmp-certs'); var other=$('or-cmp-other'); var pl=$('or-pest-list');
   var kExist=function(k){return !!ST_FRUIT.comply[k];};
-  if(certs) certs.innerHTML=(exp?['gap','siza','ppecb','phytclean']:[]).filter(kExist).map(orComplyRow).join('') || '<div class="or-empty">No export certificates needed \u2014 you sell locally.</div>';
+  if(certs) certs.innerHTML=(exp?['gap','redtractor','ppecb','phytclean']:[]).filter(kExist).map(orComplyRow).join('') || '<div class="or-empty">No export certificates needed \u2014 you sell locally.</div>';
   if(other) other.innerHTML=['water','operators','diesel'].filter(kExist).map(orComplyRow).join('') || '<div class="or-empty">No other records on file yet.</div>';
   if(pl){
     var html='';
@@ -74450,7 +74586,10 @@ function orOpenBlock(id){
        detail view. Keys are normalised above; the fallback stops a stray value doing it again. */
     var cv=OR_CURVES[b.curve]||OR_CURVES[b.cat]||OR_CURVES.topfruit; var life=cv.length; var now=Math.min(Math.max(b.age-1,0),life-1);
     h+='<div class="or-mlbl">Age vs what it yields</div><div class="or-curve">'+cv.map(function(v,i){return '<i class="'+(i===now?'now':(v>0?'fill':''))+'" style="height:'+Math.max(v,4)+'%"></i>';}).join('')+'</div><div class="or-curvex"><span>Year 1</span><span>Year '+Math.round(life/2)+'</span><span>Year '+life+'</span></div>';
-    h+='<div style="display:flex;gap:18px;flex-wrap:wrap;margin-top:12px"><div><div class="or-mini-l">Cost to plant</div><div class="or-mini-v">'+orEstabTxt(b.estab)+'</div></div>'+(b.perUnit>0?'<div><div class="or-mini-l">Money / '+b.unitWord+'</div><div class="or-mini-v lspos">'+orR(b.perUnit)+'</div></div>':'')+'</div>';
+    h+='<div style="display:flex;gap:18px;flex-wrap:wrap;margin-top:12px"><div><div class="or-mini-l">Cost to plant</div><div class="or-mini-v">'+orEstabTxt(b.estab)+'</div></div>'+(b.perUnit>0?'<div><div class="or-mini-l">Money / '+b.unitWord+'</div><div class="or-mini-v lspos">'+orR(b.perUnit)+'</div></div>':'')+
+       /* -394 B5-F14: the block's spacing, row × tree, now kept on the farm (orchard_blocks.spacing). */
+       '<div><label class="or-mini-l" for="or-b-space">Spacing <span class="or-fh">row × tree, metres</span></label><input class="or-finp" id="or-b-space" value="'+esc(orSpacingShow(b))+'" placeholder="e.g. 3.2 × 1" onchange="orSetBlockSpacing(\''+id+'\',this.value)" style="width:160px;padding:6px 9px;font-size:13px;margin-top:2px"></div>'+
+       '</div>';
   }
   /* B4-10 (-390): this block's own newest spray - it showed the newest spray of the fruit
      type, so every top-fruit block carried Long Orchard's Coragen. */
@@ -74744,6 +74883,24 @@ function orSpacingParse(s){
   return {row:r, tree:tr, text:r+' m × '+tr+' m'};
 }
 window.orSpacingParse=orSpacingParse;
+/* -394: what the block holds, as the farmer reads it: "3.2 m × 1 m", or an older value as it was typed. */
+function orSpacingShow(b){
+  if(!b) return '';
+  var r=Number(b.spaceRow), t=Number(b.spaceTree);
+  if(r>0 && t>0) return r+' m × '+t+' m';
+  return (b.space!=null && b.space!=='') ? String(b.space) : '';
+}
+function orSetBlockSpacing(id, v){
+  var b=orBlockById(id); if(!b) return;
+  var s=String(v||'').trim();
+  if(!s){ delete b.space; delete b.spaceRow; delete b.spaceTree; orSave(); orToast('Spacing cleared'); return; }
+  var sp=orSpacingParse(s);
+  if(!sp || sp.err){ fieldErr('or-b-space', (sp&&sp.err)||'Enter the spacing as row × tree in metres, like 3.2 × 1'); return; }
+  b.space=sp.text; b.spaceRow=sp.row; b.spaceTree=sp.tree;
+  var el=$('or-b-space'); if(el) el.value=sp.text;
+  orSave(); orToast('Spacing saved');
+}
+window.orSpacingShow=orSpacingShow; window.orSetBlockSpacing=orSetBlockSpacing;
 /* Home market ticked, EU not. This is a UK product: the old default had a Kent apple
    grower exporting to the EU and not selling at home, which also switched on the stricter
    export safe-to-pick rules and certificates for every new block. */
@@ -75066,7 +75223,7 @@ function orFarmName(){ return (typeof FARM!=='undefined'&&FARM&&FARM.name)?FARM.
 function orRowHtml(cells){ return '<tr>'+cells.map(function(c){return '<td>'+c+'</td>';}).join('')+'</tr>'; }
 function orExportAudit(){
   orComplyEnsure(); var C=ST_FRUIT.comply;
-  var certRows=['gap','siza','ppecb','phytclean'].filter(function(k){return C[k];}).map(function(k){var c=C[k];return orRowHtml([c.title,c.status,(c.expiry||'\u2014'),((c.docs&&c.docs.length)||0)+' file(s)']);}).join('');
+  var certRows=['gap','redtractor','ppecb','phytclean'].filter(function(k){return C[k];}).map(function(k){var c=C[k];return orRowHtml([c.title,c.status,(c.expiry||'\u2014'),((c.docs&&c.docs.length)||0)+' file(s)']);}).join('');
   var pestRows=Object.keys(C).filter(function(k){return C[k].type==='pest';}).map(function(k){var c=C[k];return orRowHtml([c.title,c.status,(c.log||''),((c.checks&&c.checks.length)||0)+' check(s)']);}).join('');
   var sprayRows='';
   OR_CAT_ORDER.forEach(function(cat){ (ST_FRUIT.sprayDiary[cat]||[]).forEach(function(x){ sprayRows+=orRowHtml([(OR_CATS[cat]?OR_CATS[cat].nm:cat),x.t,x.s,'Harvest interval '+orPhiDays(x.phi)+' days']); }); });
@@ -76307,7 +76464,7 @@ function aiPaySlipData(id, label){
        payslip use - PAYE from the engine and the workplace pension included - so the
        paper, the screen and the pay run all take the same amount off. */
     earn.push(r.partMonth
-      ? {d:'Ordinary wage — '+r.partMonth.days+' of '+r.partMonth.of+' working days from '+aiRcDate(r.partMonth.from), r:aiPayMoney(w.amt||0)+'/month', q:r.partMonth.days+'/'+r.partMonth.of, a:r.base}
+      ? {d:'Ordinary wage — '+r.partMonth.days+' of '+r.partMonth.of+' working days'+(r.partMonth.from?(' from '+aiRcDate(r.partMonth.from)):'')+(r.partMonth.to?(' to '+aiRcDate(r.partMonth.to)):'')+(r.partMonth.typed?' (days set by the employer)':''), r:aiPayMoney(w.amt||0)+'/month', q:r.partMonth.days+'/'+r.partMonth.of, a:r.base}
       : {d:'Ordinary wage — monthly', r:'', q:'1', a:r.base});
     if(r.bonus)   earn.push({d:'Bonus', r:'', q:'', a:r.bonus});
     if(r.premium) earn.push({d:'Sunday / bank holiday pay', r:[(r.sun?('Sun ×'+r.sunRate):''),(r.ph?('BH ×'+r.phRate):'')].filter(Boolean).join(' '),
