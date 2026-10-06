@@ -1091,6 +1091,7 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
       for (const r of [acc, txn, bud, rec]) if (r.error) throw r.error;
       _srvNote('accounts', acc.data);      _srvNote('transactions', txn.data);
       _srvNote('budget_months', bud.data); _srvNote('recurring', rec.data);
+      try { _budNoteLoaded(bud.data, fst && fst.data); } catch (e) {}   /* -398 F10: what the server holds, for "changed only" */
 
       var bObj = { monthlyIncome: {}, monthlyExpenses: {},
         incomePattern: (fst.data && fst.data.budget_income_pattern) || 'harvest',
@@ -1338,12 +1339,39 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
   var MON_ABBR = ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   function labelToYM(label){ var p = String(label||'').trim().split(/\s+/); var m = MON_ABBR.indexOf(p[0]); return { month: m>0?m:null, year: parseInt(p[1],10) || null }; }
   function ymToLabel(y,m){ return MON_ABBR[m] + ' ' + y; }
+  /* -398 (B7 F10): what the server holds for this farm's budget - the month rows by period and side, and the farm-row
+     fields - as last loaded or last written by this device. budget.save sends only what differs from it. null: never
+     loaded here (a first save, or a farm switched to), so everything is sent, as before. */
+  var _BUD_SRV = null;
+  function _budKey(y, m, side){ return y + '|' + m + '|' + side; }
+  function _budJ(v){ try { return JSON.stringify(v == null ? null : v); } catch (e) { return String(v); } }
+  function _budNoteLoaded(rows, f){
+    var s = { fid: farm.active(), rows: {}, farm: {} };
+    (rows || []).forEach(function (r) { if (r && r.period_year && r.period_month && r.side) s.rows[_budKey(r.period_year, r.period_month, r.side)] = Number(r.amount) || 0; });
+    if (f) {
+      s.farm.budget_income_pattern = f.budget_income_pattern || null; s.farm.budget_expense_pattern = f.budget_expense_pattern || null;
+      s.farm.budget_current_month = f.budget_current_month || null;
+      if ('budget_cat_targets' in f) s.farm.budget_cat_targets = _budJ(typeof f.budget_cat_targets === 'string' ? JSON.parse(f.budget_cat_targets) : f.budget_cat_targets);
+      if ('budget_locked' in f) s.farm.budget_locked = _budJ(typeof f.budget_locked === 'string' ? JSON.parse(f.budget_locked) : f.budget_locked);
+      if ('tax_paid' in f) s.farm.tax_paid = _budJ(typeof f.tax_paid === 'string' ? JSON.parse(f.tax_paid) : f.tax_paid);
+    }
+    _BUD_SRV = s;
+  }
+  function _budSrv(){ var s = _BUD_SRV; return (s && s.fid === farm.active()) ? s : null; }
+  /* A farm-row field differs from what the server holds (or nothing is known). */
+  function _budFarmDiffers(col, val){ var s = _budSrv(); if (!s || !(col in s.farm)) return true; return s.farm[col] !== (typeof val === 'string' || val === null ? val : _budJ(val)); }
+  function _budFarmNote(col, val){ var s = _budSrv(); if (s) s.farm[col] = (typeof val === 'string' || val === null) ? val : _budJ(val); }
   const budget = {
-    // Persist the whole budget object: per-month income/expense targets + settings
+    /* Persist the budget: the month rows and the settings on the farm row. -398 (B7 F10): ONLY what changed - a month
+       row whose figure differs from the server's, a farm-row field whose value differs. Every call used to upsert every
+       month row and make 2-4 farms updates, one call per keystroke of the annual box. The calls are debounced and merged
+       below (one save per burst, the latest copy), and still run one at a time, in order, through the budget lane. The
+       month rows go through client()'s _srvPrep/_srvWatch like every upsert (keyed period_year + period_month + side),
+       and the server's answer refreshes the memory here. */
     async save(b) {
       if (!b) return;
       var fid = farm.active();
-      var rows = [];
+      var rows = [], srv = _budSrv();
       Object.keys(b.monthlyIncome || {}).forEach(function (lbl) {
         var ym = labelToYM(lbl);
         if (ym.month && ym.year) rows.push({ farm_id: fid, period_year: ym.year, period_month: ym.month, side: 'income', amount: Number(b.monthlyIncome[lbl]) || 0 });
@@ -1352,42 +1380,47 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
         var ym = labelToYM(lbl);
         if (ym.month && ym.year) rows.push({ farm_id: fid, period_year: ym.year, period_month: ym.month, side: 'expense', amount: Number(b.monthlyExpenses[lbl]) || 0 });
       });
+      if (srv) rows = rows.filter(function (r) { var k = _budKey(r.period_year, r.period_month, r.side); return !(k in srv.rows) || srv.rows[k] !== r.amount; });
       if (rows.length) {
         var r1 = await client().from('budget_months').upsert(rows, { onConflict: 'farm_id,period_year,period_month,side' });
         if (r1.error) throw r1.error;
+        if (srv) rows.forEach(function (r) { srv.rows[_budKey(r.period_year, r.period_month, r.side)] = r.amount; });
       }
       /* This write moves the farm row's version, which is what every Settings save
          carries to prove it is not stale (-406). Live-tested 16 Sep 2026: writing the
          same three values back still moved it, in both apps. So read the new version
          back and hand it to Settings, or every budget edit sends the next Settings save
          down the refetch-merge-retry path for nothing (-411). */
-      var r2 = await client().from('farms').update({
-        budget_income_pattern: b.incomePattern || null,
-        budget_expense_pattern: b.expensePattern || null,
-        budget_current_month: b.currentMonth || null
-      }).eq('id', fid).select('budget_income_pattern,budget_expense_pattern,budget_current_month,updated_at');
-      if (r2.error) throw r2.error;
-      try { if ((r2.data || []).length) _profNoteAck(r2.data[0]); } catch (e) {}
+      var _f2 = { budget_income_pattern: b.incomePattern || null, budget_expense_pattern: b.expensePattern || null, budget_current_month: b.currentMonth || null };
+      if (Object.keys(_f2).some(function (c) { return _budFarmDiffers(c, _f2[c]); })) {
+        var r2 = await client().from('farms').update(_f2).eq('id', fid).select('budget_income_pattern,budget_expense_pattern,budget_current_month,updated_at');
+        if (r2.error) throw r2.error;
+        try { if ((r2.data || []).length) _profNoteAck(r2.data[0]); } catch (e) {}
+        Object.keys(_f2).forEach(function (c) { _budFarmNote(c, _f2[c]); });
+      }
       /* Its own statement, behind its own probe, on the same rule the profile save uses: a
          database that has not had the column added yet must still save the month figures
          rather than lose the whole budget to one missing field. */
-      if (CAN_BUDGET_CATTGT && b.catTargets) {
+      if (CAN_BUDGET_CATTGT && b.catTargets && _budFarmDiffers('budget_cat_targets', b.catTargets)) {
         var r3 = await client().from('farms')
           .update({ budget_cat_targets: b.catTargets }).eq('id', fid).select('budget_cat_targets,updated_at');
         try { if (!r3.error && (r3.data || []).length) _profNoteAck(r3.data[0]); } catch (e) {}
         if (r3.error) console.warn('Budgets: category targets not saved - add farms.budget_cat_targets. (' + (r3.error.message || r3.error) + ')');
+        else _budFarmNote('budget_cat_targets', b.catTargets);
       }
       /* -371 D1: which financial years are locked as the bank copy. */
-      if (CAN_BUDGET_LOCK && b.locked && typeof b.locked === 'object') {
+      if (CAN_BUDGET_LOCK && b.locked && typeof b.locked === 'object' && _budFarmDiffers('budget_locked', b.locked)) {
         var r5 = await client().from('farms').update({ budget_locked: b.locked }).eq('id', fid).select('budget_locked,updated_at');
         try { if (!r5.error && (r5.data || []).length) _profNoteAck(r5.data[0]); } catch (e) {}
         if (r5.error) console.warn('Budgets: lock not saved - add farms.budget_locked. (' + (r5.error.message || r5.error) + ')');
+        else _budFarmNote('budget_locked', b.locked);
       }
       /* -373: the HMRC payments the farmer has marked paid on the Tax home. */
-      if (CAN_TAX_PAID && global.ST && global.ST.taxPaid && typeof global.ST.taxPaid === 'object') {
+      if (CAN_TAX_PAID && global.ST && global.ST.taxPaid && typeof global.ST.taxPaid === 'object' && _budFarmDiffers('tax_paid', global.ST.taxPaid)) {
         var r6 = await client().from('farms').update({ tax_paid: global.ST.taxPaid }).eq('id', fid).select('tax_paid,updated_at');
         try { if (!r6.error && (r6.data || []).length) _profNoteAck(r6.data[0]); } catch (e) {}
         if (r6.error) console.warn('Tax: payments marked paid not saved - add farms.tax_paid. (' + (r6.error.message || r6.error) + ')');
+        else _budFarmNote('tax_paid', global.ST.taxPaid);
       }
       return true;
     }
@@ -3524,6 +3557,37 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
      only ever leave one row. Budgets save the whole object, like the other saveAll lanes.
      Health records join the livestock lane, whose load is already guarded. */
   _syncWrap('budget',    'budget',    budget,      'save');
+  /* -398 (B7 F10): ONE save per burst of budget edits. Typing a year's total saved on every keystroke and each save
+     re-sent the whole budget; the lane ran them one after another. Now each call marks the budget unsent AT ONCE (so
+     an app closed inside the wait is caught up on the next open - the F2 guard keeps that copy), waits BUD_SAVE_MS
+     for the burst to end, and sends the latest copy once through the same lane (FIFO behind anything already in it).
+     Every caller of the burst gets that save's answer. { now:true } sends at once (Start fresh, before a reload);
+     budget.flush() sends a waiting save now (pagehide). */
+  var BUD_SAVE_MS = 600, _budDeb = { timer: null, waiters: [], arg: null };
+  var _budLane = budget.save;
+  function _budGo(){
+    if (_budDeb.timer) { clearTimeout(_budDeb.timer); _budDeb.timer = null; }
+    var w = _budDeb.waiters.splice(0), a = _budDeb.arg; _budDeb.arg = null;
+    if (!w.length) return Promise.resolve();
+    var job = _budLane.call(budget, a);
+    /* a save finishing clears the unsent mark (_syncDone); an edit already waiting for its own save keeps it */
+    job.then(function (v) { if (_budDeb.timer) _budMark(); w.forEach(function (x) { x.res(v); }); }, function (e) { if (_budDeb.timer) _budMark(); w.forEach(function (x) { x.rej(e); }); });
+    return job.catch(function(){});
+  }
+  function _budMark(){ try { if (farm.active()) { var u = _unsentRead(); if (!u.areas.budget) { u.areas.budget = true; _unsentWrite(u); _syncEmit(); } } } catch (e) {} }
+  budget.save = function (b, o) {
+    if (b) _budDeb.arg = b;
+    _budMark();
+    return new Promise(function (res, rej) {
+      _budDeb.waiters.push({ res: res, rej: rej });
+      if (o && o.now) { _budGo(); return; }
+      if (_budDeb.timer) clearTimeout(_budDeb.timer);
+      _budDeb.timer = setTimeout(_budGo, BUD_SAVE_MS);
+    });
+  };
+  budget.flush = function () { return _budDeb.timer ? _budGo() : Promise.resolve(); };
+  budget.pending = function () { return !!_budDeb.timer; };
+  try { global.addEventListener && global.addEventListener('pagehide', function () { try { budget.flush(); } catch (e) {} }); } catch (e) {}
   _syncWrap('assets',    'asset',     asset,       'add',    true);
   _syncWrap('assets',    'asset',     asset,       'update', true);
   _syncWrap('assets',    'asset',     asset,       'remove', true);

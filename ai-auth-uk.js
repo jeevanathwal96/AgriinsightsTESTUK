@@ -388,7 +388,31 @@
   // ---- ensure a farm, load its data into ST, re-render ---------------------
   /* The signed-in user's id, read from the persisted session. Used to tell whether
      the data already on this device belongs to the account that is signing in. */
-  function _sessionUid(){
+  /* -398 (B7 F2): the server's budget onto this device - unless this device still has a budget edit it has not sent.
+   ST.budgets was replaced by the server's copy FIRST and AI.sync.catchUp() ran after it, so the catch-up then sent
+   the server's own copy back and the farmer's unsent edit was gone. Recurring and assets were already guarded by
+   isUnsent(); the budget now is too, and the payments marked paid with it (they are saved in the same budget save).
+   catchUp() then sends this device's copy. Read by tools/uk-b7f-398-harness.html from this file. */
+function aiApplyCoreBudgets(core){
+  if (!window.ST || !core) return 'none';
+  var unsent = !!(window.AI && AI.sync && AI.sync.isUnsent && AI.sync.isUnsent('budget'));
+  if (core.budgets && !unsent) {
+    /* Keep any category targets this device already has when the server has none.
+       The server payload replaces ST.budgets wholesale, so without this the first
+       load after the catTargets migration would wipe targets that had never had
+       anywhere to sync to - losing them at the exact moment they became savable. */
+    var _localCT = (ST.budgets && ST.budgets.catTargets) || null, _localLk = (ST.budgets && ST.budgets.locked) || null;
+    ST.budgets = core.budgets;
+    if (!ST.budgets.catTargets && _localCT) ST.budgets.catTargets = _localCT;
+    if (!ST.budgets.locked && _localLk) ST.budgets.locked = _localLk;   /* -371 */
+    /* -398 F8: targets saved under a merged category's old name follow it */
+    try { if (typeof window.bgtMigrateCatTargets === 'function') window.bgtMigrateCatTargets(); } catch(e){}
+  }
+  if (core.taxPaid && typeof core.taxPaid === 'object' && !unsent) ST.taxPaid = core.taxPaid;   /* -373 */
+  return unsent ? 'kept' : 'server';
+}
+window.aiApplyCoreBudgets = aiApplyCoreBudgets;
+function _sessionUid(){
     /* This app's own session first. Both apps live on one host, so localStorage holds a
        token for each Supabase project, and taking the first sb-*-auth-token found
        returned the OTHER app's account id about as often as this one's. Hydrate read
@@ -505,16 +529,7 @@
       return AI.load.financeCore(fid);
     }).then(function (core) {
       // Replace the app's working data with the farm's real data.
-      if (window.ST) { ST.txns = (window.preservePendingTxns ? window.preservePendingTxns(core.txns || []) : (core.txns || [])); if (!(window.AI && AI.sync && AI.sync.isUnsent('recurring'))) ST.recurring = core.recurring || []; if (core.budgets) {
-          /* Keep any category targets this device already has when the server has none.
-             The server payload replaces ST.budgets wholesale, so without this the first
-             load after the catTargets migration would wipe targets that had never had
-             anywhere to sync to - losing them at the exact moment they became savable. */
-          var _localCT = (ST.budgets && ST.budgets.catTargets) || null, _localLk = (ST.budgets && ST.budgets.locked) || null;
-          ST.budgets = core.budgets;
-          if (!ST.budgets.catTargets && _localCT) ST.budgets.catTargets = _localCT;
-          if (!ST.budgets.locked && _localLk) ST.budgets.locked = _localLk;   /* -371 */
-        } if (core.taxPaid && typeof core.taxPaid === 'object') ST.taxPaid = core.taxPaid;   /* -373 */ if (core.batches && !(window.AI && AI.sync && AI.sync.isUnsent('imports'))) ST.importBatches = core.batches;
+      if (window.ST) { ST.txns = (window.preservePendingTxns ? window.preservePendingTxns(core.txns || []) : (core.txns || [])); if (!(window.AI && AI.sync && AI.sync.isUnsent('recurring'))) ST.recurring = core.recurring || []; aiApplyCoreBudgets(core); if (core.batches && !(window.AI && AI.sync && AI.sync.isUnsent('imports'))) ST.importBatches = core.batches;
         /* Has this farmer ever been through setup? A farm auto-created at first
            sign-in has no owner_name until obFinish saves one, so "no owner AND no
            transactions" is an un-onboarded farm on any device. Requiring the empty
