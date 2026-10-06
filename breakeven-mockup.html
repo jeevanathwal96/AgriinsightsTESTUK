@@ -1,0 +1,522 @@
+<title>Full Cost &amp; Break-even</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
+<style>
+/* Layout: AgriInsights app shell (sidebar + main), Profit page with a new "Full cost & break-even" tab.
+   Tokens follow the app's own palette (--gd/--gm/--gl greens, orange/red/amber semantics). */
+:root{
+  --gd:#1B4332; --gm:#2D6A4F; --gl:#40916C; --gp:#D8F3DC; --gb:#F0FAF4;
+  --or:#E07B2A; --op:#FFF3E8; --rd:#C0392B; --rp:#FDECEA; --am:#B7791F; --ap:#FFF8E6;
+  --t1:#111827; --t2:#374151; --t3:#6B7280; --t4:#9CA3AF;
+  --br:#E5E7EB; --br2:#F3F4F6; --wh:#FFFFFF; --bg:#F7F9F8; --side:#1B4332; --sideT:#D8F3DC;
+  --track:#EEF2EF; --focus:#40916C;
+  --sh:0 1px 3px rgba(17,24,39,.07),0 1px 2px rgba(17,24,39,.04);
+  --fn:'Plus Jakarta Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --r:12px; --rs:8px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --gd:#B7E4C7; --gm:#74C69D; --gl:#52B788; --gp:#1D3A2C; --gb:#14261E;
+  --or:#F4A261; --op:#3A2716; --rd:#F28B82; --rp:#3B1F1D; --am:#F6C667; --ap:#3A2F14;
+  --t1:#EEF3F0; --t2:#C9D3CE; --t3:#93A39B; --t4:#6B7A73;
+  --br:#2A3832; --br2:#1F2B26; --wh:#151E1A; --bg:#0F1613; --side:#0B120F; --sideT:#B7E4C7;
+  --track:#22302A; --focus:#74C69D; --sh:0 1px 2px rgba(0,0,0,.4); color-scheme:dark }}
+:root[data-theme="dark"]{
+  --gd:#B7E4C7; --gm:#74C69D; --gl:#52B788; --gp:#1D3A2C; --gb:#14261E;
+  --or:#F4A261; --op:#3A2716; --rd:#F28B82; --rp:#3B1F1D; --am:#F6C667; --ap:#3A2F14;
+  --t1:#EEF3F0; --t2:#C9D3CE; --t3:#93A39B; --t4:#6B7A73;
+  --br:#2A3832; --br2:#1F2B26; --wh:#151E1A; --bg:#0F1613; --side:#0B120F; --sideT:#B7E4C7;
+  --track:#22302A; --focus:#74C69D; --sh:0 1px 2px rgba(0,0,0,.4); color-scheme:dark }
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{background:var(--bg);color:var(--t1);font-family:var(--fn);font-size:14px;line-height:1.5}
+.num{font-variant-numeric:tabular-nums}
+button,select,input{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+
+.shell{display:grid;grid-template-columns:232px minmax(0,1fr);min-height:100%}
+.side{background:var(--side);color:var(--sideT);padding:20px 12px;display:flex;flex-direction:column;gap:4px}
+.brand{font-weight:800;font-size:17px;padding:0 10px 16px;color:#fff;letter-spacing:-.01em}
+:root[data-theme="dark"] .brand{color:var(--gd)}
+.brand small{display:block;font-weight:500;font-size:11px;opacity:.7;letter-spacing:.04em;text-transform:uppercase}
+.nav{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:var(--rs);font-weight:500;opacity:.78;cursor:pointer;border:0;background:none;text-align:left;color:inherit;width:100%}
+.nav:hover{opacity:1;background:rgba(255,255,255,.06)}
+.nav.on{opacity:1;background:rgba(255,255,255,.12);font-weight:700}
+.nav i{width:8px;height:8px;border-radius:2px;background:currentColor;opacity:.5}
+
+.main{padding-block:24px 48px;padding-inline:clamp(16px,3vw,36px);min-width:0;display:flex;flex-direction:column;gap:20px}
+.top{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;justify-content:space-between}
+.crumb{font-size:12px;color:var(--t3);font-weight:600;letter-spacing:.04em;text-transform:uppercase}
+h1{font-size:26px;margin:2px 0 0;letter-spacing:-.02em;text-wrap:balance}
+.sample{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--or);background:var(--op);border-radius:99px;padding:3px 10px}
+.ctrls{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.sel{background:var(--wh);border:1px solid var(--br);border-radius:var(--rs);padding:7px 10px}
+.btn{background:var(--wh);border:1px solid var(--br);border-radius:var(--rs);padding:7px 12px;font-weight:600;cursor:pointer}
+.btn:hover{border-color:var(--gl)}
+.btn.pri{background:var(--gm);border-color:var(--gm);color:#fff}
+:root[data-theme="dark"] .btn.pri{color:#0F1613}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .btn.pri{color:#0F1613}}
+
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--br);overflow-x:auto}
+.tab{border:0;background:none;padding:10px 14px;font-weight:600;color:var(--t3);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap}
+.tab.on{color:var(--gm);border-bottom-color:var(--gm)}
+.new{font-size:10px;font-weight:800;letter-spacing:.06em;background:var(--gp);color:var(--gm);border-radius:4px;padding:1px 5px;margin-left:6px;vertical-align:1px}
+
+.card{background:var(--wh);border:1px solid var(--br);border-radius:var(--r);box-shadow:var(--sh)}
+.card-h{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid var(--br2)}
+.card-h h2{font-size:16px;margin:0;letter-spacing:-.01em}
+.card-h p{margin:2px 0 0;color:var(--t3);font-size:13px;max-width:70ch}
+.pad{padding:16px 18px}
+
+.levels{display:flex;flex-wrap:wrap;gap:0;border:1px solid var(--br);border-radius:var(--rs);overflow:hidden;background:var(--wh)}
+.levels button{border:0;background:none;padding:8px 14px;font-weight:600;cursor:pointer;color:var(--t2);border-right:1px solid var(--br)}
+.levels button:last-child{border-right:0}
+.levels button.on{background:var(--gm);color:#fff}
+:root[data-theme="dark"] .levels button.on{color:#0F1613}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .levels button.on{color:#0F1613}}
+.lvl-note{font-size:13px;color:var(--t3);max-width:70ch}
+
+.tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.tile{padding:14px 16px;display:flex;flex-direction:column;gap:4px}
+.tile .k{font-size:12px;color:var(--t3);font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.tile .v{font-size:24px;font-weight:800;letter-spacing:-.02em}
+.tile .s{font-size:12.5px;color:var(--t3)}
+.good{color:var(--gl)} .warn{color:var(--am)} .bad{color:var(--rd)}
+
+.whatif{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px;align-items:end}
+.slider label{display:flex;justify-content:space-between;font-weight:600;font-size:13px;margin-bottom:6px}
+.slider input{width:100%;accent-color:var(--gm)}
+.whatif-flag{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;background:var(--ap);color:var(--am);border-radius:var(--rs);padding:8px 12px;font-weight:600;font-size:13px}
+
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%}
+th{font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);font-weight:700;text-align:right;padding:10px 12px;border-bottom:1px solid var(--br);white-space:nowrap;background:var(--wh)}
+td{padding:12px;border-bottom:1px solid var(--br2);text-align:right;vertical-align:middle}
+th:first-child,td:first-child{text-align:left}
+tr:last-child td{border-bottom:0}
+.ent-tbl{min-width:900px}
+.ent-name{display:flex;align-items:center;gap:10px;font-weight:700;border:0;background:none;padding:0;cursor:pointer;text-align:left}
+.ent-name .dot{width:10px;height:10px;border-radius:3px;flex:none}
+.ent-name small{display:block;font-weight:500;color:var(--t3);font-size:12px}
+.chev{color:var(--t4);font-size:11px;transition:transform .15s}
+tr.open .chev{transform:rotate(90deg)}
+.be{font-weight:800;font-size:15px}
+.sub{display:block;font-size:12px;color:var(--t3);font-weight:500}
+.pill{display:inline-flex;align-items:center;gap:6px;border-radius:99px;padding:3px 10px;font-size:12px;font-weight:700;white-space:nowrap}
+.pill::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.pill.g{background:var(--gp);color:var(--gm)} .pill.a{background:var(--ap);color:var(--am)} .pill.r{background:var(--rp);color:var(--rd)}
+
+.bullet{position:relative;height:22px;min-width:150px;background:var(--track);border-radius:5px}
+.bullet .bar{position:absolute;left:0;top:5px;height:12px;border-radius:3px}
+.bullet .mk{position:absolute;top:1px;bottom:1px;width:3px;margin-left:-1px;background:var(--t1);border-radius:2px}
+.bullet-l{display:flex;justify-content:space-between;font-size:11.5px;color:var(--t3);margin-top:3px;gap:8px}
+
+.detail td{background:var(--gb);padding:0}
+.detail .in{padding:14px 18px 16px 40px;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px}
+.detail h4{margin:0 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3)}
+.kv{display:flex;justify-content:space-between;gap:12px;padding:3px 0;font-size:13px;border-bottom:1px dashed var(--br)}
+.kv:last-child{border-bottom:0}
+.kv b{font-weight:700}
+.tag{font-size:10.5px;font-weight:700;color:var(--t3);background:var(--br2);border-radius:4px;padding:1px 5px;margin-left:6px}
+
+.recon{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;padding:14px 18px;border-top:1px solid var(--br2);font-size:13.5px}
+.recon .ok{display:inline-flex;gap:6px;align-items:center;font-weight:700}
+.eq{color:var(--t3)}
+
+.alloc-tbl{min-width:980px}
+.alloc-tbl td{padding:9px 10px}
+.alloc-tbl select{background:var(--wh);border:1px solid var(--br);border-radius:6px;padding:5px 6px;max-width:190px}
+.cell{display:flex;flex-direction:column;align-items:flex-end;line-height:1.25}
+.cell small{color:var(--t3);font-size:11.5px}
+.cell input{width:62px;text-align:right;border:1px solid var(--br);border-radius:6px;padding:4px 6px;background:var(--wh)}
+.zero{color:var(--t4)}
+.row-warn td{background:var(--rp)}
+.tot-bad{color:var(--rd);font-weight:800}
+.src{font-size:11.5px;color:var(--t3);display:block}
+
+.grid2{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:20px}
+.basis-tbl{min-width:560px}
+.basis-tbl input{width:84px;text-align:right;border:1px solid var(--br);border-radius:6px;padding:4px 6px;background:var(--wh)}
+.chip{display:inline-block;font-size:11px;font-weight:700;border-radius:4px;padding:1px 6px;margin-top:3px}
+.chip.rec{background:var(--gp);color:var(--gm)} .chip.est{background:var(--ap);color:var(--am)}
+.econ{display:flex;flex-direction:column;gap:12px}
+.econ.dim{opacity:.55}
+.field{display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:13.5px}
+.field input{width:96px;text-align:right;border:1px solid var(--br);border-radius:6px;padding:6px 8px;background:var(--wh)}
+.note{font-size:12.5px;color:var(--t3);margin:0}
+
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%) translateY(20px);background:var(--t1);color:var(--wh);padding:10px 16px;border-radius:var(--rs);font-weight:600;opacity:0;pointer-events:none;transition:.2s;max-width:calc(100% - 32px)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+#csvBox{width:100%;min-height:120px;font-family:ui-monospace,Menlo,monospace;font-size:12px;border:1px solid var(--br);border-radius:var(--rs);background:var(--bg);padding:10px}
+
+@media (max-width:1100px){.tiles{grid-template-columns:repeat(2,minmax(0,1fr))}.grid2{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:760px){.shell{grid-template-columns:minmax(0,1fr)}.side{display:none}h1{font-size:22px}.tile .v{font-size:20px}}
+@media (max-width:420px){.tiles{grid-template-columns:minmax(0,1fr)}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="shell">
+  <nav class="side" aria-label="Main">
+    <div class="brand">AgriInsights<small>United Kingdom</small></div>
+    <button class="nav stub"><i></i>Dashboard</button>
+    <button class="nav stub"><i></i>Income</button>
+    <button class="nav stub"><i></i>Expenses</button>
+    <button class="nav stub"><i></i>Budgets</button>
+    <button class="nav stub"><i></i>Cash flow</button>
+    <button class="nav on" aria-current="page"><i></i>Profit</button>
+    <button class="nav stub"><i></i>Tax</button>
+    <button class="nav stub"><i></i>Livestock</button>
+    <button class="nav stub"><i></i>Crops</button>
+    <button class="nav stub"><i></i>Assets</button>
+    <button class="nav stub"><i></i>Workers</button>
+    <button class="nav stub"><i></i>Reports</button>
+  </nav>
+
+  <main class="main">
+    <div class="top">
+      <div>
+        <div class="crumb">Profit</div>
+        <h1>Full cost &amp; break-even</h1>
+        <span class="sample">Example farm: Hillside Farm, Shropshire. Not real figures</span>
+      </div>
+      <div class="ctrls">
+        <select class="sel" id="season" aria-label="Season">
+          <option>Harvest 2026 (Sep 25 – Aug 26)</option>
+          <option>Harvest 2025 (Sep 24 – Aug 25)</option>
+        </select>
+        <button class="btn" id="copyCsv">Copy CSV</button>
+        <button class="btn pri" id="bankPack">Add to bank pack</button>
+      </div>
+    </div>
+
+    <div class="tabs" role="tablist">
+      <button class="tab stub" role="tab">Gross margins</button>
+      <button class="tab on" role="tab" aria-selected="true">Full cost &amp; break-even<span class="new">NEW</span></button>
+      <button class="tab stub" role="tab">Profit &amp; loss</button>
+      <button class="tab stub" role="tab">Farm Business Income</button>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div class="levels" role="group" aria-label="Break-even level" id="levels">
+        <button data-l="cash">Cash</button>
+        <button data-l="full" class="on">Full cost</button>
+        <button data-l="econ">Economic</button>
+      </div>
+      <p class="lvl-note" id="lvlNote"></p>
+    </div>
+
+    <section class="tiles" id="tiles" aria-label="Summary"></section>
+
+    <section class="card">
+      <div class="card-h">
+        <div><h2>What if?</h2><p>Test a bad year before it happens. Variable costs stay as they are; overheads stay put.</p></div>
+        <button class="btn" id="resetWhatif">Reset</button>
+      </div>
+      <div class="pad" style="display:flex;flex-direction:column;gap:14px">
+        <div class="whatif">
+          <div class="slider"><label for="pDelta"><span>Price</span><span id="pDeltaV" class="num">0%</span></label><input type="range" id="pDelta" min="-30" max="20" step="1" value="0"></div>
+          <div class="slider"><label for="yDelta"><span>Yield / volume</span><span id="yDeltaV" class="num">0%</span></label><input type="range" id="yDelta" min="-30" max="15" step="1" value="0"></div>
+        </div>
+        <div class="whatif-flag" id="whatifFlag" hidden><span id="whatifTxt"></span></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-h">
+        <div><h2>Enterprises</h2><p>Break-even price is what each unit must sell for to cover its variable costs and its share of overheads. Tap an enterprise to see where its overheads come from.</p></div>
+      </div>
+      <div class="scroll">
+        <table class="ent-tbl" id="entTbl">
+          <thead><tr>
+            <th>Enterprise</th><th>Gross margin</th><th>Overheads</th><th>Net margin</th>
+            <th style="text-align:left">Price vs break-even</th><th>Break-even price</th><th>Break-even yield</th><th>Status</th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="recon" id="recon"></div>
+    </section>
+
+    <section class="card">
+      <div class="card-h">
+        <div><h2>How overheads are split</h2><p>Each overhead is split using the basis that fits it best. We've suggested one for each; change any of them. Costs you tagged to an enterprise stay with it.</p></div>
+        <button class="btn" id="resetAlloc">Reset to suggested</button>
+      </div>
+      <div class="scroll"><table class="alloc-tbl" id="allocTbl"></table></div>
+    </section>
+
+    <div class="grid2">
+      <section class="card">
+        <div class="card-h"><div><h2>Size of each enterprise</h2><p>Used for the area, livestock unit and labour splits, and for per-unit figures.</p></div></div>
+        <div class="scroll"><table class="basis-tbl" id="basisTbl"></table></div>
+        <p class="note pad" id="labourNote"></p>
+      </section>
+      <section class="card">
+        <div class="card-h"><div><h2>Economic costs</h2><p>Costs that aren't in your accounts but are real. Used only on the Economic level.</p></div></div>
+        <div class="pad econ" id="econ">
+          <div class="field"><label for="ownHa">Owned land (ha)</label><input id="ownHa" type="number" min="0" value="145"></div>
+          <div class="field"><label for="rentRate">Notional rent (£/ha)</label><input id="rentRate" type="number" min="0" value="230"></div>
+          <div class="field"><label for="famHrs">Unpaid family labour (hrs/yr)</label><input id="famHrs" type="number" min="0" value="2600"></div>
+          <div class="field"><label for="famRate">Labour rate (£/hr)</label><input id="famRate" type="number" min="0" step="0.5" value="15"></div>
+          <p class="note">Notional rent is split by area; family labour by labour time. Rates match the AHDB costings approach.</p>
+        </div>
+      </section>
+    </div>
+
+    <section class="card" id="csvCard" hidden>
+      <div class="card-h"><div><h2>CSV</h2><p>Copying wasn't allowed here. Select the text below and copy it.</p></div></div>
+      <div class="pad"><textarea id="csvBox" readonly aria-label="CSV export"></textarea></div>
+    </section>
+  </main>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+var ENTS=[
+ {id:'ww',  name:'Winter wheat',    color:'#C9A227', baseWord:'ha',  units:120, area:120, lu:0,   labour:15, vol:1020,    volWord:'t',     price:194,   variable:84000,  volSrc:'rec', volFrom:'Harvest records', fmt:'t',   yWord:'t/ha'},
+ {id:'osr', name:'Oilseed rape',    color:'#E9C46A', baseWord:'ha',  units:60,  area:60,  lu:0,   labour:8,  vol:168,     volWord:'t',     price:550,   variable:41000,  volSrc:'est', volFrom:'Estimate: 2.8 t/ha', fmt:'t',   yWord:'t/ha'},
+ {id:'dairy',name:'Dairy',          color:'#2D6A4F', baseWord:'cows',units:180, area:110, lu:180, labour:55, vol:1580000, volWord:'litres',price:0.456, variable:390000, volSrc:'rec', volFrom:'Milk statements', fmt:'ppl', yWord:'L/cow'},
+ {id:'sheep',name:'Sheep (lowland)',color:'#7FA7C9', baseWord:'ewes',units:400, area:40,  lu:44,  labour:20, vol:620,     volWord:'lambs', price:103,   variable:30000,  volSrc:'rec', volFrom:'Livestock sales', fmt:'lamb',yWord:'lambs/ewe'},
+ {id:'sfi', name:'SFI & schemes',   color:'#8B5CF6', baseWord:'ha',  units:15,  area:15,  lu:0,   labour:2,  vol:15,      volWord:'ha',    price:1240,  variable:1200,   volSrc:'rec', volFrom:'SFI agreement', fmt:'ha',  yWord:null}
+];
+var CATS_DEFAULT=[
+ {id:'rent', name:'Rent',                          amt:48000, drv:'area'},
+ {id:'mrep', name:'Machinery repairs & fuel',      amt:38000, drv:'area'},
+ {id:'mdep', name:'Machinery depreciation',        amt:42000, drv:'area', dep:true, src:'Asset register'},
+ {id:'bdep', name:'Buildings depreciation & repairs',amt:26000,drv:'lu',  dep:true, src:'Asset register'},
+ {id:'wage', name:'Wages, NI & pension',           amt:96000, drv:'labour', src:'Payroll'},
+ {id:'contr',name:'Contract work (fixed)',         amt:14000, drv:'area'},
+ {id:'power',name:'Electricity & water',           amt:22000, drv:'manual', manual:{ww:9,osr:5,dairy:80,sheep:6,sfi:0}},
+ {id:'ins',  name:'Insurance',                     amt:9500,  drv:'output'},
+ {id:'admin',name:'Accountancy, admin & phone',    amt:11000, drv:'output'},
+ {id:'int',  name:'Loan & overdraft interest',     amt:16000, drv:'output', src:'Loans (interest only)'},
+ {id:'parl', name:'Parlour maintenance contract',  amt:12000, drv:'direct:dairy', src:'Tagged to Dairy'}
+];
+var DRV_LABEL={area:'Area (ha)',lu:'Livestock units',labour:'Labour time',output:'Share of output',gm:'Share of gross margin',manual:'Manual %'};
+var LEVEL_NOTE={
+ cash:'<b>Cash break-even:</b> can the enterprise pay its bills? Leaves out depreciation, because no money leaves the bank for it.',
+ full:'<b>Full-cost break-even:</b> is the enterprise making a profit? Includes every overhead in your accounts, depreciation and interest included.',
+ econ:'<b>Economic break-even:</b> is it worth doing? Adds a notional rent on land you own and a wage for unpaid family labour.'
+};
+var st={level:'full',p:0,y:0,open:{},cats:clone(CATS_DEFAULT),econ:{ownHa:145,rentRate:230,famHrs:2600,famRate:15}};
+function clone(o){return JSON.parse(JSON.stringify(o))}
+var $=function(id){return document.getElementById(id)};
+var gbp=function(n){var s=Math.round(Math.abs(n)).toLocaleString('en-GB');return (n<0?'−£':'£')+s};
+var pct=function(n){return (n>0?'+':'')+n+'%'};
+
+function baseOut(e){return e.vol*e.price}
+function baseGM(e){return baseOut(e)-e.variable}
+function basisVal(e,drv,c){
+  if(drv==='area')return e.area; if(drv==='lu')return e.lu; if(drv==='labour')return e.labour;
+  if(drv==='output')return Math.max(baseOut(e),0); if(drv==='gm')return Math.max(baseGM(e),0); return 0;
+}
+/* Returns {ent:£} plus unallocated remainder. Largest-remainder rounding keeps the total exact. */
+function alloc(c){
+  var res={},un=0,i;
+  if(c.drv.indexOf('direct:')===0){ENTS.forEach(function(e){res[e.id]=0});res[c.drv.slice(7)]=c.amt;return {by:res,un:0,pct:pctOf(res,c.amt)}}
+  if(c.drv==='manual'){
+    var sum=0;ENTS.forEach(function(e){var p=+(c.manual&&c.manual[e.id])||0;sum+=p;res[e.id]=Math.round(c.amt*p/100)});
+    var got=0;for(i in res)got+=res[i];
+    if(Math.abs(sum-100)<1e-9){var big=largest(res);res[big]+=c.amt-got;got=c.amt}
+    return {by:res,un:c.amt-got,pct:c.manual,manualSum:sum};
+  }
+  var tot=0;ENTS.forEach(function(e){tot+=basisVal(e,c.drv,c)});
+  if(!tot){ENTS.forEach(function(e){res[e.id]=0});return {by:res,un:c.amt,pct:pctOf(res,c.amt)}}
+  var g=0;ENTS.forEach(function(e){res[e.id]=Math.round(c.amt*basisVal(e,c.drv,c)/tot);g+=res[e.id]});
+  res[largest(res)]+=c.amt-g;
+  return {by:res,un:0,pct:pctOf(res,c.amt)};
+}
+function largest(o){var k=null;for(var i in o)if(k===null||o[i]>o[k])k=i;return k}
+function pctOf(by,amt){var o={};for(var i in by)o[i]=amt?Math.round(by[i]/amt*1000)/10:0;return o}
+
+function compute(){
+  var allocs=st.cats.map(function(c){return {c:c,a:alloc(c)}});
+  var notional={rent:st.econ.ownHa*st.econ.rentRate,lab:st.econ.famHrs*st.econ.famRate};
+  var totArea=0,totLab=0;ENTS.forEach(function(e){totArea+=e.area;totLab+=e.labour});
+  var rows=ENTS.map(function(e){
+    var vol=e.vol*(1+st.y/100),price=e.price*(1+st.p/100),out=vol*price,gm=out-e.variable;
+    var oh=0,lines=[];
+    allocs.forEach(function(x){
+      var v=x.a.by[e.id]||0; if(!v)return;
+      if(st.level==='cash'&&x.c.dep)return;
+      oh+=v;lines.push({n:x.c.name,v:v,how:x.c.drv.indexOf('direct:')===0?'Direct':(DRV_LABEL[x.c.drv]||x.c.drv)});
+    });
+    if(st.level==='econ'){
+      var r=totArea?Math.round(notional.rent*e.area/totArea):0, l=totLab?Math.round(notional.lab*e.labour/totLab):0;
+      if(r){oh+=r;lines.push({n:'Notional rent (owned land)',v:r,how:'Area (ha)',imp:true})}
+      if(l){oh+=l;lines.push({n:'Unpaid family labour',v:l,how:'Labour time',imp:true})}
+    }
+    var be=vol?(e.variable+oh)/vol:0;
+    var beY=(e.yWord&&price)?(e.variable+oh)/price/e.units:null;
+    var ratio=be?price/be:0;
+    var status=ratio>=1.10?'g':(ratio>=1?'a':'r');
+    return {e:e,vol:vol,price:price,out:out,gm:gm,oh:oh,net:gm-oh,be:be,beY:beY,yNow:vol/e.units,status:status,lines:lines.sort(function(a,b){return b.v-a.v})};
+  });
+  var un=0,fixedAll=0,fixedLvl=0;
+  allocs.forEach(function(x){un+=x.a.un;fixedAll+=x.c.amt;if(!(st.level==='cash'&&x.c.dep))fixedLvl+=x.c.amt});
+  return {rows:rows,allocs:allocs,un:un,fixedAll:fixedAll,fixedLvl:fixedLvl,notional:notional};
+}
+
+function fmtPrice(e,v){
+  if(e.fmt==='ppl')return (v*100).toFixed(1)+'p/L';
+  if(e.fmt==='lamb')return gbp(v)+'/lamb';
+  return gbp(v)+'/'+e.fmt;
+}
+function fmtY(e,v){
+  if(v==null)return '—';
+  if(e.fmt==='ppl')return Math.round(v).toLocaleString('en-GB')+' '+e.yWord;
+  if(e.fmt==='lamb')return v.toFixed(2)+' '+e.yWord;
+  return v.toFixed(1)+' '+e.yWord;
+}
+var STATUS={g:['g','Comfortable'],a:['a','Tight'],r:['r','Below break-even']};
+
+function render(){
+  var R=compute();
+  // level buttons + note
+  [].forEach.call($('levels').children,function(b){b.classList.toggle('on',b.dataset.l===st.level);b.setAttribute('aria-pressed',b.dataset.l===st.level)});
+  $('lvlNote').innerHTML=LEVEL_NOTE[st.level];
+  $('econ').classList.toggle('dim',st.level!=='econ');
+
+  // tiles
+  var net=0,gm=0,below=0,tight=0;R.rows.forEach(function(r){net+=r.net;gm+=r.gm;if(r.status==='r')below++;if(r.status==='a')tight++});
+  var farmNet=gm-R.fixedLvl-(st.level==='econ'?R.notional.rent+R.notional.lab:0);
+  var allocated=R.fixedAll-R.un;
+  var whatif=st.p||st.y;
+  $('tiles').innerHTML=
+    tile('Farm net margin',gbp(farmNet),st.level==='econ'?'After notional rent &amp; family labour':(st.level==='cash'?'Before depreciation':'All overheads in your accounts'),farmNet<0?'bad':'')+
+    tile('Total gross margin',gbp(gm),'Across '+ENTS.length+' enterprises','')+
+    tile('Below break-even',below+' of '+ENTS.length,tight?tight+' more within 10% of break-even':'None close to break-even',below?'bad':(tight?'warn':'good'))+
+    tile('Overheads split',gbp(allocated)+' <span style="font-size:14px;color:var(--t3);font-weight:600">of '+gbp(R.fixedAll)+'</span>',R.un?gbp(R.un)+' not yet split':'All overheads split',R.un?'bad':'good');
+
+  // what-if flag
+  $('pDeltaV').textContent=pct(st.p);$('yDeltaV').textContent=pct(st.y);
+  $('whatifFlag').hidden=!whatif;
+  $('whatifTxt').textContent='Showing a what-if: price '+pct(st.p)+', yield '+pct(st.y)+'. These figures won’t match your accounts until you reset.';
+
+  // enterprise table
+  var tb=$('entTbl').tBodies[0],h='';
+  R.rows.forEach(function(r){
+    var e=r.e,max=Math.max(r.price,r.be)*1.18,bw=Math.min(100,r.price/max*100),mk=Math.min(100,r.be/max*100),s=STATUS[r.status];
+    var col=r.status==='g'?'var(--gl)':(r.status==='a'?'var(--am)':'var(--rd)');
+    var open=!!st.open[e.id];
+    h+='<tr class="'+(open?'open':'')+'"><td><button class="ent-name" data-ent="'+e.id+'" aria-expanded="'+open+'"><span class="chev">▶</span><span class="dot" style="background:'+e.color+'"></span><span>'+e.name+'<small>'+e.units.toLocaleString('en-GB')+' '+e.baseWord+' · '+Math.round(r.vol).toLocaleString('en-GB')+' '+e.volWord+'</small></span></button></td>'+
+      '<td class="num">'+gbp(r.gm)+'</td><td class="num">'+gbp(-r.oh)+'</td>'+
+      '<td class="num"><b class="'+(r.net<0?'bad':'')+'">'+gbp(r.net)+'</b></td>'+
+      '<td style="text-align:left;min-width:190px"><div class="bullet" role="img" aria-label="Price '+fmtPrice(e,r.price)+', break-even '+fmtPrice(e,r.be)+'"><div class="bar" style="width:'+bw+'%;background:'+col+'"></div><div class="mk" style="left:'+mk+'%"></div></div>'+
+        '<div class="bullet-l num"><span>You get '+fmtPrice(e,r.price)+'</span><span>'+(r.price>=r.be?'+':'')+Math.round((r.price/r.be-1)*100)+'%</span></div></td>'+
+      '<td class="num"><span class="be">'+fmtPrice(e,r.be)+'</span><span class="sub">cost per '+(e.fmt==='ppl'?'litre':e.fmt==='lamb'?'lamb':e.fmt==='ha'?'ha':'tonne')+'</span></td>'+
+      '<td class="num">'+fmtY(e,r.beY)+(r.beY!=null?'<span class="sub">you: '+fmtY(e,r.yNow)+'</span>':'<span class="sub">fixed by agreement</span>')+'</td>'+
+      '<td><span class="pill '+s[0]+'">'+s[1]+'</span></td></tr>';
+    if(open){
+      h+='<tr class="detail"><td colspan="8"><div class="in"><div><h4>Overheads charged to '+e.name+'</h4>'+
+        (r.lines.length?r.lines.map(function(l){return '<div class="kv"><span>'+l.n+'<span class="tag">'+l.how+'</span>'+(l.imp?'<span class="tag">Not in accounts</span>':'')+'</span><b class="num">'+gbp(l.v)+'</b></div>'}).join(''):'<p class="note">No overheads charged.</p>')+
+        '</div><div><h4>The sum</h4>'+
+        kv('Output',gbp(r.out))+kv('Variable costs',gbp(-e.variable))+kv('Gross margin',gbp(r.gm))+kv('Overheads',gbp(-r.oh))+kv('Net margin',gbp(r.net))+
+        kv('Total cost ÷ '+e.volWord,gbp(e.variable+r.oh)+' ÷ '+Math.round(r.vol).toLocaleString('en-GB'))+
+        '<p class="note" style="margin-top:8px">Volume from <b>'+e.volFrom+'</b>'+(e.volSrc==='est'?'. It’s an estimate, so this break-even is too. Add your harvest record to firm it up.':'.')+'</p></div></div></td></tr>';
+    }
+  });
+  tb.innerHTML=h;
+
+  // reconciliation
+  var rc=$('recon');
+  if(whatif){rc.innerHTML='<span class="eq">The check against your accounts is paused while a what-if is showing.</span>';}
+  else{
+    var accNet=gm-R.fixedAll;
+    var entNetFull=0;R.rows.forEach(function(r){entNetFull+=r.gm});
+    var allocSum=R.fixedAll-R.un;entNetFull-=allocSum;
+    var ok=Math.round(entNetFull-R.un)===Math.round(accNet);
+    rc.innerHTML='<span>Enterprise net margins <b class="num">'+gbp(entNetFull)+'</b></span><span class="eq">−</span><span>Not yet split <b class="num">'+gbp(R.un)+'</b></span><span class="eq">=</span><span>Net margin in your accounts <b class="num">'+gbp(accNet)+'</b></span>'+
+      (R.un?'<span class="ok bad">⚠ Split the remaining '+gbp(R.un)+' so every overhead lands on an enterprise</span>':(ok?'<span class="ok good">✓ Matches your accounts</span>':'<span class="ok bad">Doesn’t match</span>'))+
+      (st.level!=='full'?'<span class="eq" style="flex-basis:100%">Checked on the full-cost basis, which is what your accounts show.</span>':'');
+  }
+
+  renderAlloc(R);
+  renderBasis();
+}
+function tile(k,v,s,cls){return '<div class="card tile"><span class="k">'+k+'</span><span class="v num '+cls+'">'+v+'</span><span class="s">'+s+'</span></div>'}
+function kv(k,v){return '<div class="kv"><span>'+k+'</span><b class="num">'+v+'</b></div>'}
+
+function renderAlloc(R){
+  var h='<thead><tr><th>Overhead</th><th>Amount</th><th style="text-align:left">Split by</th>';
+  ENTS.forEach(function(e){h+='<th>'+e.name+'</th>'});h+='<th>Split</th></tr></thead><tbody>';
+  R.allocs.forEach(function(x){
+    var c=x.c,a=x.a,manual=c.drv==='manual',bad=manual&&Math.abs((a.manualSum||0)-100)>1e-9;
+    var dim=st.level==='cash'&&c.dep;
+    h+='<tr class="'+(bad?'row-warn':'')+'"'+(dim?' style="opacity:.5"':'')+'><td><b>'+c.name+'</b>'+(c.src?'<span class="src">From '+c.src+'</span>':'')+(c.dep?'<span class="src">Depreciation'+(dim?': left out of cash break-even':'')+'</span>':'')+'</td>'+
+      '<td class="num">'+gbp(c.amt)+'</td><td style="text-align:left"><select data-cat="'+c.id+'" aria-label="Split '+c.name+' by">'+drvOptions(c.drv)+'</select></td>';
+    ENTS.forEach(function(e){
+      var v=a.by[e.id]||0;
+      if(manual){h+='<td><div class="cell"><input type="number" min="0" max="100" step="1" data-man="'+c.id+'" data-ent="'+e.id+'" value="'+((c.manual&&c.manual[e.id])||0)+'" aria-label="'+c.name+' % to '+e.name+'"><small class="num">'+gbp(v)+'</small></div></td>'}
+      else h+='<td><div class="cell num'+(v?'':' zero')+'">'+gbp(v)+'<small>'+(a.pct[e.id]||0)+'%</small></div></td>';
+    });
+    var tp=manual?(a.manualSum||0):100;
+    h+='<td class="num '+(bad?'tot-bad':'')+'">'+(Math.round(tp*10)/10)+'%</td></tr>';
+  });
+  $('allocTbl').innerHTML=h+'</tbody>';
+}
+function drvOptions(cur){
+  var o='';for(var k in DRV_LABEL)o+='<option value="'+k+'"'+(cur===k?' selected':'')+'>'+DRV_LABEL[k]+'</option>';
+  o+='<optgroup label="All to one enterprise">';
+  ENTS.forEach(function(e){var v='direct:'+e.id;o+='<option value="'+v+'"'+(cur===v?' selected':'')+'>'+e.name+'</option>'});
+  return o+'</optgroup>';
+}
+function renderBasis(){
+  var h='<thead><tr><th>Enterprise</th><th>Area (ha)</th><th>Livestock units</th><th>Labour time</th><th>Volume</th></tr></thead><tbody>',lab=0;
+  ENTS.forEach(function(e){lab+=e.labour;
+    h+='<tr><td><b>'+e.name+'</b></td><td class="num">'+e.area+'<span class="src">'+(e.lu?'Forage':'Crop records')+'</span></td>'+
+      '<td class="num">'+e.lu+(e.lu?'<span class="src">'+e.units+' '+e.baseWord+' × '+(e.lu/e.units).toFixed(2)+'</span>':'')+'</td>'+
+      '<td><div class="cell"><input type="number" min="0" max="100" data-lab="'+e.id+'" value="'+e.labour+'" aria-label="Labour % for '+e.name+'"><small>%</small></div></td>'+
+      '<td><div class="cell"><input type="number" min="0" data-vol="'+e.id+'" value="'+e.vol+'" aria-label="Volume for '+e.name+'"><span class="chip '+e.volSrc+'">'+(e.volSrc==='rec'?'From records':'Estimate')+'</span></div></td></tr>';
+  });
+  $('basisTbl').innerHTML=h+'</tbody>';
+  $('labourNote').innerHTML=lab===100?'Labour time adds up to 100%. It comes from the staff split on the Workers page; change it here for this season.':'<b class="bad">Labour time adds up to '+lab+'%.</b> Labour is split in proportion, so the result still balances, but check the figures.';
+}
+
+// events
+$('levels').addEventListener('click',function(ev){var b=ev.target.closest('button');if(!b)return;st.level=b.dataset.l;render()});
+$('pDelta').addEventListener('input',function(){st.p=+this.value;render()});
+$('yDelta').addEventListener('input',function(){st.y=+this.value;render()});
+$('resetWhatif').addEventListener('click',function(){st.p=st.y=0;$('pDelta').value=0;$('yDelta').value=0;render()});
+$('entTbl').addEventListener('click',function(ev){var b=ev.target.closest('[data-ent]');if(!b)return;st.open[b.dataset.ent]=!st.open[b.dataset.ent];render();var nb=document.querySelector('#entTbl [data-ent="'+b.dataset.ent+'"]');nb&&nb.focus()});
+$('allocTbl').addEventListener('change',function(ev){
+  var t=ev.target;
+  if(t.dataset.cat){var c=find(t.dataset.cat);c.drv=t.value;
+    if(c.drv==='manual'&&!c.manual){var a=alloc({amt:c.amt,drv:'area'});c.manual={};ENTS.forEach(function(e){c.manual[e.id]=Math.round(a.pct[e.id])})}
+    toast(c.name+' now split by '+(DRV_LABEL[c.drv]||('all to '+entName(c.drv.slice(7)))));render();}
+});
+$('allocTbl').addEventListener('input',function(ev){var t=ev.target;if(!t.dataset.man)return;var c=find(t.dataset.man);c.manual[t.dataset.ent]=Math.max(0,+t.value||0);softRender(t)});
+$('basisTbl').addEventListener('input',function(ev){var t=ev.target;
+  if(t.dataset.lab){entById(t.dataset.lab).labour=Math.max(0,+t.value||0)}
+  else if(t.dataset.vol){var e=entById(t.dataset.vol);e.vol=Math.max(0,+t.value||0);e.volSrc='est';e.volFrom='your estimate'}
+  softRender(t);
+});
+['ownHa','rentRate','famHrs','famRate'].forEach(function(id){$(id).addEventListener('input',function(){st.econ[id]=Math.max(0,+this.value||0);render()})});
+$('resetAlloc').addEventListener('click',function(){st.cats=clone(CATS_DEFAULT);render();toast('Overheads split the suggested way')});
+document.querySelectorAll('.stub').forEach(function(b){b.addEventListener('click',function(){toast('That page isn’t part of this mock-up')})});
+$('season').addEventListener('change',function(){toast('Season switching isn’t part of this mock-up')});
+$('bankPack').addEventListener('click',function(){toast('Break-evens added to the bank pack')});
+$('copyCsv').addEventListener('click',function(){
+  var csv=buildCsv();
+  var fallback=function(){$('csvCard').hidden=false;$('csvBox').value=csv;$('csvBox').focus();$('csvBox').select()};
+  try{navigator.clipboard.writeText(csv).then(function(){toast('CSV copied. Paste it into Excel')},fallback)}catch(e){fallback()}
+});
+function softRender(t){ // keep focus while typing in a re-rendered input
+  var sel=t.dataset.man?'[data-man="'+t.dataset.man+'"][data-ent="'+t.dataset.ent+'"]':(t.dataset.lab?'[data-lab="'+t.dataset.lab+'"]':'[data-vol="'+t.dataset.vol+'"]');
+  var pos=t.selectionStart;render();var n=document.querySelector(sel);if(n){n.focus();try{n.setSelectionRange(pos,pos)}catch(e){}}
+}
+function find(id){return st.cats.filter(function(c){return c.id===id})[0]}
+function entById(id){return ENTS.filter(function(e){return e.id===id})[0]}
+function entName(id){var e=entById(id);return e?e.name:id}
+function buildCsv(){
+  var R=compute(),L=['Enterprise,Output,Variable costs,Gross margin,Overheads ('+st.level+'),Net margin,Volume,Unit,Price achieved,Break-even price,Status'];
+  R.rows.forEach(function(r){L.push(['"'+r.e.name+'"',Math.round(r.out),r.e.variable,Math.round(r.gm),Math.round(r.oh),Math.round(r.net),Math.round(r.vol),r.e.volWord,r.price.toFixed(3),r.be.toFixed(3),STATUS[r.status][1]].join(','))});
+  L.push('');L.push('Overhead,Amount,Split by,'+ENTS.map(function(e){return '"'+e.name+'"'}).join(','));
+  R.allocs.forEach(function(x){L.push(['"'+x.c.name+'"',x.c.amt,'"'+(DRV_LABEL[x.c.drv]||'Direct')+'"'].concat(ENTS.map(function(e){return x.a.by[e.id]||0})).join(','))});
+  return L.join('\n');
+}
+var tt;function toast(m){var t=$('toast');t.textContent=m;t.classList.add('show');clearTimeout(tt);tt=setTimeout(function(){t.classList.remove('show')},2400)}
+render();
+})();
+</script>
