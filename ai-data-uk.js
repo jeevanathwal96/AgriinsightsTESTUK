@@ -265,6 +265,14 @@
     });
     return data || [];
   }
+  /* -400: shared like the probe - the early reads wait on the same answer (see load.prefetch). */
+  var _catsRun = null;
+  function _catsFor(farmId){
+    if (_catsRun) return _catsRun;
+    var p = _catsRun = loadCats(farmId);
+    p.then(function(){ if (_catsRun === p) _catsRun = null; }, function(){ if (_catsRun === p) _catsRun = null; });
+    return p;
+  }
   const catToId   = code => (code == null ? null : (catMaps.code2id[norm(code)] || null));
   const catToCode = id   => (id   == null ? null : (catMaps.id2code[id]   || null));
   async function ensureCats() { if (!catMaps.list.length) await loadCats(farm.active()); }
@@ -572,6 +580,16 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
   }
   probeCaps.reset = function(){ _colCache = Object.create(null); _colRpcDead = false; };
   probeCaps.seen  = function(){ return _colCache; };
+  /* -400 (B9): one probe at a time. The finance-core load and the sign-in load's early reads
+     (load.prefetch) both need the CAN_* answers; asking once and sharing the answer keeps it one
+     round trip (and the answers are cached for the session after that anyway). */
+  var _capsRun = null;
+  function _capsFor(farmId){
+    if (_capsRun) return _capsRun;
+    var p = _capsRun = Promise.resolve().then(function(){ return probeCaps(farmId); });
+    p.then(function(){ if (_capsRun === p) _capsRun = null; }, function(){ if (_capsRun === p) _capsRun = null; });
+    return p;
+  }
 
   /* ---- -394: values this device kept before their column existed ----------------------
      Orchard spacing and Market price alerts lived only in this browser. The first load after
@@ -1063,22 +1081,39 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
         farm's transactions as though complete. Advancing by the number of rows we
         ACTUALLY received, and stopping only on an empty page, is correct whatever the
         server's cap turns out to be. It costs one extra round-trip at the end; that is
-        the right trade against losing rows without anyone noticing.
+        the right trade against losing rows without anyone noticing. (-400: superseded
+        by the exact total below; the empty-page rule is kept only where no total comes.)
 
      2. A QUERY THAT NEVER EMPTIES. If range is ignored by a proxy, every page comes
         back full and the loop never ends - it would hang the sign-in and grow memory
         until the tab dies. MAX_ROWS stops it and says so out loud, because a truncated
         read that announces itself can be investigated; one that does not, cannot. */
+  /* -400 (B9, D1): ONE rule whatever the project's "Max rows" setting is. The first page asks for
+     the exact total (Prefer: count=exact, answered in Content-Range) and the read stops when it
+     has that many rows. A short page alone never ends it: if Max rows were below the page size,
+     every page would be short and stopping there would lose rows without a word. The first page
+     also shows how many rows the server will hand out at a time, so the rest are asked for
+     together, in steps of exactly that size (a gap between two steps is impossible). If any
+     step comes back short (rows removed while reading), the rest is read one page at a time
+     from that point. If the server gives no total (an older proxy, a stand-in), the old rule
+     stands: page on until an EMPTY page. Before this, every list read cost at least two round
+     trips (the second only to see an empty page), about half of the sign-in waterfall. */
   const SELECT_ALL_MAX_ROWS = 200000;
-  async function selectAll(buildQuery, pageSize) {
-    pageSize = pageSize || 1000;
-    let out = [], from = 0;
+  function _wantCount(q){
+    try{
+      const h = q && q.headers;
+      if (h && typeof h.get === 'function' && typeof h.append === 'function') { if (!/count=/.test(h.get('Prefer') || '')) h.append('Prefer', 'count=exact'); }
+      else if (h && typeof h === 'object') { if (!/count=/.test(h.Prefer || '')) h.Prefer = (h.Prefer ? h.Prefer + ',' : '') + 'count=exact'; }
+    }catch(e){}
+    return q;
+  }
+  async function _selectAllPaged(buildQuery, pageSize, out, from) {
     for (;;) {
       const r = await buildQuery().range(from, from + pageSize - 1);
       if (r.error) return { data: null, error: r.error };
       const rows = r.data || [];
       out = out.concat(rows);
-      if (rows.length === 0) break;              // the only reliable end-of-data signal
+      if (rows.length === 0) break;              // the only reliable end-of-data signal without a total
       from += rows.length;                       // advance by what arrived, not what we asked for
       if (out.length >= SELECT_ALL_MAX_ROWS) {
         try { console.error('[AgriInsights] selectAll stopped at ' + out.length +
@@ -1088,39 +1123,93 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     }
     return { data: out, error: null };
   }
+  async function selectAll(buildQuery, pageSize) {
+    pageSize = pageSize || 1000;
+    const r = await _wantCount(buildQuery().range(0, pageSize - 1));
+    if (r.error) return { data: null, error: r.error };
+    let out = (r.data || []).slice();
+    const total = (typeof r.count === 'number' && isFinite(r.count) && r.count >= 0) ? r.count : null;
+    if (total === null) {                        // no total from the server: the empty-page rule
+      if (!out.length) return { data: out, error: null };
+      return _selectAllPaged(buildQuery, pageSize, out, out.length);
+    }
+    if (out.length >= total || !out.length) return { data: out, error: null };
+    const step = out.length;                     // what the server hands out at a time (its Max rows, or ours)
+    const cap = Math.min(total, SELECT_ALL_MAX_ROWS);
+    const starts = [];
+    for (let f = step; f < cap; f += step) starts.push(f);
+    const parts = await Promise.all(starts.map(function (f) { return buildQuery().range(f, f + step - 1); }));
+    for (let i = 0; i < parts.length; i++) {
+      const p = parts[i];
+      if (p.error) return { data: null, error: p.error };
+      const rows = p.data || [];
+      out = out.concat(rows);
+      const want = Math.min(step, total - starts[i]);
+      if (rows.length < want) {                  // rows went while reading: finish one page at a time
+        if (!rows.length) return { data: out, error: null };
+        return _selectAllPaged(buildQuery, step, out, starts[i] + rows.length);
+      }
+    }
+    if (total > SELECT_ALL_MAX_ROWS) {
+      try { console.error('[AgriInsights] selectAll stopped at ' + out.length +
+            ' rows - this read is incomplete. Raise SELECT_ALL_MAX_ROWS or narrow the query.'); } catch (e) {}
+    }
+    return { data: out, error: null };
+  }
 
   const load = {
     async financeCore(farmId) {
       if (!farmId) throw new Error('No active farm');
-      await loadCats(farmId);
-      await probeCaps(farmId);          // learn once whether cat_confirmed exists
+      /* -400 (B9): everything here starts at once, where its inputs allow. The ONE ordering rule
+         kept: a read whose column list or whose very existence is decided by a CAN_* flag waits
+         for the column probe - the farm's budget settings (budget_cat_targets / tax_paid /
+         budget_locked), the Spreadsheet's two tables and transaction_assets. The categories,
+         the import records and the four plain tables (select *) need nothing from each other or
+         from the probe: the category maps are used when MAPPING rows (dbToApp, below), after
+         every read is in, never to fetch them. Until -399 these were seven waits in a row
+         (categories, probe, import records, the four tables, the grid, the asset links). */
+      const catsP = _catsFor(farmId);
+      const capsP = _capsFor(farmId);   // learn once whether cat_confirmed exists
       /* The import panel's records. Never fatal: a farm with no imports, or a database
          without the table, must still load its transactions. */
-      let impBatches = [];
-      try { impBatches = await importBatch.list(farmId); } catch (e) { impBatches = []; }
-
-      const [acc, txn, bud, rec, fst] = await Promise.all([
+      const impP = importBatch.list(farmId).catch(function () { return []; });
+      const plainP = Promise.all([
         selectAll(() => client().from('accounts').select('*').eq('farm_id', farmId).order('name')),
         selectAll(() => client().from('transactions').select('*').eq('farm_id', farmId).order('txn_date', { ascending: false })),
         client().from('budget_months').select('*').eq('farm_id', farmId),
-        client().from('recurring').select('*').eq('farm_id', farmId).order('name'),
-        client().from('farms').select('budget_income_pattern,budget_expense_pattern,budget_current_month' + (CAN_BUDGET_CATTGT ? ',budget_cat_targets' : '') + (CAN_TAX_PAID ? ',tax_paid' : '') + (CAN_BUDGET_LOCK ? ',budget_locked' : '')).eq('id', farmId).single()
+        client().from('recurring').select('*').eq('farm_id', farmId).order('name')
       ]);
-      for (const r of [acc, txn, bud, rec]) if (r.error) throw r.error;
       /* -399 (8A): the Spreadsheet - one live budget a year (budget_scenarios) and its cells (budget_cells: category x
          enterprise x month), read with the PAGED reader (about 1,500 rows a year), this year and the two before. Never
          fatal: without the tables (or on a bad moment) bObj.grid stays unset and the device keeps its own copy. */
+      const afterCapsP = capsP.then(function () {
+        const fstP = client().from('farms').select('budget_income_pattern,budget_expense_pattern,budget_current_month' + (CAN_BUDGET_CATTGT ? ',budget_cat_targets' : '') + (CAN_TAX_PAID ? ',tax_paid' : '') + (CAN_BUDGET_LOCK ? ',budget_locked' : '')).eq('id', farmId).single();
+        let gridP = Promise.resolve(null);
+        if (CAN_BUDGET_CELLS && CAN_BUDGET_SCEN) {
+          gridP = (async function () {
+            try {
+              var _fyNow = (typeof global.bgtFY === 'function') ? global.bgtFY() : new Date().getFullYear();
+              const [gs, gc] = await Promise.all([
+                client().from('budget_scenarios').select('*').eq('farm_id', farmId),
+                selectAll(() => client().from('budget_cells').select('*').eq('farm_id', farmId).gte('period_year', _fyNow - 2).order('id'))
+              ]);
+              return (!gs.error && !gc.error) ? { scen: gs.data || [], rows: gc.data || [] } : null;
+            } catch (e) { return null; }
+          })();
+        }
+        /* The rest of every split, in one read. Never fatal (see below). */
+        const linksP = CAN_TXN_ASSETS
+          ? selectAll(() => client().from('transaction_assets').select('transaction_id,asset_id').eq('farm_id', farmId)).catch(function (e) { return { data: null, error: e || {} }; })
+          : Promise.resolve(null);
+        return Promise.all([fstP, gridP, linksP]);
+      });
+      const _all = await Promise.all([catsP, plainP, impP, afterCapsP]);
+      const impBatches = _all[2] || [];
+      const [acc, txn, bud, rec] = _all[1];
+      const [fst, grid, links] = _all[3];
+      for (const r of [acc, txn, bud, rec]) if (r.error) throw r.error;
       let gridRows = null, gridScen = null;
-      if (CAN_BUDGET_CELLS && CAN_BUDGET_SCEN) {
-        try {
-          var _fyNow = (typeof global.bgtFY === 'function') ? global.bgtFY() : new Date().getFullYear();
-          const [gs, gc] = await Promise.all([
-            client().from('budget_scenarios').select('*').eq('farm_id', farmId),
-            selectAll(() => client().from('budget_cells').select('*').eq('farm_id', farmId).gte('period_year', _fyNow - 2).order('id'))
-          ]);
-          if (!gs.error && !gc.error) { gridScen = gs.data || []; gridRows = gc.data || []; _srvNote('budget_scenarios', gridScen); _srvNote('budget_cells', gridRows); }
-        } catch (e) { gridRows = null; gridScen = null; }
-      }
+      if (grid) { gridScen = grid.scen; gridRows = grid.rows; _srvNote('budget_scenarios', gridScen); _srvNote('budget_cells', gridRows); }
       _srvNote('accounts', acc.data);      _srvNote('transactions', txn.data);
       _srvNote('budget_months', bud.data); _srvNote('recurring', rec.data);
       try { _budNoteLoaded(bud.data, fst && fst.data); } catch (e) {}   /* -398 F10: what the server holds, for "changed only" */
@@ -1161,10 +1250,8 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
       /* The rest of every split, in one read. Never fatal: a database without the
          join table loads exactly as it did before, with the first link only. */
       const _txns = (txn.data || []).map(dbToApp);
-      if (CAN_TXN_ASSETS) {
+      if (links) {
         try {
-          const links = await selectAll(() => client()
-            .from('transaction_assets').select('transaction_id,asset_id').eq('farm_id', farmId));
           if (!links.error) {
             const byTxn = {};
             (links.data || []).forEach(function (l) {
@@ -2123,17 +2210,24 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
   }
   load.rainfall = async function(farmId){
     farmId=farmId||farm.active();
-    const g=await selectAll(() => client().from('rainfall_gauges').select('*').eq('farm_id',farmId));
+    /* -400 (B9): the gauges, the readings and the housing log in ONE round trip, not three in a
+       row (each a paged read - it was the longest chain of the whole sign-in load). Applied in the
+       same order as before, with the same rules: a missing rain table means "no rain book here";
+       the housing log is never fatal. */
+    const _rg=await Promise.all([
+      selectAll(() => client().from('rainfall_gauges').select('*').eq('farm_id',farmId)),
+      selectAll(() => client().from('rainfall_readings').select('*').eq('farm_id',farmId).order('read_date',{ascending:false})),
+      selectAll(() => client().from('livestock_housing').select('*').eq('farm_id',farmId)).catch(function(e){ return { data:null, error:e||{} }; })
+    ]);
+    const g=_rg[0], r=_rg[1], hh=_rg[2];
     if(g.error){ if(_rainMissing(g.error)) return null; throw g.error; }
-    const r=await selectAll(() => client().from('rainfall_readings').select('*').eq('farm_id',farmId).order('read_date',{ascending:false}));
     if(r.error){ if(_rainMissing(r.error)) return null; throw r.error; }
     var gauges=(g.data||[]).map(rainGaugeFromDb), log=(r.data||[]).map(rainReadFromDb);
     /* What the server holds is what this device need not send again. */
     gauges.forEach(function(x){ _rainGSent[x.id]=JSON.stringify(rainGaugeToDb(x,farmId)); });
     log.forEach(function(x){ _rainSent[x.id]=JSON.stringify(rainReadToDb(x,farmId)); });
     var housing=null;
-    try{ const hh=await selectAll(() => client().from('livestock_housing').select('*').eq('farm_id',farmId));
-      if(!hh.error){ housing=(hh.data||[]).map(houseFromDb); housing.forEach(function(x){ _houseSent[x.id]=JSON.stringify(houseToDb(x,farmId)); }); } }catch(e){}
+    try{ if(hh && !hh.error){ housing=(hh.data||[]).map(houseFromDb); housing.forEach(function(x){ _houseSent[x.id]=JSON.stringify(houseToDb(x,farmId)); }); } }catch(e){}
     return { gauges:gauges, log:log, housing:housing };
   };
   const rain = {
@@ -3157,15 +3251,32 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
       catch(e){ p.partners = []; }
     }
     return p; }
+  /* -400 (B9): the profile in ONE read of the farm row, not four or five in a row. The columns
+     are the same ones the separate reads asked for, and each part is applied by the same code in
+     the same order (so what is noted as "the server's copy" is the same, field by field). Only
+     columns behind a probe that said yes are asked for. If that one read is refused for any
+     reason - an older database without the rain or prefs columns is the expected one - the
+     separate reads run exactly as before, each on its own, so a missing column still never
+     loses the farm name. */
+  var _PROF_CORE='name,owner_name,region,farm_ha,farm_type,fy_start_month,lang,vat_registered,utr,vat_number,entity_type,partners,herd_mark,herd_mark_type,farm_address,paye_ref,updated_at';
+  var _PROF_RAIN='rain_lat,rain_lon,rain_town,rain_postcode,rain_nation,rain_prefs';
+  function _pickCols(row, cols){ var o={}; cols.split(',').forEach(function(c){ if(Object.prototype.hasOwnProperty.call(row,c)) o[c]=row[c]; }); return o; }
   load.profile = async function(farmId){
     farmId=farmId||farm.active();
-    const r=await client().from('farms').select('name,owner_name,region,farm_ha,farm_type,fy_start_month,lang,vat_registered,utr,vat_number,entity_type,partners,herd_mark,herd_mark_type,farm_address,paye_ref,updated_at').eq('id',farmId).single();
+    var one=null;
+    try{
+      const r1=await client().from('farms').select(_PROF_CORE+','+_PROF_RAIN+',prefs'+(CAN_FARM_CONSENT?',consent_version,consent_accepted_at':'')+(CAN_FARM_ALERTS?',price_alerts':'')).eq('id',farmId).single();
+      if(r1 && !r1.error && r1.data) one=r1.data;
+    }catch(e){ one=null; }
+    /* each part's read: from the one row when it came, else its own request as before */
+    var part=function(cols, own){ return one ? Promise.resolve({ data:_pickCols(one, cols), error:null }) : own(); };
+    const r=await part(_PROF_CORE, function(){ return client().from('farms').select(_PROF_CORE).eq('id',farmId).single(); });
     if(r.error) throw r.error;
     var p=profileFromDb(r.data);
     /* Rainfall: where the farm is and how it keeps its rain book (tools/uk-rainfall-schema.sql).
        Its OWN request, so a database without the columns still loads the profile. */
     try{
-      const rr=await client().from('farms').select('rain_lat,rain_lon,rain_town,rain_postcode,rain_nation,rain_prefs').eq('id',farmId).single();
+      const rr=await part(_PROF_RAIN, function(){ return client().from('farms').select(_PROF_RAIN).eq('id',farmId).single(); });
       if(!rr.error && rr.data && p){
         _profNoteAck(rr.data);
         var R=rr.data, pr=R.rain_prefs; if(typeof pr==='string'){ try{ pr=JSON.parse(pr); }catch(e){ pr=null; } }
@@ -3181,7 +3292,7 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
        Read in their OWN request, so a database without the column still loads the
        profile - the same rule the save side follows for every optional column. */
     try{
-      const rp=await client().from('farms').select('prefs').eq('id',farmId).single();
+      const rp=await part('prefs', function(){ return client().from('farms').select('prefs').eq('id',farmId).single(); });
       if(!rp.error && rp.data){
         var pr=rp.data.prefs; if(typeof pr==='string'){ try{ pr=JSON.parse(pr); }catch(e){ pr=null; } }
         _farmPrefs=(pr && typeof pr==='object') ? pr : {};
@@ -3193,7 +3304,7 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
        asked again for what was already agreed. Its own request, behind the column probe. */
     if(CAN_FARM_CONSENT){
       try{
-        const rc=await client().from('farms').select('consent_version,consent_accepted_at').eq('id',farmId).single();
+        const rc=await part('consent_version,consent_accepted_at', function(){ return client().from('farms').select('consent_version,consent_accepted_at').eq('id',farmId).single(); });
         if(!rc.error && rc.data && rc.data.consent_version)
           p.consent={ policyVersion:String(rc.data.consent_version), acceptedAt:rc.data.consent_accepted_at||null };
       }catch(e){}
@@ -3202,7 +3313,7 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
        the first load after the column exists carries this device's own alerts across once. */
     if(CAN_FARM_ALERTS){
       try{
-        const ra=await client().from('farms').select('price_alerts').eq('id',farmId).single();
+        const ra=await part('price_alerts', function(){ return client().from('farms').select('price_alerts').eq('id',farmId).single(); });
         if(!ra.error && ra.data){
           _profNoteAck({ price_alerts: ra.data.price_alerts });
           var _pa=_alertsClean(ra.data.price_alerts), _pm=_migAlerts(_pa, global.ST && global.ST.priceAlerts, farmId);
@@ -3489,8 +3600,12 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
   }
   function _syncGate(){ return _syncIsOpen ? Promise.resolve() : new Promise(function(r){ _syncGateWaiters.push(r); }); }
   function _syncClear(L){ if(L.timer) clearTimeout(L.timer); L.timer = null; L.retryAt = 0; L.err = null; }
+  /* -400: every write asked for, per area, counted - so a read started BEFORE a write was asked for can tell it is
+     no longer the server's copy after that write (load.take). */
+  var _areaEpoch = Object.create(null);
   function _queue(area, run, o){
     o = o || {};
+    _areaEpoch[area] = (_areaEpoch[area] || 0) + 1;
     var L = _laneOf(area), hasFarm = !!farm.active();
     var gated = o.gate !== false && !_syncIsOpen && hasFarm;
     var opId = o.opId || null;
@@ -3715,6 +3830,7 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
         })();
       });
     },
+    epoch(area){ return _areaEpoch[area] || 0; },
     isUnsent(area){ var u = _unsentRead(); return !!u.areas[area] || u.ops.some(function(x){ return x.area === area; }); },
     /* Send what an earlier session never got to send. Runs before hydrate loads anything. */
     /* The app has loaded its own copy from this device: saves may go now. */
@@ -3764,6 +3880,61 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     }
   };
   try{ global.addEventListener('online', function(){ sync.retryAll(); }); }catch(e){}
+
+  /* ---- -400 (B9): the sign-in load's reads start early --------------------------------------
+     Until -399 the asset, loan and nine relational reads waited for the whole finance core, then
+     for the catch-up, then for each other's stage. They need none of that to be READ: only the
+     column probe (some column lists are built from CAN_* flags), the category maps, and this
+     device's own copy being in place (a loader may carry a value from it across once, -394).
+     So hydrate calls prefetch() as it starts the finance core, and take() where it used to call
+     the loader. What is APPLIED, and when, is exactly as before - hydrate still applies each area
+     at the same point, behind the same isUnsent() guard.
+
+     The rules this keeps:
+     - push, then read (-404): an area with something unsent is NOT read early. It is read where it
+       always was, after AI.sync.catchUp() has sent it, so the read brings back what was sent.
+     - a write asked for in an area after its early read began (the area's write count moved), or
+       an area marked unsent by the time it is taken, throws the early read away and reads again,
+       at the old point. An early read is only ever used when nothing was written in between.
+     - nothing pushes before the first pull: the lanes stay closed until AI.sync.open() at the end
+       of hydrate, unchanged. */
+  var _PRE_AREAS = { assets: ['assets'], loans: ['loans'], livestock: ['livestock'], crops: ['crops'], orchard: ['orchard'],
+                     plan: ['plan'], workers: ['workers'], profile: ['settings'], coopSettlements: ['coop'], rules: ['rules'], rainfall: ['rain'] };
+  var _pre = null;
+  function _preEp(areas){ return areas.map(function(a){ return _areaEpoch[a] || 0; }).join(','); }
+  function _preMarked(areas){ return areas.some(function(a){ try{ return sync.isUnsent(a); }catch(e){ return true; } }); }
+  load.prefetch = function(farmId, opts){
+    var skip = (opts && opts.skip) || [];
+    var mine = { fid: farmId, items: Object.create(null) };
+    _pre = mine;
+    if (!farmId) { mine.ready = Promise.resolve(); return mine.ready; }
+    mine.ready = Promise.all([_capsFor(farmId), _catsFor(farmId).catch(function(){}), sync.whenLocalReady(8000)]).then(function(){
+      if (_pre !== mine || farm.active() !== farmId) return;
+      Object.keys(_PRE_AREAS).forEach(function(n){
+        if (skip.indexOf(n) >= 0 || typeof load[n] !== 'function') return;
+        var areas = _PRE_AREAS[n];
+        if (_preMarked(areas)) return;                   /* push first, then read: after the catch-up */
+        var ep = _preEp(areas), pr;
+        try { pr = Promise.resolve(load[n](farmId)); } catch (e) { pr = Promise.reject(e); }
+        pr.catch(function(){});
+        mine.items[n] = { p: pr, ep: ep };
+      });
+    }).catch(function(){});
+    return mine.ready;
+  };
+  load.take = function(n, farmId){
+    var mine = _pre;
+    var fresh = function(){ return load[n](farmId); };
+    if (!mine || mine.fid !== farmId) return fresh();
+    return mine.ready.then(function(){
+      var it = mine.items[n]; delete mine.items[n];
+      if (!it) return fresh();
+      var areas = _PRE_AREAS[n];
+      if (_preEp(areas) !== it.ep || _preMarked(areas)) return fresh();   /* written since: read again, now */
+      return it.p;
+    });
+  };
+  load.prefetched = function(){ var o = {}; if (_pre) Object.keys(_pre.items).forEach(function(k){ o[k] = true; }); return o; };
 
   // ---- EXPORT --------------------------------------------------------------
   global.AI = { __probeCaps: probeCaps, __client: client, __collapseRepeats: _collapseRepeats, __rowKey: _rowKey,

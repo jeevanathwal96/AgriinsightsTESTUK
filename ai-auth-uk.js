@@ -40,6 +40,15 @@
       '#ai-auth .ghost{background:transparent;color:' + FOREST + ';border:1.5px solid #cdd2c9;font-weight:700;}' +
       '#ai-auth .inbox{text-align:center;}' +
       '#ai-auth .inbox .big{font-size:34px;line-height:1;margin-bottom:10px;}' +
+      /* -400 (B9, D2): a signed-in farmer never sees the sign-in form while the farm opens. */
+      '#ai-auth .opening{text-align:center;padding:18px 0 6px;font-size:14px;font-weight:700;color:' + FOREST + ';}' +
+      '#ai-auth .opening .spin,#ai-vo-chip .spin{display:inline-block;width:18px;height:18px;border-radius:50%;border:2.5px solid #cdd2c9;border-top-color:' + FOREST + ';animation:aiSpin .8s linear infinite;vertical-align:middle;}' +
+      '#ai-auth .opening .spin{width:26px;height:26px;}' +
+      '@keyframes aiSpin{to{transform:rotate(360deg)}}' +
+      '#ai-vo-chip{position:fixed;top:10px;left:50%;transform:translateX(-50%);z-index:99990;background:#fff;color:' + FOREST + ';border:1px solid #cdd2c9;' +
+        'border-radius:999px;padding:5px 12px 5px 9px;font:600 12.5px "Plus Jakarta Sans",system-ui,sans-serif;box-shadow:0 2px 10px rgba(0,0,0,.12);display:flex;align-items:center;gap:7px;transition:opacity .4s;}' +
+      '#ai-vo-chip .spin{width:12px;height:12px;border-width:2px;}' +
+      'html.ai-viewonly body{cursor:progress;}html.ai-viewonly input,html.ai-viewonly textarea,html.ai-viewonly select{caret-color:transparent;}' +
       '#ai-signout{position:fixed;bottom:14px;left:14px;z-index:99998;background:' + FOREST +
         ';color:#fff;border:0;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:600;' +
         'font-family:"Plus Jakarta Sans",sans-serif;cursor:pointer;opacity:.85;}';
@@ -103,6 +112,8 @@
           '<button id="ai-resend" class="ghost">Resend the email</button>' +
           '<button id="ai-inbox-back" class="ghost" style="margin-top:8px">Already confirmed? Sign in</button>' +
         '</div>' +
+        /* ── -400: shown to a farmer who is already signed in, while their farm loads ── */
+        '<div id="ai-pane-opening" style="display:none"><div class="opening" aria-hidden="true"><div class="spin"></div></div></div>' +
         '<div class="msg" id="ai-msg"></div>' +
         '<div style="margin-top:16px;padding-top:14px;border-top:1px solid #dfe3da;text-align:center">' +
           '<div style="font-size:12px;color:#6b716a;margin-bottom:9px" id="ai-demo-q">Just want to look around first?</div>' +
@@ -136,6 +147,10 @@
       if (localStorage.getItem('ai_uk_auth_mode') === 'signup') { setMode('signup'); }
       localStorage.removeItem('ai_uk_auth_mode');
     } catch (e) {}
+    /* -400 (5a): signed in already (THIS project's token): the card says "Opening your farm..." from its first
+       paint - the sign-in form is never shown to a farmer who does not need it. start() puts the form back if
+       the session turns out not to open. */
+    try { if (!window.__AI_GUEST && !RECOVERY && !window.__AI_BACKEND_BLOCKED && _sessionUid()) setMode('opening'); } catch (e) {}
     var demoBtn = document.getElementById('ai-demo');
     if (demoBtn) demoBtn.addEventListener('click', function () {
       try { localStorage.setItem('ai_uk_guest', '1'); } catch (e) {}
@@ -171,7 +186,8 @@
           resetTitle:'Check your email', resetBody1:'We sent a password-reset link to ', resetBody2:'. Open it to choose a new password.',
           resetSent:'Reset link sent — check your inbox.', mismatch:'Those two passwords are not the same.',
           savingPass:'Saving your new password…', passSaved:'Password changed — signing you in…',
-          recoverExpired:'That reset link has expired. Ask for a new one.' }
+          recoverExpired:'That reset link has expired. Ask for a new one.',
+          subOpening:'Opening your farm\u2026', openFail:'We could not open your farm just now. Check your connection, then sign in again.' }
   };
   /* Messages are remembered by KEY, not by the text already on screen, so re-rendering
      the card cannot leave a stale line under it. */
@@ -186,6 +202,7 @@
                  : pane === 'inbox'   ? (INBOX_KIND === 'reset' ? t.subReset : t.subInbox)
                  : pane === 'reset'   ? t.subReset
                  : pane === 'newpass' ? t.subNewPass
+                 : pane === 'opening' ? t.subOpening
                  : t.subIn);
     _txt('ai-forgot', t.forgot); _txt('ai-rs-hint', t.rsHint);
     _txt('ai-reset', t.resetBtn); _txt('ai-reset-back', t.resetBack); _txt('ai-savepass', t.savePass);
@@ -222,13 +239,14 @@
     show('ai-pane-inbox',   m === 'inbox');
     show('ai-pane-reset',   m === 'reset');
     show('ai-pane-newpass', m === 'newpass');
+    show('ai-pane-opening', m === 'opening');
     /* Tabs only make sense while choosing between signing in and signing up. Mid-
        confirmation, mid-reset, or on the new-password screen they are a way to lose
        your place. */
     show('ai-tabs',       m === 'signin' || m === 'signup');
     /* Nor should "look around the demo" sit under a half-finished password reset. */
     var demoBox = document.getElementById('ai-demo-q');
-    if (demoBox && demoBox.parentNode) demoBox.parentNode.style.display = (m === 'newpass') ? 'none' : '';
+    if (demoBox && demoBox.parentNode) demoBox.parentNode.style.display = (m === 'newpass' || m === 'opening') ? 'none' : '';
     var ti = document.getElementById('ai-tab-in'), tu = document.getElementById('ai-tab-up');
     if (ti) ti.className = 'tab' + (m === 'signin' ? ' on' : '');
     if (tu) tu.className = 'tab' + (m === 'signup' ? ' on' : '');
@@ -337,11 +355,17 @@
 
   // ---- offline session: reveal the cached app instead of trapping on login ----
   function _isOfflineErr(e){ var raw=(e&&e.message)?e.message:String(e||''); return (navigator.onLine===false) || /failed to fetch|networkerror|load failed|fetch|timeout|offline/i.test(raw); }
-  function _hasPersistedSession(){ try{ for(var i=0;i<localStorage.length;i++){ var k=localStorage.key(i); if(k && /^sb-.*-auth-token$/.test(k) && localStorage.getItem(k)) return true; } }catch(e){} return false; }
+  /* -400: THIS project's session only. Both apps share one host, so "any sb-*-auth-token" was also
+     true for a farmer signed in to the other app only (the shared-origin trap, -331). */
+  function _hasPersistedSession(){
+    try{ var ref = window.AI && window.AI.projectRef; if (ref) return !!localStorage.getItem('sb-' + ref + '-auth-token'); }catch(e){}
+    try{ for(var i=0;i<localStorage.length;i++){ var k=localStorage.key(i); if(k && /^sb-.*-auth-token$/.test(k) && localStorage.getItem(k)) return true; } }catch(e){} return false; }
   function _offlineReveal(){
     // The app's own boot (bootAgriInsights -> loadState) already populated ST from this
     // device's localStorage, so the user has their last-synced data. Reveal it; the topbar
     // sync indicator shows the offline state and the outbox/relational flush runs on reconnect.
+    _voOff(false);
+    _bootRenderIfDeferred();
     hideOverlay();
     try{ if(typeof window.toast==='function') window.toast('You\u2019re offline \u2014 showing your last synced data. Changes save on this device and sync when you reconnect.','info'); }catch(e){}
   }
@@ -355,11 +379,98 @@
      and the farmer would never get to type a new password. */
   var RECOVERY = /(^|[#&])type=recovery/.test(window.location.hash || '');
 
+  /* ── -400 (B9, D2): this computer's saved figures straight away, view only ──────────────────
+     A farmer who is signed in (THIS project's token) and whose device copy is theirs - the saved
+     state is stamped with the account and farm it was loaded for (index-uk.html saveState /
+     loadState, __aiSnapOwner), and those match the token's account and the active farm - sees
+     the farm as soon as the app has booted from that copy, instead of the sign-in form. Until the
+     server's copy has landed (hydrate finished, AI.sync.open()), nothing can be changed: ONE guard
+     (_viewOnly) holds every tap, key and input in capture phase before any handler sees it, so no
+     writer can start, and a tap says "One moment, getting your latest figures". Saves were already
+     held until open() and stay so; the catch-up, the unsent-edits rule (F2) and the two-device
+     guards are untouched. Figures that changed on the server are redrawn in place by hydrate's
+     closing nav() on the page the farmer is on. Anything that does not match (no stamp, another
+     account or farm, storage wiped or unreadable, a first-run farm, a recovery link) shows
+     "Opening your farm..." and waits as before - never the sign-in form for a signed-in farmer. */
+  var _viewOnly = false, _revealed = false, _hydrated = false, _voToastAt = 0;
+  function _voChip(text, spin){
+    var c = document.getElementById('ai-vo-chip');
+    if (!c) { c = document.createElement('div'); c.id = 'ai-vo-chip'; c.setAttribute('role', 'status'); (document.body || document.documentElement).appendChild(c); }
+    c.innerHTML = (spin ? '<span class="spin"></span>' : '<span aria-hidden="true">\u2713</span>') + '<span>' + _esc(text) + '</span>';
+    try { var at = window.LAST_SAVED_AT ? new Date(window.LAST_SAVED_AT) : null;
+      if (at && !isNaN(at)) c.title = 'Showing what this computer last saved at ' + ('0' + at.getHours()).slice(-2) + ':' + ('0' + at.getMinutes()).slice(-2) + ' \u2014 getting your latest figures'; } catch (e) {}
+    return c;
+  }
+  function _voOn(){ _viewOnly = true; try { document.documentElement.classList.add('ai-viewonly'); } catch (e) {} _voChip('Updating\u2026', true); }
+  function _voOff(done){
+    var was = _viewOnly; _viewOnly = false;
+    try { document.documentElement.classList.remove('ai-viewonly'); } catch (e) {}
+    var c = document.getElementById('ai-vo-chip'); if (!c) return;
+    if (done && was) { _voChip('Up to date', false); setTimeout(function () { c.style.opacity = '0'; setTimeout(function () { if (c.parentNode) c.parentNode.removeChild(c); }, 450); }, 1200); }
+    else if (c.parentNode) c.parentNode.removeChild(c);
+  }
+  window.aiViewOnly = function () { return _viewOnly; };
+  var _VO_KEYS_OK = { ArrowUp:1, ArrowDown:1, ArrowLeft:1, ArrowRight:1, PageUp:1, PageDown:1, Home:1, End:1 };
+  function _voGuard(ev){
+    if (!_viewOnly) return;
+    var t = ev.target;
+    try { if (t && t.closest && (t.closest('#ai-vo-chip') || t.closest('#ai-auth') || t.closest('#sw-update-notice'))) return; } catch (e) {}
+    if (ev.type === 'keydown' && _VO_KEYS_OK[ev.key] && !ev.ctrlKey && !ev.metaKey && !ev.altKey) return;
+    ev.preventDefault(); ev.stopImmediatePropagation();
+    if (ev.type === 'focusin') { try { if (t && t.blur) t.blur(); } catch (e) {} return; }
+    if (ev.type === 'click' || ev.type === 'keydown' || ev.type === 'submit') {
+      var now = Date.now();
+      if (now - _voToastAt > 1500) { _voToastAt = now; try { if (typeof window.toast === 'function') window.toast('One moment, getting your latest figures', 'info'); } catch (e) {} }
+    }
+  }
+  ['click','dblclick','mousedown','mouseup','auxclick','keydown','keypress','input','beforeinput','change','submit','paste','cut','drop','dragstart','focusin','contextmenu']
+    /* on window, in capture: the very first listener any event meets (before the app's own window/document listeners) */
+    .forEach(function (type) { try { window.addEventListener(type, _voGuard, true); } catch (e) {} });
+  function _localMatches(uid){
+    try {
+      if (RECOVERY || window.__AI_GUEST || !uid) return false;
+      if (window.STATE_LOADED_FROM_DISK !== true) return false;          /* nothing (readable) was saved here */
+      var o = window.__aiSnapOwner, fid = AI.farm.active();
+      if (!o || !fid || o.uid !== uid || o.farm !== fid) return false;    /* not stamped for this account and farm */
+      if (localStorage.getItem('ai_uk_state_uid') !== uid || localStorage.getItem('ai_uk_state_farm') !== fid) return false;
+      if (_sessionUid() !== uid) return false;
+      if (window.ST && window.ST.firstRun) return false;                  /* a farm still being set up opens its wizard */
+      return true;
+    } catch (e) { return false; }
+  }
+  window.aiLocalRevealable = function () { return _localMatches(_sessionUid()); };   /* for the -400 harness */
+  function _scheduleReveal(uid){
+    if (!(window.AI && AI.sync && AI.sync.whenLocalReady)) return;
+    AI.sync.whenLocalReady(8000).then(function (ok) {
+      if (!ok || _hydrated || _revealed) return;
+      var ov = document.getElementById('ai-auth');
+      if (!ov || ov.style.display === 'none' || AUTH_MODE !== 'opening') return;
+      if (!_localMatches(uid)) return;
+      _revealed = true; _voOn();
+      try { var ob = document.getElementById('ob-overlay'); if (ob) ob.style.display = 'none'; } catch (e) {}
+      hideOverlay();
+    });
+  }
+  /* The figures shown were not this account's or farm's after all, or the open failed: cover them again. */
+  function _unreveal(mode){
+    if (_revealed) { _revealed = false; _voOff(false); }
+    var o = document.getElementById('ai-auth'); if (o) o.style.display = 'flex';
+    if (mode) setMode(mode);
+  }
+  function _bootRenderIfDeferred(){
+    try { if (window.__aiBootRenderDeferred && typeof nav === 'function') { window.__aiBootRenderDeferred = false; nav(window.CURRENT_PAGE || 'dashboard'); } } catch (e) {}
+  }
+
   var _entering = false;
   function enterApp(){
     if (_entering) return Promise.resolve();
     _entering = true;
-    return hydrate().then(hideOverlay).catch(function (e) { _entering = false; throw e; });
+    return hydrate().then(function () { _hydrated = true; _voOff(true); hideOverlay(); }).catch(function (e) {
+      _entering = false;
+      /* never left on "Opening your farm..." or on figures that may not be theirs */
+      if (_revealed || AUTH_MODE === 'opening') { _unreveal('signin'); msgK('openFail', 'err'); }
+      throw e;
+    });
   }
 
   // ---- sign in -------------------------------------------------------------
@@ -531,11 +642,19 @@ function _sessionUid(){
         sameF = (localStorage.getItem('ai_uk_state_farm') === fid);
       } catch(e){}
       if (isNewFarm || !sameU || !sameF) {
+        /* -400: figures already shown from this device are not this account's farm: cover them while it loads. */
+        if (_revealed) _unreveal('opening');
         /* Unsent changes on this device belong to another account or farm: never send them. */
         try { if (window.AI && AI.sync) AI.sync.discardUnsent(); } catch(e){}
         try { if (typeof window.aiAccountReset === 'function') window.aiAccountReset(); } catch(e){}
       }
       try { localStorage.setItem('ai_uk_state_uid', uid || ''); localStorage.setItem('ai_uk_state_farm', fid || ''); } catch(e){}
+      /* -400 (B9): the asset, loan and relational READS start now, beside the finance core (each
+         waits only for the column probe, the category maps and this device's own copy). Areas
+         with something unsent are not read early: they are read after the catch-up below has
+         sent them, as before. Every APPLY below is unchanged - same place, same isUnsent guard.
+         See AI.load.prefetch in ai-data-uk.js. A brand-new farm reads no relational areas. */
+      try { if (AI.load.prefetch) AI.load.prefetch(fid, isNewFarm ? { skip: ['livestock','crops','orchard','plan','workers','profile','coopSettlements','rules','rainfall'] } : null); } catch (e) {}
       return AI.load.financeCore(fid);
     }).then(function (core) {
       // Replace the app's working data with the farm's real data.
@@ -564,9 +683,10 @@ function _sessionUid(){
          copy already in memory: it pushed that back, cleared the marks, and the change left unsent
          when the app closed was gone. Traced live on 16 Sep 2026 - loans fetched at 1.9s, catch-up
          at 2.0s holding only the server's row. */
+      var _take = function (n, f) { return AI.load.take ? AI.load.take(n, f) : AI.load[n](f); };
       return (AI.sync ? AI.sync.catchUp() : Promise.resolve()).then(function () { return Promise.all([
-        AI.load.assets(AI.farm.active()),
-        AI.load.loans(AI.farm.active())
+        _take('assets', AI.farm.active()),
+        _take('loans', AI.farm.active())
       ]); }).then(function (res) {
         var assets = res[0], loanData = res[1];
         try {
@@ -629,19 +749,22 @@ function _sessionUid(){
       var fid = AI.farm.active();
       /* Send what this device never got to send BEFORE loading over it. After financeCore,
          so the column probes have run and a settings catch-up sends every column. */
+      /* -400: each read was started early by AI.load.prefetch where that was safe; take() hands it over,
+         or reads now if the area had something unsent or was written to since. */
+      var _tk = function (n) { try { return Promise.resolve(AI.load.take ? AI.load.take(n, fid) : AI.load[n](fid)); } catch (e) { return Promise.reject(e); } };
       return Promise.all([
-        AI.load.livestock(fid).catch(function (e) { console.error('livestock load', e); return null; }),
-        AI.load.crops(fid).catch(function (e) { console.error('crops load', e); return null; }),
-        AI.load.orchard(fid).catch(function (e) { console.error('orchard load', e); return null; }),
-        AI.load.plan(fid).catch(function (e) { console.error('plan load', e); return null; }),
-        AI.load.workers(fid).catch(function (e) { console.error('workers load', e); return null; }),
-        AI.load.profile(fid).catch(function (e) { console.error('profile load', e); return null; }),
-        AI.load.coopSettlements(fid).catch(function (e) { console.error('coop load', e); return null; }),
+        _tk('livestock').catch(function (e) { console.error('livestock load', e); return null; }),
+        _tk('crops').catch(function (e) { console.error('crops load', e); return null; }),
+        _tk('orchard').catch(function (e) { console.error('orchard load', e); return null; }),
+        _tk('plan').catch(function (e) { console.error('plan load', e); return null; }),
+        _tk('workers').catch(function (e) { console.error('workers load', e); return null; }),
+        _tk('profile').catch(function (e) { console.error('profile load', e); return null; }),
+        _tk('coopSettlements').catch(function (e) { console.error('coop load', e); return null; }),
         /* Filing rules. Never fatal: an older project has no category_rules table,
            and load.rules answers null rather than throwing. */
-        AI.load.rules(fid).catch(function (e) { console.error('rules load', e); return null; }),
+        _tk('rules').catch(function (e) { console.error('rules load', e); return null; }),
         /* The rain book. Never fatal: an older project has no rainfall tables. */
-        (AI.load.rainfall ? AI.load.rainfall(fid).catch(function () { return null; }) : Promise.resolve(null))
+        (AI.load.rainfall ? _tk('rainfall').catch(function () { return null; }) : Promise.resolve(null))
       ]).then(function (r) {
         var ls = r[0], cr = r[1], orc = r[2], pl = r[3], wk = r[4], pf = r[5], coop = r[6], rl = r[7], rn = r[8];
         /* Never load over an area that still has something unsent on this device. */
@@ -740,8 +863,13 @@ function _sessionUid(){
           if (ov) ov.style.display = 'none';
         }
       } catch (e) {}
+      /* -400 (D2): the data in memory is now this account's farm - stamp the saved copy with it, so the next open
+         can show it straight away (and only to this account, on this farm). */
+      try { window.__aiDataOwner = { uid: _sessionUid(), farm: AI.farm.active() }; if (typeof window.saveState === 'function') window.saveState(); } catch (e) {}
+      try { window.__aiBootRenderDeferred = false; } catch (e) {}
       try {
-        if (typeof nav === 'function') nav(opts.silent && window.CURRENT_PAGE ? window.CURRENT_PAGE : 'dashboard');
+        /* -400: figures already on screen are redrawn where the farmer is, not moved to the dashboard */
+        if (typeof nav === 'function') nav((opts.silent || _revealed) && window.CURRENT_PAGE ? window.CURRENT_PAGE : 'dashboard');
         else if (typeof updateDashboardFigures === 'function') updateDashboardFigures();
       } catch (e) {}
       try {
@@ -766,7 +894,7 @@ function _sessionUid(){
        fully-rendered app — the guard blocked the demo it was meant to preserve. */
     if (window.__AI_BACKEND_BLOCKED && !window.__AI_GUEST) {
       try {
-        ['ai-tabs','ai-pane-in','ai-pane-up','ai-pane-reset','ai-pane-newpass','ai-pane-inbox']
+        ['ai-tabs','ai-pane-in','ai-pane-up','ai-pane-reset','ai-pane-newpass','ai-pane-inbox','ai-pane-opening']
           .forEach(function(id){ var el=document.getElementById(id); if(el) el.style.display='none'; });
         var sub=document.getElementById('ai-sub');
         if (sub) sub.textContent = 'Preview build — explore the demo farm';
@@ -804,21 +932,29 @@ function _sessionUid(){
           enterApp().catch(function () {});
         });
       } catch (e) {}
+      /* -400 (5a + D2): this project's token is on the device - the farmer is signed in. Never show them
+         the sign-in form while the farm opens; and if this device's saved copy is theirs, show it now. */
+      var _tokUid = RECOVERY ? null : _sessionUid();
+      if (_tokUid) { setMode('opening'); _scheduleReveal(_tokUid); }
       AI.init().auth.getSession().then(function (res) {
         var session = res && res.data ? res.data.session : null;
-        if (session && RECOVERY) { setMode('newpass'); return; }
+        if (session && RECOVERY) { _unreveal('newpass'); return; }
         if (session) {
           enterApp().catch(function (e) {
             if (_isOfflineErr(e) && _hasPersistedSession()) { _offlineReveal(); }
-            // else: a genuine error — overlay stays for sign-in
+            // else: a genuine error — overlay stays for sign-in (enterApp put the form back)
           });
         } else if (_hasPersistedSession() && navigator.onLine === false) {
           // getSession couldn't confirm offline, but a cached token exists
           _offlineReveal();
+        } else if (_revealed || AUTH_MODE === 'opening') {
+          /* the token on the device no longer opens a session (signed out elsewhere, expired): sign in again */
+          _unreveal('signin');
         }
         // else: no session — overlay stays visible for sign-in
       }).catch(function (e) {
         if (_hasPersistedSession() && _isOfflineErr(e)) { _offlineReveal(); }
+        else if (_revealed || AUTH_MODE === 'opening') { _unreveal('signin'); }
         // else: overlay stays visible
       });
     }, 0);

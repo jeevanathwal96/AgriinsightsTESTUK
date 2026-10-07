@@ -1,6 +1,7 @@
 /* AgriInsights — PWA service worker
  * Strategy:
- *   - HTML / navigation  -> network-first (fresh on every online reload; cached fallback offline)
+ *   - HTML / navigation  -> network-first, revalidated (304 when unchanged); the cached copy
+ *                           after 3 s on a stalled line or when offline (-400)
  *   - Supabase / cross-origin -> network-only, NEVER cached (data + auth must be live)
  *   - same-origin static -> stale-while-revalidate (instant load, refreshed in background)
  *   - old caches purged on activate (keyed by APP_VERSION)
@@ -11,13 +12,16 @@
  */
 'use strict';
 
-var APP_VERSION = 'uk-2026-10-06-399';
+var APP_VERSION = 'uk-2026-10-07-400';
 var CACHE = 'agriinsights-uk-' + APP_VERSION;
 
 /* App shell precached on install. The ?v=-suffixed JS is intentionally left to
  * runtime caching so the existing ?v= cache-busting keeps working untouched. */
 var PRECACHE = [
   './index-uk.html',
+  './js/app-0-ddf1b2fce8.js',   /* dist build: inline script 0 */
+  './js/app-1-fb7831f809.js',   /* dist build: inline script 1 */
+  './js/app-2-70532d29e2.js',   /* dist build: inline script 2 */
   './manifest-uk.webmanifest',
   './fonts.css',
   './vendor/chart.umd.js',
@@ -28,7 +32,7 @@ var PRECACHE = [
      cache.addAll() rejects the whole batch if any one entry 404s, so this single dead
      path could take the entire app-shell precache down with it. */
   './vendor/jspdf.umd.min.js?v=218',
-  './img/hero-farmland-uk.jpg?v=uk298',
+  './img/hero-farmland-uk.webp?v=uk400',   /* -400: same picture, 126 KB WebP (was a 328 KB JPEG) */
   './img/logomark.png?v=225',
   './icon-192.png',
   './icon-512.png',
@@ -61,17 +65,67 @@ self.addEventListener('activate', function (e) {
   );
 });
 
-/* Build an HTML request that bypasses the browser's HTTP cache. GitHub Pages serves
-   index.html with cache-control: max-age=600, so a plain fetch() inside a network-first
-   handler can still be answered from cache and a fresh deploy goes unseen for ten
-   minutes. cache:'reload' forces a real trip to the origin. Falls back to the original
-   request if the Request constructor rejects the option. */
+/* Build an HTML request that always asks the server whether the page has changed.
+   GitHub Pages serves index-uk.html with cache-control: max-age=600, so a plain fetch()
+   inside a network-first handler can be answered from the HTTP cache and a fresh deploy
+   goes unseen for ten minutes. -400 (B9, D4): cache:'no-cache' instead of 'reload'.
+   Both always go to the server, but 'reload' sends no If-None-Match, so every load
+   downloaded the whole 1.85 MB page again even when nothing had changed (10.4 s warm on
+   a slow line). 'no-cache' revalidates: an unchanged page is a 304 with no body and the
+   browser's own copy is used; a new deploy is a 200 and is seen on the first load.
+   Falls back to the original request if the Request constructor rejects the option. */
 function _freshHTML(req){
-  try { return new Request(req, {cache: 'reload'}); }
+  try { return new Request(req, {cache: 'no-cache'}); }
   catch (e) {
-    try { return new Request(req.url, {cache: 'reload', credentials: 'same-origin'}); }
+    try { return new Request(req.url, {cache: 'no-cache', credentials: 'same-origin'}); }
     catch (e2) { return req; }
   }
+}
+
+/* -400 (B9, D4): a line that stalls must not leave the farmer looking at a blank page.
+   If the server has not answered the page request in HTML_TIMEOUT_MS and this device has
+   a copy, the copy is shown; the request carries on, refills the cache for next time and,
+   when the page it brings is not the one shown, tells that page so it can offer a quiet
+   "New version ready · Reload" bar (index-uk.html swShowUpdateNotice). Never reloads. */
+var HTML_TIMEOUT_MS = 3000;
+function _sameBody(a, b){
+  if (!a || !b) return Promise.resolve(false);
+  return Promise.all([a.clone().text(), b.clone().text()]).then(function (t) { return t[0] === t[1]; }).catch(function () { return false; });
+}
+function _tellNewer(clientId){
+  if (!clientId) return;
+  var tries = 0;
+  (function send(){
+    self.clients.get(clientId).then(function (c) {
+      if (c) { c.postMessage({ type: 'ai-new-version' }); return; }
+      if (++tries < 10) setTimeout(send, 1000);
+    }).catch(function () {});
+  })();
+}
+function _htmlResponse(e){
+  var req = e.request;
+  return caches.match('./index-uk.html').then(function (cached) {
+    var settled = false, servedCached = false;
+    var net = fetch(_freshHTML(req)).then(function (res) {
+      if (res && res.ok) {
+        var copy = res.clone();
+        caches.open(CACHE).then(function (c) { return c.put('./index-uk.html', copy); }).catch(function () {});
+        /* The cached copy was shown because the line was slow: say so if this one differs. */
+        if (servedCached) _sameBody(res, cached).then(function (same) { if (!same) _tellNewer(e.resultingClientId || e.clientId); });
+      }
+      return res;
+    });
+    if (!cached) return net.catch(function () { return caches.match('./index-uk.html'); });
+    return new Promise(function (resolve) {
+      /* hand the page a copy: the cached response itself is kept for the comparison above */
+      var timer = setTimeout(function () { if (!settled) { settled = true; servedCached = true; resolve(cached.clone()); } }, HTML_TIMEOUT_MS);
+      net.then(function (res) {
+        if (settled) return; settled = true; clearTimeout(timer); resolve(res);
+      }, function () {
+        if (settled) return; settled = true; clearTimeout(timer); resolve(cached);
+      });
+    });
+  });
 }
 
 self.addEventListener('fetch', function (e) {
@@ -92,17 +146,7 @@ self.addEventListener('fetch', function (e) {
   // 2) HTML / navigation: network-first so a normal reload always gets the latest
   //    deploy when online; fall back to the cached shell when offline.
   if (isHTML) {
-    e.respondWith(
-      fetch(_freshHTML(req)).then(function (res) {
-        var copy = res.clone();
-        caches.open(CACHE).then(function (c) { c.put('./index-uk.html', copy); });
-        return res;
-      }).catch(function () {
-        return caches.match('./index-uk.html').then(function (m) {
-          return m || caches.match('./index-uk.html');
-        });
-      })
-    );
+    e.respondWith(_htmlResponse(e));
     return;
   }
 
