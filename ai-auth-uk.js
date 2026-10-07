@@ -402,9 +402,19 @@ function aiApplyCoreBudgets(core){
        load after the catTargets migration would wipe targets that had never had
        anywhere to sync to - losing them at the exact moment they became savable. */
     var _localCT = (ST.budgets && ST.budgets.catTargets) || null, _localLk = (ST.budgets && ST.budgets.locked) || null;
+    var _localGrid = (ST.budgets && ST.budgets.grid) || null;   /* -399 (8A): whitelist 3 of 3 - the Spreadsheet */
     ST.budgets = core.budgets;
     if (!ST.budgets.catTargets && _localCT) ST.budgets.catTargets = _localCT;
     if (!ST.budgets.locked && _localLk) ST.budgets.locked = _localLk;   /* -371 */
+    /* -399 (8A): the Spreadsheet. No grid from the server (its tables not made yet, or not read) keeps this device's;
+       a server with no saved Spreadsheet keeps one this device saved before the tables existed (sent next, as the
+       category targets were). Then the cells follow the month totals (another device may have changed a month). */
+    var _hasFarm = function (g) { try { return Object.keys((g && g.scen) || {}).some(function (k) { return g.scen[k] && g.scen[k].src === 'farm'; }); } catch (e) { return false; } };
+    var _gridResend = false;
+    if (!ST.budgets.grid && _localGrid) ST.budgets.grid = _localGrid;
+    else if (_localGrid && _hasFarm(_localGrid) && !_hasFarm(ST.budgets.grid)) { ST.budgets.grid = _localGrid; _gridResend = true; }
+    try { if (typeof window.bgGridSync === 'function' && window.bgGridSync('totals') > 0) _gridResend = true; } catch (e) {}
+    try { if (_gridResend && window.AI && AI.budget && AI.farm && AI.farm.active()) AI.budget.save(ST.budgets).catch(function () {}); } catch (e) {}
     /* -398 F8: targets saved under a merged category's old name follow it */
     try { if (typeof window.bgtMigrateCatTargets === 'function') window.bgtMigrateCatTargets(); } catch(e){}
   }

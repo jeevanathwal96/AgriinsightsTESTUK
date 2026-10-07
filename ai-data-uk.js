@@ -373,6 +373,8 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
   let CAN_TXN_PARTY    = false;
   let CAN_BUDGET_CATTGT= false;   /* farms.budget_cat_targets */
   let CAN_BUDGET_LOCK  = false;   /* farms.budget_locked - uk-batch5-step3.sql (UK -371): the bank copy lock */
+  let CAN_BUDGET_CELLS = false;   /* budget_cells - tools/uk-budget-grid.sql (UK -399): the Spreadsheet's cells */
+  let CAN_BUDGET_SCEN  = false;   /* budget_scenarios - the same file: one live budget a year */
   let CAN_TAX_PAID     = false;   /* farms.tax_paid - uk-tax-paid.sql (UK -373): HMRC payments marked paid on the Tax home */
   let CAN_UPDATED_AT   = false;   /* tools/uk-relational-sync.sql */
   let CAN_CAT_RULES    = false;   /* the category_rules table */
@@ -447,6 +449,9 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
       const code = String((r.error && r.error.code) || '');
       const msg  = String((r.error && r.error.message) || '');
       if(code === '42703' || code === 'PGRST204') return false;
+      /* -399: a table that is not there answers PGRST205 ("Could not find the table ... in the schema cache") - a definite
+         no as well. It read as "could not ask", so the probe ran again on every load (harmless, the flag stayed off). */
+      if(code === 'PGRST205') return false;
       if(/does not exist|Could not find the/i.test(msg) && /column/i.test(msg)) return false;
       return null;                       // could not ask - not an answer
     }catch(e){ return null; }
@@ -490,7 +495,8 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     ['crop_inputs','bbch'], ['orchard_sprays','bbch'], ['crop_lands','field_ref'], ['orchard_blocks','field_ref'],
     ['crop_inputs','situation'], ['orchard_sprays','situation'],
     ['workers','tax_code'], ['pay_runs','lines'], ['workers','p45_pay'], ['worker_settings','contract_extra'],
-    ['workers','end_date'], ['payroll_entries','part_days'], ['orchard_blocks','spacing'], ['farms','price_alerts'], ['plan_events','in_forecast']
+    ['workers','end_date'], ['payroll_entries','part_days'], ['orchard_blocks','spacing'], ['farms','price_alerts'], ['plan_events','in_forecast'],
+    ['budget_cells','ent_code'], ['budget_scenarios','is_live']   /* -399 (8A) */
   ];
 
   async function probeCaps(farmId){
@@ -518,6 +524,8 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     CAN_BUDGET_CATTGT = keep(CAN_BUDGET_CATTGT, 'farms','budget_cat_targets');
     CAN_BUDGET_LOCK   = keep(CAN_BUDGET_LOCK,   'farms','budget_locked');
     CAN_TAX_PAID      = keep(CAN_TAX_PAID,      'farms','tax_paid');
+    CAN_BUDGET_CELLS  = keep(CAN_BUDGET_CELLS,  'budget_cells','ent_code');      /* -399 */
+    CAN_BUDGET_SCEN   = keep(CAN_BUDGET_SCEN,   'budget_scenarios','is_live');   /* -399 */
     /* A table probe, not a column probe: selecting a column off a table that does not
        exist errors the same way a missing column does, which is all we need to know. */
     CAN_TXN_ASSETS    = keep(CAN_TXN_ASSETS,    'transaction_assets','asset_id');
@@ -675,7 +683,9 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     orchard_compliance_items: ['item_key'],
     crop_compliance_areas:    ['area_key'],
     payroll_entries:          ['period_label','worker_local_id'],
-    budget_months:            ['period_year','period_month','side']
+    budget_months:            ['period_year','period_month','side'],
+    /* -399 (8A): a cell is a category x enterprise x month of one budget; a scenario is keyed on its local_id */
+    budget_cells:             ['scenario_local_id','period_year','period_month','side','category','ent_code']
   };
   function _srvKey(table,row){
     if(!row || typeof row!=='object') return null;
@@ -882,6 +892,14 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
   /* Server primary keys this device loaded - the scope for a replace-all child
      table, whose rows are positional and have no identity of their own. */
   function _srvIds(table){ var t=_SRV[table]; return t ? t.ids.slice() : null; }
+  /* -399 (8A): the keyed prune. The server ids of rows THIS device loaded (or wrote) from `table` whose identity
+     (_SRV_KEY) is no longer in keepKeys - a cell the farmer cleared. _srvGone takes one field; a cell is identified by
+     six. Returns null when the table was never loaded here: prune nothing rather than guess. */
+  function _srvGoneIds(table, keepKeys, filter){
+    var t=_SRV[table]; if(!t) return null; var out=[];
+    Object.keys(t.rows).forEach(function(k){ var r=t.rows[k]; if(!r || r.id==null) return; if(filter && !filter(r)) return; if(!keepKeys[k]) out.push(r.id); });
+    return out;
+  }
   /* Rows THIS device wrote belong in its row memory too. The memory was only ever filled
      by a load, so a row added and then removed in the same session was never in it: the
      prune skipped it, the server kept it, and it came back on the next load - proven on
@@ -1089,6 +1107,20 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
         client().from('farms').select('budget_income_pattern,budget_expense_pattern,budget_current_month' + (CAN_BUDGET_CATTGT ? ',budget_cat_targets' : '') + (CAN_TAX_PAID ? ',tax_paid' : '') + (CAN_BUDGET_LOCK ? ',budget_locked' : '')).eq('id', farmId).single()
       ]);
       for (const r of [acc, txn, bud, rec]) if (r.error) throw r.error;
+      /* -399 (8A): the Spreadsheet - one live budget a year (budget_scenarios) and its cells (budget_cells: category x
+         enterprise x month), read with the PAGED reader (about 1,500 rows a year), this year and the two before. Never
+         fatal: without the tables (or on a bad moment) bObj.grid stays unset and the device keeps its own copy. */
+      let gridRows = null, gridScen = null;
+      if (CAN_BUDGET_CELLS && CAN_BUDGET_SCEN) {
+        try {
+          var _fyNow = (typeof global.bgtFY === 'function') ? global.bgtFY() : new Date().getFullYear();
+          const [gs, gc] = await Promise.all([
+            client().from('budget_scenarios').select('*').eq('farm_id', farmId),
+            selectAll(() => client().from('budget_cells').select('*').eq('farm_id', farmId).gte('period_year', _fyNow - 2).order('id'))
+          ]);
+          if (!gs.error && !gc.error) { gridScen = gs.data || []; gridRows = gc.data || []; _srvNote('budget_scenarios', gridScen); _srvNote('budget_cells', gridRows); }
+        } catch (e) { gridRows = null; gridScen = null; }
+      }
       _srvNote('accounts', acc.data);      _srvNote('transactions', txn.data);
       _srvNote('budget_months', bud.data); _srvNote('recurring', rec.data);
       try { _budNoteLoaded(bud.data, fst && fst.data); } catch (e) {}   /* -398 F10: what the server holds, for "changed only" */
@@ -1119,6 +1151,7 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
         try { taxPaid = (typeof fst.data.tax_paid === 'string') ? JSON.parse(fst.data.tax_paid) : fst.data.tax_paid; }
         catch (e) { taxPaid = null; }
       }
+      if (gridRows && gridScen) { try { bObj.grid = gridFromDb(gridScen, gridRows); } catch (e) {} }   /* -399: whitelist 1 of 3 */
       (bud.data || []).forEach(function (r) {
         var lbl = ymToLabel(r.period_year, r.period_month);
         if (r.side === 'income') bObj.monthlyIncome[lbl] = Number(r.amount);
@@ -1361,6 +1394,36 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
   /* A farm-row field differs from what the server holds (or nothing is known). */
   function _budFarmDiffers(col, val){ var s = _budSrv(); if (!s || !(col in s.farm)) return true; return s.farm[col] !== (typeof val === 'string' || val === null ? val : _budJ(val)); }
   function _budFarmNote(col, val){ var s = _budSrv(); if (s) s.farm[col] = (typeof val === 'string' || val === null) ? val : _budJ(val); }
+  /* -399 (8A): the Spreadsheet to and from its rows. Only the farmer's own grid is stored (src 'farm'); a seed is
+     today's budget split on the device and never sent. A cell row is kept while it holds money, a note or a formula. */
+  function gridFromDb(scen, rows){
+    var g = { v: 1, scen: {} };
+    (scen || []).forEach(function (r) { if (!r || !r.local_id) return; g.scen[r.local_id] = { fy: +r.fy, name: r.name || 'Budget', live: !!r.is_live, src: 'farm', cells: { income: {}, expense: {} }, fml: {}, notes: {} }; });
+    (rows || []).forEach(function (r) {
+      var s = g.scen[r.scenario_local_id]; if (!s || (r.side !== 'income' && r.side !== 'expense')) return;
+      var L = ymToLabel(r.period_year, r.period_month), ent = r.ent_code || 'none', key = r.side + '|' + r.category + '|' + ent + '|' + L, v = Number(r.amount) || 0;
+      if (ent !== '*' && v) { var c = s.cells[r.side][r.category] || (s.cells[r.side][r.category] = {}); (c[ent] || (c[ent] = {}))[L] = v; }
+      if (r.note) s.notes[key] = r.note; if (r.formula) s.fml[key] = r.formula;
+    });
+    return g;
+  }
+  function gridToDb(g, fid){
+    var scen = [], cells = [];
+    Object.keys((g && g.scen) || {}).forEach(function (id) {
+      var s = g.scen[id]; if (!s || s.src !== 'farm') return;
+      scen.push({ farm_id: fid, local_id: id, fy: +s.fy, name: s.name || 'Budget', is_live: !!s.live, sort_idx: 0 });
+      var seen = {};
+      var add = function (side, cat, ent, L) { var key = side + '|' + cat + '|' + ent + '|' + L; if (seen[key]) return; seen[key] = 1; var ym = labelToYM(L); if (!ym.month || !ym.year) return;
+        var amt = (ent === '*') ? 0 : (Number((((s.cells[side] || {})[cat] || {})[ent] || {})[L]) || 0), note = (s.notes || {})[key] || null, f = (s.fml || {})[key] || null;
+        if (!amt && !note && !f) return;
+        cells.push({ farm_id: fid, scenario_local_id: id, period_year: ym.year, period_month: ym.month, side: side, category: cat, ent_code: ent, amount: amt, note: note, formula: f }); };
+      ['income', 'expense'].forEach(function (side) { var cs = (s.cells && s.cells[side]) || {}; Object.keys(cs).forEach(function (cat) { Object.keys(cs[cat]).forEach(function (ent) { Object.keys(cs[cat][ent]).forEach(function (L) { add(side, cat, ent, L); }); }); }); });
+      [s.fml || {}, s.notes || {}].forEach(function (m) { Object.keys(m).forEach(function (key) { var p = key.split('|'); add(p[0], p[1], p[2], p.slice(3).join('|')); }); });
+    });
+    return { scen: scen, cells: cells };
+  }
+  /* Only rows that differ from the server's copy as this device knows it (row memory); everything when it knows none. */
+  function _gridChanged(table, rows){ var t = _SRV[table]; if (!t) return rows; return rows.filter(function (r) { var k = _srvKey(table, r); return !(k != null && t.rows[k] && _srvSame(t.rows[k], r)); }); }
   const budget = {
     /* Persist the budget: the month rows and the settings on the farm row. -398 (B7 F10): ONLY what changed - a month
        row whose figure differs from the server's, a farm-row field whose value differs. Every call used to upsert every
@@ -1371,6 +1434,27 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     async save(b) {
       if (!b) return;
       var fid = farm.active();
+      /* -399 (8A): the Spreadsheet first, in this order - the scenarios, the cells that changed (through client()'s
+         _srvPrep/_srvWatch: an unchanged row keeps its edit time, so another device's newer edit stands), then a KEYED
+         prune of the cells this device loaded and the farmer has since cleared (never replaceAllRows: cells have an
+         identity), and only then the month totals, which are the live budget's column sums. */
+      if (CAN_BUDGET_CELLS && CAN_BUDGET_SCEN && b.grid && b.grid.scen) {
+        var gd = gridToDb(b.grid, fid), keep = {};
+        gd.cells.forEach(function (r) { var k = _srvKey('budget_cells', r); if (k != null) keep[k] = 1; });
+        var sUp = _gridChanged('budget_scenarios', gd.scen);
+        if (sUp.length) { var g1 = await client().from('budget_scenarios').upsert(sUp, { onConflict: 'farm_id,local_id' }); if (g1.error) throw g1.error; }
+        var cUp = _gridChanged('budget_cells', gd.cells);
+        for (var ci = 0; ci < cUp.length; ci += 500) {
+          var g2 = await client().from('budget_cells').upsert(cUp.slice(ci, ci + 500), { onConflict: 'farm_id,scenario_local_id,period_year,period_month,side,category,ent_code' });
+          if (g2.error) throw g2.error;
+        }
+        var gone = _srvGoneIds('budget_cells', keep);
+        for (var gi = 0; gone && gi < gone.length; gi += 200) {
+          var part = gone.slice(gi, gi + 200), g3 = await client().from('budget_cells').delete().eq('farm_id', fid).in('id', part);
+          if (g3.error) throw g3.error;
+          _srvForgetRows('budget_cells', 'id', part);
+        }
+      }
       var rows = [], srv = _budSrv();
       Object.keys(b.monthlyIncome || {}).forEach(function (lbl) {
         var ym = labelToYM(lbl);
@@ -3033,6 +3117,8 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     /* -391 (D6): the separate marketing opt-in {optIn, at, version}. Farm-level and never
        queried, so it rides in prefs - no new column. */
     if(prefs.marketing && typeof prefs.marketing==='object') p.marketingOptIn = prefs.marketing;
+    /* -399 (8A): what this farm's people have dismissed (the Spreadsheet's first-time card). Never queried: prefs. */
+    if(prefs.ui && typeof prefs.ui==='object') p.uiPrefs = prefs.ui;
     return p;
   }
   function _profPrefsNext(prev, st){
@@ -3043,6 +3129,7 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     if(st && typeof st.cashBasis==='boolean'){ next.cashBasis = st.cashBasis; has=true; }
     if(st && st.lsYear && typeof st.lsYear==='object'){ next.ls = st.lsYear; has=true; }   /* -388 */
     if(st && st.marketingOptIn && typeof st.marketingOptIn==='object'){ next.marketing = st.marketingOptIn; has=true; }   /* -391 */
+    if(st && st.uiPrefs && typeof st.uiPrefs==='object'){ next.ui = st.uiPrefs; has=true; }   /* -399 */
     return has ? next : null;
   }
 
@@ -3697,6 +3784,10 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
                          migSpacing: _migSpacing, migAlerts: _migAlerts, migKey: _migKey, complyRtKey: _complyRtKey,
                          profileSnapFields: function(st){ return (CAN_FARM_ALERTS && Array.isArray(st && st.priceAlerts)) ? { price_alerts: _alertsClean(st.priceAlerts) } : {}; } },
                 _ls: { herdToDb: herdToDb, herdFromDb: herdFromDb, moveToDb: moveToDb, moveFromDb: moveFromDb },
-                _util: { selectAll: selectAll, SELECT_ALL_MAX_ROWS: SELECT_ALL_MAX_ROWS } };
+                _util: { selectAll: selectAll, SELECT_ALL_MAX_ROWS: SELECT_ALL_MAX_ROWS },
+                /* -399 (8A): harness access to the Spreadsheet's whitelists, probes and keyed prune */
+                _grid: { fromDb: gridFromDb, toDb: gridToDb, goneIds: _srvGoneIds, capCols: CAP_COLS,
+                         caps: function(){ return { CAN_BUDGET_CELLS: CAN_BUDGET_CELLS, CAN_BUDGET_SCEN: CAN_BUDGET_SCEN }; },
+                         mem: function(t){ var x = _SRV[t]; return x ? Object.keys(x.rows).length : null; }, probeCol: _probeCol } };
 
 })(window);

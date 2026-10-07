@@ -33,8 +33,8 @@
 <script defer src="vendor/chart.umd.js"></script>
 <!-- AgriInsights backend: Supabase client + data service (load order matters) -->
 <script src="vendor/supabase.js"></script>
-<script src="ai-data-uk.js?v=uk132"></script>
-<script src="ai-auth-uk.js?v=uk111"></script>
+<script src="ai-data-uk.js?v=uk133"></script>
+<script src="ai-auth-uk.js?v=uk112"></script>
 <link rel="stylesheet" href="fonts.css"/>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -6961,6 +6961,244 @@ body.ai-guest .content{padding-bottom:166px}
 .or-mktchip .bx{width:15px;height:15px;border-radius:4px;border:1.5px solid #C7CDD3;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff}
 .or-mktchip.on .bx{background:var(--gm);border-color:var(--gm)}
 </style>
+<style id="bg-grid-css">
+/* -399 (8A): the Budgets Spreadsheet (the signed-off mock-up's styles, scoped to the view; tokens it adds to the app) */
+:root{ --card:#FFFFFF; --neg:#B42318; --ok-w:#F7FBF8; --ok-cw:#DDF1E3; --ok-ct:#0B5B3E; --ok-d:#16a34a;
+  --ti-w:#FFF8E6; --ti-b:#F2DFA8; --ti-cw:#FCEBB6; --ti-ct:#6B4A00; --ti-d:#d97706; --bd-w:#FEF1F1; --bd-b:#F5CFCF; --bd-cw:#FAD9D9; --bd-ct:#8A1C1C; --bd-d:#E74C3C;
+  --nt-cw:#EEF0F2; --nt-ct:#4B5563; --nt-d:#9ca3af; --bg-pop-sh:0 12px 28px rgba(0,0,0,.16); --track:#ECECE8; --past:#F5F6F4; --selbg:#E2F2E8; --tot:#FAFBFA;
+  --netbg:#F0FAF4; --bankbg:#F4F7FB; --xl-bg:#FFFFFF; --xl-br:#E1E4E2; --xl-hd:#F3F4F3; --xl-head:#E8F3EC; --xl-head-t:#14532D; --xl-past:#F4F5F3; --subbg:#FBFCFB; --note:#7C5CD6; }
+#pg-budgets.bg-sheet-on #bgt-first,#pg-budgets.bg-sheet-on #bgt-main,#pg-budgets.bg-sheet-on #bgt-setup-panel{display:none!important}
+#bg-sheet-view[hidden],.bg-pop[hidden],.bg-scrim[hidden],#pg-budgets [hidden]{display:none!important}
+.bg-viewbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:-6px 0 16px}
+.bg-seg{display:grid;grid-auto-columns:minmax(0,1fr);grid-auto-flow:column;gap:3px;background:var(--br2);border:1px solid var(--br);border-radius:10px;padding:3px}
+.bg-seg2{grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-flow:row;width:300px;max-width:100%}
+.bg-seg button{padding:7px 10px;font-size:12.5px;font-weight:700;color:var(--t3);border-radius:8px;text-align:center;white-space:nowrap;font-family:inherit}
+.bg-seg button:hover{color:var(--t2)}
+.bg-seg button.on{background:var(--card);color:var(--gd);box-shadow:0 0 0 1.5px var(--gl) inset}
+.bg-seg button[aria-disabled="true"]{opacity:.45;cursor:not-allowed}
+.bg-seg.col{grid-auto-flow:row;grid-auto-rows:auto}
+.bg-seg.col button{text-align:left;padding:8px 10px}
+.bg-new-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--ok-d);margin-left:6px;vertical-align:2px}
+#bg-sheet-view .bgt-btn{display:inline-flex;align-items:center;gap:7px}
+#bg-sheet-view .bgt-btn:disabled{opacity:.45;cursor:not-allowed}
+#bg-sheet-view .bgt-btn svg{width:15px;height:15px;stroke:currentColor;stroke-width:2;fill:none;flex:none}
+#bg-sheet-view .bgt-btn.ic{padding:8px 9px}
+.bg-card{background:var(--card);border:1px solid var(--br);border-radius:16px;box-shadow:var(--sh);margin-bottom:18px;min-width:0}
+.bg-top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:14px 18px 12px;border-bottom:1px solid var(--br2)}
+.bg-top-l{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.bg-top-t{font-size:15px;font-weight:800;color:var(--t1)}
+.bg-acts{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+#bg-sheet-view .vsep{width:1px;height:24px;background:var(--br);margin:0 2px;display:inline-block}
+#bg-sheet-view .dim,#bg-pop .dim{color:var(--t4)}
+#bg-sheet-view .neg{color:var(--neg)}
+.bg-lockbar{padding:9px 18px;background:var(--ti-w);border-bottom:1px solid var(--ti-b);font-size:13px;color:var(--ti-ct);font-weight:600}
+.bg-tools{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:10px 18px;background:var(--bg);border-bottom:1px solid var(--br2)}
+.bg-tools-l{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.bg-fpick{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:800;color:var(--t1);background:var(--card);border:1.5px solid var(--br);border-radius:10px;padding:7px 10px 7px 12px;white-space:nowrap;font-family:inherit}
+.bg-fpick:hover,.bg-fpick.on{border-color:var(--gl)}
+.bg-fpick .fl{font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.05em}
+.bg-fpick svg{width:14px;height:14px;stroke:currentColor;stroke-width:2.2;fill:none}
+.bg-vwrap{position:relative}
+.bg-vpanel{position:absolute;top:calc(100% + 8px);left:0;z-index:60;width:340px;max-width:calc(100vw - 32px);background:var(--card);border:1px solid var(--br);border-radius:14px;box-shadow:var(--bg-pop-sh);padding:12px 14px;display:flex;flex-direction:column;gap:12px}
+.bg-vrow{display:flex;flex-direction:column;gap:6px}
+.bg-vrow.tg{flex-direction:row}
+.bg-vl{font-size:11px;color:var(--t3);font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+.bg-vnow{font-size:12px;font-weight:700;color:var(--gm)}
+.bg-tgl{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;font-weight:700;color:var(--t2);cursor:pointer;user-select:none}
+.bg-tgl input{position:absolute;opacity:0;width:1px;height:1px;padding:0}
+.bg-tgl .sw{width:30px;height:18px;border-radius:999px;background:var(--track);position:relative;transition:background .15s;flex:none}
+.bg-tgl .sw::after{content:"";position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:var(--card);box-shadow:0 1px 2px rgba(0,0,0,.25);transition:left .15s}
+.bg-tgl input:checked+.sw{background:var(--gl)}
+.bg-tgl input:checked+.sw::after{left:14px}
+.bg-tgl input:focus-visible+.sw{outline:2px solid var(--gl);outline-offset:2px}
+.bg-intro{display:flex;align-items:center;gap:14px 20px;flex-wrap:wrap;padding:14px 18px;background:var(--gb);border-bottom:1px solid var(--gp)}
+.bg-intro-h{font-size:15px;font-weight:800;color:var(--t1)}
+.bg-intro-c{display:flex;gap:8px;flex-wrap:wrap;flex:1;min-width:0}
+.bg-ip{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:700;color:var(--t2);background:var(--card);border:1px solid var(--br);border-radius:999px;padding:4px 10px}
+.bg-ip i{width:12px;height:12px;border-radius:3px;border:1px solid var(--br);flex:none}
+.bg-ip i.g{background:var(--past)}.bg-ip i.w{background:var(--card)}.bg-ip i.s{background:var(--ok-d);border-color:var(--ok-d);border-radius:50%}.bg-ip i.f{background:var(--gb);border-color:var(--gl)}
+.bg-intro-a{display:flex;gap:8px}
+.bg-ctx{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:8px 18px;background:var(--bg);border-bottom:1px solid var(--br2)}
+.bg-ctx-l{font-size:13px;color:var(--t2);display:flex;align-items:center;gap:10px;min-width:0;flex-wrap:wrap}
+.bg-ctx-l b{color:var(--t1)}
+.ctx-k{font-size:11.5px;font-weight:700;color:var(--gm);background:var(--gb);border-radius:999px;padding:2px 9px}
+.ctx-k.g{color:var(--t3);background:var(--past)}
+.ctx-sum{font-weight:800;color:var(--t1);font-variant-numeric:tabular-nums}
+.bg-cell-tools{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.bg-ct{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;color:var(--t2);background:var(--card);border:1px solid var(--br);border-radius:8px;padding:6px 10px;white-space:nowrap;font-family:inherit}
+.bg-ct svg{width:14px;height:14px;stroke:currentColor;stroke-width:2;fill:none}
+.bg-ct:hover:not(:disabled){border-color:var(--gl);color:var(--gd)}
+.bg-ct[hidden]{display:none!important}
+.bg-ib{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;color:var(--t4);font-weight:700;font-size:14px;cursor:help;flex:none;line-height:1}
+.bg-ib:hover,.bg-ib:focus-visible{color:var(--gm);background:var(--gb);outline:none}
+.bg-fx{display:grid;grid-template-columns:minmax(150px,230px) 28px minmax(0,1fr) auto;align-items:stretch;border-bottom:1px solid var(--br);background:var(--card)}
+.bg-fx-name{font-size:12.5px;font-weight:700;color:var(--t2);padding:9px 14px;border-right:1px solid var(--br2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bg-fx-i{display:flex;align-items:center;justify-content:center;font-style:italic;font-weight:800;color:var(--t4);font-size:12.5px;border-right:1px solid var(--br2);font-family:Georgia,serif}
+.bg-fx input{border:none;border-radius:0;padding:9px 12px;font-size:13px;font-variant-numeric:tabular-nums;background:transparent;min-width:0;width:100%}
+.bg-fx input:focus{box-shadow:inset 0 -2px 0 var(--gl)}
+.bg-fx input:disabled{color:var(--t3);background:transparent}
+.bg-fx-st{display:flex;align-items:center;gap:14px;padding:0 14px;font-size:12px;color:var(--t3);white-space:nowrap;border-left:1px solid var(--br2)}
+.bg-fx-st b{color:var(--t1);font-variant-numeric:tabular-nums}
+/* the grid: the wrapper is the scroll container in both directions, so the header row and the category column stick */
+.bg-gw{overflow:auto;max-height:min(68vh,760px);position:relative;outline:none}
+.bg-gw:focus-visible{box-shadow:inset 0 0 0 2px var(--gl)}
+table.bg-g{border-collapse:separate;border-spacing:0;font-size:13px;min-width:100%;user-select:none}
+table.bg-g th,table.bg-g td{white-space:nowrap}
+table.bg-g thead th{position:sticky;top:0;z-index:3;background:var(--card);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--t3);text-align:right;padding:9px 10px 8px;border-bottom:1.5px solid var(--br)}
+table.bg-g thead th .mo{display:block;font-size:12px;color:var(--t1);letter-spacing:.02em}
+table.bg-g thead th .k{display:block;font-size:10px;font-weight:800;margin-top:2px;letter-spacing:.06em}
+table.bg-g thead th.past .k{color:var(--t4)}
+table.bg-g thead th.now .k,table.bg-g thead th.fut .k{color:var(--gm)}
+table.bg-g thead th.cat{left:0;z-index:5;text-align:left;min-width:248px}
+table.bg-g th.cat,table.bg-g td.cat{position:sticky;left:0;z-index:2;background:var(--card);border-right:1px solid var(--br)}
+table.bg-g td{padding:0;border-bottom:1px solid var(--br2);height:36px;text-align:right;font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1}
+table.bg-g td.c{min-width:84px;padding:0 10px;position:relative;cursor:cell;color:var(--t1)}
+table.bg-g td.c.lock{background:var(--past);color:var(--t2);cursor:zoom-in}
+table.bg-g td.c.zero{color:var(--t4)}
+table.bg-g td.c.now-l,table.bg-g th.now-l{box-shadow:inset 2px 0 0 var(--gm)}
+table.bg-g td.c.sel{background:var(--selbg)}
+table.bg-g td.c.act{outline:2px solid var(--gl);outline-offset:-2px;z-index:1}
+table.bg-g td.c.chg::before{content:"";position:absolute;top:0;right:0;border-style:solid;border-width:0 7px 7px 0;border-color:transparent var(--or) transparent transparent}
+table.bg-g td.c.fml::after{content:"";position:absolute;bottom:4px;right:4px;width:4px;height:4px;border-radius:50%;background:var(--gl)}
+table.bg-g td.c.good{color:var(--ok-ct)}
+table.bg-g td.c.bad{color:var(--neg)}
+table.bg-g td.c input{width:100%;border:none;background:transparent;text-align:right;font-weight:700;font-size:13px;padding:0;font-variant-numeric:tabular-nums;color:var(--t1);border-radius:0;box-shadow:none}
+table.bg-g td.c.ro{cursor:default}
+table.bg-g td.yr,table.bg-g th.yr{min-width:112px;padding:0 12px;font-weight:800;border-left:1px solid var(--br);background:var(--tot)}
+table.bg-g th.yr{background:var(--card)}
+table.bg-g td.yr.neg{color:var(--neg)}
+table.bg-g td.yr.good{color:var(--ok-ct)}table.bg-g td.yr.bad{color:var(--neg)}
+table.bg-g td.ly,table.bg-g th.ly{min-width:96px;padding:0 12px;color:var(--t3)}
+table.bg-g td.ly{background:var(--tot)}
+table.bg-g td.cat{text-align:left;padding:0 10px 0 14px}
+table.bg-g .cn{display:flex;align-items:center;gap:9px;min-width:0}
+table.bg-g .cn .dot{width:9px;height:9px;border-radius:3px;flex:none}
+table.bg-g .cn .nm{font-weight:700;color:var(--t1);overflow:hidden;text-overflow:ellipsis;max-width:156px}
+table.bg-g .cn .spk{margin-left:auto;flex:none;display:block}
+table.bg-g tr.grp td{background:var(--bg);height:30px;font-size:11px;font-weight:800;color:var(--t3);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--br)}
+table.bg-g tr.side td{height:34px;font-size:12px;font-weight:800;color:var(--t1);text-transform:uppercase;letter-spacing:.05em;background:var(--card);border-bottom:1.5px solid var(--br)}
+table.bg-g tr.side .sd{display:inline-flex;align-items:center;gap:8px}
+table.bg-g tr.side .sd i{width:8px;height:8px;border-radius:50%}
+table.bg-g tr.sub td{font-weight:800;background:var(--tot);border-bottom:1.5px solid var(--br)}
+table.bg-g tr.sub td.c,table.bg-g tr.net td.c,table.bg-g tr.run td.c,table.bg-g tr.bank td.c,table.bg-g tr.vatr td.c,table.bg-g tr.smallr td.c{cursor:default}
+table.bg-g tr.net td{font-weight:800;font-size:13.5px;background:var(--netbg);border-top:1.5px solid var(--br);border-bottom:1px solid var(--br)}
+table.bg-g tr.run td,table.bg-g tr.bank td{color:var(--t2);font-weight:700;background:var(--card)}
+table.bg-g tr.bank td{background:var(--bankbg)}
+table.bg-g tr.vatr td{background:var(--card);color:var(--t2);font-weight:700}
+table.bg-g tr.smallr td{background:var(--card);color:var(--t3);font-weight:700}
+table.bg-g tr.smallr td.cat,table.bg-g tr.hid td.cat{padding-left:38px}
+table.bg-g tr.hid td{height:30px;background:var(--card)}
+table.bg-g td.c.odwarn{background:var(--ti-w);color:var(--ti-ct)}
+table.bg-g td.c.odbad{background:var(--bd-w);color:var(--neg)}
+table.bg-g td.c.hasnote{background-image:linear-gradient(135deg,var(--note) 0,var(--note) 6px,transparent 6px)}
+table.bg-g .lbl-i{display:inline-flex;align-items:center;gap:6px}
+table.bg-g .chev{width:18px;height:18px;border-radius:5px;display:inline-flex;align-items:center;justify-content:center;color:var(--t4);font-weight:800;font-size:14px;flex:none;transition:transform .15s;margin-left:-4px;font-family:inherit}
+table.bg-g .chev.dim{opacity:.35}
+table.bg-g .chev:hover{background:var(--br2);color:var(--t1);opacity:1}
+table.bg-g tr.crow.open .chev{transform:rotate(90deg);color:var(--gd);opacity:1}
+table.bg-g td.cat[data-name]{cursor:pointer}
+table.bg-g tr.subr td{height:30px;font-size:12.5px;background:var(--subbg);border-bottom:1px solid var(--br2)}
+table.bg-g tr.subr td.c{color:var(--t2)}
+table.bg-g .cn.sub{padding-left:22px}
+table.bg-g .cn.sub .ic{width:18px;text-align:center;font-size:13px;flex:none;color:var(--t4)}
+table.bg-g .cn.sub .nm{font-weight:600;color:var(--t2);max-width:150px}
+table.bg-g .cn .sz{font-size:11px;color:var(--t4);font-weight:600;margin-left:auto;flex:none;font-variant-numeric:tabular-nums}
+table.bg-g tr.subf td{height:40px}
+table.bg-g .subbar{display:flex;align-items:center;gap:12px;padding-left:22px;flex-wrap:wrap;position:sticky;left:14px;width:max-content;max-width:calc(100vw - 80px)}
+table.bg-g .nm-link{font-weight:600;color:var(--t2);text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:150px;font-size:12.5px;font-family:inherit}
+table.bg-g .nm-link:hover{color:var(--gd);text-decoration:underline}
+table.bg-g .bytag{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;border-radius:999px;padding:1px 7px;flex:none}
+table.bg-g .bytag.warn{color:var(--ti-ct);background:var(--ti-cw);border:1px solid var(--ti-b);cursor:help}
+.bg-lnk{font-size:12px;font-weight:700;color:var(--gm);white-space:nowrap;font-family:inherit}
+.bg-lnk:hover{text-decoration:underline}
+table.bg-g .prog{position:absolute;left:10px;right:10px;bottom:5px;height:3px;border-radius:2px;background:var(--track);overflow:hidden}
+table.bg-g .prog i{display:block;height:100%;border-radius:2px}
+table.bg-g .prog.in i{background:var(--gl)}table.bg-g .prog.out i{background:var(--or)}table.bg-g .prog.over i{background:var(--rd)}
+.bg-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:12px 18px;border-top:1px solid var(--br);background:var(--card);border-radius:0 0 16px 16px}
+/* -399 (FAB-overlap class): nothing floats over the Spreadsheet. The quick-capture + and the tours button sit fixed
+   bottom-right, over the footer's Save / Discard, the context bar and Download at some scroll positions; the page's
+   112px gutter only clears them at the very end of the page, and their resting state wakes them exactly when the
+   pointer comes near Save. While the Spreadsheet is showing they are hidden (Picture and every other page keep them).
+   The footer is not made sticky: a bar fixed over the page would cover the grid's own controls on a short window. */
+body:has(#pg-budgets.on.bg-sheet-on) #qc-fab,body:has(#pg-budgets.on.bg-sheet-on) #qc-fab-tip,body:has(#pg-budgets.on.bg-sheet-on) #tours-fab{display:none!important}
+.bg-recon{display:flex;align-items:center;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--t2)}
+.bg-recon .f{display:flex;flex-direction:column;gap:1px}
+.bg-recon .f span{font-size:11px;color:var(--t3);font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+.bg-recon .f b{font-variant-numeric:tabular-nums;font-size:14px;color:var(--t1)}
+.bg-recon .f b small{font-size:11px;font-weight:600}
+.bg-foot-r{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.bg-chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;border-radius:999px;padding:3px 10px 3px 8px;white-space:nowrap}
+.bg-chip>i{width:8px;height:8px;border-radius:50%;flex:none;display:inline-block}
+.bg-chip.ok{background:var(--ok-cw);color:var(--ok-ct)}.bg-chip.ok>i{background:var(--ok-d)}
+.bg-chip.ti{background:var(--ti-cw);color:var(--ti-ct)}.bg-chip.ti>i{background:var(--ti-d)}
+.bg-chip.bd{background:var(--bd-cw);color:var(--bd-ct)}.bg-chip.bd>i{background:var(--bd-d)}
+.bg-chip.nt{background:var(--nt-cw);color:var(--nt-ct)}.bg-chip.nt>i{background:var(--nt-d)}
+/* floating: tip, popover, modal */
+.bg-tip{position:fixed;z-index:9999;max-width:300px;background:var(--card);color:var(--t2);border:1px solid var(--br);border-radius:12px;box-shadow:var(--bg-pop-sh);padding:10px 12px;font-size:12.5px;line-height:1.55;font-weight:500;display:none;pointer-events:none}
+.bg-tip.on{display:block}
+.bg-keys{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 18px;font-size:12.5px;color:var(--t2)}
+.bg-keys div{display:flex;justify-content:space-between;gap:10px}
+.bg-keys .kbd{display:inline-block;font-size:11px;font-weight:700;border:1px solid var(--br);border-bottom-width:2px;border-radius:5px;padding:0 5px;color:var(--t2);background:var(--card)}
+.bg-pop{position:fixed;z-index:9000;background:var(--card);border:1px solid var(--br);border-radius:14px;box-shadow:var(--bg-pop-sh);padding:14px;width:300px;max-width:calc(100vw - 32px)}
+.bg-pop.wide{width:340px}
+.bg-pop h4{font-size:13.5px;font-weight:800;margin:0 0 10px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.bg-pop label{display:block;font-size:11px;color:var(--t3);font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin:10px 0 5px}
+.bg-pop input,.bg-pop select,.bg-pop textarea{width:100%;font-size:13px;padding:7px 10px}
+.bg-pop .row{display:flex;gap:8px;justify-content:flex-end;margin-top:14px}
+.bg-pop .quick{display:flex;gap:6px;flex-wrap:wrap}
+.bg-pop .quick button{font-size:12px;font-weight:700;border:1px solid var(--br);border-radius:999px;padding:4px 10px;color:var(--t2);font-family:inherit}
+.bg-pop .quick button:hover{border-color:var(--gl);color:var(--gd)}
+.bg-pop .prev{margin-top:10px;font-size:12.5px;color:var(--t2);display:flex;justify-content:space-between;gap:8px}
+.bg-pop .prev b{font-variant-numeric:tabular-nums}
+.bg-pop .shapes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+.bg-pop .shape{border:1px solid var(--br);border-radius:10px;padding:7px 8px;text-align:left;font-size:12px;font-weight:700;color:var(--t2);display:flex;flex-direction:column;gap:6px;font-family:inherit}
+.bg-pop .shape.on{border-color:var(--gl);background:var(--gb);color:var(--gd);box-shadow:0 0 0 1px var(--gl) inset}
+.bg-pop .flist button{display:grid;grid-template-columns:22px minmax(0,1fr);align-items:center;gap:8px;width:100%;text-align:left;padding:7px 8px;border-radius:8px;font-size:13px;font-weight:700;color:var(--t1);font-family:inherit}
+.bg-pop .flist button.on{background:var(--gb);color:var(--gd);box-shadow:0 0 0 1.5px var(--gl) inset}
+.bg-scrim{position:fixed;inset:0;background:rgba(10,20,15,.42);z-index:8000;display:flex;align-items:center;justify-content:center;padding:16px}
+.bg-modal{background:var(--card);border-radius:18px;box-shadow:var(--bg-pop-sh);width:min(920px,100%);max-height:calc(100vh - 32px);overflow:auto;display:flex;flex-direction:column}
+.bg-mh{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:18px 20px 12px;border-bottom:1px solid var(--br2)}
+.bg-mh h3{font-size:17px;font-weight:800;margin:0}
+.bg-mh p{font-size:12.5px;color:var(--t3);margin:3px 0 0}
+.bg-mb{padding:16px 20px;min-width:0}
+.bg-mf{display:flex;justify-content:flex-end;gap:10px;padding:12px 20px 18px;flex-wrap:wrap}
+.bg-x{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--t3);font-size:20px;flex:none;font-family:inherit}
+.bg-x:hover{background:var(--br2);color:var(--t1)}
+.bg-modal .dim{color:var(--t4)}
+table.bg-map{width:100%;border-collapse:collapse;font-size:13px;min-width:560px}
+table.bg-map th{font-size:11px;color:var(--t3);font-weight:700;text-transform:uppercase;letter-spacing:.04em;text-align:left;padding:7px 10px;border-bottom:1.5px solid var(--br)}
+table.bg-map td{padding:8px 10px;border-bottom:1px solid var(--br2);vertical-align:middle}
+table.bg-map .num{text-align:right;font-variant-numeric:tabular-nums;font-weight:700}
+/* the workbook preview */
+.bg-xl{border:1px solid var(--xl-br);border-radius:10px;overflow:hidden;background:var(--xl-bg);font-family:Calibri,'Segoe UI',system-ui,sans-serif}
+.bg-xl-fx{display:flex;border-bottom:1px solid var(--xl-br);font-size:12.5px}
+.bg-xl-fx .n{width:70px;padding:6px 8px;border-right:1px solid var(--xl-br);color:var(--t2)}
+.bg-xl-fx .f{padding:6px 10px;color:var(--t1);font-family:Consolas,Menlo,monospace;font-size:12px}
+.bg-xl-scroll{overflow:auto;max-height:340px}
+table.bg-xls{border-collapse:collapse;font-size:12px;color:var(--t1)}
+table.bg-xls th{background:var(--xl-hd);color:var(--t3);font-weight:500;padding:3px 8px;border:1px solid var(--xl-br);font-size:11px;text-align:center;position:sticky;top:0}
+table.bg-xls td{border:1px solid var(--xl-br);padding:4px 8px;text-align:right;min-width:72px;white-space:nowrap;font-variant-numeric:tabular-nums;cursor:cell}
+table.bg-xls td.t{text-align:left;min-width:190px}
+table.bg-xls td.rn{background:var(--xl-hd);color:var(--t3);text-align:center;min-width:34px;position:sticky;left:0}
+table.bg-xls td.b{font-weight:700}
+table.bg-xls td.h{background:var(--xl-head);color:var(--xl-head-t);font-weight:700}
+table.bg-xls td.pa{background:var(--xl-past)}
+table.bg-xls td.on{outline:2px solid #217346;outline-offset:-2px}
+.bg-xl-tabs{display:flex;gap:2px;background:var(--xl-hd);border-top:1px solid var(--xl-br);padding:0 8px;overflow-x:auto}
+.bg-xl-tabs button{font-size:12px;padding:6px 14px;color:var(--t3);border-bottom:2px solid transparent;white-space:nowrap;font-family:inherit}
+.bg-xl-tabs button.on{background:var(--xl-bg);color:#217346;font-weight:700;border-bottom-color:#217346}
+.bg-xl-file{display:flex;align-items:center;gap:10px;font-size:13px;font-weight:700;margin-bottom:12px;flex-wrap:wrap}
+.bg-xl-file .ico{width:30px;height:30px;border-radius:7px;background:#217346;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;flex:none}
+.bg-xl-file small{color:var(--t3);font-weight:600}
+.bg-note-list{margin-top:12px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.bg-note{border:1px solid var(--br);border-radius:12px;padding:10px 12px;font-size:12.5px;color:var(--t2);background:var(--bg)}
+.bg-note b{display:block;color:var(--t1);font-size:13px;margin-bottom:2px}
+@media (max-width:1100px){ .bg-fx{grid-template-columns:minmax(120px,180px) 28px minmax(0,1fr)} .bg-fx-st{display:none} }
+@media (max-width:860px){ .bg-top,.bg-tools,.bg-foot,.bg-ctx,.bg-intro{padding-left:14px;padding-right:14px} .bg-note-list,.bg-keys{grid-template-columns:1fr}
+  table.bg-g thead th.cat{min-width:180px} table.bg-g .cn .nm{max-width:118px} table.bg-g .cn .spk{display:none} }
+@media (max-width:560px){ .bg-fx{grid-template-columns:1fr} .bg-fx-name,.bg-fx-i{display:none} .bg-seg2{width:100%} }
+@media (prefers-reduced-motion:reduce){ .bg-tgl .sw,.bg-tgl .sw::after,table.bg-g .chev{transition:none} }
+</style>
 
 </head>
 <body>
@@ -8488,9 +8726,84 @@ body.ai-guest .content{padding-bottom:166px}
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       <button class="bgt-btn" onclick="bgtPrint()">Print for the bank</button>
-      <button class="bgt-btn" id="bgt-edit-btn" onclick="bgtToggleSetup()">Edit targets</button>
+      <button class="bgt-btn" id="bgt-edit-btn" onclick="bgEditTargets()">Edit targets</button>
     </div>
   </div>
+
+  <!-- -399 (8A): Picture | Spreadsheet. Picture is the page below, as it was; Spreadsheet is the budget as a grid. -->
+  <div class="bg-viewbar">
+    <div class="bg-seg bg-seg2" id="bg-view-seg" role="tablist" aria-label="Budgets view">
+      <button role="tab" type="button" data-v="pic" class="on" aria-selected="true" onclick="bgView('pic')">Picture</button>
+      <button role="tab" type="button" data-v="sheet" aria-selected="false" onclick="bgView('sheet')">Spreadsheet<span class="bg-new-dot" aria-label="new"></span></button>
+    </div>
+  </div>
+  <div id="bg-sheet-view" hidden>
+    <section class="bg-card" aria-label="Budget spreadsheet">
+      <div class="bg-top">
+        <div class="bg-top-l"><span class="bg-top-t">Your budget, month by month</span><span class="dim" id="bg-fy"></span></div>
+        <div class="bg-acts">
+          <button class="bgt-btn ic" id="bg-undo" type="button" title="Undo (Ctrl+Z)" aria-label="Undo" disabled><svg viewBox="0 0 24 24"><path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 010 10h-3"/></svg></button>
+          <button class="bgt-btn ic" id="bg-redo" type="button" title="Redo (Ctrl+Y)" aria-label="Redo" disabled><svg viewBox="0 0 24 24"><path d="M15 14l5-5-5-5"/><path d="M20 9H9a5 5 0 000 10h3"/></svg></button>
+          <span class="vsep"></span>
+          <button class="bgt-btn pri" id="bg-xl-btn" type="button"><svg viewBox="0 0 24 24"><path d="M12 4v12M7 11l5 5 5-5M5 20h14"/></svg>Download for the bank</button>
+        </div>
+      </div>
+      <div class="bg-lockbar" id="bg-lockbar" hidden>&#128274; Locked as the copy the bank has, so the figures cannot be changed. To change them, unlock it first: Edit targets &#8250; Bank copy &#8250; Unlock.</div>
+      <div class="bg-tools">
+        <div class="bg-tools-l">
+          <button class="bg-fpick" id="bg-f-btn" type="button" aria-haspopup="listbox"><span class="fl">Show</span><span>Whole farm</span><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
+          <div class="bg-seg" id="bg-per-seg" role="radiogroup" aria-label="Columns"><button type="button" role="radio" class="on" aria-checked="true">Months</button><button type="button" role="radio" aria-checked="false" aria-disabled="true" title="Quarters come in the next release">Quarters</button><button type="button" role="radio" aria-checked="false" aria-disabled="true" title="The year on its own comes in the next release">Year</button></div>
+          <div class="bg-vwrap">
+            <button class="bg-fpick" id="bg-v-btn" type="button" aria-haspopup="true" aria-expanded="false"><span>View</span><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
+            <div class="bg-vpanel" id="bg-vpanel" hidden>
+              <div class="bg-vrow"><span class="bg-vl">Figures</span><div class="bg-seg col" id="bg-show-seg" role="radiogroup" aria-label="Figures">
+                <button type="button" role="radio" data-s="ab" class="on" aria-checked="true">What happened, then the plan</button>
+                <button type="button" role="radio" data-s="b" aria-checked="false">Plan only</button>
+                <button type="button" role="radio" data-s="v" aria-checked="false">How I&#8217;m doing</button></div></div>
+              <div class="bg-vrow" id="bg-vat-row"><span class="bg-vl">VAT</span><div class="bg-seg" id="bg-vat-seg" role="radiogroup" aria-label="VAT"><button type="button" role="radio" data-vat="inc" class="on" aria-checked="true">Including VAT</button><button type="button" role="radio" data-vat="exc" aria-checked="false">Without VAT</button></div></div>
+              <div class="bg-vrow tg"><label class="bg-tgl"><input type="checkbox" id="bg-ly-tg" checked><span class="sw"></span>Last year column</label></div>
+              <div class="bg-vrow tg"><label class="bg-tgl"><input type="checkbox" id="bg-em-tg"><span class="sw"></span>Show every line</label></div>
+              <div class="bg-vrow tg"><label class="bg-tgl"><input type="checkbox" id="bg-fx-tg"><span class="sw"></span>Formula bar</label></div>
+            </div>
+          </div>
+          <span class="bg-vnow" id="bg-vnow"></span>
+        </div>
+      </div>
+      <div class="bg-intro" id="bg-intro" hidden>
+        <div class="bg-intro-h">Click a figure and type a new one</div>
+        <div class="bg-intro-c"><span class="bg-ip"><i class="g"></i>Grey months show what happened</span><span class="bg-ip"><i class="w"></i>White months are your plan</span><span class="bg-ip"><i class="s"></i>Save updates your Budgets page</span><span class="bg-ip"><i class="f"></i>&#8250; on a line shows its blocks, crops and herds</span></div>
+        <div class="bg-intro-a"><button class="bgt-btn" type="button" id="bg-intro-tour">Take the tour</button><button class="bgt-btn pri" type="button" id="bg-intro-ok">Got it</button></div>
+      </div>
+      <div class="bg-ctx" id="bg-ctx" hidden>
+        <div class="bg-ctx-l" id="bg-ctx-l"></div>
+        <div class="bg-cell-tools">
+          <button class="bg-ct" data-tool="fill" type="button" title="Copy the first figure across the months you picked, or to the year end"><svg viewBox="0 0 24 24"><path d="M4 12h14M13 7l5 5-5 5"/></svg>Copy across</button>
+          <button class="bg-ct" data-tool="pct" type="button" title="Raise or lower the figures you picked"><svg viewBox="0 0 24 24"><path d="M19 5L5 19"/><circle cx="7" cy="7" r="2.5"/><circle cx="17" cy="17" r="2.5"/></svg>Up or down by %</button>
+          <button class="bg-ct" data-tool="spread" type="button" title="Type a total and share it over the months still to come"><svg viewBox="0 0 24 24"><path d="M4 20V10M9 20V4M14 20v-8M19 20v-5"/></svg>Share a total over the months</button>
+          <button class="bg-ct" data-tool="ly" type="button" title="Use last year&#8217;s figures for the months you picked"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 109-9"/><path d="M3 4v5h5"/></svg>Same as last year</button>
+          <button class="bg-ct" data-tool="note" type="button" title="Add a note to this figure (Shift+F2)"><svg viewBox="0 0 24 24"><path d="M4 4h16v12H8l-4 4z"/></svg>Note</button>
+          <button class="bg-ct" data-tool="rec" type="button" title="See the records behind this figure"><svg viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>See the records</button>
+          <span class="bg-ib" tabindex="0" data-tip-id="keys" aria-label="Keyboard shortcuts">&#9432;</span>
+        </div>
+      </div>
+      <div class="bg-fx" id="bg-fx" hidden>
+        <div class="bg-fx-name" id="bg-fx-name">&#8212;</div>
+        <div class="bg-fx-i" aria-hidden="true">fx</div>
+        <input id="bg-fx-in" type="text" autocomplete="off" spellcheck="false" aria-label="Figure or sum" placeholder="Pick a month still to come">
+        <div class="bg-fx-st" id="bg-fx-st"></div>
+      </div>
+      <div class="bg-gw" id="bg-gw" tabindex="0" aria-label="Budget grid. Arrow keys move, type to change a figure.">
+        <table class="bg-g" id="bg-g" role="grid"></table>
+      </div>
+      <div class="bg-foot">
+        <div class="bg-recon" id="bg-recon"></div>
+        <div class="bg-foot-r" id="bg-foot-r"></div>
+      </div>
+    </section>
+  </div>
+  <div class="bg-tip" id="bg-tip" role="tooltip"></div>
+  <div class="bg-pop" id="bg-pop" hidden></div>
+  <div class="bg-scrim" id="bg-scrim" hidden><div class="bg-modal" id="bg-modal" role="dialog" aria-modal="true"></div></div>
 
   <!-- First visit: three doors (shown by JS when no targets exist) -->
   <div id="bgt-first" style="display:none">
@@ -11564,6 +11877,9 @@ function migrateDemoData() {
       }
       ST.budgets.monthlyIncome   = newInc;
       ST.budgets.monthlyExpenses = newExp;
+      /* -399 (8A): the Spreadsheet's cells move with the same old -> new month map */
+      try { var _bgMap = {}, _bgNew = Object.keys(newInc); oldKeys.forEach(function(L, j){ _bgMap[L] = _bgNew[j]; });
+            if (typeof bgGridRekeyMap === 'function') bgGridRekeyMap(_bgMap, bgtFyOfLabel(_bgNew[0])); } catch (e) {}
     }
     ST.budgets.currentMonth = MONTH_LABELS_SHORT[APP_TODAY.getMonth()] + ' ' + APP_TODAY.getFullYear();
   }
@@ -20315,9 +20631,13 @@ function setExpPeriod(p) {
 // that via its switch statement.
 // ============================================================
 function dataChanged(event) {
+  /* -399 (8A): a rate typed in the Spreadsheet (95/ha, 2/head) re-prices the months still to come when a field, block
+     or herd changes size - checked on every change but the budget's own (cheap: only a farmer's grid with rates). */
+  if (event !== 'budget' && typeof bgGridReprice === 'function') { try { if (bgGridReprice() > 0) dataChanged('budget'); } catch (e) {} }
   // Backend sync: all budget edits funnel through dataChanged('budget')
   if (event === 'budget') {
     try { if (typeof bgtLockBackstop === 'function') bgtLockBackstop(); } catch (e) {}   /* -398 F1: a locked year never leaves the device changed */
+    try { if (typeof bgGridSync === 'function') bgGridSync('totals'); } catch (e) {}   /* -399 (8A): the Spreadsheet's cells follow the month totals any other writer set */
     try { if (window.AI && AI.farm && AI.farm.active()) { AI.budget.save(ST.budgets).catch(function(e){ console.error('Backend budget save failed:', e); }); } } catch (e) {}
   }
   // Identify the currently visible page
@@ -21733,7 +22053,7 @@ var FRESH_CONFIG = {
                /* -384: the farm's own tax and holding details. Kept when the farmer only clears
                   records (keepIdentity); removed with the sample identity below. */
                'partners','farmAddr','payeRef','stockMark','stockMarkType','taxResidence','cashBasis','fyYearEnd',
-               'ieTileMode','_demoK'],
+               'ieTileMode','_demoK','uiPrefs'],   /* -399: uiPrefs = what this farm's people have dismissed (the Spreadsheet's first-time card) */
   ST_ASSETS:  [],
   ST_LOANS:   ['activeTab'],
   ST_WORK:    ['activeTab','nmwRate','hoursWeek','taxThreshold','payRepPeriod'],
@@ -21751,12 +22071,13 @@ var FRESH_CONFIG = {
    budget_locked), which clear_farm_data does not touch. The budget is now REBUILT from this scaffold: records go back
    to the shape, settings are copied, and anything in neither list is dropped and reported by freshResidue(). */
 var FRESH_BUDGETS = {
-  shape:  { monthlyIncome:{}, monthlyExpenses:{}, catTargets:{income:{}, expense:{}}, locked:{} },
+  shape:  { monthlyIncome:{}, monthlyExpenses:{}, catTargets:{income:{}, expense:{}}, locked:{}, grid:{} },   /* -399: grid = the Spreadsheet (scaffold below) */
   config: ['incomePattern','expensePattern','currentMonth']
 };
 function bgtFreshBudgets(old){
   var out = _freshCopy(FRESH_BUDGETS.shape);
   FRESH_BUDGETS.config.forEach(function(k){ if (old && old[k] !== undefined) out[k] = old[k]; });
+  try { out.grid = bgGridScaffold(); } catch(e){}   /* -399 (8A): one live budget for this year, nothing in it */
   return out;
 }
 function _freshCopy(v){
@@ -21789,6 +22110,7 @@ function freshResidue(){
       if (Object.prototype.hasOwnProperty.call(FRESH_BUDGETS.shape, k)) {
         var a = JSON.stringify(b[k]), f = JSON.stringify(FRESH_BUDGETS.shape[k]);
         if (k === 'catTargets') { a = JSON.stringify(_bgtCtCanon(b[k])); f = JSON.stringify(_bgtCtCanon(FRESH_BUDGETS.shape[k])); }
+        if (k === 'grid') { a = JSON.stringify(_bgGridCanon(b[k])); f = '{}'; }   /* -399: the scaffold holds nothing */
         if (a !== f) out.push({ module:'ST.budgets', key:k, why:'record not cleared', holds:String(a).slice(0,80) });
         return;
       }
@@ -22135,6 +22457,10 @@ function showSkeleton(containerId, rows) {
 
 // ============================================================
 function nav(id) {
+  /* -399 (8A): leaving Budgets with Spreadsheet changes not saved asks first (Stay / Leave without saving / Save and go) */
+  if (id !== 'budgets' && !nav._bgOk && typeof BG !== 'undefined' && BG.on && BG.s && typeof bgNChanged === 'function' && bgNChanged()) {
+    bgGuardLeave(function(){ nav._bgOk = 1; try { nav(id); } finally { nav._bgOk = 0; } }); return;
+  }
   var pg = $('pg-' + id);
   if (!pg) { pg = $('pg-dashboard'); id = 'dashboard'; }   // missing target -> fall back to dashboard, never blank the screen
   /* Drawing the page you are already on again - a background refresh from the phone, the
@@ -41255,7 +41581,8 @@ function recomputePlan() {
      was filled from the plan again on the next recompute (Feb 2027 income 38,708 -> typed 0 -> 23,888). F1: the one
      write guard, quietly. F4: the budget's own year. */
   var _s4fy=(typeof bgtFY==='function')?bgtFY():null, _s4m=(_s4fy!=null&&typeof getFYMonths==='function')?getFYMonths(_s4fy):null;
-  if(_s4m && typeof bgtCanWrite==='function' && bgtCanWrite(_s4fy, true)){
+  /* -399 (8A, owner decision): once the farmer has saved the Spreadsheet for the year, Planning no longer fills it */
+  if(_s4m && typeof bgtCanWrite==='function' && bgtCanWrite(_s4fy, true) && !(typeof bgOwned==='function' && bgOwned(_s4fy))){
     ST_PLAN.months.forEach(function(m){
       if(!m.label || _s4m.indexOf(m.label)<0) return;
       if(m.income   > 0 && !bgtMonthSet(ST.budgets.monthlyIncome,   m.label)) ST.budgets.monthlyIncome[m.label]   = m.income;
@@ -44238,6 +44565,7 @@ function renderBudgetsPage() {
     bgtRenderDrift(c);
   }
   bgtFillEditor(c);
+  try { if (typeof bgAfterRender === 'function') bgAfterRender(); } catch(e) {}   /* -399 (8A): the Spreadsheet shows the budget as it now is */
 }
 
 function bgtChip(cls, txt) { var _t = String(txt).replace(/^(\u25b2|\u2713|\u2248)\s*/, ''); return '<span class="bgt-chip ' + cls + '">' + (cls === 'warn' || cls === 'good' ? d9Dot(cls === 'warn' ? 'a' : 'g', _t.charAt(0).toUpperCase() + _t.slice(1)) : _t.charAt(0).toUpperCase() + _t.slice(1)) + '</span>'; }   /* 6c (D9): "▲ R732k behind" - an up arrow read as more; the app's dot and the words */
@@ -44789,6 +45117,7 @@ function _bgtCtCanon(ct){ var o={}; ['income','expense'].forEach(function(s){ va
 function bgtLockSnap(fy){
   var b=ST.budgets||{}, s={'in':{}, out:{}, ct:_bgtCtCanon(b.catTargets)};
   getFYMonths(fy).forEach(function(m){ if(bgtMonthSet(b.monthlyIncome, m)) s['in'][m]=+b.monthlyIncome[m]; if(bgtMonthSet(b.monthlyExpenses, m)) s.out[m]=+b.monthlyExpenses[m]; });
+  try { s.g = (typeof bgLockCopy==='function') ? bgLockCopy(fy) : null; } catch(e){ s.g = null; }   /* -399 (8A): the Spreadsheet's cells */
   return s;
 }
 /* Backstop for the guard: before a budget is saved, a locked year's months (and, for this year, the category targets)
@@ -44799,7 +45128,10 @@ function bgtLockBackstop(){
   Object.keys(lk).forEach(function(fy){
     var rec=lk[fy], y=parseInt(fy,10); if(!rec || typeof rec!=='object' || !isFinite(y)) return;
     if(!rec.snap){ rec.snap=bgtLockSnap(y); return; }
-    var s=rec.snap; b.monthlyIncome=b.monthlyIncome||{}; b.monthlyExpenses=b.monthlyExpenses||{};
+    var s=rec.snap;
+    /* -399 (8A): a lock made before the Spreadsheet takes the grid's copy when first seen; after that the grid goes back too */
+    try{ if(!('g' in s)) s.g=bgLockCopy(y); else { var _gid=bgScenId(y), _gr=b.grid&&b.grid.scen, _now=_gr?(_gr[_gid]||null):null, _nowF=(_now&&_now.src==='farm')?_now:null;
+      if(JSON.stringify(_nowF)!==JSON.stringify(s.g||null)){ if(s.g){ bgGridRoot().scen[_gid]=bgCopy(s.g); } else if(_nowF){ delete b.grid.scen[_gid]; } n++; } } }catch(e){} b.monthlyIncome=b.monthlyIncome||{}; b.monthlyExpenses=b.monthlyExpenses||{};
     getFYMonths(y).forEach(function(m){
       [['in','monthlyIncome'],['out','monthlyExpenses']].forEach(function(q){
         var want=(s[q[0]]||{})[m], has=b[q[1]][m];
@@ -45444,6 +45776,7 @@ function bgtMergeHero() {
    drawer, so calling the toggle on each would open it and then shut it again
    on the second — the farmer would watch the panel close as they advanced. */
 function bgtTourOpenMore() {
+  try { if (typeof bgTourPic === 'function') bgTourPic(); } catch(e) {}   /* -399: the Picture, not the Spreadsheet */
   var b = $('bgt-more-body'), c2 = $('bgt-more-c'); if (!b) return;
   if (b.classList.contains('open')) return;
   b.classList.add('open');
@@ -46045,6 +46378,8 @@ async function bgtEditCat(side, cat) {
 
 function bgtCatSet(side, cat, val, c) {
   if (!bgtCanWrite()) return false;   /* -398 F1 */
+  /* -399 (8A, D8): with the farmer's Spreadsheet the target IS the row's year total - the row moves, the months follow */
+  try { if (typeof bgOwned === 'function' && bgOwned() && bgGridCatTarget(side, cat, val)) { dataChanged('budget'); return true; } } catch (e) {}
   // The first edit adopts the derived set, so changing one number
   // doesn't silently zero all the other categories.
   var store = bgtCatStore(side), has = false, k;
@@ -54850,7 +55185,10 @@ function b5ProfitPeriod(info){
    split by category comes from the farmer's category targets when set, else this year's
    actual mix, else last year's. Step 3 replaces this with stored lines (D1) - one function,
    so every engine moves together. */
-function b5BudgetLines(fy){
+function b5BudgetLines(fy, opt){
+  /* -399 (8A): once the farmer has saved the Spreadsheet its cells ARE the lines (source 'grid'); a seeded grid is
+     today's split, so the engines keep this path for it. opt.legacy: this split, whatever the grid (the seed itself). */
+  if(!(opt && opt.legacy) && typeof bgGridLines==='function'){ var _gl=bgGridLines(fy); if(_gl) return _gl; }
   var yms=b5FyYms(fy), out={source:'none', months:{}};
   function mixFrom(obj){ var t=0,k,m={}; for(k in obj) if((obj[k]||0)>0) t+=obj[k]; if(!(t>0)) return null; for(k in obj) if((obj[k]||0)>0) m[k]=obj[k]/t; return m; }
   function actualMix(f, type){ var o={}; ((ST&&ST.txns)||[]).forEach(function(t){ if(!t||t.type!==type) return; var d=parseDate(t.date||''); if(!d||_fyOfParts(d)!==f) return; var c=txCatKey(t); o[c]=(o[c]||0)+(+t.amt||0); }); return o; }
@@ -55030,9 +55368,30 @@ function b5MonthRest(inc, exp, td){
 /* The bank at the end of this month on that rule: Money Flow's table starts NEXT month from here. It started from the
    typed balance as it stood on its date - not rolled to today, and with this month's remainder left out - so its
    balances disagreed with the fix-it panel's "Bank on 31 Mar" by the month we are in. */
+/* -399 (owner decision 1, 7 Oct): EVERY BANK FIGURE counts the rest of this month's PLAN with no days-left cap - this
+   month's budget less this month's entries so far, never below 0 - so a figure typed into the month we are in moves
+   the bank by exactly that much: the Spreadsheet's "Bank at month end ≈" and Lowest bank, the fix-it panel's "Bank on
+   31 Mar", Money Flow (its table opens from b5BankMonthEnd) and Home / the Dashboard (b5CashForecast's balances).
+   The days-left cap (b5MonthRest above) stays for "heading for" only - the Budgets headline's net cash - so that does
+   not jump on the 1st. A month with no budget figure on a side takes the Money Flow forecast's figure for it. */
+function b5BankRestOf(inc, exp, td){
+  td=td||((typeof APP_TODAY!=='undefined'&&APP_TODAY)?new Date(APP_TODAY):new Date());
+  var rIn=0, rOut=0;
+  ((ST&&ST.txns)||[]).forEach(function(t){ var d=t?parseDate(t.date||''):null;
+    if(!d || d.m!==td.getMonth() || d.y!==td.getFullYear()) return; if(t.type==='income') rIn+=(+t.amt||0); else rOut+=(+t.amt||0); });
+  inc=+inc||0; exp=+exp||0;
+  return { inc:Math.max(0, inc-rIn), exp:Math.max(0, exp-rOut), budIn:inc, budOut:exp, gotIn:rIn, gotOut:rOut };
+}
+function b5BankRest(td){
+  td=td||((typeof APP_TODAY!=='undefined'&&APP_TODAY)?new Date(APP_TODAY):new Date());
+  var L=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][td.getMonth()]+' '+td.getFullYear(), b=(ST&&ST.budgets)||{};
+  var bi=bgtMonthSet(b.monthlyIncome, L) ? +b.monthlyIncome[L] : null, be=bgtMonthSet(b.monthlyExpenses, L) ? +b.monthlyExpenses[L] : null, src='budget';
+  if(bi==null || be==null){ var f=null; try{ f=buildCfForecast(0, {from0:true}); }catch(e){ f=null; } var m0=(Array.isArray(f) && f.length) ? f[0] : null;
+    if(bi==null) bi=m0 ? (+m0.income||0) : 0; if(be==null) be=m0 ? (+m0.expenses||0) : 0; src='forecast'; }
+  var r=b5BankRestOf(bi, be, td); r.src=src; r.label=L; return r;
+}
 function b5BankMonthEnd(){
-  var now=b5CashNow(), f=null; try{ f=buildCfForecast(0, {from0:true}); }catch(e){ f=null; }
-  var m0=(Array.isArray(f) && f.length) ? f[0] : null, r=m0 ? b5MonthRest(m0.income||0, m0.expenses||0) : {inc:0, exp:0};
+  var now=b5CashNow(), r=b5BankRest();
   return Math.round((now.bal + r.inc - r.exp)*100)/100;
 }
 function b5CashForecast(n){
@@ -55046,10 +55405,10 @@ function b5CashForecast(n){
   var _td=(typeof APP_TODAY!=='undefined'&&APP_TODAY)?new Date(APP_TODAY):new Date();
   var _curL=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][_td.getMonth()]+' '+_td.getFullYear();
   (Array.isArray(f) ? f : ((f&&f.months)||[])).forEach(function(m){
-    var inc=(m.income||0), exp=(m.expenses||0), cur=(m.label===_curL), _r=null;
-    if(cur){ _r=b5MonthRest(inc, exp); inc=_r.inc; exp=_r.exp; }
-    var net=inc-exp;
-    bal+=net; var row={label:m.label, net:Math.round(net), balance:Math.round(bal), part:cur?Math.round(_r.frac*1000)/1000:1};
+    var inc=(m.income||0), exp=(m.expenses||0), cur=(m.label===_curL), _r=null, _bk=null;
+    if(cur){ _r=b5MonthRest(inc, exp); inc=_r.inc; exp=_r.exp; _bk=b5BankRest(); }
+    var net=inc-exp, bankNet=cur ? (_bk.inc-_bk.exp) : net;   /* -399 (decision 1): net = "heading for" (capped); the bank, uncapped */
+    bal+=bankNet; var row={label:m.label, net:Math.round(net), bankNet:Math.round(bankNet*100)/100, balance:Math.round(bal), part:cur?Math.round(_r.frac*1000)/1000:1};
     months.push(row); if(!low || row.balance<low.balance) low=row;
   });
   return { start:now, months:months, lowest:low };
@@ -55079,7 +55438,7 @@ function b5BudgetCash(fy){
   out.endLabel=((pe[0]==='Feb' && (+pe[1])%4===0)?29:(MF[pe[0]]||30))+' '+pe[0];
   if(typed){
     var b=f.start.bal+later, low=null; out.bankNow=Math.round(f.start.bal);
-    rows.forEach(function(m){ b+=m.net; if(!low || b<low.balance) low={label:m.label, balance:Math.round(b)}; });
+    rows.forEach(function(m){ b+=(m.bankNet!=null ? m.bankNet : m.net); if(!low || b<low.balance) low={label:m.label, balance:Math.round(b)}; });   /* -399: the bank's own month */
     out.endBank=Math.round(b); out.low=low?low.balance:out.endBank; out.lowLabel=low?String(low.label).split(' ')[0]:pe[0];
     out.lowIsEnd=!low || low.label===(rows.length?rows[rows.length-1].label:'');
   }
@@ -67178,7 +67537,7 @@ function _d8BudBase(){
     else if(t.type==='income' && B5_OTHER_INCOME_CATS.indexOf(c)>=0) oin[mo]=(oin[mo]||0)+ukExVat(t); }); }catch(e){}
   var rIn=1, rOut=1;
   try{ var _sI=ST.budgets.monthlyIncome, _sE=ST.budgets.monthlyExpenses, _p={}; getFYMonths(fy).forEach(function(L){ _p[L]=1000; });
-    ST.budgets.monthlyIncome=_p; ST.budgets.monthlyExpenses=_p; var bl=b5BudgetLines(fy), m0=bl.months[Object.keys(bl.months)[0]]||{}, ni=0, ne=0, k;
+    ST.budgets.monthlyIncome=_p; ST.budgets.monthlyExpenses=_p; var bl=b5BudgetLines(fy, {legacy:true}),   /* -399: the split itself */ m0=bl.months[Object.keys(bl.months)[0]]||{}, ni=0, ne=0, k;
     for(k in (m0.income||{})) if(b5CatRole(k)!=='nonop') ni+=IE_split(m0.income[k],k).net;
     for(k in (m0.expense||{})) if(b5CatRole(k)==='running') ne+=IE_split(m0.expense[k],k).net;
     ST.budgets.monthlyIncome=_sI; ST.budgets.monthlyExpenses=_sE; if(ni>0) rIn=ni/1000; if(ne>0) rOut=ne/1000; }catch(e){}
@@ -67197,6 +67556,7 @@ function d8DemoBudget(){
   getFYMonths(fy).forEach(function(L){ var mo=String(L).split(' ')[0], v=byM[mo]; if(!v) return;
     inc[L]=Math.round((v.inc+(oin[mo]||0))/rIn); exp[L]=Math.round((v.exp+(ovh[mo]||0))/rOut); });
   ST.budgets.monthlyIncome=inc; ST.budgets.monthlyExpenses=exp;
+  try{ bgSeedStore(fy); }catch(e){}   /* -399 (8A): the demo's Spreadsheet is today's budget, seeded and stored */
 }
 window.d8DemoBudget=d8DemoBudget;
 /* Month-label keys of a twelve-month budget: -397 each calendar month keeps its own figure (the farming year's pattern
@@ -67302,6 +67662,7 @@ function d8RollAll(k, fresh){
   try{ W({crops:ST_PLAN.crops, events:ST_PLAN.events}, mP); }catch(e){}
   try{ if(ST.bankBalanceAt) ST.bankBalanceAt=_d8Shift(String(ST.bankBalanceAt), k); }catch(e){}
   try{ if(ST.budgets){ ST.budgets.monthlyIncome=_d8RollBudget(ST.budgets.monthlyIncome, k); ST.budgets.monthlyExpenses=_d8RollBudget(ST.budgets.monthlyExpenses, k); } }catch(e){}
+  try{ if(ST.budgets && typeof bgGridRoll==='function') bgGridRoll(k); }catch(e){}   /* -399 (8A): the cells roll on the same rule */
   try{ var mvr=ST.lsYear&&ST.lsYear.mvRep; if(mvr) Object.keys(mvr).forEach(function(id){ if(mvr[id]&&mvr[id].at) mvr[id].at=_d8Shift(mvr[id].at, k); }); }catch(e){}
   /* tax-year keyed stores follow the tax year the months land in */
   try{ var a0=new Date(Math.floor((ST._demoK)/12), (ST._demoK)%12, 15), a1=new Date(Math.floor((ST._demoK+k)/12), (ST._demoK+k)%12, 15);
@@ -68454,18 +68815,25 @@ var PAGE_TOURS = {
       text:'A lender-ready summary of your farm’s finances — debt cover, collateral and track record — built from your own records. Handy when you’re applying for finance or renewing an overdraft.', pos:'smart' }
   ],
   budgets: [
-    { target:'bgt-hero', title:'Your verdict, in plain words', icon:'🎯',
+    { onEnter:'bgTourPic', target:'bgt-hero', title:'Your verdict, in plain words', icon:'🎯',
       text:'The big card answers the question straight: are you heading for the profit you planned? It weighs income and spending against your own season curve — not a flat monthly average.', pos:'smart' },
-    { target:'bgt-kpis', title:'Income, spending and your goal', icon:'📊',
+    { onEnter:'bgTourPic', target:'bgt-kpis', title:'Income, spending and your goal', icon:'📊',
       text:'Three cards show the year so far. The black tick on each bar is where your plan says you should be today — so a quiet winter month doesn’t look like a crisis.', pos:'smart' },
-    { target:'bgt-mountain-card', title:'The money mountain', icon:'⛰️', tab:'in',
+    { onEnter:'bgTourPic', target:'bgt-mountain-card', title:'The money mountain', icon:'⛰️', tab:'in',
       text:'The green mountain is money that has come in, growing through the year. Stay on top of the grey dashed line and you’re ahead of plan. Switch to Spending to see costs the same way.', pos:'smart' },
-    { target:'bgt-cats-card', title:'Every category, judged fairly', icon:'🧾',
+    { onEnter:'bgTourPic', target:'bgt-cats-card', title:'Every category, judged fairly', icon:'🧾',
       text:'Income and spending split into the same categories you already record with. Steady ones are watched month by month; big seasonal ones are only judged against their season — so nothing cries wolf.', pos:'smart' },
     { onEnter:'bgtTourOpenMore', target:'bgt-months-card', title:'Month by month', icon:'🗓️',
       text:'Finished months get a simple verdict. Tap any month to fine-tune its target — you choose whether the year total stays the same or moves with your change.', pos:'smart' },
     { onEnter:'bgtTourOpenMore', target:'bgt-setup-row', title:'Your targets live here', icon:'✏️',
-      text:'Edit targets opens the full setup — annual totals, seasonal patterns, and pulling figures straight from your Planning page.', pos:'smart' }
+      text:'Edit targets opens the full setup — annual totals, seasonal patterns, and pulling figures straight from your Planning page.', pos:'smart' },
+    /* -399 (8A): the Spreadsheet */
+    { onEnter:'bgTourSheet', target:'bg-view-seg', title:'Picture or Spreadsheet', icon:'🧮',
+      text:'Picture is this page. Spreadsheet is the same budget as a grid: every line, every month. Its column totals are the figures this page, the tracker and the tax estimate use.', pos:'smart' },
+    { onEnter:'bgTourSheet', target:'bg-gw', title:'Click a figure and type', icon:'⌨️',
+      text:'Grey months show what happened; white months are your plan. Type a number, 12.5k, 95/ha or =LY*1.05, or paste a block from Excel. The › on a line shows its blocks, crops and herds.', tip:'Nothing changes on your other pages until you press Save.', pos:'smart' },
+    { onEnter:'bgTourSheet', target:'bg-xl-btn', title:'Download for the bank', icon:'📥',
+      text:'An Excel file with live totals: the budget month by month, a cash flow for the bank (opening, in, out, closing and overdraft headroom), last year and your notes.', pos:'smart' }
   ],
   planning: [
     { intro:true, title:'Planning overview', icon:'🌱',
@@ -84492,6 +84860,1092 @@ function rnT1SeedDemo(){
     did = true;
   }
   return did;
+}
+
+</script>
+
+<script id="bg-grid-js">
+/* =====================================================================================================================
+   -399 (batch 8A): THE BUDGET SPREADSHEET - the model. (UI: bg-ui below; the workbook writer: bgXlsx.)
+   ONE BUDGET, stored as category x enterprise x month (D14 revised): ST.budgets.grid.scen['live-<fy>'] =
+     {fy, name, live:true, src:'seed'|'farm', cells:{income|expense:{cat:{ent:{'Apr 2026':amount}}}}, fml:{key:'=95*ha'},
+      notes:{key:'text'}}   key = side|cat|ent|label
+   ent: 'none' = not tagged · an entList() code ('crop:Winter wheat', 'or:f2', 'ls:h3') · 'gone' = a removed block, crop
+   or herd (its past months only) · '*' = the category line itself (a note or formula typed on the category row; its
+   amount is always 0 and it is never added up).
+   A category is always the sum of its enterprise rows. The month totals ST.budgets.monthlyIncome/monthlyExpenses - which
+   every existing screen reads - are the column sums, and the category targets are the row sums (D8).
+   src 'seed': the grid made from today's budget - the month totals split by category exactly as b5BudgetLines splits
+     them (category targets' mix, else last year's, else this year's), then by enterprise by last year's tagged split.
+     Seeded figures keep full precision (they ARE the shares the engines use), so on the day this ships every engine
+     reads exactly what it read before; while a grid is a seed every engine keeps its own path. Real farms are seeded
+     on the fly; the demo stores its seed (d8DemoBudget). A seed is never sent to the server.
+   src 'farm': from the farmer's first Save in the Spreadsheet. b5BudgetLines reads the cells, the month totals are the
+     column sums, the category targets the row sums, Planning stops filling that year (owner decision). Any other writer
+     of the month totals (month editor, annual box, patterns, Income / Expenses bars, plan pulls) is shared into the
+     cells before the save (bgGridSync); a category target edit becomes a row change over the months still to come.
+   ===================================================================================================================== */
+var BG_NONE='none', BG_GONE='gone', BG_CATROW='*';
+var BG_SIDES=['income','expense'];
+function bgScenId(fy){ return 'live-'+fy; }
+function bgKey(side, cat, ent, L){ return side+'|'+cat+'|'+ent+'|'+L; }
+function bgKeyParts(k){ var p=String(k).split('|'); return {side:p[0], cat:p[1], ent:p[2], L:p.slice(3).join('|')}; }
+function bgNewScen(fy){ return {fy:fy, name:'Budget', live:true, src:'seed', cells:{income:{}, expense:{}}, fml:{}, notes:{}}; }
+/* The stored live budget for a year, or null. Reading never creates anything. */
+function bgScenGet(fy){ try{ var g=ST.budgets&&ST.budgets.grid; return (g&&g.scen&&g.scen[bgScenId(fy)])||null; }catch(e){ return null; } }
+function bgGridRoot(){ var b=ST.budgets; if(!b.grid||typeof b.grid!=='object') b.grid={v:1, scen:{}}; if(!b.grid.scen||typeof b.grid.scen!=='object') b.grid.scen={}; b.grid.v=1; return b.grid; }
+/* The farmer's own grid (saved from the Spreadsheet): the engines read it. */
+function bgOwned(fy){ var s=bgScenGet(fy==null?bgtFY():fy); return !!(s && s.src==='farm'); }
+function bgR2(x){ return Math.round((+x||0)*100)/100; }
+function bgCopy(o){ return JSON.parse(JSON.stringify(o)); }
+function bgLabelOfYm(ym){ return b5YmLabel(ym); }
+function bgLyLabel(L){ var p=String(L).split(' '); return p[0]+' '+(parseInt(p[1],10)-1); }
+function bgTodayLabel(){ var t=(typeof APP_TODAY!=='undefined'&&APP_TODAY)?new Date(APP_TODAY):new Date(); return MONTH_LABELS_SHORT[t.getMonth()]+' '+t.getFullYear(); }
+/* Index of the month we are in among the year's twelve columns (0..12: 12 = the whole year is behind). */
+function bgCurIdx(fy){ var L=getFYMonths(fy), t=bgTodayLabel(), i=L.indexOf(t); if(i>=0) return i;
+  var ym=function(l){ var p=String(l).split(' '); return (+p[1])*12+MONTH_LABELS_SHORT.indexOf(p[0]); };
+  return ym(t)<ym(L[0]) ? 0 : 12; }
+function bgTot(side){ var b=ST.budgets||{}; return side==='income' ? (b.monthlyIncome||(b.monthlyIncome={})) : (b.monthlyExpenses||(b.monthlyExpenses={})); }
+
+/* ---- the farm's blocks, crops and herds ---- */
+function bgEntInfo(){
+  var map={}; try{ entList().forEach(function(e){ map[e.code]=e; }); }catch(e){}
+  return map;
+}
+function bgEntLabel(code, info){ if(code===BG_NONE) return 'Not tagged'; if(code===BG_GONE) return 'Removed block, crop or herd'; if(code===BG_CATROW) return '';
+  var e=(info||bgEntInfo())[code]; return e ? e.label : 'Removed block, crop or herd'; }
+/* An enterprise's size for 95/ha and 2/head: a crop's hectares (every field growing it), a block's hectares, a herd's head. */
+function bgEntSize(code){
+  try{
+    if(/^crop:/.test(code)){ var crop=code.slice(5), ha=0; ((typeof ST_CROP!=='undefined'&&ST_CROP.lands)||[]).forEach(function(l){ if(l && l.crop===crop && l.stage!=='fallow') ha+=(+l.area||0); }); return ha>0?{n:Math.round(ha*100)/100, u:'ha'}:null; }
+    if(/^or:/.test(code)){ var id=code.slice(3), b=((typeof ST_FRUIT!=='undefined'&&ST_FRUIT.blocks)||[]).filter(function(x){ return x && String(x.id)===id; })[0]; return (b && +b.ha>0)?{n:+b.ha, u:'ha'}:null; }
+    if(/^ls:/.test(code)){ var hid=code.slice(3), h=((typeof ST_LS!=='undefined'&&ST_LS.herd)||[]).filter(function(x){ return x && String(x.id)===hid; })[0]; return (h && +h.qty>0)?{n:+h.qty, u:'head'}:null; }
+  }catch(e){}
+  return null;
+}
+/* The whole farm, for a rate typed on a category line: its hectares and its head of stock. */
+function bgFarmSize(){
+  var ha=0, head=0, info=bgEntInfo();
+  Object.keys(info).forEach(function(c){ var z=bgEntSize(c); if(!z) return; if(z.u==='ha') ha+=z.n; else head+=z.n; });
+  if(!(ha>0) && +ST.farmHa>0) ha=+ST.farmHa;
+  return {ha:Math.round(ha*100)/100, head:head};
+}
+
+/* ---- actual money by side x category x enterprise x month: the bgtCompute loop (calendar months, the amount as on
+   the bank statement, income vs everything else), keyed by txCatKey (-398 F7) and the record's tag ---- */
+function bgActuals(labels){
+  var want={}, out={income:{}, expense:{}}, info=bgEntInfo(); (labels||[]).forEach(function(L){ want[L]=1; });
+  ((ST&&ST.txns)||[]).forEach(function(t){
+    if(!t) return; var d=parseDate(t.date); if(!d) return; var L=MONTH_LABELS_SHORT[d.m]+' '+d.y; if(!want[L]) return;
+    var side=(t.type==='income')?'income':'expense', cat=txCatKey(t), ent=t.ent?(info[t.ent]?t.ent:BG_GONE):BG_NONE;
+    var a=out[side][cat]||(out[side][cat]={}), e=a[ent]||(a[ent]={}); e[L]=(e[L]||0)+(+t.amt||0);
+  });
+  return out;
+}
+function bgSumL(obj, labels){ var s=0; if(!obj) return 0; (labels||Object.keys(obj)).forEach(function(L){ s+=(+obj[L]||0); }); return s; }
+
+/* ---- the seed ---- */
+/* How a category's month is shared between its blocks, crops and herds: last year's same month, else last year's whole
+   year, else this year so far; a removed one gets nothing in a month still to come. */
+function bgEntWeights(side, cat, i, A, future){
+  var L12=A.L12, lyL=A.lyL, pick=function(src, labels){ var w={}, s=0, c=(src[side]||{})[cat]||{};
+      Object.keys(c).forEach(function(ent){ if(ent===BG_GONE && future) return; var v=Math.max(0, bgSumL(c[ent], labels)); if(v>0){ w[ent]=v; s+=v; } });
+      return s>0 ? w : null; };
+  return pick(A.ly, [lyL[i]]) || pick(A.ly, lyL) || pick(A.cur, L12.slice(0, Math.max(1, A.cur0))) || pick(A.cur, L12) || (function(){ var o={}; o[BG_NONE]=1; return o; })();
+}
+/* Share v over the weights. Exact: the parts add back to v (the last part takes what is left). whole: whole pounds by
+   largest remainder (for a total in whole pounds); otherwise full precision. */
+function bgShare(v, w, whole){
+  var ks=Object.keys(w).sort(), s=0, out={}; ks.forEach(function(k){ s+=Math.max(0,+w[k]||0); });
+  if(!(s>0)){ ks=ks.length?ks:[BG_NONE]; ks.forEach(function(k){ w[k]=1; }); s=ks.length; }
+  if(whole && Math.abs(v-Math.round(v))<1e-9){
+    var raw=ks.map(function(k){ return v*Math.max(0,+w[k]||0)/s; }), fl=raw.map(Math.floor), rem=Math.round(v-fl.reduce(function(a,b){ return a+b; },0));
+    raw.map(function(x,j){ return [x-fl[j], j]; }).sort(function(a,b){ return (b[0]-a[0])||(a[1]-b[1]); }).slice(0, Math.max(0, rem)).forEach(function(p){ fl[p[1]]++; });
+    ks.forEach(function(k,j){ if(fl[j]) out[k]=fl[j]; }); return out;
+  }
+  var acc=0; ks.forEach(function(k,j){ var x=(j===ks.length-1) ? v-acc : v*Math.max(0,+w[k]||0)/s; if(j<ks.length-1) acc+=x; if(x) out[k]=x; });
+  return out;
+}
+function bgSeedCtx(fy){ var L12=getFYMonths(fy), lyL=L12.map(bgLyLabel); return {L12:L12, lyL:lyL, ly:bgActuals(lyL), cur:bgActuals(L12), cur0:bgCurIdx(fy)}; }
+/* The seed: today's budget as the Budgets page shows it. Each month's total (the column) is shared over the categories
+   so that each category's year is its target on the page today (bgtCatTargets: the targets typed, else last year's mix
+   of the year's total), in the shape of its own last year month by month - a balanced table (iterative proportional
+   fitting), then whole pounds by largest remainder in each column, so every column adds up to its month exactly. A side
+   with no category targets takes the engines' own split (b5BudgetLines). Each category's month is then shared over its
+   blocks, crops and herds by last year's tagged split. Months with no figure have no cells. */
+function bgSeedSplit(fy, side, A){
+  var L12=A.L12, T=bgTot(side), cols=L12.map(function(L){ return bgtMonthSet(T, L) ? (+T[L]||0) : 0; }), annual=bgSum0(cols), tg={};
+  try{ if(fy===bgtFY()){ var c=bgtCompute(); tg=bgtCatTargets(side, c)||{}; } }catch(e){ tg={}; }
+  var cats=Object.keys(tg).filter(function(k){ return (+tg[k]||0)>0; }), tsum=bgSum0(cats.map(function(k){ return +tg[k]; }));
+  var out=L12.map(function(){ return {}; });
+  if(!(annual>0)) return out;
+  if(!(tsum>0)){ var lines=b5BudgetLines(fy, {legacy:true}), yms=b5FyYms(fy); L12.forEach(function(L,i){ var p=((lines.months[yms[i]]||{})[side])||{}; Object.keys(p).forEach(function(k){ if(+p[k]) out[i][k]=+p[k]; }); }); return out; }
+  var rowT=cats.map(function(k){ return (+tg[k])*annual/tsum; });
+  /* last year's months as the shape; a category with no last year is even, and a month no category had last year is
+     open to every category (in proportion to its year) - only there, so a month that was empty stays empty */
+  var W=cats.map(function(k){ var e=((A.ly[side]||{})[k])||{};
+    return L12.map(function(L, i){ var v=0; Object.keys(e).forEach(function(x){ v+=(+e[x][A.lyL[i]]||0); }); return Math.max(0, v); }); });
+  W.forEach(function(row, r){ if(!(bgSum0(row)>0)) for(var i=0;i<12;i++) row[i]=rowT[r]/12; });
+  for(var i0=0;i0<12;i0++){ if(!cols[i0]) continue; var cs=0; W.forEach(function(row){ cs+=row[i0]; }); if(!(cs>0)) W.forEach(function(row, r){ row[i0]=rowT[r]/12; }); }
+  for(var it=0; it<2000; it++){
+    W.forEach(function(row, r){ var s=bgSum0(row); if(s>0){ var f=rowT[r]/s; for(var i=0;i<12;i++) row[i]*=f; } });
+    var worst=0;
+    for(var i=0;i<12;i++){ var s=0; W.forEach(function(row){ s+=row[i]; }); var f=s>0 ? cols[i]/s : 0; W.forEach(function(row){ row[i]*=f; }); }
+    W.forEach(function(row, r){ var d=Math.abs(bgSum0(row)-rowT[r]); if(d>worst) worst=d; });
+    if(worst<0.01) break;
+  }
+  for(var j=0;j<12;j++){ if(!cols[j]) continue; var w={}; cats.forEach(function(k, r){ if(W[r][j]>0) w[k]=W[r][j]; }); var sh=bgShare(cols[j], w, true); Object.keys(sh).forEach(function(k){ if(sh[k]) out[j][k]=sh[k]; }); }
+  return out;
+}
+function bgSum0(a){ var s=0; for(var i=0;i<a.length;i++) s+=(+a[i]||0); return s; }
+function bgSeed(fy){
+  var s=bgNewScen(fy), A=bgSeedCtx(fy);
+  BG_SIDES.forEach(function(side){
+    var split=bgSeedSplit(fy, side, A);
+    A.L12.forEach(function(L, i){ var parts=split[i]||{};
+      Object.keys(parts).forEach(function(cat){ var v=+parts[cat]||0; if(!v) return;
+        var sh=bgShare(v, bgEntWeights(side, cat, i, A, i>=A.cur0), true);
+        Object.keys(sh).forEach(function(ent){ bgCellSet(s, side, cat, ent, L, sh[ent]); });
+      });
+    });
+  });
+  return s;
+}
+function bgCellGet(s, side, cat, ent, L){ var c=s&&s.cells&&s.cells[side]&&s.cells[side][cat]&&s.cells[side][cat][ent]; return c ? (+c[L]||0) : 0; }
+function bgCellSet(s, side, cat, ent, L, v){
+  if(ent===BG_CATROW) return;
+  var sc=s.cells[side]||(s.cells[side]={}), c=sc[cat]||(sc[cat]={}), e=c[ent]||(c[ent]={});
+  if(v){ e[L]=v; } else { delete e[L]; if(!Object.keys(e).length){ delete c[ent]; if(!Object.keys(c).length) delete sc[cat]; } }
+}
+/* A category's month (the sum of its enterprise rows; the category line itself carries no money). */
+function bgCatMonth(s, side, cat, L){ var c=s&&s.cells&&s.cells[side]&&s.cells[side][cat], t=0; if(!c) return 0; Object.keys(c).forEach(function(ent){ if(ent!==BG_CATROW) t+=(+c[ent][L]||0); }); return t; }
+function bgColSum(s, side, L){ var t=0, c=(s&&s.cells&&s.cells[side])||{}; Object.keys(c).forEach(function(cat){ t+=bgCatMonth(s, side, cat, L); }); return t; }
+function bgRowSum(s, side, cat, labels){ var t=0; (labels||getFYMonths(s.fy)).forEach(function(L){ t+=bgCatMonth(s, side, cat, L); }); return t; }
+function bgScenSig(s){ try{ return JSON.stringify({c:s.cells, f:s.fml, n:s.notes}); }catch(e){ return ''; } }
+/* The grid the Spreadsheet shows: the farmer's own, or today's budget seeded (stored seed or made now). */
+function bgGridFor(fy){
+  var s=bgScenGet(fy);
+  if(s && s.src==='farm'){ bgGridSync('totals', fy); return bgScenGet(fy); }
+  var seed=bgSeed(fy);
+  if(s){ seed.fml=s.fml||{}; seed.notes=s.notes||{}; seed.name=s.name||seed.name; s.cells=bgCopy(seed.cells); }   /* the stored seed stays a mirror */
+  return seed;
+}
+
+/* ---- keeping the cells and the month totals one figure ---- */
+/* dir 'totals' (any writer of the month totals other than the grid): each column whose total moved is shared over its
+   rows and blocks in their current proportions (whole pounds when the total is whole); a column with nothing in it
+   takes today's split; a month that lost its figure loses its cells. Seeds are simply made again. A locked year is
+   never touched (the backstop owns it). Returns the number of columns changed. fyOnly limits it to one year. */
+function bgGridSync(dir, fyOnly){
+  var g=ST.budgets&&ST.budgets.grid; if(!g||!g.scen) return 0; var n=0;
+  Object.keys(g.scen).forEach(function(id){
+    var s=g.scen[id]; if(!s || !s.live) return; var fy=+s.fy; if(fyOnly!=null && fy!==+fyOnly) return;
+    if(typeof bgtIsLocked==='function' && bgtIsLocked(fy)) return;
+    if(s.src!=='farm'){
+      /* a stored seed is a mirror of today's budget: made again whenever it no longer matches (the totals moved, or the
+         targets or last year's records it is shaped by) */
+      var fresh=bgSeed(fy); if(JSON.stringify(fresh.cells)!==JSON.stringify(s.cells)){ s.cells=fresh.cells; n++; }
+      return;
+    }
+    var A=null, lines=null;
+    getFYMonths(fy).forEach(function(L, i){
+      BG_SIDES.forEach(function(side){
+        var T=bgTot(side), set=bgtMonthSet(T, L), tot=set?(+T[L]||0):0, col=bgColSum(s, side, L);
+        if(Math.abs(col-tot)<=0.005) return;
+        n++;
+        var cats=(s.cells[side])||{}, w={}, keyOf=function(cat, ent){ return cat+'\u0001'+ent; };
+        Object.keys(cats).forEach(function(cat){ Object.keys(cats[cat]).forEach(function(ent){ if(ent===BG_CATROW) return; var v=+cats[cat][ent][L]||0; if(v>0) w[keyOf(cat, ent)]=v; }); });
+        Object.keys(cats).forEach(function(cat){ Object.keys(cats[cat]).forEach(function(ent){ if(ent!==BG_CATROW) bgCellSet(s, side, cat, ent, L, 0); }); });
+        if(!tot) return;
+        if(!Object.keys(w).length){
+          A=A||bgSeedCtx(fy); lines=lines||b5BudgetLines(fy, {legacy:true});
+          var mix=(lines.months[b5FyYms(fy)[i]]||{})[side]||{}, sm=0; Object.keys(mix).forEach(function(c){ sm+=(+mix[c]||0); });
+          if(!(sm>0)){ mix={}; mix[side==='income'?'Other Income':'Other Expenses']=1; }
+          Object.keys(mix).forEach(function(cat){ var ew=bgEntWeights(side, cat, i, A, i>=A.cur0), es=0; Object.keys(ew).forEach(function(e){ es+=ew[e]; });
+            Object.keys(ew).forEach(function(ent){ w[keyOf(cat, ent)]=(+mix[cat]||0)*ew[ent]/(es||1); }); });
+        }
+        var sh=bgShare(tot, w, true);
+        Object.keys(sh).forEach(function(k){ var p=k.split('\u0001'); bgCellSet(s, side, p[0], p[1], L, sh[k]); });
+      });
+    });
+    if(n && fy===bgtFY()) bgGridTargets(s);
+  });
+  return n;
+}
+/* D8: the category targets ARE the grid's row totals (kept on farms.budget_cat_targets as a copy). */
+function bgGridTargets(s){
+  var ct={income:{}, expense:{}}, L12=getFYMonths(s.fy);
+  BG_SIDES.forEach(function(side){ Object.keys((s.cells&&s.cells[side])||{}).forEach(function(cat){ var v=Math.round(bgRowSum(s, side, cat, L12)); if(v>0) ct[side][cat]=v; }); });
+  ST.budgets.catTargets=ct;
+}
+/* The month totals from the cells (the grid's own save): every column the grid holds, and any month it touched. */
+function bgGridTotals(s, labels){
+  BG_SIDES.forEach(function(side){ var T=bgTot(side);
+    (labels||getFYMonths(s.fy)).forEach(function(L){ var col=bgR2(bgColSum(s, side, L)); if(col || bgtMonthSet(T, L)) T[L]=col; }); });
+}
+
+/* ---- the engines: the working budget as lines from the farmer's grid ---- */
+function bgGridLines(fy){
+  var s=bgScenGet(fy); if(!s || s.src!=='farm') return null;
+  var yms=b5FyYms(fy), out={source:'grid', months:{}}, legacy=null;
+  yms.forEach(function(ym){
+    var L=bgLabelOfYm(ym), ti=+((ST.budgets.monthlyIncome||{})[L]||0), te=+((ST.budgets.monthlyExpenses||{})[L]||0), mo={income:{}, expense:{}, totalIn:ti, totalOut:te};
+    BG_SIDES.forEach(function(side){
+      var tot=side==='income'?ti:te, col=bgColSum(s, side, L), f=(Math.abs(col-tot)>0.005 && col>0) ? tot/col : 1;
+      if(!(col>0) && tot){ legacy=legacy||b5BudgetLines(fy, {legacy:true}); mo[side]=bgCopy(((legacy.months[ym]||{})[side])||{}); return; }
+      Object.keys((s.cells[side])||{}).forEach(function(cat){ var v=bgCatMonth(s, side, cat, L); if(v) mo[side][cat]=v*f; });
+    });
+    out.months[ym]=mo;
+  });
+  return out;
+}
+
+/* ---- a category target set on the Budgets page (bgtCatSet) when the farmer has a grid: the row moves to the new
+   year total over the months still to come, in the row's own shape (its plan, else last year's, else even), shared
+   over its blocks as they stand. Returns true when the grid took it. ---- */
+function bgGridCatTarget(side, cat, val){
+  var fy=bgtFY(), s=bgScenGet(fy); if(!s || s.src!=='farm') return false;
+  var L12=getFYMonths(fy), cur=bgCurIdx(fy), fut=L12.slice(Math.min(cur, 11)), now=bgRowSum(s, side, cat, L12), past=now-bgRowSum(s, side, cat, fut);
+  var want=Math.max(0, Math.round(val)-past), w={}, A=null;
+  fut.forEach(function(L){ var v=bgCatMonth(s, side, cat, L); if(v>0) w[L]=v; });
+  if(!Object.keys(w).length){ A=bgSeedCtx(fy); fut.forEach(function(L){ var v=0, e=((A.ly[side]||{})[cat])||{}; Object.keys(e).forEach(function(x){ v+=+e[x][bgLyLabel(L)]||0; }); if(v>0) w[L]=v; }); }
+  if(!Object.keys(w).length) fut.forEach(function(L){ w[L]=1; });
+  var byL=bgShare(want, w, true);
+  fut.forEach(function(L, j){ var i=L12.indexOf(L), v=+byL[L]||0, ents={}, c=(s.cells[side]&&s.cells[side][cat])||{};
+    Object.keys(c).forEach(function(ent){ if(ent!==BG_CATROW && (+c[ent][L]||0)>0) ents[ent]=+c[ent][L]; });
+    if(!Object.keys(ents).length){ A=A||bgSeedCtx(fy); ents=bgEntWeights(side, cat, i, A, true); }
+    Object.keys(c).forEach(function(ent){ if(ent!==BG_CATROW) bgCellSet(s, side, cat, ent, L, 0); });
+    var sh=bgShare(v, ents, true); Object.keys(sh).forEach(function(ent){ bgCellSet(s, side, cat, ent, L, sh[ent]); });
+    Object.keys(s.fml||{}).forEach(function(k){ var p=bgKeyParts(k); if(p.side===side && p.cat===cat && p.L===L) delete s.fml[k]; });
+  });
+  bgGridTotals(s, fut); bgGridTargets(s);
+  return true;
+}
+
+/* ---- formulas: a safe arithmetic parser (numbers, + - * / ( ), k for thousands, % for a hundredth). No eval. ---- */
+function bgCalc(expr){
+  var s=String(expr), i=0;
+  function sp(){ while(i<s.length && /\s/.test(s[i])) i++; }
+  function num(){ sp(); var m=/^(\d+(?:\.\d*)?|\.\d+)(k?)(%?)/i.exec(s.slice(i)); if(!m) throw 0; i+=m[0].length; var v=parseFloat(m[1]); if(m[2]) v*=1000; if(m[3]) v/=100; return v; }
+  function atom(){ sp(); if(s[i]==='('){ i++; var v=add(); sp(); if(s[i]!==')') throw 0; i++; return v; } if(s[i]==='-'){ i++; return -atom(); } if(s[i]==='+'){ i++; return atom(); } return num(); }
+  function mul(){ var v=atom(); for(;;){ sp(); var c=s[i]; if(c==='*'){ i++; v*=atom(); } else if(c==='/'){ i++; var d=atom(); if(d===0) throw 0; v/=d; } else return v; } }
+  function add(){ var v=mul(); for(;;){ sp(); var c=s[i]; if(c==='+'){ i++; v+=mul(); } else if(c==='-'){ i++; v-=mul(); } else return v; } }
+  try{ var v=add(); sp(); if(i!==s.length || !isFinite(v)) return null; return v; }catch(e){ return null; }
+}
+/* What the farmer typed: 12,500 · 12.5k · £1,200 · (300) · - · 95/ha · 2/head · =95*ha · =LY*1.05 · =1200*12.
+   ctx: {ly: last year's figure for that row and month, size: {n,u} of the row's enterprise or null, farm: {ha, head}
+   for a category line}. Returns {v, f} (f = the formula to keep, or null), {err:'…'} or null (not a number). */
+function bgParseIn(raw, ctx){
+  ctx=ctx||{}; var s=String(raw==null?'':raw).trim().replace(/−/g,'-'); if(s===''||s==='-'||s==='–') return {v:0, f:null};
+  var neg=/^\((.*)\)$/.exec(s); if(neg) s='-'+neg[1];
+  var rate=/^(\d+(?:\.\d+)?)(k?)\s*(?:\/|per\s*)(ha|hectares?|head)$/i.exec(s.replace(/[£,]/g,'').trim());
+  if(rate) s='='+(parseFloat(rate[1])*(rate[2]?1000:1))+'*'+(/^h(a|ectare)/i.test(rate[3])?'ha':'head');
+  var f=s.charAt(0)==='=' ? s : null, e=(f?s.slice(1):s).replace(/[£,]/g,'').replace(/\s+/g,'');
+  var lower=e.toLowerCase(), need=/head/.test(lower)?'head':(/ha|hectare/.test(lower)?'ha':null);
+  if(need){
+    var z=ctx.size, n=(z && z.u===need) ? z.n : (ctx.isCat && ctx.farm ? ctx.farm[need] : null);
+    if(!(n>0)) return {err:(ctx.name?ctx.name+' has no '+(need==='ha'?'hectares':'head count')+'. ':'')+'Type an amount instead.'};
+    lower=lower.replace(/hectares?|ha/g,'('+n+')').replace(/head/g,'('+n+')');
+  }
+  if(/ly/.test(lower)) lower=lower.replace(/ly/g,'('+(+ctx.ly||0)+')');
+  if(!/^[\d+\-*/().k%]+$/.test(lower)) return null;
+  var v=bgCalc(lower); if(v==null) return null;
+  return {v:v, f:(f||need)?(f||s):null};
+}
+/* A formula again (re-pricing): the value for the size and last-year figure today. */
+function bgEvalFormula(f, ctx){ var p=bgParseIn(f, ctx); return (p && !p.err) ? p.v : null; }
+
+/* ---- the one writer of a farmer's grid outside the Spreadsheet's own save: a rate re-priced when a field, block or
+   herd changes size. Months still to come only; returns the cells changed. ---- */
+function bgGridReprice(){
+  var fy=bgtFY(), s=bgScenGet(fy); if(!s || s.src!=='farm' || !s.fml) return 0;
+  if(typeof bgtIsLocked==='function' && bgtIsLocked(fy)) return 0;
+  var L12=getFYMonths(fy), cur=bgCurIdx(fy), farm=null, n=0, touched={};
+  Object.keys(s.fml).forEach(function(k){
+    var f=s.fml[k], p=bgKeyParts(k); if(!/ha|head|hectare/i.test(f)) return; var i=L12.indexOf(p.L); if(i<cur || i<0) return;
+    var isCat=(p.ent===BG_CATROW); farm=farm||bgFarmSize();
+    var v=bgEvalFormula(f, {size:isCat?null:bgEntSize(p.ent), farm:farm, isCat:isCat}); if(v==null) return; v=Math.max(0, Math.round(v));
+    if(isCat){ var now=bgCatMonth(s, p.side, p.cat, p.L); if(Math.abs(now-v)<0.005) return;
+      var c=(s.cells[p.side]&&s.cells[p.side][p.cat])||{}, w={}; Object.keys(c).forEach(function(ent){ if(ent!==BG_CATROW && (+c[ent][p.L]||0)>0) w[ent]=+c[ent][p.L]; });
+      if(!Object.keys(w).length) w[BG_NONE]=1; Object.keys(c).forEach(function(ent){ if(ent!==BG_CATROW) bgCellSet(s, p.side, p.cat, ent, p.L, 0); });
+      var sh=bgShare(v, w, true); Object.keys(sh).forEach(function(ent){ bgCellSet(s, p.side, p.cat, ent, p.L, sh[ent]); });
+    } else { if(Math.abs(bgCellGet(s, p.side, p.cat, p.ent, p.L)-v)<0.005) return; bgCellSet(s, p.side, p.cat, p.ent, p.L, v); }
+    touched[p.L]=1; n++;
+  });
+  if(n){ bgGridTotals(s, Object.keys(touched)); bgGridTargets(s); }
+  return n;
+}
+
+/* ---- the demo: its seed is stored (d8DemoBudget), and the roll and re-anchor move the cells with the month totals ---- */
+function bgSeedStore(fy){ var g=bgGridRoot(), id=bgScenId(fy), old=g.scen[id]; if(old && old.src==='farm') return old; var s=bgSeed(fy); if(old){ s.fml=old.fml||{}; s.notes=old.notes||{}; } g.scen[id]=s; return s; }
+/* Re-key every label of a scenario through fnObj (an object of {label:value} -> the same object re-keyed). */
+function bgScenRekey(s, fnObj){
+  BG_SIDES.forEach(function(side){ var cs=(s.cells&&s.cells[side])||{}; Object.keys(cs).forEach(function(cat){ Object.keys(cs[cat]).forEach(function(ent){ var o=fnObj(cs[cat][ent]); if(o && Object.keys(o).length) cs[cat][ent]=o; else delete cs[cat][ent]; }); if(!Object.keys(cs[cat]).length) delete cs[cat]; }); });
+  ['fml','notes'].forEach(function(k){ var m=s[k]||{}, by={}; Object.keys(m).forEach(function(key){ var p=bgKeyParts(key), g=(by[p.side+'|'+p.cat+'|'+p.ent]=by[p.side+'|'+p.cat+'|'+p.ent]||{}); g[p.L]=m[key]; });
+    var out={}; Object.keys(by).forEach(function(pre){ var o=fnObj(by[pre])||{}; Object.keys(o).forEach(function(L){ out[pre+'|'+L]=o[L]; }); }); s[k]=out; });
+}
+/* d8RollAll's twin (the _d8RollBudget rule: each calendar month keeps its own figure; a month of the new year takes the
+   same month of the year before). A seed is simply made again for the year the demo now opens in. */
+function bgGridRoll(k){
+  var g=ST.budgets&&ST.budgets.grid; if(!g||!g.scen) return; var fy=bgtFY(), out={};
+  Object.keys(g.scen).forEach(function(id){ var s=g.scen[id]; if(!s) return;
+    if(s.src!=='farm'){ return; }
+    bgScenRekey(s, function(o){ return _d8RollBudget(o, k); }); s.fy=fy; out[bgScenId(fy)]=s; });
+  g.scen=out;
+  if(!g.scen[bgScenId(fy)]) bgSeedStore(fy); else bgGridSync('totals', fy);
+}
+/* migrateDemoData's twin: the same old-label -> new-label map it uses for the month totals. */
+function bgGridRekeyMap(map, fy){
+  var g=ST.budgets&&ST.budgets.grid; if(!g||!g.scen) return; var out={};
+  Object.keys(g.scen).forEach(function(id){ var s=g.scen[id]; if(!s) return;
+    bgScenRekey(s, function(o){ var r={}; Object.keys(o).forEach(function(L){ if(map[L]) r[map[L]]=o[L]; }); return r; });
+    s.fy=fy; out[bgScenId(fy)]=s; });
+  g.scen=out;
+}
+/* Start fresh: the scaffold - one live budget for this year, nothing in it (the fresh-start scaffold rule). */
+function bgGridScaffold(){ var fy=bgtFY(), g={v:1, scen:{}}; g.scen[bgScenId(fy)]=bgNewScen(fy); return g; }
+/* Residue check: a scaffold holds nothing. */
+function _bgGridCanon(g){ var o={}; try{ Object.keys((g&&g.scen)||{}).forEach(function(id){ var s=g.scen[id]; if(!s) return;
+  var has=Object.keys((s.cells&&s.cells.income)||{}).length+Object.keys((s.cells&&s.cells.expense)||{}).length+Object.keys(s.fml||{}).length+Object.keys(s.notes||{}).length;
+  if(has || s.src==='farm') o[id]={src:s.src, n:has}; }); }catch(e){} return o; }
+/* The lock's copy of the farmer's grid (a seed is a mirror of the month totals, which the lock already keeps). */
+function bgLockCopy(fy){ var s=bgScenGet(fy); return (s && s.src==='farm') ? bgCopy(s) : null; }
+
+/* =====================================================================================================================
+   -399 (8A): THE BUDGET SPREADSHEET - the view. Budgets > Picture | Spreadsheet. A port of the signed-off mock-up (v6,
+   03-docs/proposals/budget-grid/index.html) onto the app's own budget: rows are categories (Money in / Money out, big
+   lumps or season lumps / steady), columns the financial year's months split by a "Now" line, finished months show
+   what happened (grey, never editable), the rest the plan. The Spreadsheet edits a working copy of the live budget;
+   nothing anywhere moves until Save. Release A: whole farm, months, this year (Show one enterprise, Quarters / Year,
+   Next 12 months, sense checks, Yield x price, versions and Excel upload are later releases).
+   ===================================================================================================================== */
+var BG = { on:false, fy:null, L12:[], SH:[], CUR:0, s:null, base:null, show:'ab', ly:true, empty:false, vat:'inc', fx:false,
+  open:{}, act:null, sel:null, edit:null, editVal:'', undo:[], redo:[], drag:false, touched:false, addEnts:{}, addCats:{income:[], expense:[]},
+  A:null, LYA:null, NAV:[], bound:false, info:null, ms:0 };
+var BG_SHAPES=[['ly','Like last year'],['even','Even'],['harvest','Mostly at harvest'],['planting','Mostly at planting']];
+/* the two farming shapes by CALENDAR month (Jan..Dec), as -398 F6 set the spread patterns: harvest money Jul-Oct,
+   planting spend in autumn (winter crops) and spring */
+var BG_LIB={ even:[1,1,1,1,1,1,1,1,1,1,1,1],
+  harvest:[0.02,0.02,0.02,0.02,0.02,0.04,0.14,0.22,0.22,0.16,0.08,0.04],
+  planting:[0.04,0.08,0.14,0.14,0.04,0.02,0.02,0.06,0.18,0.18,0.06,0.04] };
+function bgEsc(s){ return esc(s); }
+function bgGrp(n){ return _grpInt(n); }
+function bgFmt(n, plus){ n=Math.round(+n||0); if(n===0) return '–'; return (n<0?'−':(plus?'+':''))+bgGrp(n); }
+function bgMoney(n){ n=Math.round(+n||0); return (n<0?'−':'')+_curSym()+bgGrp(n); }
+function bgSum(a){ var s=0; for(var j=0;j<a.length;j++) s+=(+a[j]||0); return s; }
+function bgLocked(){ return typeof bgtIsLocked==='function' && bgtIsLocked(BG.fy); }
+function bgVatOn(){ return typeof FARM!=='undefined' && !!FARM.vat; }
+function bgVatF(cat){ return (BG.vat==='exc' && bgVatOn() && IE_treat(cat)==='std') ? 1/(1+IE_VAT_RATE) : 1; }
+function bgDsp(cat, x){ var f=bgVatF(cat); return f===1 ? x : Math.round(x*f); }
+function bgCatColour(cat){ for(var i=0;i<FARM_CATS.length;i++) if(FARM_CATS[i].n===cat) return FARM_CATS[i].ic||FARM_CATS[i].ec||'#9CA3AF'; return '#9CA3AF'; }
+function bgNid(n){ return n.side+'|'+n.cat+'|'+(n.ent==null?'':n.ent); }
+function bgSame(a, b){ return a && b && a.side===b.side && a.cat===b.cat && (a.ent==null?null:a.ent)===(b.ent==null?null:b.ent); }
+
+/* ---- what a cell holds ---- */
+function bgA(side, cat, ent, L, src){ var c=((src||BG.A)[side]||{})[cat]; if(!c) return 0; if(ent!=null) return (c[ent]&&+c[ent][L])||0; var t=0; Object.keys(c).forEach(function(e){ t+=(+c[e][L]||0); }); return t; }
+function bgRawB(n, m){ var L=BG.L12[m]; return n.ent==null ? bgCatMonth(BG.s, n.side, n.cat, L) : bgCellGet(BG.s, n.side, n.cat, n.ent, L); }
+function bgEntsOf(side, cat){
+  var mk='e|'+side+'|'+cat; if(BG.memo && BG.memo[mk]) return BG.memo[mk];
+  var seen={}, out=[], add=function(e){ if(e===BG_CATROW || seen[e]) return; seen[e]=1; out.push(e); };
+  [((BG.s.cells[side]||{})[cat])||{}, ((BG.A[side]||{})[cat])||{}, ((BG.LYA[side]||{})[cat])||{}].forEach(function(o){ Object.keys(o).forEach(add); });
+  (BG.addEnts[side+'|'+cat]||[]).forEach(add);
+  var info=BG.info, rank=function(e){ return e===BG_NONE?1:(e===BG_GONE?2:0); };
+  var tot=function(e){ var t=0; BG.L12.forEach(function(L,m){ t+=bgCellGet(BG.s, side, cat, e, L)+bgA(side, cat, e, L)+bgA(side, cat, e, bgLyLabel(L), BG.LYA); }); return t; };
+  out.sort(function(a,b){ return (rank(a)-rank(b)) || (tot(b)-tot(a)); }); if(BG.memo) BG.memo[mk]=out; return out;
+}
+function bgB(n, m){ if(n.ent==null && bgVatF(n.cat)!==1){ var s=0; bgEntsOf(n.side, n.cat).forEach(function(e){ s+=bgDsp(n.cat, bgCellGet(BG.s, n.side, n.cat, e, BG.L12[m])); }); return s; } return bgDsp(n.cat, bgRawB(n, m)); }
+function bgAct(n, m){ var L=BG.L12[m]; if(n.ent==null && bgVatF(n.cat)!==1){ var s=0; bgEntsOf(n.side, n.cat).forEach(function(e){ s+=bgDsp(n.cat, bgA(n.side, n.cat, e, L)); }); return s; } return bgDsp(n.cat, bgA(n.side, n.cat, n.ent, L)); }
+function bgLy(n, m){ var L=bgLyLabel(BG.L12[m]); if(n.ent==null && bgVatF(n.cat)!==1){ var s=0; bgEntsOf(n.side, n.cat).forEach(function(e){ s+=bgDsp(n.cat, bgA(n.side, n.cat, e, L, BG.LYA)); }); return s; } return bgDsp(n.cat, bgA(n.side, n.cat, n.ent, L, BG.LYA)); }
+function bgVal(n, m){ var b=bgB(n, m); if(BG.show==='b') return b; if(m<BG.CUR) return BG.show==='v' ? bgAct(n, m)-b : bgAct(n, m); return b; }
+function bgBudYear(n){ var s=0; for(var m=0;m<12;m++) s+=bgB(n, m); return s; }
+function bgSoFar(n){ var s=0; for(var m=0;m<Math.min(BG.CUR,12);m++) s+=bgAct(n, m); return s; }
+function bgVarYear(n){ var s=0; for(var m=0;m<Math.min(BG.CUR,12);m++) s+=bgAct(n, m)-bgB(n, m); return s; }
+function bgLyYear(n){ var s=0; for(var m=0;m<12;m++) s+=bgLy(n, m); return s; }
+function bgCanEdit(n, m){
+  if(bgLocked()) return false;
+  if(m<BG.CUR && BG.show!=='b') return false;          /* a finished month shows what happened (D3: its budget is edited in Plan only) */
+  if(n.ent===BG_GONE && m>=BG.CUR) return false;       /* a removed block, crop or herd gets no budget */
+  return true;
+}
+function bgWhyNot(n, m){ if(bgLocked()) return BGT_LOCK_MSG; if(m<BG.CUR && BG.show!=='b') return 'Finished months show what happened. Double-click to see the records, or use View › Plan only to change the budget.';
+  return 'That block, crop or herd has been removed, so it has no budget for the months to come.'; }
+function bgName(n){ return n.cat+(n.ent!=null?' · '+bgEntLabel(n.ent, BG.info):''); }
+function bgCk(n, m){ return bgKey(n.side, n.cat, n.ent==null?BG_CATROW:n.ent, BG.L12[m]); }
+
+/* ---- rows ---- */
+function bgCatsOf(side){
+  var mk='c|'+side; if(BG.memo && BG.memo[mk]) return BG.memo[mk];
+  var seen={}, out=[]; [BG.s.cells[side]||{}, BG.A[side]||{}, BG.LYA[side]||{}].forEach(function(o){ Object.keys(o).forEach(function(c){ if(!seen[c]){ seen[c]=1; out.push(c); } }); });
+  (BG.addCats[side]||[]).forEach(function(c){ if(!seen[c]){ seen[c]=1; out.push(c); } });
+  var w={}; out.forEach(function(c){ var n={side:side, cat:c, ent:null}; w[c]=Math.abs(bgBudYear(n))+Math.abs(bgSoFar(n))+Math.abs(bgLyYear(n))*0.5; });
+  var lump=function(c){ return (BGT_CAT_LUMP[side]&&BGT_CAT_LUMP[side][c])?0:1; };
+  out.sort(function(a,b){ return (lump(a)-lump(b)) || (w[b]-w[a]) || (a<b?-1:1); }); if(BG.memo) BG.memo[mk]=out; return out;
+}
+function bgGroupName(side, cat){ var l=!!(BGT_CAT_LUMP[side]&&BGT_CAT_LUMP[side][cat]); return side==='income' ? (l?'Big lumps':'Steady through the year') : (l?'Season lumps':'Steady through the year'); }
+
+/* ---- the bank at each month end: the month we are in from b5BankMonthEnd (the bank today plus what is still to come
+   this month, as Money Flow and the fix-it panel count it), then each later month's budget net cash ---- */
+function bgBankPath(){
+  if(BG.memo && BG.memo.bank) return BG.memo.bank;
+  /* -399 (owner decision 1): the month we are in = the bank today + the rest of THIS grid's month (its figures less this
+     month's entries, never below 0, no days-left cap: b5BankRestOf, the rule every bank figure uses), so a figure typed
+     here moves the bank row at once; after Save it is b5BankMonthEnd exactly. Later months add the grid's net cash. */
+  var out=[], bank=null;
+  if(BG.bankNow!=null && BG.CUR<12){ var Lc=BG.L12[BG.CUR], fb=BG.bankR||{}, v={};
+    BG_SIDES.forEach(function(side){ var col=bgColSum(BG.s, side, Lc); v[side]=(bgtMonthSet(bgTot(side), Lc) || Math.abs(col)>0.005) ? col : (side==='income' ? (+fb.budIn||0) : (+fb.budOut||0)); });
+    var r=b5BankRestOf(v.income, v.expense); bank=Math.round((BG.bankNow + r.inc - r.exp)*100)/100; }
+  for(var m=0;m<12;m++){ if(m<BG.CUR || bank==null){ out.push(null); continue; }
+    if(m>BG.CUR){ var net=0; BG_SIDES.forEach(function(side){ var col=bgColSum(BG.s, side, BG.L12[m]); net+=(side==='income'?col:-col); }); bank+=net; }
+    out.push(bank); }
+  if(BG.memo) BG.memo.bank=out; return out;
+}
+function bgOd(){ var lim=0, lender=''; try{ ((typeof ST_LOANS!=='undefined'&&ST_LOANS.overdrafts)||[]).forEach(function(o){ if(o && !o.closed){ lim+=(+o.limit||0); if(!lender) lender=o.lender||o.name||''; } }); }catch(e){} return {limit:lim, lender:lender}; }
+function bgBankState(v, od){ if(v==null) return 'nt'; return v>=0?'ok':(v>=-od.limit?'ti':'bd'); }
+
+/* ---- the VAT row (D15): the VAT inside each month's figures - costs' less sales' - lands in the month HMRC pays or
+   collects it (the farm's VAT periods, ST.vatCategory; due the month after the period's end + 1, as the forecast's cfVatDue) ---- */
+function bgVatInMonth(m){ var t=0; BG_SIDES.forEach(function(side){ bgCatsOf(side).forEach(function(cat){ if(IE_treat(cat)!=='std') return; var n={side:side, cat:cat, ent:null};
+  var raw=(m<BG.CUR && BG.show!=='b') ? bgA(side, cat, null, BG.L12[m]) : bgRawB(n, m), d=(m<BG.CUR && BG.show!=='b') ? bgAct(n, m) : bgB(n, m);
+  t+=(side==='expense'?1:-1)*(raw-d); }); }); return t; }
+function bgVatDueIdx(m){ try{ var p=String(BG.L12[m]).split(' '), d=new Date(+p[1], MONTH_LABELS_SHORT.indexOf(p[0]), 15), pr=_vatPeriod(d, ST.vatCategory||'quarterly'), due=new Date(pr.end.getFullYear(), pr.end.getMonth()+2, 1);
+  return BG.L12.indexOf(MONTH_LABELS_SHORT[due.getMonth()]+' '+due.getFullYear()); }catch(e){ return m; } }
+function bgVatRow(){ var row=[]; for(var m=0;m<12;m++) row.push(0); var later=0; for(m=0;m<12;m++){ var v=bgVatInMonth(m), d=bgVatDueIdx(m); if(d>=0 && d<12) row[d]+=v; else later+=v; } return {row:row, later:later}; }
+
+/* ---- render ---- */
+function bgRender(){
+  var t0=Date.now(); BG.NAV=[]; BG.memo={};   /* rows and blocks, worked out once per draw */
+  var g=$('bg-g'); if(!g) return;
+  var CUR=BG.CUR, TC=bgTotCols(), ncol=1+12+TC.length, h='<thead><tr><th class="cat" scope="col">Category</th>';
+  for(var m=0;m<12;m++){ var past=m<CUR, cls=past?'past':(m===CUR?'now':'fut'); if(m===CUR) cls+=' now-l';
+    var k=past?(BG.show==='b'?'Budget':BG.show==='v'?'vs budget':'Actual'):(m===CUR?'Now':'Budget');
+    var tt=''; if(m===CUR){ var si=0, so=0; BG_SIDES.forEach(function(sd){ Object.keys(BG.A[sd]||{}).forEach(function(c){ var v=bgA(sd, c, null, BG.L12[m]); if(sd==='income') si+=v; else so+=v; }); }); tt=' title="This month is budget. So far: '+bgMoney(si)+' in, '+bgMoney(so)+' out."'; }
+    h+='<th class="'+cls+'" scope="col"'+tt+'><span class="mo">'+BG.SH[m]+'</span><span class="k">'+k+'</span></th>'; }
+  TC.forEach(function(c){ h+='<th class="'+(c.ly?'ly':'yr')+'" scope="col"'+(c.tip?' title="'+bgEsc(c.tip)+'"':'')+'>'+c.lab+'</th>'; });
+  h+='</tr></thead><tbody>';
+  function blank(cls, label){ return '<tr class="'+cls+'"><td class="cat">'+label+'</td><td colspan="'+(ncol-1)+'"></td></tr>'; }
+  function tcCells(vals, side){ return TC.map(function(c,j){ var v=vals[j]; if(v==null) return '<td class="'+(c.ly?'ly':'yr')+'"></td>';
+    var cl=c.ly?'ly':'yr'; if(c.vr && Math.round(v)!==0 && side) cl+=((side==='income'?v>0:v<0)?' good':' bad'); if(!c.ly && !c.vr && v<0) cl+=' neg';
+    return '<td class="'+cl+'">'+bgFmt(v, !!c.vr)+'</td>'; }).join(''); }
+  function totRow(cls, label, fn, tip, vals, cellCls){
+    var x='<tr class="'+cls+'"><td class="cat"><span class="lbl-i">'+label+(tip?' <span class="bg-ib" tabindex="0" data-tip="'+bgEsc(tip)+'">ⓘ</span>':'')+'</span></td>';
+    for(var m=0;m<12;m++){ var v=fn(m), cc=cellCls?cellCls(v):''; x+='<td class="c'+(m===CUR?' now-l':'')+(v==null?' zero':'')+(v!=null&&v<0&&cls!=='sub'&&!cc?' bad':'')+(cc?' '+cc:'')+'">'+(v==null?'':bgFmt(v, BG.show==='v'&&m<CUR))+'</td>'; }
+    x+=vals ? TC.map(function(c,j){ var v=vals[j]; return '<td class="'+(c.ly?'ly':'yr')+(v!=null&&v<0&&!c.ly?' neg':'')+'">'+(v==null?'':bgFmt(v, !!c.vr))+'</td>'; }).join('') : TC.map(function(c){ return '<td class="'+(c.ly?'ly':'yr')+'"></td>'; }).join('');
+    return x+'</tr>'; }
+  function cells(n){ var x='', side=n.side;
+    for(var m=0;m<12;m++){ var v=bgVal(n, m), c='c'+(n.ent!=null?' subc':''), ed=bgCanEdit(n, m);
+      if(m<CUR && BG.show!=='b') c+=' lock'; else if(!ed) c+=' ro';
+      if(m===CUR) c+=' now-l'; if(Math.round(v)===0) c+=' zero';
+      if(BG.show==='v' && m<CUR && Math.round(v)!==0) c+=((side==='income')?v>0:v<0)?' good':' bad';
+      if(bgChanged(n, m)) c+=' chg'; if((BG.s.fml||{})[bgCk(n, m)]) c+=' fml';
+      var note=(BG.s.notes||{})[bgCk(n, m)]; if(note) c+=' hasnote';
+      var ident=' data-n="'+BG.NAV.length+'" data-m="'+m+'"';
+      var inner=(BG.edit && bgSame(BG.edit, n) && BG.edit.m===m) ? '<input id="bg-cell-ed" value="'+bgEsc(BG.editVal)+'" aria-label="Change '+bgEsc(bgName(n))+', '+BG.SH[m]+'" autocomplete="off" spellcheck="false">' : bgFmt(v, BG.show==='v'&&m<CUR)+(m===CUR?bgProg(n):'');
+      x+='<td class="'+c+'"'+ident+(note?' data-tip="'+bgEsc(note)+'"':'')+' role="gridcell">'+inner+'</td>'; }
+    return x; }
+  function rowTail(n){ return tcCells(TC.map(function(c){ return c.fn(n); }), n.side); }
+  var sides=[['income','Money in','#40916C'],['expense','Money out','#E07B2A']], hiddenBy={income:[], expense:[]};
+  sides.forEach(function(sd){
+    var side=sd[0], cats=bgCatsOf(side), lastGroup=null, SMALL={};
+    if(!BG.empty) cats.map(function(c){ var n={side:side, cat:c, ent:null}; return [c, Math.abs(bgBudYear(n))+Math.abs(bgSoFar(n))+Math.abs(bgLyYear(n))*0.5]; })
+      .sort(function(a,b){ return b[1]-a[1]; }).slice(8).forEach(function(x){ SMALL[x[0]]=1; });
+    h+='<tr class="side"><td class="cat"><span class="sd"><i style="background:'+sd[2]+'"></i>'+sd[1]+'</span></td><td colspan="'+(ncol-1)+'"></td></tr>';
+    cats.forEach(function(cat){
+      var keepAct=BG.act && BG.touched && BG.act.side===side && BG.act.cat===cat;
+      if(SMALL[cat] && !keepAct && !BG.open[side+'|'+cat]){ hiddenBy[side].push(cat); return; }
+      var gname=bgGroupName(side, cat); if(gname!==lastGroup){ h+=blank('grp', gname); lastGroup=gname; }
+      var n={side:side, cat:cat, ent:null}, key=side+'|'+cat, op=!!BG.open[key], ents=bgEntsOf(side, cat), has=ents.length>0 && !(ents.length===1 && ents[0]===BG_NONE);
+      var unk=(BG.vat==='exc' && IE_treat(cat)==='unk') ? '<span class="bytag warn" data-tip="No VAT treatment set for this category in Settings, so nothing is taken off.">VAT?</span>' : '';
+      h+='<tr class="crow'+(op?' open':'')+'"><td class="cat" data-name="'+bgEsc(key)+'"><div class="cn">'+(has||op?'<button class="chev" type="button" data-open="'+bgEsc(key)+'" aria-expanded="'+op+'" aria-label="'+(op?'Hide':'Show')+' the breakdown of '+bgEsc(cat)+'" tabindex="-1">›</button>':'<button class="chev dim" type="button" data-open="'+bgEsc(key)+'" aria-expanded="false" aria-label="Show the breakdown of '+bgEsc(cat)+'" tabindex="-1">›</button>')+'<span class="dot" style="background:'+bgCatColour(cat)+'"></span><span class="nm" title="'+bgEsc(cat)+'">'+bgEsc(cat)+'</span>'+unk+bgSpark(n)+'</div></td>'+cells(n);
+      BG.NAV.push(n); h+=rowTail(n)+'</tr>';
+      if(op){
+        ents.forEach(function(e){ var sn={side:side, cat:cat, ent:e}, z=bgEntSize(e), lab=bgEntLabel(e, BG.info), ic=(BG.info[e]&&BG.info[e].icon)||(e===BG_NONE?'·':(e===BG_GONE?'×':'·'));
+          h+='<tr class="subr"><td class="cat"><div class="cn sub"><span class="ic">'+ic+'</span>'+(e===BG_NONE||e===BG_GONE?'<span class="nm">'+bgEsc(lab)+'</span>':'<button class="nm-link" type="button" data-ent="'+bgEsc(e)+'" title="Show '+bgEsc(lab)+' on its own">'+bgEsc(lab)+'</button>')+(z?'<span class="sz">'+bgSizeTxt(z)+'</span>':'')+'</div></td>'+cells(sn);
+          BG.NAV.push(sn); h+=rowTail(sn)+'</tr>'; });
+        h+='<tr class="subr subf"><td class="cat" colspan="'+ncol+'"><div class="subbar"><button class="bg-lnk" type="button" data-addent="'+bgEsc(key)+'">+ Add a block, crop or herd</button><button class="bg-lnk" type="button" data-tx="'+bgEsc(key)+'">See the records ›</button><span class="bg-ib" tabindex="0" data-tip="Change '+bgEsc(cat)+' and it is shared across the rows below in the same proportions. Change a row and '+bgEsc(cat)+' follows.">ⓘ</span></div></td></tr>';
+      }
+    });
+    var hs=hiddenBy[side];
+    if(hs.length){ h+=totRow('smallr', '<button class="bg-lnk" type="button" data-showall>'+hs.length+' smaller line'+(hs.length===1?'':'s')+' · Show all</button>', function(m){ var t=0; hs.forEach(function(c){ t+=bgVal({side:side, cat:c, ent:null}, m); }); return t; }, null, TC.map(function(c){ var t=0; hs.forEach(function(cat){ t+=c.fn({side:side, cat:cat, ent:null}); }); return t; })); }
+    h+=blank('hid', '<button class="bg-lnk" type="button" data-addcat="'+side+'">+ Add '+(side==='income'?'an income':'a cost')+' line</button>');
+    h+=totRow('sub', side==='income'?'Total money in':'Total money out', function(m){ var t=0; bgCatsOf(side).forEach(function(c){ t+=bgVal({side:side, cat:c, ent:null}, m); }); return t; }, null,
+      TC.map(function(c){ var t=0; bgCatsOf(side).forEach(function(cat){ t+=c.fn({side:side, cat:cat, ent:null}); }); return t; }));
+  });
+  var netM=function(m){ var t=0; BG_SIDES.forEach(function(side){ bgCatsOf(side).forEach(function(c){ t+=(side==='income'?1:-1)*bgVal({side:side, cat:c, ent:null}, m); }); }); return t; };
+  var netTC=TC.map(function(c){ var t=0; BG_SIDES.forEach(function(side){ bgCatsOf(side).forEach(function(cat){ t+=(side==='income'?1:-1)*c.fn({side:side, cat:cat, ent:null}); }); }); return t; });
+  if(BG.vat==='exc' && bgVatOn() && BG.show!=='v'){
+    var vr=bgVatRow();
+    h+=totRow('vatr', 'VAT to get back ≈', function(m){ return vr.row[m]; }, 'VAT on your costs less VAT on your sales, in the month HMRC pays it back or collects it (your VAT '+(String(ST.vatCategory||'quarterly').indexOf('monthly')>=0?'months':'quarters')+'). Most farms get money back, because crops, fruit, milk and livestock are zero-rated.'+(Math.round(vr.later)?' '+bgMoney(vr.later)+' of this year’s VAT is settled after March.':''),
+      TC.map(function(c){ if(c.ly||c.vr) return null; return bgSum(vr.row); }));
+  }
+  h+=totRow('net', BG.show==='v'?'Net cash against budget':'Net cash', netM, BG.show==='v'?'Positive means better than your budget: more in, or less out.':'Money in less money out'+(BG.vat==='exc'&&bgVatOn()?', without VAT':'')+'.', netTC);
+  if(BG.show!=='v'){
+    if(BG.show==='b'){ var run=[], acc=0; for(var mm=0;mm<12;mm++){ acc+=netM(mm); run.push(acc); } h+=totRow('run', 'Running total', function(m){ return run[m]; }, 'Budget net cash added up from '+BG.SH[0]+'.', null); }
+    var bp=bgBankPath(), od=bgOd(), bnow=null; try{ bnow=b5CashNow(); }catch(e){}
+    var btip=(bnow&&!bnow.estimated ? 'From your bank balance of '+bgMoney(bnow.bal)+' today' : 'From your bank balance today (estimated: type it in Money Flow for a better start)')+
+      ', plus what is still to come in '+BG.SH[Math.min(CUR,11)]+' on this budget (its figures less what has already come in and gone out, never below 0), then each month’s budget. Always with VAT, because the bank sees real cash.'+(od.limit?' Amber means using your '+bgMoney(od.limit)+' overdraft'+(od.lender?' with '+od.lender:'')+'; red means past it.':'');
+    h+=totRow('bank', 'Bank at month end ≈', function(m){ return bp[m]; }, btip, null, function(v){ return v==null?'':(v<0?(od.limit&&v>=-od.limit?'odwarn':'odbad'):''); });
+  }
+  h+='</tbody>'; g.innerHTML=h;
+  if(BG.touched && BG.act){
+    var a=bgNavIdx(BG.act), r0=bgNavIdx(BG.sel.a), r1=bgNavIdx(BG.sel.b), lo=Math.min(r0,r1), hi=Math.max(r0,r1), mlo=Math.min(BG.sel.a.m,BG.sel.b.m), mhi=Math.max(BG.sel.a.m,BG.sel.b.m);
+    g.querySelectorAll('td.c[data-n]').forEach(function(td){ var ni=+td.getAttribute('data-n'), m=+td.getAttribute('data-m');
+      if(ni>=lo&&ni<=hi&&m>=mlo&&m<=mhi) td.classList.add('sel'); if(ni===a&&m===BG.act.m) td.classList.add('act'); });
+  }
+  if(BG.edit){ var ed=$('bg-cell-ed'); if(ed){ ed.focus(); var Lx=ed.value.length; try{ ed.setSelectionRange(Lx,Lx); }catch(x){} } }
+  bgRenderFx(); bgRenderFoot(); bgRenderTools(); bgRenderBars();
+  BG.ms=Date.now()-t0; BG.memo=null;
+}
+function bgTotCols(){ var c=[], nowL=BG.L12[Math.max(0,Math.min(BG.CUR,12)-1)];
+  if(BG.show==='ab') c.push({lab:'Actual so far', fn:bgSoFar, tip:BG.CUR>0?BG.SH[0]+' to '+String(nowL).split(' ')[0]+', from your records':'Nothing has happened yet this year'});
+  c.push(BG.show==='v' ? {lab:'So far vs budget', fn:bgVarYear, vr:1} : {lab:'Budget for year', fn:bgBudYear, tip:'The budget your Budgets page uses'});
+  if(BG.ly) c.push({lab:'Last year', fn:bgLyYear, ly:1}); return c; }
+function bgSizeTxt(z){ return z?(String(z.n).replace(/\.0+$/,'')+' '+z.u):''; }
+function bgProg(n){ if(BG.show==='b') return ''; var a=bgAct(n, BG.CUR), b=bgB(n, BG.CUR); if(!a&&!b) return '';
+  var p=b>0?a/b:(a>0?1:0), over=n.side==='expense'&&a>b; return '<span class="prog '+(n.side==='income'?'in':(over?'over':'out'))+'" title="So far this month: '+bgMoney(a)+' of '+bgMoney(b)+'"><i style="width:'+Math.min(100,Math.round(p*100))+'%"></i></span>'; }
+function bgSpark(n){ var v=[], mx=0, m, h='', col=bgCatColour(n.cat);
+  for(m=0;m<12;m++){ var x=m<BG.CUR?bgAct(n, m):bgB(n, m); v.push(x); if(x>mx) mx=x; }
+  for(m=0;m<12;m++){ var hh=mx>0?Math.max(v[m]>0?1.5:0,14*v[m]/mx):0; h+='<rect x="'+(m*4)+'" y="'+(15-hh)+'" width="3" height="'+hh+'" rx=".6" fill="'+col+'" fill-opacity="'+(m<BG.CUR?'.95':'.38')+'"/>'; }
+  return '<svg class="spk" width="47" height="15" viewBox="0 0 47 15" aria-hidden="true">'+h+'</svg>'; }
+function bgNavIdx(p){ if(!p) return 0; for(var j=0;j<BG.NAV.length;j++) if(bgSame(BG.NAV[j], p)) return j; for(j=0;j<BG.NAV.length;j++) if(BG.NAV[j].side===p.side && BG.NAV[j].cat===p.cat && BG.NAV[j].ent==null) return j; return 0; }
+
+/* ---- changes against the saved budget ---- */
+function bgChangedRaw(side, cat, ent, L){
+  var a=BG.s, b=BG.base, keyc=bgKey(side, cat, ent==null?BG_CATROW:ent, L);
+  if(ent==null){ if(Math.abs(bgCatMonth(a, side, cat, L)-bgCatMonth(b, side, cat, L))>0.005) return true;
+    var ea={}; Object.keys(((a.cells[side]||{})[cat])||{}).concat(Object.keys(((b.cells[side]||{})[cat])||{})).forEach(function(e){ ea[e]=1; });
+    if(Object.keys(ea).some(function(e){ return Math.abs(bgCellGet(a, side, cat, e, L)-bgCellGet(b, side, cat, e, L))>0.005; })) return true; }
+  else if(Math.abs(bgCellGet(a, side, cat, ent, L)-bgCellGet(b, side, cat, ent, L))>0.005) return true;
+  return ((a.fml||{})[keyc]||'')!==((b.fml||{})[keyc]||'') || ((a.notes||{})[keyc]||'')!==((b.notes||{})[keyc]||'');
+}
+function bgChanged(n, m){ return bgChangedRaw(n.side, n.cat, n.ent, BG.L12[m]); }
+/* How many figures differ from the saved budget: a category's month counts once, whatever moved inside it. */
+function bgNChanged(){
+  if(!BG.s || !BG.base) return 0; var n=0, seen={};
+  BG_SIDES.forEach(function(side){ var cats={}; [BG.s.cells[side]||{}, BG.base.cells[side]||{}].forEach(function(o){ Object.keys(o).forEach(function(c){ cats[c]=1; }); });
+    [BG.s.fml||{}, BG.base.fml||{}, BG.s.notes||{}, BG.base.notes||{}].forEach(function(o){ Object.keys(o).forEach(function(k){ var p=bgKeyParts(k); if(p.side===side) cats[p.cat]=1; }); });
+    Object.keys(cats).forEach(function(cat){ BG.L12.forEach(function(L){ var k=side+'|'+cat+'|'+L; if(seen[k]) return; if(bgChangedRaw(side, cat, null, L)){ seen[k]=1; n++; } }); }); });
+  return n;
+}
+
+/* ---- formula bar, footer, context bar, banners ---- */
+function bgRenderFx(){
+  var fx=$('bg-fx'); if(!fx) return; fx.hidden=!BG.fx; if(!BG.fx || !BG.act) return;
+  var n=BG.act, m=n.m, inp=$('bg-fx-in'), z=n.ent!=null?bgEntSize(n.ent):null;
+  setEl('bg-fx-name', bgName(n)+' · '+BG.L12[m]);
+  if(document.activeElement!==inp){
+    if(m<BG.CUR && BG.show!=='b'){ inp.value=(BG.show==='v'?'Against budget ':'Actual ')+bgGrp(bgVal(n, m))+'  ·  finished month · double-click for the records'; inp.disabled=true; }
+    else if(!bgCanEdit(n, m)){ inp.value=bgLocked()?'Locked as the bank’s copy':'Removed · no budget'; inp.disabled=true; }
+    else { inp.disabled=false; inp.value=(BG.s.fml||{})[bgCk(n, m)]||String(Math.round(bgB(n, m))); }
+  }
+  var st=z ? '<span>'+bgSizeTxt(z)+'</span><span>Year <b>'+bgMoney(bgBudYear(n))+'</b></span><span><b>'+bgMoney(bgBudYear(n)/z.n)+'</b> a '+(z.u==='ha'?'hectare':'head')+'</span>' : '<span>Last year <b>'+bgMoney(bgLy(n, m))+'</b></span>';
+  $('bg-fx-st').innerHTML=st;
+}
+function bgRenderFoot(){
+  var inB=0, outB=0; BG_SIDES.forEach(function(side){ bgCatsOf(side).forEach(function(c){ var v=bgBudYear({side:side, cat:c, ent:null}); if(side==='income') inB+=v; else outB+=v; }); });
+  var bp=bgBankPath(), od=bgOd(), low=null, lowM=null; bp.forEach(function(v,m){ if(v!=null && (low===null || v<low)){ low=v; lowM=m; } });
+  var st=bgBankState(low, od), xv=(BG.vat==='exc'&&bgVatOn())?' <small class="dim">without VAT</small>':'', n=bgNChanged();
+  var r=$('bg-recon'); if(r) r.innerHTML=
+    '<div class="f"><span>Budget in</span><b>'+bgMoney(inB)+'</b></div>'+
+    '<div class="f"><span>Budget out</span><b>'+bgMoney(outB)+'</b></div>'+
+    '<div class="f"><span>Budget net cash</span><b'+(inB-outB<0?' class="neg"':'')+'>'+bgMoney(inB-outB)+xv+'</b></div>'+
+    '<span class="bg-ib" tabindex="0" data-tip="Each month’s column total is the budget your Budgets page, the tracker and the tax estimate use. One budget, kept in one place. Amounts include VAT, as on your bank statement'+(bgVatOn()?' (View › Without VAT takes it off)':'')+'.">ⓘ</span>'+
+    (low!=null ? '<span class="vsep"></span><div class="f"><span>Lowest bank ≈</span><b'+(low<0?' class="neg"':'')+'>'+bgMoney(low)+' <small class="dim">end of '+BG.SH[lowM]+'</small></b></div>'+
+      (od.limit ? '<span class="bg-chip '+st+'"><i></i>'+(st==='ok'?'Overdraft not needed':st==='ti'?'Uses '+bgMoney(-low)+' of your overdraft':bgMoney(-low-od.limit)+' past your overdraft')+'</span>'
+                : (low<0?'<span class="bg-chip bd"><i></i>Overdrawn, with no overdraft in Loans</span>':'<span class="bg-chip ok"><i></i>Stays in credit</span>')) : '');
+  var fr=$('bg-foot-r'); if(fr){ var x='';
+    if(n) x+='<span class="bg-chip ti"><i></i>'+n+' change'+(n===1?'':'s')+' not saved</span><button class="bgt-btn" type="button" data-act="discard">Discard</button><button class="bgt-btn pri" type="button" data-act="save"'+(bgLocked()?' disabled':'')+'>Save</button>';
+    else x+='<span class="bg-chip ok"><i></i>Matches your Budgets page</span>';
+    fr.innerHTML=x; }
+  var u=$('bg-undo'), rd=$('bg-redo'); if(u) u.disabled=!BG.undo.length; if(rd) rd.disabled=!BG.redo.length;
+}
+function bgSelCells(){ if(!BG.sel) return []; var lo=Math.min(bgNavIdx(BG.sel.a),bgNavIdx(BG.sel.b)), hi=Math.max(bgNavIdx(BG.sel.a),bgNavIdx(BG.sel.b)), mlo=Math.min(BG.sel.a.m,BG.sel.b.m), mhi=Math.max(BG.sel.a.m,BG.sel.b.m), out=[];
+  for(var r=lo;r<=hi;r++) for(var m=mlo;m<=mhi;m++) if(BG.NAV[r] && bgCanEdit(BG.NAV[r], m)) out.push({side:BG.NAV[r].side, cat:BG.NAV[r].cat, ent:BG.NAV[r].ent, m:m}); return out; }
+function bgRenderTools(){
+  var ctx=$('bg-ctx'), on=BG.touched && BG.NAV.length>0 && BG.act; if(!ctx) return; ctx.hidden=!on; if(!on) return;
+  var n=BG.act, cells=bgSelCells(), lo=Math.min(bgNavIdx(BG.sel.a),bgNavIdx(BG.sel.b)), hi=Math.max(bgNavIdx(BG.sel.a),bgNavIdx(BG.sel.b)), mlo=Math.min(BG.sel.a.m,BG.sel.b.m), mhi=Math.max(BG.sel.a.m,BG.sel.b.m), cnt=0, sm=0;
+  for(var r=lo;r<=hi;r++) for(var m=mlo;m<=mhi;m++){ cnt++; sm+=bgVal(BG.NAV[r], m); }
+  var what=(hi>lo?(hi-lo+1)+' lines':bgEsc(bgName(n)))+' · '+(mhi>mlo?BG.SH[mlo]+' – '+BG.SH[mhi]:BG.L12[n.m]);
+  var past=n.m<BG.CUR && BG.show!=='b';
+  var state=bgLocked()?'<span class="ctx-k g">Locked · the bank’s copy</span>':(past?'<span class="ctx-k g">What happened</span>':(bgCanEdit(n, n.m)?'<span class="ctx-k">Plan · click and type</span>':'<span class="ctx-k g">No budget</span>'));
+  $('bg-ctx-l').innerHTML='<b>'+what+'</b>'+(cnt>1?' <span class="ctx-sum">Sum '+bgMoney(sm)+'</span>':' '+state);
+  var any=cells.length>0;
+  ctx.querySelectorAll('.bg-ct').forEach(function(b){ var t=b.getAttribute('data-tool');
+    b.hidden=t==='note'?false:(t==='rec'?!(n.m<BG.CUR):!any);
+    if(t==='spread') b.hidden=!any||(cells.length>12&&hi>lo); });
+}
+function bgRenderBars(){
+  var lk=$('bg-lockbar'); if(lk){ lk.hidden=!bgLocked(); }
+  var vn=$('bg-vnow'); if(vn){ var w=[]; if(BG.show==='b') w.push('Plan only'); if(BG.show==='v') w.push('How I’m doing'); if(BG.vat==='exc'&&bgVatOn()) w.push('Without VAT'); if(BG.empty) w.push('Every line'); if(!BG.ly) w.push('No last year'); if(BG.fx) w.push('Formula bar'); vn.textContent=w.join(' · '); }
+  var vr=$('bg-vat-row'); if(vr) vr.hidden=!bgVatOn();
+  var intro=$('bg-intro'); if(intro) intro.hidden=!!(ST.uiPrefs && ST.uiPrefs.bgIntro);
+  setEl('bg-fy', BG.L12[0]+' – '+BG.L12[11]);
+}
+
+/* ---- the working copy: open, apply, undo, save, discard, the local draft ---- */
+function bgDraftKey(){ var f=''; try{ f=(window.AI&&AI.farm&&AI.farm.active())||(window.__AI_GUEST?'demo':'local'); }catch(e){ f='local'; } return 'ai_uk_bgdraft_'+f+'_'+BG.fy; }
+function bgDraftWrite(){ try{ if(bgNChanged()) localStorage.setItem(bgDraftKey(), JSON.stringify({at:Date.now(), base:bgScenSig(BG.base), s:BG.s})); else localStorage.removeItem(bgDraftKey()); }catch(e){} }
+function bgDraftClear(){ try{ localStorage.removeItem(bgDraftKey()); }catch(e){} }
+function bgLoad(keepView){
+  BG.fy=bgtFY(); BG.L12=getFYMonths(BG.fy); BG.SH=BG.L12.map(function(L){ return String(L).split(' ')[0]; }); BG.CUR=bgCurIdx(BG.fy);
+  BG.info=bgEntInfo(); BG.A=bgActuals(BG.L12); BG.LYA=bgActuals(BG.L12.map(bgLyLabel));
+  try{ BG.bankNow=b5CashNow().bal; BG.bankR=b5BankRest(); }catch(e){ BG.bankNow=null; BG.bankR=null; }   /* the bank today, and this month's figures where the grid has none */
+  BG.base=bgCopy(bgGridFor(BG.fy)); BG.s=bgCopy(BG.base); BG.undo=[]; BG.redo=[]; BG.edit=null;
+  if(!BG.act || BG.act.m==null){ BG.act=null; BG.sel=null; }
+  var d=null; try{ d=JSON.parse(localStorage.getItem(bgDraftKey())||'null'); }catch(e){ d=null; }
+  if(d && d.s && d.base===bgScenSig(BG.base) && bgScenSig(d.s)!==bgScenSig(BG.base)){ BG.s=d.s; if(!keepView) try{ toast('Your changes from before are back. Save them, or Discard.', 'info'); }catch(e){} }
+  else if(d) bgDraftClear();
+}
+function bgPushUndo(label, before){ BG.undo.push({label:label, before:before, after:bgCopy(BG.s)}); if(BG.undo.length>60) BG.undo.shift(); BG.redo=[]; }
+function bgUndo(){ var u=BG.undo.pop(); if(!u) return; BG.s=bgCopy(u.before); BG.redo.push(u); bgDraftWrite(); bgRender(); try{ toast('Undone: '+u.label, 'info'); }catch(e){} }
+function bgRedo(){ var u=BG.redo.pop(); if(!u) return; BG.s=bgCopy(u.after); BG.undo.push(u); bgDraftWrite(); bgRender(); try{ toast('Redone: '+u.label, 'info'); }catch(e){} }
+/* THE one writer of the working copy. list: [{side, cat, ent (null = the category line), m, v, f}]. Locked: nothing,
+   with the lock's one toast. Whole pounds, never below 0. A category's change is shared over its rows in the month's own
+   proportions (by last year's split when the month is empty); a row's change moves the category. In the Without VAT
+   view a standard-rated figure is stored with its VAT (D4: the budget stays VAT-inclusive at rest). */
+function bgApply(list, label){
+  if(!bgtCanWrite(BG.fy)){ bgRender(); return 0; }
+  var s=BG.s, before=bgCopy(s), cnt=0, ctxA=null;
+  list=list.filter(function(c){ return bgCanEdit({side:c.side, cat:c.cat, ent:c.ent}, c.m); });
+  list.forEach(function(c){
+    var n={side:c.side, cat:c.cat, ent:c.ent==null?null:c.ent}, L=BG.L12[c.m], key=bgCk(n, c.m), nf=c.f||null, of=(s.fml||{})[key]||null;
+    var f=bgVatF(n.cat), nv=Math.max(0, Math.round((+c.v||0)/f)), ov=bgRawB(n, c.m);
+    if(f!==1 && Math.round(+c.v||0)===Math.round(bgB(n, c.m))) nv=ov;      /* the same figure typed back in the VAT-free view leaves it alone */
+    if(Math.abs(ov-nv)<0.005 && of===nf) return; cnt++;
+    s.fml=s.fml||{};
+    if(n.ent==null){
+      var cur=(s.cells[n.side]&&s.cells[n.side][n.cat])||{}, w={};
+      Object.keys(cur).forEach(function(e){ if(e!==BG_CATROW && (+cur[e][L]||0)>0) w[e]=+cur[e][L]; });
+      if(!Object.keys(w).length){ ctxA=ctxA||bgSeedCtx(BG.fy); w=bgEntWeights(n.side, n.cat, c.m, ctxA, c.m>=BG.CUR); }
+      if(c.m>=BG.CUR) delete w[BG_GONE];
+      Object.keys(cur).forEach(function(e){ if(e!==BG_CATROW) bgCellSet(s, n.side, n.cat, e, L, 0); });
+      var sh=bgShare(nv, w, true); Object.keys(sh).forEach(function(e){ bgCellSet(s, n.side, n.cat, e, L, sh[e]); });
+      Object.keys(s.fml).forEach(function(k){ var p=bgKeyParts(k); if(p.side===n.side && p.cat===n.cat && p.L===L && p.ent!==BG_CATROW) delete s.fml[k]; });
+    } else {
+      bgCellSet(s, n.side, n.cat, n.ent, L, nv);
+      delete s.fml[bgKey(n.side, n.cat, BG_CATROW, L)];
+    }
+    if(nf) s.fml[key]=nf; else delete s.fml[key];
+  });
+  if(!cnt){ bgRender(); return 0; }
+  bgPushUndo(label, before); bgDraftWrite(); bgRender(); return cnt;
+}
+function bgSave(){
+  if(!bgtCanWrite(BG.fy)) return false;
+  if(!bgNChanged()){ bgRender(); return true; }
+  var s=bgCopy(BG.s), was=bgScenGet(BG.fy), T0=JSON.stringify([ST.budgets.monthlyIncome, ST.budgets.monthlyExpenses]);
+  s.src='farm'; s.live=true; s.fy=BG.fy; s.name=(was&&was.name)||s.name||'Budget';
+  bgGridRoot().scen[bgScenId(BG.fy)]=s;
+  bgGridTotals(s); if(BG.fy===bgtFY()) bgGridTargets(s);
+  if(JSON.stringify([ST.budgets.monthlyIncome, ST.budgets.monthlyExpenses])!==T0){ ST.budgets.incomePattern='custom'; ST.budgets.expensePattern='custom'; }
+  BG.base=bgCopy(s); BG.s=bgCopy(s); bgDraftClear(); BG.undo=[]; BG.redo=[];
+  dataChanged('budget');
+  var c=bgtCompute(); try{ toast('Saved. Your Budgets page now plans '+bgMoney(c.annualNet)+' net cash for the year.', 'success'); }catch(e){}
+  bgRender(); return true;
+}
+function bgDiscard(){ BG.s=bgCopy(BG.base); BG.undo=[]; BG.redo=[]; BG.edit=null; bgDraftClear(); bgRender(); try{ toast('Changes discarded', 'info'); }catch(e){} }
+
+/* ---- editing ---- */
+function bgParseCtx(n, m){ return {ly:bgLy(n, m), size:n.ent!=null?bgEntSize(n.ent):null, farm:bgFarmSize(), isCat:n.ent==null, name:n.ent!=null?bgEntLabel(n.ent, BG.info):''}; }
+var BG_BADNUM='Type a number like 12,500, 12.5k, 95/ha or =LY*1.05';
+function bgCommitEdit(move){
+  if(!BG.edit) return; var n={side:BG.edit.side, cat:BG.edit.cat, ent:BG.edit.ent}, m=BG.edit.m, ed=$('bg-cell-ed'), s=ed?ed.value:BG.editVal; BG.edit=null;
+  var p=bgParseIn(s, bgParseCtx(n, m));
+  if(!p || p.err){ try{ toast((p&&p.err)||BG_BADNUM, 'info'); }catch(e){} bgRender(); return; }
+  bgApply([{side:n.side, cat:n.cat, ent:n.ent, m:m, v:p.v, f:p.f}], bgName(n)+' '+BG.SH[m]);
+  if(move) bgMoveAct(move[0], move[1], false);
+  var gw=$('bg-gw'); if(gw) gw.focus({preventScroll:true});
+}
+function bgStartEdit(seed){ var n=BG.act; if(!n) return; if(!bgCanEdit(n, n.m)){ if(n.m<BG.CUR && BG.show!=='b' && !bgLocked()) bgOpenTx(n, n.m); else try{ toast(bgWhyNot(n, n.m), 'info'); }catch(e){} return; }
+  BG.edit={side:n.side, cat:n.cat, ent:n.ent, m:n.m}; BG.editVal=seed!=null?seed:((BG.s.fml||{})[bgCk(n, n.m)]||String(Math.round(bgB(n, n.m)))); bgRender(); }
+function bgSetAct(r, m, extend){ if(!BG.NAV.length) return; r=Math.max(0,Math.min(BG.NAV.length-1,r)); m=Math.max(0,Math.min(11,m)); var p={side:BG.NAV[r].side, cat:BG.NAV[r].cat, ent:BG.NAV[r].ent, m:m};
+  if(extend) BG.sel.b=p; else { BG.act=p; BG.sel={a:bgCopy(p), b:bgCopy(p)}; } bgRender(); bgScrollAct(); }
+function bgMoveAct(dr, dm, extend){ var base=extend?BG.sel.b:BG.act; if(!base){ bgSetAct(0, Math.min(BG.CUR,11), false); return; } bgSetAct(bgNavIdx(base)+dr, base.m+dm, extend); }
+function bgScrollAct(){ var td=document.querySelector('#bg-g td.c.act'), gw=$('bg-gw'); if(!td||!gw) return; var cat=document.querySelector('#bg-g th.cat').offsetWidth, tr=td.getBoundingClientRect(), wr=gw.getBoundingClientRect();
+  if(tr.left<wr.left+cat) gw.scrollLeft-=(wr.left+cat-tr.left); else if(tr.right>wr.right) gw.scrollLeft+=tr.right-wr.right+4;
+  if(tr.top<wr.top+46) gw.scrollTop-=(wr.top+46-tr.top); else if(tr.bottom>wr.bottom) gw.scrollTop+=tr.bottom-wr.bottom+4; }
+function bgToggleOpen(key){ BG.open[key]=!BG.open[key]; if(!BG.open[key] && BG.act && (BG.act.side+'|'+BG.act.cat)===key){ BG.act.ent=null; BG.sel={a:bgCopy(BG.act), b:bgCopy(BG.act)}; } bgRender(); }
+/* copy and paste, Excel style: a block of tab-separated figures; finished months and locked cells are skipped and counted */
+function bgCopySel(){ if(!BG.sel) return ''; var lo=Math.min(bgNavIdx(BG.sel.a),bgNavIdx(BG.sel.b)), hi=Math.max(bgNavIdx(BG.sel.a),bgNavIdx(BG.sel.b)), mlo=Math.min(BG.sel.a.m,BG.sel.b.m), mhi=Math.max(BG.sel.a.m,BG.sel.b.m), lines=[];
+  for(var r=lo;r<=hi;r++){ var l=[]; for(var m=mlo;m<=mhi;m++) l.push(Math.round(bgVal(BG.NAV[r], m))); lines.push(l.join('\t')); }
+  var txt=lines.join('\n'); BG.clip=txt;
+  try{ navigator.clipboard.writeText(txt).then(function(){ toast('Copied. Paste it into Excel.', 'info'); }, function(){ toast('Copied here. Your browser kept it from Excel.', 'info'); }); }catch(x){}
+  return txt; }
+function bgPaste(t){
+  var lines=String(t||'').replace(/\r/g,'').split('\n'); while(lines.length && !lines[lines.length-1].length) lines.pop();
+  var list=[], skipped=0, bad=0, r0=bgNavIdx(BG.act), m0=BG.act?BG.act.m:0;
+  lines.forEach(function(l, dr){ l.split('\t').forEach(function(c, dm){ var r=r0+dr, m=m0+dm; if(r>=BG.NAV.length||m>11) return; var n=BG.NAV[r];
+    if(!bgCanEdit(n, m)){ skipped++; return; } var p=bgParseIn(c, bgParseCtx(n, m)); if(!p||p.err){ bad++; return; } list.push({side:n.side, cat:n.cat, ent:n.ent, m:m, v:p.v, f:p.f}); }); });
+  if(bgLocked()){ bgtCanWrite(BG.fy); return 0; }
+  var cnt=bgApply(list, 'paste '+list.length+' cell'+(list.length===1?'':'s'));
+  try{ toast('Pasted '+cnt+' cell'+(cnt===1?'':'s')+(skipped?' · '+skipped+' finished or locked cell'+(skipped===1?'':'s')+' left as '+(skipped===1?'it was':'they were'):'')+(bad?' · '+bad+' not number'+(bad===1?'':'s'):''), 'info'); }catch(e){}
+  return cnt; }
+
+/* ---- the records behind a figure: the transactions, with a total equal to the cell ---- */
+function bgTxFor(n, m){ var want={}, info=BG.info; (m==null?BG.L12.slice(0, Math.min(BG.CUR+1,12)):[BG.L12[m]]).forEach(function(L){ want[L]=1; });
+  return ((ST&&ST.txns)||[]).filter(function(t){ if(!t) return false; var d=parseDate(t.date); if(!d) return false; if(!want[MONTH_LABELS_SHORT[d.m]+' '+d.y]) return false;
+    if(((t.type==='income')?'income':'expense')!==n.side || txCatKey(t)!==n.cat) return false;
+    if(n.ent==null) return true; var e=t.ent?(info[t.ent]?t.ent:BG_GONE):BG_NONE; return e===n.ent; }); }
+function bgOpenTx(n, m){
+  var list=bgTxFor(n, m).sort(function(a,b){ var x=parseDate(a.date), y=parseDate(b.date); return (x.y-y.y)||(x.m-y.m)||((x.d||0)-(y.d||0)); }), tot=0;
+  var rows=list.map(function(t){ tot+=(+t.amt||0); return '<tr><td class="dim">'+bgEsc(typeof dispDate==='function'?dispDate(t.date):t.date)+'</td><td><b>'+bgEsc(t.desc||t.description||'')+'</b></td><td>'+bgEsc(t.ent?bgEntLabel(BG.info[t.ent]?t.ent:BG_GONE, BG.info):'Not tagged')+'</td><td class="num">'+bgMoney(t.amt)+'</td></tr>'; }).join('');
+  var title=bgName(n)+' · '+(m==null?BG.SH[0]+' – '+BG.L12[Math.min(BG.CUR,11)]:BG.L12[m]);
+  bgModal('<div class="bg-mh"><div><h3>'+bgEsc(title)+'</h3><p>'+list.length+' record'+(list.length===1?'':'s')+' · '+bgMoney(tot)+'</p></div><button class="bg-x" type="button" data-close aria-label="Close">×</button></div><div class="bg-mb"><div style="overflow-x:auto"><table class="bg-map"><thead><tr><th>Date</th><th>What</th><th>Block, crop or herd</th><th class="num">Amount</th></tr></thead><tbody>'+(rows||'<tr><td colspan="4" class="dim" style="text-align:center;padding:22px">No records</td></tr>')+'</tbody></table></div></div><div class="bg-mf"><button class="bgt-btn" type="button" data-close>Close</button><button class="bgt-btn pri" type="button" id="bg-tx-open">Open in '+(n.side==='income'?'Income':'Expenses')+'</button></div>', '760px');
+  $('bg-tx-open').addEventListener('click', function(){ bgModalClose(); bgGuardLeave(function(){ bgtCatRowTap(n.side, n.cat); }); });
+  return {n:list.length, tot:Math.round(tot*100)/100};
+}
+
+/* ---- popovers, the modal and the tip ---- */
+function bgPop(btn, html, wide){ var pop=$('bg-pop'); pop.className='bg-pop'+(wide?' wide':''); pop.innerHTML=html; pop.hidden=false; var r=btn.getBoundingClientRect(), w=pop.offsetWidth, hh=pop.offsetHeight, top=r.bottom+8; if(top+hh>innerHeight-8) top=Math.max(8,r.top-hh-8);
+  pop.style.left=Math.max(16,Math.min(r.left,innerWidth-w-16))+'px'; pop.style.top=top+'px'; var f=pop.querySelector('input,textarea,select'); if(f){ f.focus(); if(f.select) f.select(); } return pop; }
+function bgPopClose(){ var p=$('bg-pop'); if(p) p.hidden=true; }
+var _bgLastFocus=null;
+function bgModal(html, w){ _bgLastFocus=document.activeElement; var md=$('bg-modal'), sc=$('bg-scrim'); md.innerHTML=html; md.style.width=w?'min('+w+',100%)':''; sc.hidden=false; var f=md.querySelector('button,input,select'); if(f) f.focus(); }
+function bgModalClose(){ var sc=$('bg-scrim'), md=$('bg-modal'); if(sc) sc.hidden=true; if(md) md.innerHTML=''; if(_bgLastFocus&&_bgLastFocus.focus) try{ _bgLastFocus.focus({preventScroll:true}); }catch(e){} }
+function bgShowTip(el){ var tip=$('bg-tip'), id=el.getAttribute('data-tip-id'), txt=el.getAttribute('data-tip'); if(id==='keys'){ tip.innerHTML=BG_KEYS; tip.style.maxWidth='440px'; } else if(txt){ tip.textContent=txt; tip.style.maxWidth=''; } else return;
+  tip.classList.add('on'); var r=el.getBoundingClientRect(), w=tip.offsetWidth, hg=tip.offsetHeight, x=Math.min(Math.max(12,r.left+r.width/2-w/2),innerWidth-w-12), y=r.bottom+8; if(y+hg>innerHeight-8) y=r.top-hg-8; tip.style.left=x+'px'; tip.style.top=y+'px'; }
+function bgHideTip(){ var t=$('bg-tip'); if(t) t.classList.remove('on'); }
+var BG_KEYS='<div class="bg-keys"><div><span>Move</span><span><span class="kbd">←</span> <span class="kbd">→</span> <span class="kbd">↑</span> <span class="kbd">↓</span></span></div><div><span>Select more</span><span class="kbd">Shift + arrows</span></div><div><span>Change a figure</span><span>type, or <span class="kbd">Enter</span></span></div><div><span>Keep it, move down</span><span class="kbd">Enter</span></div><div><span>Keep it, move right</span><span class="kbd">Tab</span></div><div><span>Clear</span><span class="kbd">Delete</span></div><div><span>Undo / redo</span><span><span class="kbd">Ctrl Z</span> <span class="kbd">Ctrl Y</span></span></div><div><span>Copy / paste</span><span><span class="kbd">Ctrl C</span> <span class="kbd">Ctrl V</span></span></div><div><span>Sums</span><span>=1200*12</span></div><div><span>From last year</span><span>=LY*1.05</span></div><div><span>Per hectare or head</span><span>95/ha · 2/head</span></div><div><span>Thousands</span><span>12.5k</span></div><div><span>Show the breakdown</span><span>double-click the name, or <span class="kbd">Alt ↓</span></span></div><div><span>See the records</span><span>double-click a finished month</span></div><div><span>Add a note</span><span class="kbd">Shift F2</span></div><div><span>Sums and =LY formulas</span><span>View › Formula bar</span></div><div><span>Select the months to come</span><span class="kbd">Ctrl A</span></div></div>';
+
+/* ---- the tools in the context bar ---- */
+function bgNum(s){ return parseFloat(String(s).replace(/[%\s+£,]/g,'').replace('−','-'))||0; }
+function bgShapeW(n, k, from, end){ var w=[]; for(var m=0;m<12;m++){ var L=BG.L12[m], cal=MONTH_LABELS_SHORT.indexOf(String(L).split(' ')[0]); w.push(m<from||m>end?0:(k==='ly'?Math.max(0,bgA(n.side, n.cat, n.ent, bgLyLabel(L), BG.LYA)):BG_LIB[k][cal])); } if(!bgSum(w)) for(var j=from;j<=end;j++) w[j]=1; return w; }
+function bgShapeSvg(w, from){ var mx=Math.max.apply(null,w), h=''; w.forEach(function(x,j){ var hh=mx?16*x/mx:0; h+='<rect x="'+(j*7)+'" y="'+(17-hh)+'" width="5" height="'+hh+'" rx="1" fill="currentColor" fill-opacity="'+(j<from?'.25':'.85')+'"/>'; }); return '<svg width="84" height="18" viewBox="0 0 84 18" aria-hidden="true">'+h+'</svg>'; }
+function bgLR(w, total){ var o={}; w.forEach(function(x,j){ o[j]=x; }); var sh=bgShare(Math.round(total), o, true), out=[]; for(var j=0;j<w.length;j++) out.push(+sh[j]||0); return out; }
+function bgTool(t, b){
+  var cells=bgSelCells(), n=BG.act;
+  if(t==='note'){ bgOpenNote(b); return; }
+  if(t==='rec'){ bgOpenTx(n, n.m); return; }
+  if(bgLocked()){ bgtCanWrite(BG.fy); return; }
+  if(t==='fill'){ var groups={}, list=[], single=cells.length===1; cells.forEach(function(c){ var k=c.side+'|'+c.cat+'|'+c.ent; (groups[k]=groups[k]||[]).push(c); });
+    Object.keys(groups).forEach(function(k){ var g=groups[k].sort(function(a,b){ return a.m-b.m; }), src=g[0], v=bgB(src, src.m), to=single?11:g[g.length-1].m;
+      for(var m=src.m+1;m<=to;m++) list.push({side:src.side, cat:src.cat, ent:src.ent, m:m, v:v}); });
+    var n1=bgApply(list, 'copy across'); try{ toast(n1?'Copied into '+n1+' month'+(n1===1?'':'s'):'Nothing to copy', 'info'); }catch(e){} return; }
+  if(t==='ly'){ var n2=bgApply(cells.map(function(c){ return {side:c.side, cat:c.cat, ent:c.ent, m:c.m, v:bgLy(c, c.m)}; }), 'same as last year'); try{ toast(n2?'Used last year in '+n2+' month'+(n2===1?'':'s'):'Already the same as last year', 'info'); }catch(e){} return; }
+  if(t==='pct'){ var now=cells.reduce(function(a,c){ return a+bgB(c, c.m); },0);
+    var pop=bgPop(b, '<h4>Up or down by a percentage <span class="dim" style="font-size:12px">'+cells.length+' figure'+(cells.length===1?'':'s')+'</span></h4><div class="quick">'+[-10,-5,3,5,10].map(function(p){ return '<button type="button" data-q="'+p+'">'+(p>0?'+':'−')+Math.abs(p)+'%</button>'; }).join('')+'</div><label for="bg-pct-in">Change, %</label><input id="bg-pct-in" type="text" inputmode="decimal" value="5"><div class="prev"><span>Picked now '+bgMoney(now)+'</span><b id="bg-pct-prev"></b></div><div class="row"><button class="bgt-btn" type="button" data-x>Cancel</button><button class="bgt-btn pri" type="button" data-go>Apply</button></div>');
+    var upd=function(){ var p=bgNum($('bg-pct-in').value); $('bg-pct-prev').textContent='→ '+bgMoney(cells.reduce(function(a,c){ return a+Math.round(bgB(c, c.m)*(1+p/100)); },0)); };
+    upd(); pop.querySelector('#bg-pct-in').addEventListener('input', upd);
+    pop.querySelectorAll('[data-q]').forEach(function(q){ q.addEventListener('click', function(){ $('bg-pct-in').value=q.getAttribute('data-q'); upd(); }); });
+    pop.querySelector('[data-go]').addEventListener('click', function(){ var p=bgNum($('bg-pct-in').value); bgPopClose(); var n3=bgApply(cells.map(function(c){ return {side:c.side, cat:c.cat, ent:c.ent, m:c.m, v:bgB(c, c.m)*(1+p/100)}; }), (p>0?'+':'')+p+'%'); try{ toast((p>=0?'Raised ':'Lowered ')+n3+' figure'+(n3===1?'':'s')+' by '+Math.abs(p)+'%', 'info'); }catch(e){} $('bg-gw').focus({preventScroll:true}); });
+    pop.querySelector('[data-x]').addEventListener('click', bgPopClose); return; }
+  if(t==='spread'){ var from=Math.max(BG.show==='b'?0:BG.CUR, Math.min(BG.sel.a.m, BG.sel.b.m)), end=11, cur=0, z=n.ent!=null?bgEntSize(n.ent):null, shape='ly';
+    if(!bgCanEdit(n, from)){ try{ toast(bgWhyNot(n, from), 'info'); }catch(e){} return; }
+    for(var m=from;m<=end;m++) cur+=bgB(n, m);
+    var amt=function(){ var s=String($('bg-sp-in').value), r=s.replace(/[£,\s]/g,'').match(/^(\d+(?:\.\d+)?)(?:\/|per)(ha|head)$/i); if(r&&z) return Math.round(parseFloat(r[1])*z.n); return Math.round(bgNum(s.replace(/k$/i,'000'))); };
+    var draw=function(){ var a=amt(), parts=bgLR(bgShapeW(n, shape, from, end), a);
+      $('bg-pop').querySelectorAll('.shape').forEach(function(s){ s.classList.toggle('on', s.getAttribute('data-shape')===shape); });
+      $('bg-sp-prev').innerHTML='<span>'+BG.SH[from]+' '+bgFmt(parts[from])+' … '+BG.SH[end]+' '+bgFmt(parts[end])+'</span><b>'+bgMoney(a)+(z?' · '+bgMoney(a/z.n)+'/'+z.u:'')+'</b>'; return parts; };
+    var pop2=bgPop(b, '<h4>Share a total over the months <span class="dim" style="font-size:12px">'+bgEsc(bgName(n))+'</span></h4><label for="bg-sp-in">Total for '+BG.SH[from]+' – '+BG.SH[end]+(z?' · or a rate like 95/'+z.u:'')+'</label><input id="bg-sp-in" type="text" inputmode="decimal" value="'+bgGrp(cur)+'"><label>Shape</label><div class="shapes">'+BG_SHAPES.map(function(s){ return '<button type="button" class="shape" data-shape="'+s[0]+'">'+s[1]+bgShapeSvg(bgShapeW(n, s[0], from, end), from)+'</button>'; }).join('')+'</div><div class="prev" id="bg-sp-prev"></div><div class="row"><button class="bgt-btn" type="button" data-x>Cancel</button><button class="bgt-btn pri" type="button" data-go>Share it</button></div>');
+    draw(); pop2.querySelector('#bg-sp-in').addEventListener('input', draw);
+    pop2.querySelectorAll('.shape').forEach(function(s){ s.addEventListener('click', function(){ shape=s.getAttribute('data-shape'); draw(); }); });
+    pop2.querySelector('[data-go]').addEventListener('click', function(){ var parts=draw(), list=[]; for(var m=from;m<=end;m++) list.push({side:n.side, cat:n.cat, ent:n.ent, m:m, v:parts[m]}); bgPopClose(); bgApply(list, 'share '+bgName(n)); try{ toast('Shared across '+BG.SH[from]+' – '+BG.SH[end], 'info'); }catch(e){} $('bg-gw').focus({preventScroll:true}); });
+    pop2.querySelector('[data-x]').addEventListener('click', bgPopClose); return; }
+}
+function bgOpenNote(btn){ var n=BG.act; if(!n) return; var key=bgCk(n, n.m), cur=(BG.s.notes||{})[key]||'';
+  if(bgLocked()){ bgtCanWrite(BG.fy); return; }
+  var pop=bgPop(btn, '<h4>Note <span class="dim" style="font-size:12px">'+bgEsc(bgName(n))+' · '+BG.SH[n.m]+'</span></h4><textarea id="bg-nt-in" rows="3" maxlength="500" placeholder="e.g. Quote from the merchant, 12 Sep">'+bgEsc(cur)+'</textarea><div class="row">'+(cur?'<button class="bgt-btn" type="button" data-del style="margin-right:auto">Remove</button>':'')+'<button class="bgt-btn" type="button" data-x>Cancel</button><button class="bgt-btn pri" type="button" data-go>Keep note</button></div>');
+  var setNote=function(v){ var before=bgCopy(BG.s); BG.s.notes=BG.s.notes||{}; if(v) BG.s.notes[key]=v; else delete BG.s.notes[key]; bgPushUndo('note '+bgName(n), before); bgDraftWrite(); bgPopClose(); bgRender(); };
+  pop.querySelector('[data-x]').addEventListener('click', bgPopClose);
+  var del=pop.querySelector('[data-del]'); if(del) del.addEventListener('click', function(){ setNote(''); try{ toast('Note removed', 'info'); }catch(e){} });
+  pop.querySelector('[data-go]').addEventListener('click', function(){ var v=$('bg-nt-in').value.trim(); setNote(v); try{ toast(v?'Note kept. Save to keep it with the budget.':'Note removed', 'info'); }catch(e){} var gw=$('bg-gw'); if(gw) gw.focus({preventScroll:true}); }); }
+function bgOpenAddEnt(btn, key){ var p=key.split('|'), side=p[0], cat=p.slice(1).join('|'), have={}; bgEntsOf(side, cat).forEach(function(e){ have[e]=1; });
+  var opts=Object.keys(BG.info).filter(function(c){ return !have[c]; });
+  if(!have[BG_NONE]) opts.push(BG_NONE);
+  if(!opts.length){ try{ toast('Every block, crop and herd is already here', 'info'); }catch(e){} return; }
+  var pop=bgPop(btn, '<h4>Add to '+bgEsc(cat)+'</h4><label for="bg-ae-in">Block, crop or herd</label><select id="bg-ae-in">'+opts.map(function(c){ return '<option value="'+bgEsc(c)+'">'+bgEsc(bgEntLabel(c, BG.info))+'</option>'; }).join('')+'</select><div class="row"><button class="bgt-btn" type="button" data-x>Cancel</button><button class="bgt-btn pri" type="button" data-go>Add</button></div>');
+  pop.querySelector('[data-x]').addEventListener('click', bgPopClose);
+  pop.querySelector('[data-go]').addEventListener('click', function(){ var e=$('bg-ae-in').value, z=bgEntSize(e); (BG.addEnts[key]=BG.addEnts[key]||[]).push(e); BG.open[key]=true; bgPopClose();
+    BG.act={side:side, cat:cat, ent:e, m:Math.max(Math.min(BG.CUR,11), BG.act?BG.act.m:0)}; BG.sel={a:bgCopy(BG.act), b:bgCopy(BG.act)}; BG.touched=true; bgRender(); bgScrollAct();
+    try{ toast(bgEntLabel(e, BG.info)+' added. Type its budget'+(z?', or a rate like 95/'+z.u:'')+'.', 'info'); }catch(x){} $('bg-gw').focus({preventScroll:true}); }); }
+function bgOpenAddCat(btn, side){ var have={}; bgCatsOf(side).forEach(function(c){ have[c]=1; });
+  var opts=FARM_CATS.filter(function(c){ return (side==='income'?c.t==='inc':c.t!=='inc') && !c.sys && !have[c.n]; }).map(function(c){ return c.n; });
+  if(!opts.length){ try{ toast('Every '+(side==='income'?'income':'cost')+' line is already here', 'info'); }catch(e){} return; }
+  var pop=bgPop(btn, '<h4>Add '+(side==='income'?'an income':'a cost')+' line</h4><label for="bg-ac-in">Category</label><select id="bg-ac-in">'+opts.map(function(c){ return '<option>'+bgEsc(c)+'</option>'; }).join('')+'</select><div class="row"><button class="bgt-btn" type="button" data-x>Cancel</button><button class="bgt-btn pri" type="button" data-go>Add</button></div>');
+  pop.querySelector('[data-x]').addEventListener('click', bgPopClose);
+  pop.querySelector('[data-go]').addEventListener('click', function(){ var c=$('bg-ac-in').value; BG.addCats[side].push(c); bgPopClose();
+    BG.act={side:side, cat:c, ent:null, m:Math.min(BG.CUR,11)}; BG.sel={a:bgCopy(BG.act), b:bgCopy(BG.act)}; BG.touched=true; BG.empty=true; var em=$('bg-em-tg'); if(em) em.checked=true; bgRender(); bgScrollAct();
+    try{ toast(c+' added. Type its budget month by month, or use Share a total.', 'info'); }catch(e){} $('bg-gw').focus({preventScroll:true}); }); }
+
+/* ---- the view switch, leaving with unsaved changes ---- */
+function bgView(v, force){
+  var pg=$('pg-budgets'); if(!pg) return;
+  if(v!=='sheet' && BG.on && !force && bgNChanged()){ bgGuardLeave(function(){ bgView(v, true); }); return; }
+  BG.on=(v==='sheet');
+  pg.classList.toggle('bg-sheet-on', BG.on);
+  document.querySelectorAll('#bg-view-seg button').forEach(function(b){ var on=b.getAttribute('data-v')===v; b.classList.toggle('on', on); b.setAttribute('aria-selected', on?'true':'false'); });
+  var sv=$('bg-sheet-view'); if(sv) sv.hidden=!BG.on;
+  if(BG.on){ bgBind(); bgLoad(); bgRender(); }
+  else { try{ renderBudgetsPage(); }catch(e){} }
+}
+var _bgLeaveGo=null;
+function bgGuardLeave(go){
+  var n=(BG.on && BG.s) ? bgNChanged() : 0; if(!n){ go(); return; }
+  _bgLeaveGo=go;
+  bgModal('<div class="bg-mh"><div><h3>Save your changes first?</h3><p>'+n+' change'+(n===1?'':'s')+' to your budget '+(n===1?'is':'are')+' not saved yet.</p></div><button class="bg-x" type="button" data-close aria-label="Close">×</button></div><div class="bg-mf"><button class="bgt-btn" type="button" data-close>Stay here</button><button class="bgt-btn" type="button" id="bg-lv-no">Leave without saving</button><button class="bgt-btn pri" type="button" id="bg-lv-save">Save and go</button></div>', '540px');
+  $('bg-lv-no').addEventListener('click', function(){ bgModalClose(); BG.s=bgCopy(BG.base); BG.undo=[]; BG.redo=[]; bgDraftClear(); var g=_bgLeaveGo; _bgLeaveGo=null; if(g) g(); });
+  $('bg-lv-save').addEventListener('click', function(){ bgModalClose(); if(bgSave()){ var g=_bgLeaveGo; _bgLeaveGo=null; if(g) g(); } });
+}
+/* Budgets redrew (any budget change): a Spreadsheet with nothing unsaved shows the budget as it now is. */
+function bgAfterRender(){ if(!BG.on || !$('bg-g')) return; if(BG.edit) return; if(BG.fy!==bgtFY() || !bgNChanged()){ bgLoad(true); bgRender(); } else bgRenderFoot(); }
+function bgIntroOk(){ ST.uiPrefs=(ST.uiPrefs&&typeof ST.uiPrefs==='object')?ST.uiPrefs:{}; ST.uiPrefs.bgIntro=1; try{ saveState(); }catch(e){} try{ if(window.AI && AI.farm && AI.farm.active() && AI.profile) AI.profile.save(ST).catch(function(){}); }catch(e){} bgRenderBars(); }
+function bgTourSheet(){ if(!BG.on) bgView('sheet'); }
+function bgTourPic(){ if(BG.on) bgView('pic', true); }
+function bgEditTargets(){ if(BG.on){ bgGuardLeave(function(){ bgView('pic', true); bgtToggleSetup(true); }); return; } bgtToggleSetup(); }
+
+/* ---- events, bound once ---- */
+function bgBind(){
+  if(BG.bound) return; BG.bound=true;
+  var gw=$('bg-gw');
+  gw.addEventListener('keydown', function(e){
+    var mod=e.ctrlKey||e.metaKey; if(/^Arrow|^Tab$|^Enter$/.test(e.key)) BG.touched=true;
+    if(BG.edit){
+      if(e.key==='Enter'){ e.preventDefault(); bgCommitEdit(e.shiftKey?[-1,0]:[1,0]); }
+      else if(e.key==='Tab'){ e.preventDefault(); bgCommitEdit(e.shiftKey?[0,-1]:[0,1]); }
+      else if(e.key==='Escape'){ e.preventDefault(); BG.edit=null; bgRender(); gw.focus({preventScroll:true}); }
+      return; }
+    if(mod&&(e.key==='z'||e.key==='Z')){ e.preventDefault(); if(e.shiftKey) bgRedo(); else bgUndo(); return; }
+    if(mod&&(e.key==='y'||e.key==='Y')){ e.preventDefault(); bgRedo(); return; }
+    if(mod&&(e.key==='c'||e.key==='C')){ e.preventDefault(); bgCopySel(); return; }
+    if(!BG.NAV.length) return;
+    if(!BG.act){ BG.act={side:BG.NAV[0].side, cat:BG.NAV[0].cat, ent:null, m:Math.min(BG.CUR,11)}; BG.sel={a:bgCopy(BG.act), b:bgCopy(BG.act)}; }
+    if(mod&&(e.key==='a'||e.key==='A')){ e.preventDefault(); var f=BG.NAV[0], l=BG.NAV[BG.NAV.length-1]; BG.sel={a:{side:f.side, cat:f.cat, ent:f.ent, m:Math.min(BG.CUR,11)}, b:{side:l.side, cat:l.cat, ent:l.ent, m:11}}; BG.touched=true; bgRender(); return; }
+    if(e.altKey&&(e.key==='ArrowDown'||e.key==='ArrowUp')){ e.preventDefault(); var key=BG.act.side+'|'+BG.act.cat; BG.open[key]=e.key==='ArrowDown'; if(!BG.open[key]) BG.act.ent=null; BG.sel={a:bgCopy(BG.act), b:bgCopy(BG.act)}; bgRender(); return; }
+    if(e.shiftKey&&e.key==='F2'){ e.preventDefault(); bgOpenNote(document.querySelector('#bg-ctx [data-tool="note"]')||gw); return; }
+    var k={ArrowUp:[-1,0],ArrowDown:[1,0],ArrowLeft:[0,-1],ArrowRight:[0,1]}[e.key];
+    if(k){ e.preventDefault(); if(mod) k=[k[0]*999,k[1]*99]; bgMoveAct(k[0],k[1],e.shiftKey); return; }
+    if(e.key==='Tab'){ e.preventDefault(); bgMoveAct(0, e.shiftKey?-1:1, false); return; }
+    if(e.key==='Enter'||e.key==='F2'){ e.preventDefault(); bgStartEdit(null); return; }
+    if(e.key==='Delete'||e.key==='Backspace'){ e.preventDefault(); if(bgLocked()){ bgtCanWrite(BG.fy); return; } var c=bgSelCells(); if(!c.length){ try{ toast(bgWhyNot(BG.act, BG.act.m), 'info'); }catch(x){} return; } bgApply(c.map(function(x){ return {side:x.side, cat:x.cat, ent:x.ent, m:x.m, v:0}; }), 'clear '+c.length+' figure'+(c.length===1?'':'s')); return; }
+    if(!mod&&e.key.length===1&&/[\d.=£\-(]/.test(e.key)){ e.preventDefault(); BG.touched=true; bgStartEdit(e.key); }
+  });
+  gw.addEventListener('mousedown', function(e){ var td=e.target.closest('td.c[data-n]'); if(!td||e.target.id==='bg-cell-ed') return; BG.touched=true;
+    if(BG.edit) bgCommitEdit(null); e.preventDefault(); gw.focus({preventScroll:true});
+    var r=+td.getAttribute('data-n'), m=+td.getAttribute('data-m');
+    if(e.shiftKey && BG.act) bgSetAct(r, m, true); else { BG.drag=true; bgSetAct(r, m, false); } });
+  gw.addEventListener('mouseover', function(e){ if(!BG.drag) return; var td=e.target.closest('td.c[data-n]'); if(!td) return; var r=+td.getAttribute('data-n'), m=+td.getAttribute('data-m');
+    if(bgNavIdx(BG.sel.b)!==r||BG.sel.b.m!==m){ BG.sel.b={side:BG.NAV[r].side, cat:BG.NAV[r].cat, ent:BG.NAV[r].ent, m:m}; bgRender(); } });
+  document.addEventListener('mouseup', function(){ BG.drag=false; });
+  gw.addEventListener('dblclick', function(e){
+    var nm=e.target.closest('td.cat[data-name]'); if(nm && !e.target.closest('button')){ bgToggleOpen(nm.getAttribute('data-name')); return; }
+    var dc=e.target.closest('td.c[data-n]'); if(dc){ var r=+dc.getAttribute('data-n'), m=+dc.getAttribute('data-m'); if(!BG.act || bgNavIdx(BG.act)!==r || BG.act.m!==m){ BG.touched=true; bgSetAct(r, m, false); } bgStartEdit(null); } });
+  gw.addEventListener('click', function(e){
+    var b=e.target.closest('[data-open]'); if(b){ bgToggleOpen(b.getAttribute('data-open')); return; }
+    var t=e.target.closest('[data-tx]'); if(t){ var p=t.getAttribute('data-tx').split('|'); bgOpenTx({side:p[0], cat:p.slice(1).join('|'), ent:null}, null); return; }
+    var ad=e.target.closest('[data-addent]'); if(ad){ bgOpenAddEnt(ad, ad.getAttribute('data-addent')); return; }
+    if(e.target.closest('[data-showall]')){ BG.empty=true; var em=$('bg-em-tg'); if(em) em.checked=true; bgRender(); return; }
+    var en=e.target.closest('[data-ent]'); if(en){ try{ toast(bgEntLabel(en.getAttribute('data-ent'), BG.info)+' on its own comes in the next release of the Spreadsheet.', 'info'); }catch(x){} return; }
+    var ac=e.target.closest('[data-addcat]'); if(ac){ bgOpenAddCat(ac, ac.getAttribute('data-addcat')); } });
+  gw.addEventListener('focusout', function(e){ if(BG.edit && e.target.id==='bg-cell-ed' && !gw.contains(e.relatedTarget)) bgCommitEdit(null); });
+  document.addEventListener('paste', function(e){ if(!BG.on || !gw.contains(document.activeElement) || BG.edit) return; var t=(e.clipboardData||window.clipboardData).getData('text'); if(!t) return; e.preventDefault(); bgPaste(t); });
+  $('bg-ctx').addEventListener('click', function(e){ var b=e.target.closest('[data-tool]'); if(!b||b.disabled||b.hidden) return; bgTool(b.getAttribute('data-tool'), b); });
+  $('bg-undo').addEventListener('click', bgUndo); $('bg-redo').addEventListener('click', bgRedo);
+  $('bg-xl-btn').addEventListener('click', function(){ bgOpenExcel('Budget'); });
+  $('bg-sheet-view').addEventListener('click', function(e){ var b=e.target.closest('[data-act]'); if(!b) return; var a=b.getAttribute('data-act'); if(a==='save') bgSave(); if(a==='discard') bgDiscard(); });
+  $('bg-show-seg').addEventListener('click', function(e){ var b=e.target.closest('button'); if(!b) return; BG.show=b.getAttribute('data-s'); if(BG.edit) BG.edit=null;
+    document.querySelectorAll('#bg-show-seg button').forEach(function(x){ var on=x===b; x.classList.toggle('on', on); x.setAttribute('aria-checked', on?'true':'false'); }); bgRender(); });
+  $('bg-vat-seg').addEventListener('click', function(e){ var b=e.target.closest('button'); if(!b) return; BG.vat=b.getAttribute('data-vat');
+    document.querySelectorAll('#bg-vat-seg button').forEach(function(x){ var on=x===b; x.classList.toggle('on', on); x.setAttribute('aria-checked', on?'true':'false'); }); bgRender();
+    try{ toast(BG.vat==='exc'?'Showing figures without VAT. The bank line still includes it.':'Showing figures with VAT, as they hit the bank.', 'info'); }catch(x){} });
+  $('bg-ly-tg').addEventListener('change', function(e){ BG.ly=e.target.checked; bgRender(); });
+  $('bg-em-tg').addEventListener('change', function(e){ BG.empty=e.target.checked; bgRender(); });
+  $('bg-fx-tg').addEventListener('change', function(e){ BG.fx=e.target.checked; bgRender(); });
+  var vbtn=$('bg-v-btn'), vpanel=$('bg-vpanel');
+  vbtn.addEventListener('click', function(){ vpanel.hidden=!vpanel.hidden; vbtn.setAttribute('aria-expanded', vpanel.hidden?'false':'true'); vbtn.classList.toggle('on', !vpanel.hidden); });
+  document.addEventListener('mousedown', function(e){ if(!vpanel.hidden && !e.target.closest('.bg-vwrap')){ vpanel.hidden=true; vbtn.setAttribute('aria-expanded','false'); vbtn.classList.remove('on'); }
+    var pop=$('bg-pop'); if(pop && !pop.hidden && !pop.contains(e.target) && !e.target.closest('[data-tool],[data-addent],[data-addcat],#bg-f-btn')) bgPopClose(); });
+  vpanel.addEventListener('keydown', function(e){ if(e.key==='Escape'){ vpanel.hidden=true; vbtn.classList.remove('on'); vbtn.focus(); } });
+  $('bg-per-seg').addEventListener('click', function(e){ var b=e.target.closest('button'); if(b && b.getAttribute('aria-disabled')==='true') try{ toast(b.getAttribute('title')||'Coming in the next release', 'info'); }catch(x){} });
+  $('bg-f-btn').addEventListener('click', function(e){ bgPop(e.currentTarget, '<h4>Show</h4><div class="flist" role="listbox"><button type="button" role="option" class="on" aria-selected="true"><span class="ic">🏠</span><span>Whole farm</span></button></div><p class="dim" style="font-size:12px;margin-top:8px">One block, crop or herd on its own, and all of them side by side, come in the next release.</p>', true); });
+  $('bg-pop').addEventListener('keydown', function(e){ if(e.key==='Escape'){ bgPopClose(); gw.focus({preventScroll:true}); } if(e.key==='Enter' && e.target.tagName==='INPUT'){ var b=$('bg-pop').querySelector('[data-go]'); if(b) b.click(); } });
+  var fxIn=$('bg-fx-in');
+  fxIn.addEventListener('keydown', function(e){ if(e.key==='Enter'){ e.preventDefault(); var n=BG.act; if(!n) return; var p=bgParseIn(fxIn.value, bgParseCtx(n, n.m)); if(!p||p.err){ try{ toast((p&&p.err)||BG_BADNUM, 'info'); }catch(x){} return; } fxIn.blur(); bgApply([{side:n.side, cat:n.cat, ent:n.ent, m:n.m, v:p.v, f:p.f}], bgName(n)+' '+BG.SH[n.m]); gw.focus({preventScroll:true}); }
+    if(e.key==='Escape'){ fxIn.blur(); bgRenderFx(); gw.focus({preventScroll:true}); } });
+  $('bg-scrim').addEventListener('click', function(e){ if(e.target===$('bg-scrim') || e.target.closest('[data-close]')) bgModalClose(); });
+  document.addEventListener('keydown', function(e){ if(e.key==='Escape' && !$('bg-scrim').hidden) bgModalClose(); });
+  $('bg-intro-ok').addEventListener('click', bgIntroOk);
+  $('bg-intro-tour').addEventListener('click', function(){ try{ startPageTour('budgets'); }catch(e){} });
+  document.addEventListener('mouseover', function(ev){ var i=ev.target.closest && ev.target.closest('#bg-sheet-view .bg-ib, #bg-sheet-view td.hasnote, #bg-sheet-view .bytag.warn, #bg-ctx .bg-ib'); if(i) bgShowTip(i); });
+  document.addEventListener('mouseout', function(ev){ var i=ev.target.closest && ev.target.closest('#bg-sheet-view .bg-ib, #bg-sheet-view td.hasnote, #bg-sheet-view .bytag.warn, #bg-ctx .bg-ib'); if(i) bgHideTip(); });
+  document.addEventListener('focusin', function(ev){ var i=ev.target.closest && ev.target.closest('#bg-sheet-view .bg-ib'); if(i) bgShowTip(i); });
+  document.addEventListener('focusout', function(ev){ if(ev.target.closest && ev.target.closest('#bg-sheet-view .bg-ib')) bgHideTip(); });
+  addEventListener('scroll', bgHideTip, true);
+  addEventListener('beforeunload', function(e){ if(BG.on && BG.s && bgNChanged()){ bgDraftWrite(); e.preventDefault(); e.returnValue=''; } });
+}
+
+/* =====================================================================================================================
+   -399 (8A): "Download for the bank" - a hand-written .xlsx (owner decision: no library). A stored (uncompressed) ZIP with
+   CRC-32 and the minimal parts: content types, relationships, a workbook with fullCalcOnLoad, a style sheet (bold, grey
+   for months that have happened, a header fill, #,##0;[Red]-#,##0), and four sheets - Budget, Cash flow for the bank,
+   Last year, Notes. Totals are live formulas (SUM, the net, the bank's running balance), each carrying its value too
+   (<v>) so Numbers, Quick Look and phone viewers show figures without recalculating. Text goes in as inline strings, so
+   a category name can never become a formula. Works offline; nothing is loaded.
+   ===================================================================================================================== */
+var BG_XL_COLS='ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+function bgXlCol(i){ var s=''; i++; while(i>0){ var r=(i-1)%26; s=BG_XL_COLS[r]+s; i=Math.floor((i-1)/26); } return s; }
+/* style ids (styles.xml cellXfs): 0 default · 1 number · 2 number, grey (happened) · 3 bold text · 4 bold number ·
+   5 header text · 6 header (right) · 7 bold number, grey · 8 title (bold, larger) · 9 small grey text */
+function bgXlModel(fy){
+  if(!BG.s || BG.fy!==fy) bgLoad(true);
+  var L12=BG.L12, SH=BG.SH, CUR=BG.CUR, farm=String(ST.farmName||'My farm'), fyLab=L12[0]+' – '+L12[11];
+  var vatTxt='amounts include VAT, as on your bank statement';
+  var sheets=[];
+  /* ---- Budget ---- */
+  var R=[], refs={};
+  R.push([{v:farm+' · budget '+fyLab, s:8}]);
+  R.push([{v:'Grey months ('+(CUR>0?SH[0]+' to '+SH[Math.min(CUR,12)-1]:'none yet')+') are what happened, from your records; the rest is your budget · '+vatTxt+'.', s:9}]);
+  R.push([{v:'Category', s:5}].concat(SH.map(function(s,m){ return {v:s+(m<CUR?' (actual)':''), s:6}; }), [{v:'Actual so far + budget to come', s:6}]));
+  var valOf=function(n, m){ return m<CUR ? (n.ent==null?bgA(n.side, n.cat, null, L12[m]):bgA(n.side, n.cat, n.ent, L12[m])) : (n.ent==null?bgCatMonth(BG.s, n.side, n.cat, L12[m]):bgCellGet(BG.s, n.side, n.cat, n.ent, L12[m])); };
+  var lastCol=bgXlCol(12), totCol=bgXlCol(13);
+  [['income','Money in'],['expense','Money out']].forEach(function(sd){
+    R.push([{v:sd[1], s:3}]);
+    var catRows=[];
+    bgCatsOf(sd[0]).forEach(function(cat){
+      var n={side:sd[0], cat:cat, ent:null}, ri=R.length+1, ents=bgEntsOf(sd[0], cat), kids=(ents.length>1 || (ents.length===1 && ents[0]!==BG_NONE)) ? ents : [];
+      catRows.push(ri);
+      var line=[{v:cat, s:kids.length?3:0}];
+      for(var m=0;m<12;m++){ var v=Math.round(valOf(n, m)*100)/100, c={v:v, s:m<CUR?(kids.length?7:2):(kids.length?4:1)}; if(kids.length) c.f='SUM('+bgXlCol(m+1)+(ri+1)+':'+bgXlCol(m+1)+(ri+kids.length)+')'; line.push(c); }
+      line.push({f:'SUM(B'+ri+':'+lastCol+ri+')', v:line.slice(1).reduce(function(a,c){ return a+c.v; },0), s:4}); R.push(line);
+      kids.forEach(function(e){ var sn={side:sd[0], cat:cat, ent:e}, rj=R.length+1, z=bgEntSize(e), l=[{v:'    '+bgEntLabel(e, BG.info)+(z?' ('+bgSizeTxt(z)+')':''), s:0}];
+        for(var m=0;m<12;m++) l.push({v:Math.round(valOf(sn, m)*100)/100, s:m<CUR?2:1});
+        l.push({f:'SUM(B'+rj+':'+lastCol+rj+')', v:l.slice(1).reduce(function(a,c){ return a+c.v; },0), s:4}); R.push(l); });
+    });
+    var tr=R.length+1; refs[sd[0]]=tr;
+    var tl=[{v:'Total '+sd[1].toLowerCase(), s:3}];
+    for(var ci=1;ci<=13;ci++){ var L=bgXlCol(ci), s=0; catRows.forEach(function(r){ s+=R[r-1][ci].v; }); tl.push({f:catRows.length?'SUM('+catRows.map(function(r){ return L+r; }).join(',')+')':'0', v:s, s:4}); }
+    R.push(tl);
+  });
+  var nl=[{v:'Net cash', s:3}]; for(var ci=1;ci<=13;ci++){ var L=bgXlCol(ci); nl.push({f:L+refs.income+'-'+L+refs.expense, v:R[refs.income-1][ci].v-R[refs.expense-1][ci].v, s:4}); } R.push(nl);
+  sheets.push({name:'Budget', rows:R, widths:[34].concat(SH.map(function(){ return 12; }), [31]), freeze:{col:1, row:3}});
+  /* ---- Cash flow for the bank: from next month to the year end ---- */
+  var C=[], od=bgOd(), endNow=null; try{ endNow=bgBankPath()[Math.min(CUR,11)]; if(endNow==null && CUR<12) endNow=b5BankMonthEnd(); }catch(e){ endNow=null; }
+  var ms=[]; for(var m=CUR+1;m<12;m++) ms.push(m);
+  C.push([{v:farm+' · cash flow for the bank · '+fyLab, s:8}]);
+  C.push([{v:(endNow!=null ? 'Opening: the bank at the end of '+(SH[CUR]||'')+' ≈ '+bgMoney(endNow)+' (your balance today, with the rest of this month’s budget still to come)' : 'No bank balance yet: type it in Money Flow')+(od.limit?' · overdraft '+bgMoney(od.limit)+(od.lender?' with '+od.lender:''):'')+' · '+vatTxt+'.', s:9}]);
+  C.push([{v:'', s:5}].concat(ms.map(function(m){ return {v:BG.L12[m], s:6}; })));
+  if(ms.length){
+    var r4=C.length+1, bal=endNow||0, op=[], inn=[], out=[], cl=[];
+    ms.forEach(function(m){ var a=R[refs.income-1][m+1].v, o=R[refs.expense-1][m+1].v; op.push(bal); inn.push(a); out.push(o); bal+=a-o; cl.push(bal); });
+    C.push([{v:'Opening bank balance', s:0}].concat(op.map(function(v,j){ return j===0 ? {v:Math.round(v), s:1} : {f:bgXlCol(j)+(r4+3), v:v, s:1}; })));
+    C.push([{v:'Money in', s:0}].concat(inn.map(function(v,j){ return {f:'Budget!'+bgXlCol(ms[j]+1)+refs.income, v:v, s:1}; })));
+    C.push([{v:'Money out', s:0}].concat(out.map(function(v,j){ return {f:'Budget!'+bgXlCol(ms[j]+1)+refs.expense, v:v, s:1}; })));
+    C.push([{v:'Closing bank balance', s:3}].concat(cl.map(function(v,j){ var L=bgXlCol(j+1); return {f:L+r4+'+'+L+(r4+1)+'-'+L+(r4+2), v:v, s:4}; })));
+    C.push([{v:'Overdraft headroom', s:0}].concat(cl.map(function(v,j){ return {f:Math.round(od.limit)+'+MIN(0,'+bgXlCol(j+1)+(r4+3)+')', v:od.limit+Math.min(0,v), s:1}; })));
+  } else C.push([{v:'The year ends this month: the bank at the end of it is the opening figure above.', s:0}]);
+  sheets.push({name:'Cash flow for the bank', rows:C, widths:[28].concat(ms.map(function(){ return 13; })), freeze:{col:1, row:3}});
+  /* ---- Last year ---- */
+  var Y=[], lyL=L12.map(bgLyLabel);
+  Y.push([{v:farm+' · last year by month', s:8}]); Y.push([{v:lyL[0]+' – '+lyL[11]+' · from your records · '+vatTxt+'.', s:9}]);
+  Y.push([{v:'Category', s:5}].concat(lyL.map(function(L){ return {v:L, s:6}; }), [{v:'Total', s:6}]));
+  [['income','Money in'],['expense','Money out']].forEach(function(sd){ Y.push([{v:sd[1], s:3}]);
+    bgCatsOf(sd[0]).forEach(function(cat){ var ri=Y.length+1, l=[{v:cat, s:0}]; lyL.forEach(function(L){ l.push({v:Math.round(bgA(sd[0], cat, null, L, BG.LYA)*100)/100, s:2}); });
+      l.push({f:'SUM(B'+ri+':'+lastCol+ri+')', v:l.slice(1).reduce(function(a,c){ return a+c.v; },0), s:4}); Y.push(l); }); });
+  sheets.push({name:'Last year', rows:Y, widths:[34].concat(lyL.map(function(){ return 12; }), [14]), freeze:{col:1, row:3}});
+  /* ---- Notes ---- */
+  var N=[], td=(typeof APP_TODAY!=='undefined'&&APP_TODAY)?new Date(APP_TODAY):new Date();
+  N.push([{v:'About this file', s:8}]);
+  N.push([{v:'Made by AgriInsights on '+td.getDate()+' '+MONTH_LABELS_SHORT[td.getMonth()]+' '+td.getFullYear()+' for '+farm+'.'}]);
+  N.push([{v:CUR>0 ? SH[0]+' to '+SH[Math.min(CUR,12)-1]+' are what happened, from your records (shaded grey).' : 'No month of this year has finished yet.'}]);
+  N.push([{v:CUR<12 ? SH[Math.min(CUR,11)]+' to '+SH[11]+' are your budget.' : 'The whole year has happened.'}]);
+  N.push([{v:'Totals are Excel formulas, so they update when you change a figure. Amounts include VAT, as on your bank statement.'}]);
+  N.push([{v:''}]); N.push([{v:'Notes on figures', s:3}]);
+  var notes=BG.s.notes||{}, nk=Object.keys(notes).sort();
+  if(!nk.length) N.push([{v:'None yet. Add one in the Spreadsheet with Note (Shift+F2).', s:9}]);
+  nk.forEach(function(k){ var p=bgKeyParts(k); N.push([{v:p.cat+(p.ent!==BG_CATROW?' · '+bgEntLabel(p.ent, BG.info):'')+' · '+p.L+': '+notes[k]}]); });
+  sheets.push({name:'Notes', rows:N, widths:[110], freeze:null});
+  return {farm:farm, fy:fy, file:(farm.replace(/[\\\/:*?"<>|]+/g,' ').trim()||'Farm')+' budget '+fy+'-'+String(fy+1).slice(2)+'.xlsx', sheets:sheets, refs:refs};
+}
+function bgXmlEsc(s){ return String(s==null?'':s).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g,'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function bgXlSheetXml(sh){
+  var x='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">';
+  if(sh.freeze){ var tl=bgXlCol(sh.freeze.col)+(sh.freeze.row+1); x+='<sheetViews><sheetView workbookViewId="0"><pane xSplit="'+sh.freeze.col+'" ySplit="'+sh.freeze.row+'" topLeftCell="'+tl+'" activePane="bottomRight" state="frozen"/><selection pane="bottomRight" activeCell="'+tl+'" sqref="'+tl+'"/></sheetView></sheetViews>'; }
+  else x+='<sheetViews><sheetView workbookViewId="0"/></sheetViews>';
+  x+='<sheetFormatPr defaultRowHeight="15"/>';
+  if(sh.widths && sh.widths.length){ x+='<cols>'; sh.widths.forEach(function(w,i){ x+='<col min="'+(i+1)+'" max="'+(i+1)+'" width="'+w+'" customWidth="1"/>'; }); x+='</cols>'; }
+  x+='<sheetData>';
+  sh.rows.forEach(function(row, ri){ x+='<row r="'+(ri+1)+'">';
+    row.forEach(function(c, ci){ if(!c) return; var ref=bgXlCol(ci)+(ri+1), s=c.s?' s="'+c.s+'"':'';
+      if(c.f!=null){ x+='<c r="'+ref+'"'+s+'><f>'+bgXmlEsc(c.f)+'</f><v>'+(Math.round((+c.v||0)*100)/100)+'</v></c>'; }
+      else if(typeof c.v==='number'){ x+='<c r="'+ref+'"'+s+'><v>'+(Math.round(c.v*100)/100)+'</v></c>'; }
+      else if(c.v!=null && c.v!==''){ x+='<c r="'+ref+'"'+s+' t="inlineStr"><is><t xml:space="preserve">'+bgXmlEsc(c.v)+'</t></is></c>'; }
+    });
+    x+='</row>'; });
+  x+='</sheetData><pageMargins left="0.5" right="0.5" top="0.6" bottom="0.6" header="0.3" footer="0.3"/><pageSetup orientation="landscape" fitToWidth="1" fitToHeight="0"/></worksheet>';
+  return x;
+}
+function bgXlParts(model){
+  var sh=model.sheets, P={};
+  P['[Content_Types].xml']='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>'+
+    sh.map(function(s,i){ return '<Override PartName="/xl/worksheets/sheet'+(i+1)+'.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>'; }).join('')+
+    '<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/><Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/><Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/></Types>';
+  P['_rels/.rels']='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/><Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties" Target="docProps/app.xml"/></Relationships>';
+  var td=(typeof APP_TODAY!=='undefined'&&APP_TODAY)?new Date(APP_TODAY):new Date(), iso=new Date(Date.UTC(td.getFullYear(), td.getMonth(), td.getDate(), 12)).toISOString().replace(/\.\d+Z$/,'Z');
+  P['docProps/core.xml']='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:dcmitype="http://purl.org/dc/dcmitype/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:title>'+bgXmlEsc(model.farm+' budget')+'</dc:title><dc:creator>AgriInsights</dc:creator><dcterms:created xsi:type="dcterms:W3CDTF">'+iso+'</dcterms:created><dcterms:modified xsi:type="dcterms:W3CDTF">'+iso+'</dcterms:modified></cp:coreProperties>';
+  P['docProps/app.xml']='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes"><Application>AgriInsights</Application></Properties>';
+  P['xl/workbook.xml']='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><bookViews><workbookView/></bookViews><sheets>'+
+    sh.map(function(s,i){ return '<sheet name="'+bgXmlEsc(s.name)+'" sheetId="'+(i+1)+'" r:id="rId'+(i+1)+'"/>'; }).join('')+'</sheets><calcPr calcId="191029" fullCalcOnLoad="1"/></workbook>';
+  P['xl/_rels/workbook.xml.rels']='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+
+    sh.map(function(s,i){ return '<Relationship Id="rId'+(i+1)+'" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet'+(i+1)+'.xml"/>'; }).join('')+
+    '<Relationship Id="rId'+(sh.length+1)+'" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>';
+  P['xl/styles.xml']='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'+
+    '<numFmts count="1"><numFmt numFmtId="164" formatCode="#,##0;[Red]\\-#,##0"/></numFmts>'+
+    '<fonts count="4"><font><sz val="11"/><name val="Calibri"/><family val="2"/></font><font><b/><sz val="11"/><name val="Calibri"/><family val="2"/></font><font><b/><sz val="13"/><name val="Calibri"/><family val="2"/></font><font><i/><sz val="10"/><color rgb="FF6B7280"/><name val="Calibri"/><family val="2"/></font></fonts>'+
+    '<fills count="4"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FFEEEEEE"/><bgColor indexed="64"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFE8F3EC"/><bgColor indexed="64"/></patternFill></fill></fills>'+
+    '<borders count="2"><border><left/><right/><top/><bottom/><diagonal/></border><border><left/><right/><top/><bottom style="thin"><color rgb="FFB7C9BE"/></bottom><diagonal/></border></borders>'+
+    '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>'+
+    '<cellXfs count="10">'+
+      '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>'+
+      '<xf numFmtId="164" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>'+
+      '<xf numFmtId="164" fontId="0" fillId="2" borderId="0" xfId="0" applyNumberFormat="1" applyFill="1"/>'+
+      '<xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"/>'+
+      '<xf numFmtId="164" fontId="1" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyFont="1"/>'+
+      '<xf numFmtId="0" fontId="1" fillId="3" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1"/>'+
+      '<xf numFmtId="0" fontId="1" fillId="3" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="right"/></xf>'+
+      '<xf numFmtId="164" fontId="1" fillId="2" borderId="0" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1"/>'+
+      '<xf numFmtId="0" fontId="2" fillId="0" borderId="0" xfId="0" applyFont="1"/>'+
+      '<xf numFmtId="0" fontId="3" fillId="0" borderId="0" xfId="0" applyFont="1"/>'+
+    '</cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>';
+  sh.forEach(function(s,i){ P['xl/worksheets/sheet'+(i+1)+'.xml']=bgXlSheetXml(s); });
+  return P;
+}
+var _bgCrcT=null;
+function bgCrc32(u8){ if(!_bgCrcT){ _bgCrcT=new Uint32Array(256); for(var n=0;n<256;n++){ var c=n; for(var k=0;k<8;k++) c=(c&1)?(0xEDB88320^(c>>>1)):(c>>>1); _bgCrcT[n]=c>>>0; } }
+  var crc=0xFFFFFFFF; for(var i=0;i<u8.length;i++) crc=_bgCrcT[(crc^u8[i])&0xFF]^(crc>>>8); return (crc^0xFFFFFFFF)>>>0; }
+/* A ZIP of stored entries: local headers, the data, the central directory, the end record. */
+function bgZip(parts){
+  var enc=new TextEncoder(), files=[], total=0, td=(typeof APP_TODAY!=='undefined'&&APP_TODAY)?new Date(APP_TODAY):new Date();
+  var dosT=((td.getHours()&31)<<11)|((td.getMinutes()&63)<<5)|((Math.floor(td.getSeconds()/2))&31), dosD=(((td.getFullYear()-1980)&127)<<9)|(((td.getMonth()+1)&15)<<5)|(td.getDate()&31);
+  Object.keys(parts).forEach(function(name){ var nb=enc.encode(name), db=enc.encode(parts[name]); files.push({nb:nb, db:db, crc:bgCrc32(db), off:0}); });
+  var chunks=[], off=0, w16=function(dv,o,v){ dv.setUint16(o,v,true); }, w32=function(dv,o,v){ dv.setUint32(o,v>>>0,true); };
+  files.forEach(function(f){ var h=new Uint8Array(30), dv=new DataView(h.buffer); w32(dv,0,0x04034b50); w16(dv,4,20); w16(dv,6,0); w16(dv,8,0); w16(dv,10,dosT); w16(dv,12,dosD); w32(dv,14,f.crc); w32(dv,18,f.db.length); w32(dv,22,f.db.length); w16(dv,26,f.nb.length); w16(dv,28,0);
+    f.off=off; chunks.push(h, f.nb, f.db); off+=30+f.nb.length+f.db.length; });
+  var cdStart=off;
+  files.forEach(function(f){ var h=new Uint8Array(46), dv=new DataView(h.buffer); w32(dv,0,0x02014b50); w16(dv,4,20); w16(dv,6,20); w16(dv,8,0); w16(dv,10,0); w16(dv,12,dosT); w16(dv,14,dosD); w32(dv,16,f.crc); w32(dv,20,f.db.length); w32(dv,24,f.db.length); w16(dv,28,f.nb.length); w16(dv,30,0); w16(dv,32,0); w16(dv,34,0); w16(dv,36,0); w32(dv,38,0); w32(dv,42,f.off);
+    chunks.push(h, f.nb); off+=46+f.nb.length; });
+  var e=new Uint8Array(22), ev=new DataView(e.buffer); w32(ev,0,0x06054b50); w16(ev,4,0); w16(ev,6,0); w16(ev,8,files.length); w16(ev,10,files.length); w32(ev,12,off-cdStart); w32(ev,16,cdStart); w16(ev,20,0); chunks.push(e); off+=22;
+  var out=new Uint8Array(off), p=0; chunks.forEach(function(c){ out.set(c,p); p+=c.length; }); return out;
+}
+function bgXlsxBuild(fy){ var model=bgXlModel(fy==null?BG.fy||bgtFY():fy); return {model:model, parts:bgXlParts(model), bytes:bgZip(bgXlParts(model))}; }
+function bgXlsxDownload(){ var x=bgXlsxBuild(BG.fy); try{ var blob=new Blob([x.bytes], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}), a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=x.model.file; document.body.appendChild(a); a.click(); setTimeout(function(){ try{ URL.revokeObjectURL(a.href); a.remove(); }catch(e){} }, 1500); }catch(e){} return x; }
+/* the preview: the file's own cells (the same model the writer uses), one sheet at a time, its formulas on click */
+function bgOpenExcel(sheet){
+  var x=bgXlModel(BG.fy), sh=x.sheets.filter(function(s){ return s.name===sheet; })[0]||x.sheets[0], w=sh.rows.reduce(function(a,r){ return Math.max(a,r.length); },0), n=bgNChanged();
+  var h='<table class="bg-xls"><thead><tr><th class="rn"></th>'; for(var ci=0;ci<w;ci++) h+='<th>'+bgXlCol(ci)+'</th>'; h+='</tr></thead><tbody>';
+  sh.rows.forEach(function(r,ri){ h+='<tr><td class="rn">'+(ri+1)+'</td>'; for(var ci=0;ci<w;ci++){ var c=r[ci]||{v:''}, cls=(typeof c.v==='number'||c.f!=null)?'':'t';
+      if(c.s===3||c.s===4||c.s===7||c.s===8) cls+=' b'; if(c.s===5||c.s===6) cls+=' h'; if(c.s===2||c.s===7) cls+=' pa';
+      var shown=(c.f!=null||typeof c.v==='number') ? bgFmt(c.v) : String(c.v==null?'':c.v);
+      h+='<td class="'+cls+'" data-ref="'+bgXlCol(ci)+(ri+1)+'" data-f="'+bgEsc(c.f!=null?'='+c.f:(typeof c.v==='number'?String(c.v):String(c.v||'')))+'">'+bgEsc(shown)+'</td>'; } h+='</tr>'; });
+  h+='</tbody></table>';
+  var tabs=x.sheets.map(function(s){ return '<button type="button" class="'+(s.name===sh.name?'on':'')+'" data-sheet="'+bgEsc(s.name)+'">'+bgEsc(s.name)+'</button>'; }).join('');
+  bgModal('<div class="bg-mh"><div><h3>Download for the bank</h3><p>'+x.sheets.length+' sheets · opens in Excel, Numbers or Google Sheets'+(n?' · it has your '+n+' change'+(n===1?'':'s')+' not saved yet':'')+'</p></div><button class="bg-x" type="button" data-close aria-label="Close">×</button></div>'+
+    '<div class="bg-mb"><div class="bg-xl-file"><span class="ico">X</span>'+bgEsc(x.file)+' <small>preview</small></div>'+
+    '<div class="bg-xl"><div class="bg-xl-fx"><div class="n" id="bg-xl-n">A1</div><div class="f" id="bg-xl-f"></div></div><div class="bg-xl-scroll">'+h+'</div><div class="bg-xl-tabs">'+tabs+'</div></div>'+
+    '<div class="bg-note-list"><div class="bg-note"><b>Live totals</b>Excel formulas, not typed numbers</div><div class="bg-note"><b>Months that happened, shaded</b>Your adviser sees what is actual</div><div class="bg-note"><b>Cash flow for the bank</b>Opening, in, out, closing and overdraft headroom</div></div></div>'+
+    '<div class="bg-mf"><button class="bgt-btn" type="button" data-close>Close</button><button class="bgt-btn pri" type="button" id="bg-xl-go"><svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:currentColor;stroke-width:2;fill:none"><path d="M12 4v12M7 11l5 5 5-5M5 20h14"/></svg>Download</button></div>');
+  var md=$('bg-modal'), pick=function(td){ md.querySelectorAll('table.bg-xls td.on').forEach(function(y){ y.classList.remove('on'); }); td.classList.add('on'); $('bg-xl-n').textContent=td.getAttribute('data-ref'); $('bg-xl-f').textContent=td.getAttribute('data-f'); };
+  md.querySelectorAll('table.bg-xls td:not(.rn)').forEach(function(td){ td.addEventListener('click', function(){ pick(td); }); });
+  var first=Array.prototype.find.call(md.querySelectorAll('table.bg-xls td'), function(td){ return /^=SUM\(/.test(td.getAttribute('data-f')||''); }); if(first) pick(first);
+  md.querySelectorAll('[data-sheet]').forEach(function(b){ b.addEventListener('click', function(){ bgOpenExcel(b.getAttribute('data-sheet')); }); });
+  $('bg-xl-go').addEventListener('click', function(){ bgXlsxDownload(); try{ toast('Saved '+x.file+' to your downloads', 'success'); }catch(e){} });
 }
 
 </script>
