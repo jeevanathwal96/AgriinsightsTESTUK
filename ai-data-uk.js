@@ -383,6 +383,7 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
   let CAN_BUDGET_LOCK  = false;   /* farms.budget_locked - uk-batch5-step3.sql (UK -371): the bank copy lock */
   let CAN_BUDGET_CELLS = false;   /* budget_cells - tools/uk-budget-grid.sql (UK -399): the Spreadsheet's cells */
   let CAN_BUDGET_SCEN  = false;   /* budget_scenarios - the same file: one live budget a year */
+  let CAN_BUDGET_YP    = false;   /* budget_scenarios.yp - tools/uk-budget-grid-b.sql (UK -401): yield x price per enterprise row */
   let CAN_TAX_PAID     = false;   /* farms.tax_paid - uk-tax-paid.sql (UK -373): HMRC payments marked paid on the Tax home */
   let CAN_UPDATED_AT   = false;   /* tools/uk-relational-sync.sql */
   let CAN_CAT_RULES    = false;   /* the category_rules table */
@@ -504,7 +505,8 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     ['crop_inputs','situation'], ['orchard_sprays','situation'],
     ['workers','tax_code'], ['pay_runs','lines'], ['workers','p45_pay'], ['worker_settings','contract_extra'],
     ['workers','end_date'], ['payroll_entries','part_days'], ['orchard_blocks','spacing'], ['farms','price_alerts'], ['plan_events','in_forecast'],
-    ['budget_cells','ent_code'], ['budget_scenarios','is_live']   /* -399 (8A) */
+    ['budget_cells','ent_code'], ['budget_scenarios','is_live'],  /* -399 (8A) */
+    ['budget_scenarios','yp']   /* -401 (8B) */
   ];
 
   async function probeCaps(farmId){
@@ -534,6 +536,7 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     CAN_TAX_PAID      = keep(CAN_TAX_PAID,      'farms','tax_paid');
     CAN_BUDGET_CELLS  = keep(CAN_BUDGET_CELLS,  'budget_cells','ent_code');      /* -399 */
     CAN_BUDGET_SCEN   = keep(CAN_BUDGET_SCEN,   'budget_scenarios','is_live');   /* -399 */
+    CAN_BUDGET_YP     = keep(CAN_BUDGET_YP,     'budget_scenarios','yp');        /* -401 */
     /* A table probe, not a column probe: selecting a column off a table that does not
        exist errors the same way a missing column does, which is all we need to know. */
     CAN_TXN_ASSETS    = keep(CAN_TXN_ASSETS,    'transaction_assets','asset_id');
@@ -1485,7 +1488,7 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
      today's budget split on the device and never sent. A cell row is kept while it holds money, a note or a formula. */
   function gridFromDb(scen, rows){
     var g = { v: 1, scen: {} };
-    (scen || []).forEach(function (r) { if (!r || !r.local_id) return; g.scen[r.local_id] = { fy: +r.fy, name: r.name || 'Budget', live: !!r.is_live, src: 'farm', cells: { income: {}, expense: {} }, fml: {}, notes: {} }; });
+    (scen || []).forEach(function (r) { if (!r || !r.local_id) return; g.scen[r.local_id] = { fy: +r.fy, name: r.name || 'Budget', live: !!r.is_live, sort: +r.sort_idx || 0, src: 'farm', cells: { income: {}, expense: {} }, fml: {}, notes: {}, yp: (r.yp && typeof r.yp === 'object') ? r.yp : {} }; });
     (rows || []).forEach(function (r) {
       var s = g.scen[r.scenario_local_id]; if (!s || (r.side !== 'income' && r.side !== 'expense')) return;
       var L = ymToLabel(r.period_year, r.period_month), ent = r.ent_code || 'none', key = r.side + '|' + r.category + '|' + ent + '|' + L, v = Number(r.amount) || 0;
@@ -1498,7 +1501,10 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     var scen = [], cells = [];
     Object.keys((g && g.scen) || {}).forEach(function (id) {
       var s = g.scen[id]; if (!s || s.src !== 'farm') return;
-      scen.push({ farm_id: fid, local_id: id, fy: +s.fy, name: s.name || 'Budget', is_live: !!s.live, sort_idx: 0 });
+      var sr = { farm_id: fid, local_id: id, fy: +s.fy, name: s.name || 'Budget', is_live: !!s.live, sort_idx: Math.max(0, Math.round(+s.sort || 0)) };
+      /* -401 (8B): yield x price per enterprise row, {'cat|ent': {y, p, unit, ...}} with its keys sorted (one spelling) */
+      if (CAN_BUDGET_YP) { var yo = {}; Object.keys(s.yp || {}).sort().forEach(function (k) { var v = s.yp[k], o = {}; if (!v) return; Object.keys(v).sort().forEach(function (q) { o[q] = v[q]; }); yo[k] = o; }); sr.yp = yo; }
+      scen.push(sr);
       var seen = {};
       var add = function (side, cat, ent, L) { var key = side + '|' + cat + '|' + ent + '|' + L; if (seen[key]) return; seen[key] = 1; var ym = labelToYM(L); if (!ym.month || !ym.year) return;
         var amt = (ent === '*') ? 0 : (Number((((s.cells[side] || {})[cat] || {})[ent] || {})[L]) || 0), note = (s.notes || {})[key] || null, f = (s.fml || {})[key] || null;
@@ -1529,7 +1535,11 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
         var gd = gridToDb(b.grid, fid), keep = {};
         gd.cells.forEach(function (r) { var k = _srvKey('budget_cells', r); if (k != null) keep[k] = 1; });
         var sUp = _gridChanged('budget_scenarios', gd.scen);
-        if (sUp.length) { var g1 = await client().from('budget_scenarios').upsert(sUp, { onConflict: 'farm_id,local_id' }); if (g1.error) throw g1.error; }
+        /* -401 (8C): one live budget a year is a unique index (farm_id, fy) where is_live, checked row by row: so the rows
+           that stop being live go first, then the one that becomes live - clear, then set, in this one ordered job */
+        var sOff = sUp.filter(function (r) { return !r.is_live; }), sOn = sUp.filter(function (r) { return r.is_live; });
+        if (sOff.length) { var g0 = await client().from('budget_scenarios').upsert(sOff, { onConflict: 'farm_id,local_id' }); if (g0.error) throw g0.error; }
+        if (sOn.length) { var g1 = await client().from('budget_scenarios').upsert(sOn, { onConflict: 'farm_id,local_id' }); if (g1.error) throw g1.error; }
         var cUp = _gridChanged('budget_cells', gd.cells);
         for (var ci = 0; ci < cUp.length; ci += 500) {
           var g2 = await client().from('budget_cells').upsert(cUp.slice(ci, ci + 500), { onConflict: 'farm_id,scenario_local_id,period_year,period_month,side,category,ent_code' });
@@ -3958,7 +3968,7 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
                 _util: { selectAll: selectAll, SELECT_ALL_MAX_ROWS: SELECT_ALL_MAX_ROWS },
                 /* -399 (8A): harness access to the Spreadsheet's whitelists, probes and keyed prune */
                 _grid: { fromDb: gridFromDb, toDb: gridToDb, goneIds: _srvGoneIds, capCols: CAP_COLS,
-                         caps: function(){ return { CAN_BUDGET_CELLS: CAN_BUDGET_CELLS, CAN_BUDGET_SCEN: CAN_BUDGET_SCEN }; },
+                         caps: function(){ return { CAN_BUDGET_CELLS: CAN_BUDGET_CELLS, CAN_BUDGET_SCEN: CAN_BUDGET_SCEN, CAN_BUDGET_YP: CAN_BUDGET_YP }; },
                          mem: function(t){ var x = _SRV[t]; return x ? Object.keys(x.rows).length : null; }, probeCol: _probeCol } };
 
 })(window);

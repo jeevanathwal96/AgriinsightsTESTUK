@@ -30,7 +30,7 @@
 <script defer src="vendor/chart.umd.js"></script>
 
 <script src="vendor/supabase.js"></script>
-<script src="ai-data-uk.js?v=uk134"></script>
+<script src="ai-data-uk.js?v=uk135"></script>
 <script src="ai-auth-uk.js?v=uk113"></script>
 <link rel="stylesheet" href="fonts.css"/>
 <style>
@@ -6687,6 +6687,63 @@ body.ai-guest .content{padding-bottom:166px}
   --nt-cw:#EEF0F2; --nt-ct:#4B5563; --nt-d:#9ca3af; --bg-pop-sh:0 12px 28px rgba(0,0,0,.16); --track:#ECECE8; --past:#F5F6F4; --selbg:#E2F2E8; --tot:#FAFBFA;
   --netbg:#F0FAF4; --bankbg:#F4F7FB; --xl-bg:#FFFFFF; --xl-br:#E1E4E2; --xl-hd:#F3F4F3; --xl-head:#E8F3EC; --xl-head-t:#14532D; --xl-past:#F4F5F3; --subbg:#FBFCFB; --note:#7C5CD6; }
 #pg-budgets.bg-sheet-on #bgt-first,#pg-budgets.bg-sheet-on #bgt-main,#pg-budgets.bg-sheet-on #bgt-setup-panel{display:none!important}
+
+.bg-scenbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:8px 18px;border-bottom:1px solid var(--br2)}
+.bg-scen{display:flex;align-items:center;gap:6px;flex-wrap:wrap;min-width:0}
+.bg-scen .scen-l{font-size:11px;color:var(--t3);font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-right:4px}
+.bg-scen .sc{display:inline-flex;align-items:center;gap:7px;font:inherit;font-size:12.5px;font-weight:700;color:var(--t2);background:var(--card);border:1px solid var(--br);border-radius:999px;padding:6px 12px;white-space:nowrap;cursor:pointer}
+.bg-scen .sc.on{background:var(--gb);color:var(--gd);border-color:var(--gl);box-shadow:0 0 0 1px var(--gl) inset}
+.bg-scen .sc .live{font-size:10.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--ok-ct);background:var(--ok-cw);border-radius:999px;padding:1px 7px}
+.bg-scen .sc.add{border-style:dashed;color:var(--t3)}
+.bg-scen-banner{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:9px 18px;background:var(--ti-w);border-bottom:1px solid var(--ti-b);font-size:13px;color:var(--ti-ct);font-weight:600}
+table.bg-cmpv{width:100%;border-collapse:collapse;font-size:13px;min-width:560px}
+table.bg-cmpv th{font-size:11px;color:var(--t3);font-weight:700;text-transform:uppercase;letter-spacing:.04em;text-align:right;padding:8px 12px;border-bottom:1.5px solid var(--br)}
+table.bg-cmpv th:first-child,table.bg-cmpv td:first-child{text-align:left}
+table.bg-cmpv td{padding:11px 12px;border-bottom:1px solid var(--br2);text-align:right;font-variant-numeric:tabular-nums;font-weight:700}
+table.bg-cmpv td:first-child{font-weight:600;color:var(--t2)}
+table.bg-cmpv td .d{display:block;font-size:11.5px;font-weight:700;margin-top:2px}
+table.bg-cmpv th .sc-n{display:block;font-size:13px;color:var(--t1);text-transform:none;letter-spacing:0;font-weight:800}
+table.bg-cmpv tr.key td{background:var(--netbg)} table.bg-cmpv td.neg{color:var(--neg)}
+.bg-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:14px}
+.bg-steps .step{font-size:12px;font-weight:700;color:var(--t4);border-top:3px solid var(--br);padding-top:6px}
+.bg-steps .step.on{color:var(--gd);border-color:var(--gl)}.bg-steps .step.done{color:var(--t2);border-color:var(--gm)}
+.bg-drop{display:block;cursor:pointer;border:1.5px dashed var(--br);border-radius:14px;padding:26px;text-align:center;color:var(--t3);font-weight:600;background:var(--bg)}
+.bg-drop b{color:var(--t1)}
+.bg-modal table.bg-map select{width:100%;font:inherit;font-size:13px}
+.bg-confirm{margin-top:14px;padding:12px 14px;border-radius:12px;background:var(--ti-w);border:1px solid var(--ti-b);font-size:13px;color:var(--ti-ct);font-weight:600}
+
+.bg-blk{display:flex;align-items:center;gap:18px;flex-wrap:wrap;padding:12px 18px;background:var(--gb);border-bottom:1px solid var(--gp)}
+.bg-blk .who{display:flex;align-items:center;gap:10px;font-size:16px;font-weight:800;color:var(--t1);margin-right:auto}
+.bg-blk .who .ic{font-size:22px}.bg-blk .who small{font-size:12px;font-weight:600;color:var(--t3)}
+.bg-blk .f{display:flex;flex-direction:column;gap:1px}.bg-blk .f span{font-size:11px;color:var(--t3);font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+.bg-blk .f b{font-size:15px;font-variant-numeric:tabular-nums}.bg-blk .f b.neg{color:var(--neg)}
+.bg-pop .flist{max-height:min(60vh,520px);overflow:auto;margin:0 -6px}
+.bg-pop .flist .fg{font-size:10.5px;font-weight:800;color:var(--t4);text-transform:uppercase;letter-spacing:.06em;padding:10px 8px 4px}
+.bg-pop .flist button{grid-template-columns:22px minmax(0,1fr) auto}
+.bg-pop .flist button small{font-size:11px;color:var(--t4);font-weight:600;margin-left:6px}
+.bg-pop .flist button .v{font-size:12px;font-variant-numeric:tabular-nums;color:var(--t2)}.bg-pop .flist button .v.neg{color:var(--neg)}
+.bg-pop .flist .ic{text-align:center}
+table.bg-g th.ny-l,table.bg-g td.ny-l{box-shadow:inset 2px 0 0 var(--ti-d)}
+table.bg-g td.c.draft{color:var(--t3);font-style:italic}
+table.bg-g td.c.q{cursor:pointer}
+table.bg-g td.c.flag,table.bg-g td.yr.flag{position:relative}
+table.bg-g td.c.flag::after,table.bg-g td.yr.flag::after{content:"";position:absolute;left:5px;top:50%;margin-top:-3px;width:6px;height:6px;border-radius:50%;background:var(--ti-d)}
+.bg-chkb{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;border-radius:999px;padding:5px 11px 5px 9px;background:var(--ti-cw);color:var(--ti-ct);border:1px solid var(--ti-b);white-space:nowrap;cursor:pointer;font-family:inherit}
+.bg-chkb i{width:8px;height:8px;border-radius:50%;background:var(--ti-d)}.bg-chkb:hover{filter:brightness(.97)}
+table.bg-g .yptag{font-size:10.5px;font-weight:700;color:var(--gd);background:var(--gb);border:1px solid var(--gp);border-radius:999px;padding:1px 7px;margin-left:auto;flex:none;white-space:nowrap;font-variant-numeric:tabular-nums}
+table.bg-g .chev-sp{width:18px;flex:none}
+.bg-pop .yp-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 10px}
+.bg-pop .yp-calc{margin-top:12px;border:1px solid var(--br);border-radius:10px;padding:8px 10px;display:flex;flex-direction:column;gap:4px;font-size:12.5px;color:var(--t2);background:var(--bg)}
+.bg-pop .yp-calc div{display:flex;justify-content:space-between;gap:10px}.bg-pop .yp-calc b{font-variant-numeric:tabular-nums;color:var(--t1)}
+.bg-pop .yp-calc .t{border-top:1px solid var(--br);padding-top:5px;font-weight:700}
+table.bg-g tr.cmpr{cursor:pointer}table.bg-g tr.cmpr:hover td{background:var(--gb)}
+table.bg-g tr.cmpr:focus-visible td{box-shadow:inset 0 0 0 2px var(--gl)}table.bg-g tr.cmpr td.c{cursor:pointer}
+table.bg-g td.c.mg{min-width:170px;position:relative}
+table.bg-g .mbar{position:absolute;left:10px;top:50%;height:8px;margin-top:-4px;border-radius:4px;opacity:.28;max-width:calc(100% - 20px)}
+table.bg-g .mbar.pos{background:var(--gl)}table.bg-g .mbar.neg{background:var(--rd);opacity:.22}
+table.bg-g td.c.mg b{position:relative}
+table.bg-g .srt{font:inherit;color:inherit;text-transform:inherit;letter-spacing:inherit;border:0;border-bottom:1px dashed var(--t4);background:none;padding:0;cursor:pointer}
+table.bg-g .srt.on{color:var(--gd);border-bottom:2px solid var(--gl)}
 #bg-sheet-view[hidden],.bg-pop[hidden],.bg-scrim[hidden],#pg-budgets [hidden]{display:none!important}
 .bg-viewbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:-6px 0 16px}
 .bg-seg{display:grid;grid-auto-columns:minmax(0,1fr);grid-auto-flow:column;gap:3px;background:var(--br2);border:1px solid var(--br);border-radius:10px;padding:3px}
@@ -8434,14 +8491,18 @@ table.bg-xls td.on{outline:2px solid #217346;outline-offset:-2px}
           <button class="bgt-btn ic" id="bg-undo" type="button" title="Undo (Ctrl+Z)" aria-label="Undo" disabled><svg viewBox="0 0 24 24"><path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 010 10h-3"/></svg></button>
           <button class="bgt-btn ic" id="bg-redo" type="button" title="Redo (Ctrl+Y)" aria-label="Redo" disabled><svg viewBox="0 0 24 24"><path d="M15 14l5-5-5-5"/><path d="M20 9H9a5 5 0 000 10h3"/></svg></button>
           <span class="vsep"></span>
+          <button class="bgt-btn" id="bg-cmp-btn" type="button"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="7" height="16" rx="1.5"/><rect x="14" y="4" width="7" height="16" rx="1.5"/></svg>Compare budgets</button>
+          <button class="bgt-btn" id="bg-up-btn" type="button"><svg viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5M5 20h14"/></svg>Upload Excel</button>
           <button class="bgt-btn pri" id="bg-xl-btn" type="button"><svg viewBox="0 0 24 24"><path d="M12 4v12M7 11l5 5 5-5M5 20h14"/></svg>Download for the bank</button>
         </div>
       </div>
+      <div class="bg-scenbar"><div class="bg-scen" id="bg-scen" role="tablist" aria-label="Budgets"></div></div>
+      <div class="bg-scen-banner" id="bg-scen-banner" hidden></div>
       <div class="bg-lockbar" id="bg-lockbar" hidden>&#128274; Locked as the copy the bank has, so the figures cannot be changed. To change them, unlock it first: Edit targets &#8250; Bank copy &#8250; Unlock.</div>
       <div class="bg-tools">
         <div class="bg-tools-l">
           <button class="bg-fpick" id="bg-f-btn" type="button" aria-haspopup="listbox"><span class="fl">Show</span><span>Whole farm</span><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
-          <div class="bg-seg" id="bg-per-seg" role="radiogroup" aria-label="Columns"><button type="button" role="radio" class="on" aria-checked="true">Months</button><button type="button" role="radio" aria-checked="false" aria-disabled="true" title="Quarters come in the next release">Quarters</button><button type="button" role="radio" aria-checked="false" aria-disabled="true" title="The year on its own comes in the next release">Year</button></div>
+          <div class="bg-seg" id="bg-per-seg" role="radiogroup" aria-label="Columns"><button type="button" role="radio" data-per="m" class="on" aria-checked="true">Months</button><button type="button" role="radio" data-per="q" aria-checked="false" title="Three months a column. Double-click one to change its months.">Quarters</button><button type="button" role="radio" data-per="y" aria-checked="false" title="The totals only">Year</button></div>
           <div class="bg-vwrap">
             <button class="bg-fpick" id="bg-v-btn" type="button" aria-haspopup="true" aria-expanded="false"><span>View</span><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
             <div class="bg-vpanel" id="bg-vpanel" hidden>
@@ -8449,6 +8510,7 @@ table.bg-xls td.on{outline:2px solid #217346;outline-offset:-2px}
                 <button type="button" role="radio" data-s="ab" class="on" aria-checked="true">What happened, then the plan</button>
                 <button type="button" role="radio" data-s="b" aria-checked="false">Plan only</button>
                 <button type="button" role="radio" data-s="v" aria-checked="false">How I&#8217;m doing</button></div></div>
+              <div class="bg-vrow"><span class="bg-vl">Months</span><div class="bg-seg" id="bg-rng-seg" role="radiogroup" aria-label="Months shown"><button type="button" role="radio" data-rng="fy" class="on" aria-checked="true">This year</button><button type="button" role="radio" data-rng="r12" aria-checked="false">Next 12 months</button></div></div>
               <div class="bg-vrow" id="bg-vat-row"><span class="bg-vl">VAT</span><div class="bg-seg" id="bg-vat-seg" role="radiogroup" aria-label="VAT"><button type="button" role="radio" data-vat="inc" class="on" aria-checked="true">Including VAT</button><button type="button" role="radio" data-vat="exc" aria-checked="false">Without VAT</button></div></div>
               <div class="bg-vrow tg"><label class="bg-tgl"><input type="checkbox" id="bg-ly-tg" checked><span class="sw"></span>Last year column</label></div>
               <div class="bg-vrow tg"><label class="bg-tgl"><input type="checkbox" id="bg-em-tg"><span class="sw"></span>Show every line</label></div>
@@ -8456,8 +8518,10 @@ table.bg-xls td.on{outline:2px solid #217346;outline-offset:-2px}
             </div>
           </div>
           <span class="bg-vnow" id="bg-vnow"></span>
+          <button class="bg-chkb" id="bg-chk" type="button" title="Figures that look different from last year. Click to step through them." hidden></button>
         </div>
       </div>
+      <div class="bg-blk" id="bg-blk" hidden></div>
       <div class="bg-intro" id="bg-intro" hidden>
         <div class="bg-intro-h">Click a figure and type a new one</div>
         <div class="bg-intro-c"><span class="bg-ip"><i class="g"></i>Grey months show what happened</span><span class="bg-ip"><i class="w"></i>White months are your plan</span><span class="bg-ip"><i class="s"></i>Save updates your Budgets page</span><span class="bg-ip"><i class="f"></i>&#8250; on a line shows its blocks, crops and herds</span></div>
@@ -8470,6 +8534,7 @@ table.bg-xls td.on{outline:2px solid #217346;outline-offset:-2px}
           <button class="bg-ct" data-tool="pct" type="button" title="Raise or lower the figures you picked"><svg viewBox="0 0 24 24"><path d="M19 5L5 19"/><circle cx="7" cy="7" r="2.5"/><circle cx="17" cy="17" r="2.5"/></svg>Up or down by %</button>
           <button class="bg-ct" data-tool="spread" type="button" title="Type a total and share it over the months still to come"><svg viewBox="0 0 24 24"><path d="M4 20V10M9 20V4M14 20v-8M19 20v-5"/></svg>Share a total over the months</button>
           <button class="bg-ct" data-tool="ly" type="button" title="Use last year&#8217;s figures for the months you picked"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 109-9"/><path d="M3 4v5h5"/></svg>Same as last year</button>
+          <button class="bg-ct" data-tool="yp" type="button" title="Work out the money from the yield and the price" hidden><svg viewBox="0 0 24 24"><path d="M12 3v18M5 8h14M7 16h10"/></svg>Yield × price</button>
           <button class="bg-ct" data-tool="note" type="button" title="Add a note to this figure (Shift+F2)"><svg viewBox="0 0 24 24"><path d="M4 4h16v12H8l-4 4z"/></svg>Note</button>
           <button class="bg-ct" data-tool="rec" type="button" title="See the records behind this figure"><svg viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>See the records</button>
           <span class="bg-ib" tabindex="0" data-tip-id="keys" aria-label="Keyboard shortcuts">&#9432;</span>
@@ -11129,7 +11194,7 @@ table.bg-xls td.on{outline:2px solid #217346;outline-offset:-2px}
 
 </div>
 </div>
-<script src="js/app-0-ddf1b2fce8.js"></script>
+<script src="js/app-0-fc1c5ebe0b.js"></script>
 
 
 <div class="imp-bg" id="imp-hub-bg">
@@ -11685,7 +11750,7 @@ table.bg-xls td.on{outline:2px solid #217346;outline-offset:-2px}
 <div id="kpi-trail"></div>
 <script id="kpi-detail-js" src="js/app-1-fb7831f809.js"></script>
 
-<script id="bg-grid-js" src="js/app-2-70532d29e2.js"></script>
+<script id="bg-grid-js" src="js/app-2-4e706de2b6.js"></script>
 
 <div class="simple-mode-badge" id="simple-badge">Simple View ON</div>
 </body>
