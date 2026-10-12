@@ -30,7 +30,7 @@
 <script defer src="vendor/chart.umd.js"></script>
 
 <script src="vendor/supabase.js"></script>
-<script src="ai-data-uk.js?v=uk135"></script>
+<script src="ai-data-uk.js?v=uk137"></script>
 <script src="ai-auth-uk.js?v=uk113"></script>
 <link rel="stylesheet" href="fonts.css"/>
 <style>
@@ -6772,6 +6772,16 @@ table.bg-g .srt.on{color:var(--gd);border-bottom:2px solid var(--gl)}
 #bg-sheet-view .vsep{width:1px;height:24px;background:var(--br);margin:0 2px;display:inline-block}
 #bg-sheet-view .dim,#bg-pop .dim{color:var(--t4)}
 #bg-sheet-view .neg{color:var(--neg)}
+.bg-book{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:8px 18px;border-bottom:1px solid var(--bd,#E5E7EB)}
+.bg-book .bg-seg button.on{font-weight:800}
+.fc-chips{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-left:auto}
+.fc-chip{cursor:pointer;border:0}
+.bg-g td.c.you{box-shadow:inset 2px 0 0 #7C5CBF}
+.bg-g td.c.you.fch{background-image:linear-gradient(225deg,#D97706 0 5px,transparent 5px)}
+.fc-note{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:460;display:flex;gap:12px;align-items:center;background:#1F2937;color:#fff;border-radius:10px;padding:10px 14px;font-size:13px;box-shadow:0 8px 24px rgba(0,0,0,.25);max-width:calc(100vw - 32px);flex-wrap:wrap}
+.fc-note .bg-lnk{color:#C7E8D2}.fc-note .bg-x{background:none;border:0;color:#fff;font-size:18px;cursor:pointer}
+.fc-hist{width:100%;border-collapse:collapse;font-size:12.5px}.fc-hist td,.fc-hist th{padding:6px 8px;border-bottom:1px solid var(--bd,#E5E7EB);text-align:left}
+.fc-aplist{margin:0;padding-left:18px;font-size:12.5px}
 .bg-lockbar{padding:9px 18px;background:var(--ti-w);border-bottom:1px solid var(--ti-b);font-size:13px;color:var(--ti-ct);font-weight:600}
 .bg-tools{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:10px 18px;background:var(--bg);border-bottom:1px solid var(--br2)}
 .bg-tools-l{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
@@ -8499,7 +8509,7 @@ table.bg-xls td.on{outline:2px solid #217346;outline-offset:-2px}
   <div id="bg-sheet-view" hidden>
     <section class="bg-card" aria-label="Budget spreadsheet">
       <div class="bg-top">
-        <div class="bg-top-l"><span class="bg-top-t">Your budget, month by month</span><span class="dim" id="bg-fy"></span></div>
+        <div class="bg-top-l"><span class="bg-top-t" id="bg-top-t">Your budget, month by month</span><span class="dim" id="bg-fy"></span></div>
         <div class="bg-acts">
           <button class="bgt-btn ic" id="bg-undo" type="button" title="Undo (Ctrl+Z)" aria-label="Undo" disabled><svg viewBox="0 0 24 24"><path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 010 10h-3"/></svg></button>
           <button class="bgt-btn ic" id="bg-redo" type="button" title="Redo (Ctrl+Y)" aria-label="Redo" disabled><svg viewBox="0 0 24 24"><path d="M15 14l5-5-5-5"/><path d="M20 9H9a5 5 0 000 10h3"/></svg></button>
@@ -8509,6 +8519,7 @@ table.bg-xls td.on{outline:2px solid #217346;outline-offset:-2px}
           <button class="bgt-btn pri" id="bg-xl-btn" type="button"><svg viewBox="0 0 24 24"><path d="M12 4v12M7 11l5 5 5-5M5 20h14"/></svg>Download for the bank</button>
         </div>
       </div>
+      <div class="bg-book" id="bg-book" hidden><div class="bg-seg" role="radiogroup" aria-label="Budget or forecast"><button type="button" role="radio" data-book="f" class="on" aria-checked="true" title="Live: what happened, Planning’s linked lines and your own figures">Forecast</button><button type="button" role="radio" data-book="b" aria-checked="false" title="The budget you approve: fixed">Budget</button></div><span class="fc-chips" id="fc-chips"></span></div>
       <div class="bg-scenbar"><div class="bg-scen" id="bg-scen" role="tablist" aria-label="Budgets"></div></div>
       <div class="bg-scen-banner" id="bg-scen-banner" hidden></div>
       <div class="bg-lockbar" id="bg-lockbar" hidden>&#128274; Locked as the copy the bank has, so the figures cannot be changed. To change them, unlock it first: Edit targets &#8250; Bank copy &#8250; Unlock.</div>
@@ -8522,7 +8533,8 @@ table.bg-xls td.on{outline:2px solid #217346;outline-offset:-2px}
               <div class="bg-vrow"><span class="bg-vl">Figures</span><div class="bg-seg col" id="bg-show-seg" role="radiogroup" aria-label="Figures">
                 <button type="button" role="radio" data-s="ab" class="on" aria-checked="true">What happened, then the plan</button>
                 <button type="button" role="radio" data-s="b" aria-checked="false">Plan only</button>
-                <button type="button" role="radio" data-s="v" aria-checked="false">How I&#8217;m doing</button></div></div>
+                <button type="button" role="radio" data-s="v" aria-checked="false">How I&#8217;m doing</button>
+                <button type="button" role="radio" data-s="fb" aria-checked="false" hidden>Forecast vs budget</button></div></div>
               <div class="bg-vrow"><span class="bg-vl">Months</span><div class="bg-seg" id="bg-rng-seg" role="radiogroup" aria-label="Months shown"><button type="button" role="radio" data-rng="fy" class="on" aria-checked="true">This year</button><button type="button" role="radio" data-rng="r12" aria-checked="false">Next 12 months</button></div></div>
               <div class="bg-vrow" id="bg-vat-row"><span class="bg-vl">VAT</span><div class="bg-seg" id="bg-vat-seg" role="radiogroup" aria-label="VAT"><button type="button" role="radio" data-vat="inc" class="on" aria-checked="true">Including VAT</button><button type="button" role="radio" data-vat="exc" aria-checked="false">Without VAT</button></div></div>
               <div class="bg-vrow tg"><label class="bg-tgl"><input type="checkbox" id="bg-ly-tg" checked><span class="sw"></span>Last year column</label></div>
@@ -8537,7 +8549,7 @@ table.bg-xls td.on{outline:2px solid #217346;outline-offset:-2px}
       <div class="bg-blk" id="bg-blk" hidden></div>
       <div class="bg-intro" id="bg-intro" hidden>
         <div class="bg-intro-h">Click a figure and type a new one</div>
-        <div class="bg-intro-c"><span class="bg-ip"><i class="g"></i>Grey months show what happened</span><span class="bg-ip"><i class="w"></i>White months are your plan</span><span class="bg-ip"><i class="s"></i>Save updates your Budgets page</span><span class="bg-ip"><i class="f"></i>&#8250; on a line shows its blocks, crops and herds</span></div>
+        <div class="bg-intro-c"><span class="bg-ip"><i class="g"></i>Grey months show what happened</span><span class="bg-ip"><i class="w"></i>White months are your plan</span><span class="bg-ip"><i class="s"></i>Save updates your forecast</span><span class="bg-ip"><i class="f"></i>&#8250; on a line shows its blocks, crops and herds</span></div>
         <div class="bg-intro-a"><button class="bgt-btn" type="button" id="bg-intro-tour">Take the tour</button><button class="bgt-btn pri" type="button" id="bg-intro-ok">Got it</button></div>
       </div>
       <div class="bg-ctx" id="bg-ctx" hidden>
@@ -8736,7 +8748,7 @@ table.bg-xls td.on{outline:2px solid #217346;outline-offset:-2px}
     </div>
     
     <div class="bgt-section-card collapsed" title="Once the bank has your budget, lock it. It stays exactly as it is; your plan keeps moving underneath.">
-      <div class="bgt-sum"><span class="k">Bank copy</span><span class="v" id="bgt-lock-v" style="font-size:15px">Not locked</span><span class="p" id="bgt-lock-state">· lock it once the bank has your budget</span><span class="sp"></span><button class="bgt-btn" id="bgt-lock-btn" onclick="bgtLockToggle()">🔒 Lock this budget</button></div>
+      <div class="bgt-sum"><span class="k">Your budget</span><span class="v" id="bgt-lock-v" style="font-size:15px">Not locked</span><span class="p" id="bgt-lock-state">· lock it once the bank has your budget</span><span class="sp"></span><button class="bgt-btn" id="bgt-lock-btn" onclick="bgtLockToggle()">🔒 Lock this budget</button></div>
     </div>
     <div style="display:flex;justify-content:center;margin-bottom:14px"><button class="bgt-btn" style="background:transparent;border:none;color:var(--t3)" onclick="bgtToggleSetup()">Close</button></div>
   </div>
@@ -11207,7 +11219,7 @@ table.bg-xls td.on{outline:2px solid #217346;outline-offset:-2px}
 
 </div>
 </div>
-<script src="js/app-0-d0646c593c.js"></script>
+<script src="js/app-0-97f2e8144a.js"></script>
 
 
 <div class="imp-bg" id="imp-hub-bg">
@@ -11763,7 +11775,7 @@ table.bg-xls td.on{outline:2px solid #217346;outline-offset:-2px}
 <div id="kpi-trail"></div>
 <script id="kpi-detail-js" src="js/app-1-fb7831f809.js"></script>
 
-<script id="bg-grid-js" src="js/app-2-2d16d01cd9.js"></script>
+<script id="bg-grid-js" src="js/app-2-6f6390c4ee.js"></script>
 
 <div class="simple-mode-badge" id="simple-badge">Simple View ON</div>
 </body>
