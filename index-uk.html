@@ -30,7 +30,7 @@
 <script defer src="vendor/chart.umd.js"></script>
 
 <script src="vendor/supabase.js"></script>
-<script src="ai-data-uk.js?v=uk137"></script>
+<script src="ai-data-uk.js?v=uk138"></script>
 <script src="ai-auth-uk.js?v=uk113"></script>
 <link rel="stylesheet" href="fonts.css"/>
 <style>
@@ -6995,6 +6995,147 @@ table.bg-xls td.on{outline:2px solid #217346;outline-offset:-2px}
 @media (prefers-reduced-motion:reduce){ .bg-tgl .sw,.bg-tgl .sw::after,table.bg-g .chev{transition:none} }
 </style>
 
+<style id="bmb-css">
+
+.bmb-ov{position:fixed;inset:0;z-index:9000;background:rgba(17,24,39,.42);display:flex;align-items:flex-start;justify-content:center;padding:28px 16px;overflow:auto}
+.bmb-ov[hidden]{display:none}
+.bmb-box{background:var(--wh);border-radius:var(--rl);box-shadow:0 20px 50px rgba(0,0,0,.18);width:min(920px,100%);display:flex;flex-direction:column;max-height:calc(100vh - 56px)}
+.bmb-top{display:flex;align-items:center;gap:10px;padding:14px 20px;border-bottom:1px solid var(--br);font-size:14px;color:var(--t1)}
+.bmb-fy{color:var(--t3);font-weight:600;font-size:13px}
+.bmb-x{margin-left:auto;border:0;background:none;font-size:22px;line-height:1;color:var(--t3);cursor:pointer;padding:2px 6px;border-radius:6px}
+.bmb-x:hover{background:var(--br2);color:var(--t1)}
+.bmb-body{padding:22px 26px 26px;overflow:auto}
+.bmb-q{font-size:22px;font-weight:800;color:var(--t1);margin:6px 0 6px;letter-spacing:-.01em}
+.bmb-hint{color:var(--t2);font-size:14px;margin:0 0 18px;max-width:72ch}
+.bmb-prog{display:flex;align-items:center;gap:12px;font-size:12px;font-weight:700;color:var(--t3);margin-bottom:12px}
+.bmb-prog .bar{flex:1;height:6px;border-radius:99px;background:var(--br2);overflow:hidden}
+.bmb-prog .bar i{display:block;height:100%;background:var(--gl);border-radius:99px}
+.bmb-from{display:flex;gap:10px;align-items:flex-start;background:var(--gb);border:1px solid var(--gp);border-radius:var(--rs);padding:10px 12px;font-size:13px;color:var(--t2);margin:0 0 14px}
+.bmb-from .tick,.bmb-done-h i{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:var(--gl);color:#fff;font-style:normal;font-weight:800;flex:0 0 auto}
+.bmb-done-h{display:flex;align-items:center;gap:10px}
+.bmb-opts{display:flex;flex-direction:column;gap:10px;margin-bottom:16px}
+.bmb-opt{display:flex;gap:12px;align-items:flex-start;border:1.5px solid var(--br);border-radius:var(--r);padding:12px 14px;cursor:pointer;margin-bottom:12px}
+.bmb-opts .bmb-opt{margin:0}
+.bmb-opt.on{border-color:var(--gl);background:var(--gb)}
+.bmb-opt b{display:block;font-size:14px;color:var(--t1)}
+.bmb-opt small{display:block;color:var(--t3);font-size:12.5px;margin-top:2px}
+.bmb-tag{display:inline-block;font-size:11px;font-weight:700;border-radius:99px;padding:1px 8px;margin-left:8px;vertical-align:1px}
+.bmb-tag.ok{background:var(--gp);color:var(--gd)}.bmb-tag.nt{background:var(--br2);color:var(--t3)}
+.bmb-ent{border:1px solid var(--br);border-radius:var(--r);padding:14px 16px;margin:0 0 14px}
+.bmb-ent h4,.bmb-eh{font-size:12px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--t3);margin:14px 0 8px}
+.bmb-ent h4:first-child{margin-top:0}
+.bmb-ent .hd{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px}
+.bmb-ent .tot{font-weight:800;color:var(--gd);font-size:14px;white-space:nowrap}
+.bmb-en{display:inline-flex;align-items:center;gap:8px;font-weight:700;color:var(--t1)}
+.bmb-en .ic{font-size:18px}
+.bmb-dim{color:var(--t3);font-weight:600}
+.bmb-chips{display:flex;flex-wrap:wrap;gap:8px}
+.bmb-chips label{border:1.5px solid var(--br);border-radius:99px;padding:6px 12px;font-size:13px;cursor:pointer;color:var(--t2);background:var(--wh)}
+.bmb-chips label.on{border-color:var(--gl);background:var(--gb);color:var(--gd);font-weight:700}
+.bmb-chips input{position:absolute;opacity:0;width:1px;height:1px}
+.bmb-chips label:focus-within{outline:2px solid var(--gl);outline-offset:1px}
+.bmb-row{display:flex;flex-wrap:wrap;gap:14px;align-items:flex-start;margin:8px 0}
+.bmb-row .fld{display:flex;flex-direction:column;gap:4px;min-width:150px}
+.bmb-row .fld label{font-size:12.5px;font-weight:700;color:var(--t2)}
+.bmb-in{border:1.5px solid var(--br);border-radius:var(--rs);padding:6px 8px;font:inherit;font-size:13.5px;width:96px;text-align:right;background:var(--wh);color:var(--t1)}
+.bmb-in.w{width:100%;text-align:left}
+.bmb-in.est{border-style:dashed}
+.bmb-in:focus{outline:none;border-color:var(--gl);box-shadow:0 0 0 3px var(--gp)}
+.bmb-body select{border:1.5px solid var(--br);border-radius:var(--rs);padding:6px 8px;font:inherit;font-size:13px;background:var(--wh);color:var(--t1);max-width:100%}
+.bmb-est{display:inline-block;font-size:10.5px;font-weight:700;color:var(--t3);background:var(--br2);border-radius:99px;padding:1px 7px;margin-left:6px;vertical-align:2px}
+.bmb-bench{font-size:12px;color:var(--t3);margin:4px 0 8px}
+.bmb-lock{margin:-6px 0 16px}
+.bmb-memo{display:flex;gap:8px;background:var(--bg);border:1px solid var(--br);border-radius:var(--rs);padding:10px 12px;font-size:13px;color:var(--t2);margin:10px 0}
+.bmb-inl{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--t2);margin-left:8px}
+.bmb-flow{display:grid;grid-template-columns:minmax(160px,1.4fr) 110px 110px minmax(180px,1.6fr);gap:6px 10px;align-items:center;font-size:13px;color:var(--t2)}
+.bmb-flow .h{font-size:11.5px;font-weight:800;color:var(--t3);text-transform:uppercase;letter-spacing:.04em}
+.bmb-flow .h.r{text-align:right}
+.bmb-flow .nil{text-align:right;color:var(--t3);font-weight:700}
+.bmb-flow .cash{text-align:right;font-weight:800;color:var(--t1)}
+.bmb-flow .left{border-top:1px dashed var(--br);padding-top:6px;font-weight:700}
+.bmb-flow .shape{font-size:12.5px;color:var(--t3)}
+.bmb-flow .shape select{font-size:12px;max-width:240px}
+.bmb-body .warn,.bmb-flow .warn{color:var(--neg,#B42318)}
+.bmb-t{width:100%;border-collapse:collapse;font-size:13.5px;margin:0 0 14px}
+.bmb-t th{text-align:left;font-size:11.5px;font-weight:800;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;padding:6px 8px;border-bottom:1px solid var(--br)}
+.bmb-t td{padding:7px 8px;border-bottom:1px solid var(--br2);vertical-align:middle}
+.bmb-t .num{text-align:right;white-space:nowrap}
+.bmb-t tr.out td{opacity:.5}
+.bmb-t tr.sub td{font-size:12.5px;color:var(--t3);padding-left:34px}
+.bmb-wt td{font-variant-numeric:tabular-nums}
+.bmb-scroll{overflow-x:auto}
+.bmb-when{font-size:13px;color:var(--t2)}
+.bmb-src{font-size:11.5px;color:var(--t4)}
+.bmb-lnk{border:0;background:none;color:var(--gm);font:inherit;font-size:13px;font-weight:700;cursor:pointer;padding:2px 0;text-decoration:underline;text-underline-offset:2px}
+.bmb-lnk:hover{color:var(--gd)}
+.bmb-nav{display:flex;align-items:center;gap:10px;margin-top:18px;flex-wrap:wrap}
+.bmb-nav .sp{flex:1}
+.bmb-fin .eq{min-width:260px;justify-content:center}
+.bmb-big2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:6px 0 14px}
+.bmb-bigopt{display:flex;flex-direction:column;gap:6px;text-align:left;border:1.5px solid var(--br);border-radius:var(--r);background:var(--wh);padding:16px;cursor:pointer;font:inherit;color:var(--t2)}
+.bmb-bigopt.rec{border-color:var(--gl)}
+.bmb-bigopt:hover{background:var(--gb)}
+.bmb-bigopt em{font-style:normal;font-size:11.5px;font-weight:800;color:var(--gm);text-transform:uppercase;letter-spacing:.04em}
+.bmb-bigopt b{font-size:16px;color:var(--t1)}
+.bmb-bigopt span{font-size:13px}
+.bmb-have{display:flex;flex-direction:column;gap:6px;margin:14px 0}
+.bmb-have div{display:flex;justify-content:space-between;border-bottom:1px solid var(--br2);padding:6px 0;font-size:14px}
+.bmb-gaps h3{font-size:14px;margin:14px 0 8px;color:var(--t1)}
+.bmb-gaps ul,.bmb-miss{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px}
+.bmb-gaps li,.bmb-miss li{background:var(--ap);border:1px solid #F3D9A4;border-radius:var(--rs);padding:8px 10px;font-size:13px;color:var(--t2)}
+.bmb-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:4px 0 12px}
+.bmb-kpis .kpi{border:1px solid var(--br);border-radius:var(--r);padding:10px 12px;display:flex;flex-direction:column;gap:2px}
+.bmb-kpis span{font-size:12px;color:var(--t3);font-weight:700}
+.bmb-kpis b{font-size:19px;color:var(--t1);font-variant-numeric:tabular-nums}
+.bmb-kpis b.neg{color:var(--neg,#B42318)}
+.bmb-kpis small{font-size:11.5px;color:var(--t3)}
+.bmb-chart{border:1px solid var(--br);border-radius:var(--r);padding:10px 12px;margin:0 0 14px}
+.bmb-chart svg{width:100%;height:auto;display:block}
+.bmb-callout{background:var(--bg);border:1px solid var(--br);border-radius:var(--rs);padding:10px 12px;font-size:13px;color:var(--t2);margin:10px 0}
+.bmb-callout.warn{background:var(--ap);border-color:#F3D9A4}
+.bmb-ticks{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.bmb-ticks label{display:flex;gap:8px;align-items:center}
+.bmb-sum{display:grid;grid-template-columns:minmax(160px,auto) 1fr auto;border:1px solid var(--br);border-radius:var(--r);margin:12px 0;overflow:hidden}
+.bmb-sum>div{padding:9px 12px;border-bottom:1px solid var(--br2);font-size:13.5px}
+.bmb-sum .k{font-weight:700;color:var(--t1)}
+.bmb-sum .v{color:var(--t2)}
+.bmb-sum .chg{background:var(--ap)}
+.bmb-two{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:14px 0}
+.bmb-two .box{border:1px solid var(--br);border-radius:var(--r);padding:12px 14px}
+.bmb-two h3{font-size:15px;margin:0;color:var(--t1)}
+.bmb-two .sub{font-size:12px;font-weight:700;color:var(--gm);margin:2px 0 6px}
+.bmb-two p{font-size:13px;color:var(--t2);margin:0}
+.bmb-add,.bmb-add2{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin:8px 0 14px}
+.bmb-add label{display:flex;flex-direction:column;gap:4px;font-size:12.5px;font-weight:700;color:var(--t2)}
+.bmb-add .bmb-in.w{width:200px}
+.bmb-card{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;background:var(--wh);border:1px solid var(--br);border-radius:var(--r);padding:16px 18px;margin:0 0 14px;box-shadow:var(--sh)}
+.bmb-card h3{font-size:16px;margin:0 0 4px;color:var(--t1)}
+.bmb-card p{font-size:13.5px;color:var(--t2);margin:0 0 6px;max-width:70ch}
+.bmb-card.gap{background:var(--ap);border-color:#F3D9A4}
+.bmb-card.first{flex-direction:column}
+.bmb-acts{display:flex;gap:10px;flex-wrap:wrap;flex:0 0 auto}
+.bmb-acts .bgt-btn[disabled]{opacity:.5;cursor:not-allowed}
+.bmb-why{font-size:12.5px;color:var(--t3);margin-top:4px}
+.bmb-ways{display:flex;gap:16px;flex-wrap:wrap;margin-top:10px}
+.bmb-ways>div{display:flex;gap:8px;align-items:flex-start;font-size:12.5px;color:var(--t3);max-width:240px}
+.bmb-ways i{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:var(--gp);color:var(--gd);font-style:normal;font-weight:800;font-size:11px;flex:0 0 auto}
+.bmb-ways b{color:var(--t1)}
+.bmb-door{margin:14px 0}
+.bmb-door-h{font-size:12px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--t3);margin:0 0 6px}
+.bmb-keep{display:flex;gap:8px;align-items:center;font-size:13px}
+.bmb-explain{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 0 10px}
+.bmb-explain>div{font-size:12.5px;color:var(--t2);background:var(--bg);border:1px solid var(--br2);border-radius:var(--rs);padding:8px 10px}
+.bmb-explain b{color:var(--t1)}
+body.bmb-on{overflow:hidden}
+@media (max-width:760px){.bmb-big2,.bmb-two,.bmb-explain{grid-template-columns:1fr}.bmb-kpis{grid-template-columns:1fr 1fr}.bmb-flow{grid-template-columns:1fr 90px 90px}.bmb-flow .shape,.bmb-flow .h:last-child{grid-column:1/-1}.bmb-card{flex-direction:column}}
+
+.bmb-opt input,.bmb-inl input,.bmb-ticks input,.bmb-keep input,.bmb-flow input[type=checkbox]{width:auto!important;flex:0 0 auto;margin:3px 0 0;min-width:0}
+.bmb-row .fld .bmb-est{align-self:flex-start;margin:3px 0 0}
+.bmb-flow .bmb-est{display:block;width:max-content;margin:2px 0 0 auto}
+.bmb-flow .shape select,.bmb-inl select{width:auto!important;display:inline-block}
+.bmb-inl{white-space:nowrap}
+.bmb-flow .shape{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+</style>
 </head>
 <body>
 <div id="toast"></div>
@@ -7453,6 +7594,7 @@ table.bg-xls td.on{outline:2px solid #217346;outline-offset:-2px}
   </div>
 
   <div id="dash-import-doorway"></div>
+  <div id="bmb-home-door" class="bmb-host" hidden></div>
 
 <div class="sec-head">
     <div class="sh-icon month">
@@ -8514,15 +8656,18 @@ table.bg-xls td.on{outline:2px solid #217346;outline-offset:-2px}
           <button class="bgt-btn ic" id="bg-undo" type="button" title="Undo (Ctrl+Z)" aria-label="Undo" disabled><svg viewBox="0 0 24 24"><path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 010 10h-3"/></svg></button>
           <button class="bgt-btn ic" id="bg-redo" type="button" title="Redo (Ctrl+Y)" aria-label="Redo" disabled><svg viewBox="0 0 24 24"><path d="M15 14l5-5-5-5"/><path d="M20 9H9a5 5 0 000 10h3"/></svg></button>
           <span class="vsep"></span>
+          <button class="bgt-btn" id="bg-bmb-btn" type="button" onclick="bmbRestart()" title="Next year&#8217;s budget, or this year&#8217;s forecast again: only the months to come">Start my forecast again</button>
           <button class="bgt-btn" id="bg-cmp-btn" type="button"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="7" height="16" rx="1.5"/><rect x="14" y="4" width="7" height="16" rx="1.5"/></svg>Compare budgets</button>
           <button class="bgt-btn" id="bg-up-btn" type="button"><svg viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5M5 20h14"/></svg>Upload Excel</button>
           <button class="bgt-btn pri" id="bg-xl-btn" type="button"><svg viewBox="0 0 24 24"><path d="M12 4v12M7 11l5 5 5-5M5 20h14"/></svg>Download for the bank</button>
         </div>
       </div>
-      <div class="bg-book" id="bg-book" hidden><div class="bg-seg" role="radiogroup" aria-label="Budget or forecast"><button type="button" role="radio" data-book="f" class="on" aria-checked="true" title="Live: what happened, Planning’s linked lines and your own figures">Forecast</button><button type="button" role="radio" data-book="b" aria-checked="false" title="The budget you approve: fixed">Budget</button></div><span class="fc-chips" id="fc-chips"></span></div>
+      <div class="bg-book" id="bg-book" hidden><div class="bg-seg" role="radiogroup" aria-label="Budget or forecast"><button type="button" role="radio" data-book="f" class="on" aria-checked="true" title="What has happened so far, plus your plan for the months still to come">Forecast · where you’ll end up</button><button type="button" role="radio" data-book="b" aria-checked="false" title="The plan you set for the year: fixed once you approve it">Budget · what you aim for</button></div><button type="button" class="bg-lnk" onclick="var e=document.getElementById('bmb-explain');if(e)e.hidden=!e.hidden;">What’s the difference?</button><span class="fc-chips" id="fc-chips"></span></div>
+      <div class="bmb-explain" id="bmb-explain" hidden><div><b>Your forecast</b> · where you’ll end up. What has happened so far, plus your plan for the months still to come. It moves as records come in and when your crops or herds change. Your bank line and “heading for” use it.</div><div><b>Your budget</b> · what you aim for. The plan you set for the year. Once you approve it, it stays fixed, so “How I’m doing” has something steady to measure against.</div></div>
       <div class="bg-scenbar"><div class="bg-scen" id="bg-scen" role="tablist" aria-label="Budgets"></div></div>
       <div class="bg-scen-banner" id="bg-scen-banner" hidden></div>
-      <div class="bg-lockbar" id="bg-lockbar" hidden>&#128274; Locked as the copy the bank has, so the figures cannot be changed. To change them, unlock it first: Edit targets &#8250; Bank copy &#8250; Unlock.</div>
+      <div class="bg-lockbar" id="bg-lockbar" hidden></div>
+      <div id="bmb-gapbar" class="bmb-host" hidden></div>
       <div class="bg-tools">
         <div class="bg-tools-l">
           <button class="bg-fpick" id="bg-f-btn" type="button" aria-haspopup="listbox"><span class="fl">Show</span><span>Whole farm</span><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
@@ -8532,7 +8677,7 @@ table.bg-xls td.on{outline:2px solid #217346;outline-offset:-2px}
             <div class="bg-vpanel" id="bg-vpanel" hidden>
               <div class="bg-vrow"><span class="bg-vl">Figures</span><div class="bg-seg col" id="bg-show-seg" role="radiogroup" aria-label="Figures">
                 <button type="button" role="radio" data-s="ab" class="on" aria-checked="true">What happened, then the plan</button>
-                <button type="button" role="radio" data-s="b" aria-checked="false">Plan only</button>
+                <button type="button" role="radio" data-s="b" aria-checked="false">Budget figures only</button>
                 <button type="button" role="radio" data-s="v" aria-checked="false">How I&#8217;m doing</button>
                 <button type="button" role="radio" data-s="fb" aria-checked="false" hidden>Forecast vs budget</button></div></div>
               <div class="bg-vrow"><span class="bg-vl">Months</span><div class="bg-seg" id="bg-rng-seg" role="radiogroup" aria-label="Months shown"><button type="button" role="radio" data-rng="fy" class="on" aria-checked="true">This year</button><button type="button" role="radio" data-rng="r12" aria-checked="false">Next 12 months</button></div></div>
@@ -8549,7 +8694,7 @@ table.bg-xls td.on{outline:2px solid #217346;outline-offset:-2px}
       <div class="bg-blk" id="bg-blk" hidden></div>
       <div class="bg-intro" id="bg-intro" hidden>
         <div class="bg-intro-h">Click a figure and type a new one</div>
-        <div class="bg-intro-c"><span class="bg-ip"><i class="g"></i>Grey months show what happened</span><span class="bg-ip"><i class="w"></i>White months are your plan</span><span class="bg-ip"><i class="s"></i>Save updates your forecast</span><span class="bg-ip"><i class="f"></i>&#8250; on a line shows its blocks, crops and herds</span></div>
+        <div class="bg-intro-c"><span class="bg-ip"><i class="g"></i>Grey months show what happened</span><span class="bg-ip"><i class="w"></i>White months are the months to come</span><span class="bg-ip"><i class="s"></i>Save updates your forecast</span><span class="bg-ip"><i class="f"></i>&#8250; on a line shows its blocks, crops and herds</span></div>
         <div class="bg-intro-a"><button class="bgt-btn" type="button" id="bg-intro-tour">Take the tour</button><button class="bgt-btn pri" type="button" id="bg-intro-ok">Got it</button></div>
       </div>
       <div class="bg-ctx" id="bg-ctx" hidden>
@@ -8588,15 +8733,16 @@ table.bg-xls td.on{outline:2px solid #217346;outline-offset:-2px}
   <div id="bgt-first" style="display:none">
     <div class="bgt-hero grey">
       <div class="bgt-hero-eyebrow"><span class="bgt-hero-dot"></span><span>Not set up yet</span></div>
-      <div class="bgt-hero-headline">Let&#8217;s set your goals for the year</div>
-      <div class="bgt-hero-sub">Two numbers &#8212; what you expect to earn and what you expect to spend &#8212; and every week this page will tell you if you&#8217;re on track. Pick the easiest way to start:</div>
+      <div class="bgt-hero-headline">Your budget for the year</div>
+      <div class="bgt-hero-sub">Once your budget is in, this page tells you every week whether you&#8217;re on track.</div>
     </div>
     <div class="bgt-fr-grid" id="bgt-fr-grid"></div>
-    <div class="bgt-fr-note">&#128161; <span>Whatever you pick, nothing is locked &#8212; you can fine-tune any month afterwards, and this page only starts judging once your targets are in.</span></div>
+    <div class="bgt-fr-note">&#128161; <span>Whatever you pick, you can change any line afterwards in the Spreadsheet.</span></div>
   </div>
 
   
   <div id="bgt-main">
+    <div id="bmb-bar" hidden></div>
     <div class="bgt-hero green calm" id="bgt-hero">
       <div class="bgt-hero-eyebrow"><span class="bgt-hero-dot"></span><span id="bgt-hero-eyebrow-text">On track</span></div>
       <div class="bgt-hero-headline" id="bgt-hero-headline"></div>
@@ -10243,6 +10389,7 @@ table.bg-xls td.on{outline:2px solid #217346;outline-offset:-2px}
     </div>
   </div>
 
+  <div id="bmb-plan-door" class="bmb-host" hidden></div>
   
   <div class="plan-tabs">
     <button class="plan-tab on crops" id="plan-tab-crops" onclick="setPlanTab('crops')">
@@ -10968,6 +11115,7 @@ table.bg-xls td.on{outline:2px solid #217346;outline-offset:-2px}
   </div>
 
   <div id="mf-tab-forecast" style="display:none">
+  <div id="bmb-mf-door" class="bmb-host" hidden></div>
 
 <div class="cf-sec-head">
     <div class="cf-sh-l">
@@ -11219,7 +11367,7 @@ table.bg-xls td.on{outline:2px solid #217346;outline-offset:-2px}
 
 </div>
 </div>
-<script src="js/app-0-97f2e8144a.js"></script>
+<script src="js/app-0-7b51e69dd2.js"></script>
 
 
 <div class="imp-bg" id="imp-hub-bg">
@@ -11775,7 +11923,7 @@ table.bg-xls td.on{outline:2px solid #217346;outline-offset:-2px}
 <div id="kpi-trail"></div>
 <script id="kpi-detail-js" src="js/app-1-fb7831f809.js"></script>
 
-<script id="bg-grid-js" src="js/app-2-6f6390c4ee.js"></script>
+<script id="bg-grid-js" src="js/app-2-d6a7d27be7.js"></script>
 
 <div class="simple-mode-badge" id="simple-badge">Simple View ON</div>
 </body>

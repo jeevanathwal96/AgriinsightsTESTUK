@@ -436,6 +436,12 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
   let CAN_BLOCK_SPACING = false;   /* orchard_blocks.spacing - row x tree, as text */
   let CAN_FARM_ALERTS   = false;   /* farms.price_alerts - Market price alerts on every device */
   let CAN_PLANEVT_FC    = false;   /* plan_events.in_forecast - a herd plan line not confirmed yet (null = in the forecast) */
+  /* -404 (B10, tools/uk-b10-404.sql): Build my budget. herds.plan and plan_crops.plan (jsonb) keep the herd plan (every p* field and
+     the answers) and a crop line's payment fields (payWhen, paySplit, sellMonth, c2, hedge) and answers, which the mappers dropped
+     - a second device lost them. farms.country / tenure / vat_scheme / bmb_flags (one ALTER) keep the farm's answers and flags. */
+  let CAN_HERD_PLAN     = false;   /* herds.plan */
+  let CAN_PLANCROP_PLAN = false;   /* plan_crops.plan */
+  let CAN_FARM_BMB      = false;   /* farms.country/tenure/vat_scheme/bmb_flags */
   /* ---- what this database actually has, asked once ------------------------
      Ported from SA -438, same reasoning. Every late-added column is gated on a
      CAN_* flag, and each flag cost its own round trip in series on every
@@ -508,7 +514,8 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     ['workers','end_date'], ['payroll_entries','part_days'], ['orchard_blocks','spacing'], ['farms','price_alerts'], ['plan_events','in_forecast'],
     ['budget_cells','ent_code'], ['budget_scenarios','is_live'],  /* -399 (8A) */
     ['budget_scenarios','yp'],   /* -401 (8B) */
-    ['budget_cells','src'], ['budget_scenarios','kind']   /* -403 (8E) */
+    ['budget_cells','src'], ['budget_scenarios','kind'],   /* -403 (8E) */
+    ['herds','plan'], ['plan_crops','plan'], ['farms','bmb_flags']   /* -404 (B10) */
   ];
 
   async function probeCaps(farmId){
@@ -583,6 +590,9 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     CAN_BLOCK_SPACING = keep(CAN_BLOCK_SPACING, 'orchard_blocks','spacing');
     CAN_FARM_ALERTS   = keep(CAN_FARM_ALERTS,   'farms','price_alerts');
     CAN_PLANEVT_FC    = keep(CAN_PLANEVT_FC,    'plan_events','in_forecast');
+    CAN_HERD_PLAN     = keep(CAN_HERD_PLAN,     'herds','plan');        /* -404 */
+    CAN_PLANCROP_PLAN = keep(CAN_PLANCROP_PLAN, 'plan_crops','plan');   /* -404 */
+    CAN_FARM_BMB      = keep(CAN_FARM_BMB,      'farms','bmb_flags');   /* -404 */
   }
   probeCaps.reset = function(){ _colCache = Object.create(null); _colRpcDead = false; };
   probeCaps.seen  = function(){ return _colCache; };
@@ -2062,7 +2072,13 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
   function _inList(keep){ return '('+keep.map(function(k){return '"'+String(k).replace(/"/g,'')+'"';}).join(',')+')'; }
   function campToDb(c,fid){ return { farm_id:fid, local_id:String(c.id), name:c.name||null, ha:(c.ha!=null&&c.ha!=='')?Number(c.ha):null, since:c.since||null, notes:c.notes||null }; }
   function campFromDb(r){ return { id:r.local_id, name:r.name||'', ha:(r.ha!=null)?Number(r.ha):0, since:r.since||'', notes:r.notes||'' }; }
-  function herdToDb(h,fid){ return { farm_id:fid, local_id:String(h.id), type:h.type||null, name:h.name||null, breed:h.breed||null,
+  function herdToDb(h,fid){ var row=_herdToDbBase(h,fid); if(CAN_HERD_PLAN) row.plan=_herdPlanOut(h); return row; }   /* -404 */
+  /* -404: the herd plan (every p* field) and Build my budget's answers, as one jsonb */
+  function _herdPlanOut(h){ var p={}, any=false; Object.keys(h||{}).forEach(function(k){ if(/^p[A-Z]/.test(k) && h[k]!==undefined){ p[k]=h[k]; any=true; } });
+    var o={}; if(any) o.p=p; if(h && h.plan && h.plan.bmb) o.bmb=h.plan.bmb; if(h && h.plan && h.plan.bmbNext) o.bmbNext=h.plan.bmbNext; return Object.keys(o).length ? o : null; }
+  function _herdPlanIn(h, v){ if(!v) return h; if(typeof v==='string'){ try{ v=JSON.parse(v); }catch(e){ return h; } } if(!v || typeof v!=='object') return h;
+    if(v.p && typeof v.p==='object') Object.keys(v.p).forEach(function(k){ if(/^p[A-Z]/.test(k)) h[k]=v.p[k]; }); if(v.bmb || v.bmbNext){ h.plan={}; if(v.bmb) h.plan.bmb=v.bmb; if(v.bmbNext) h.plan.bmbNext=v.bmbNext; } return h; }
+  function _herdToDbBase(h,fid){ return { farm_id:fid, local_id:String(h.id), type:h.type||null, name:h.name||null, breed:h.breed||null,
     field:h.field||null, field_id:(h.campId!=null)?(h.campId||null):(h.fieldId||null), track:!!h.track, planned:!!h.planned, qty:(h.qty!=null)?parseInt(h.qty,10):0,
     buy:(h.buy!=null&&h.buy!=='')?Number(h.buy):null, feed:(h.feed!=null&&h.feed!=='')?Number(h.feed):null,
     vet:(h.vet!=null&&h.vet!=='')?Number(h.vet):null, sell:(h.sell!=null&&h.sell!=='')?Number(h.sell):null,
@@ -2081,6 +2097,7 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     if(r.plan_head!=null) h.planHead=Number(r.plan_head);
     if(r.plan_month) h.planMonth=r.plan_month;
     if(r.plan_classes){ try{ h.planClasses=(typeof r.plan_classes==='string'?JSON.parse(r.plan_classes):r.plan_classes); }catch(e){} }
+    if(r.plan) _herdPlanIn(h, r.plan);   /* -404 */
     return h; }
   function classRows(h,fid){ return (h.classes||[]).map(function(c){ return { farm_id:fid, herd_local_id:String(h.id), class_key:c.k, count:(c.n!=null)?parseInt(c.n,10):0, class_value:(c.v!=null)?Number(c.v):0 }; }); }
   // 3a-ii — moves / treatments / animals (set-sync, append-only) + health (per-row)
@@ -2847,8 +2864,13 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
   // ST_PLAN.crops[] : forecast lines (linked to a crop land via link_id, or manual).
   // ST_PLAN.events[]: livestock events; herd_local_id is a soft ref to a herd, same
   // pattern as livestock_moves/treatments. UI state (view/tab/months) is transient.
-  function planCropToDb(c,fid,i){ return { farm_id:fid, crop:c.crop||null, field:c.field||null, ha:(c.ha!=null&&c.ha!=='')?Number(c.ha):null, plant:c.plant||null, harvest:c.harvest||null, yield_val:(c.yield!=null&&c.yield!=='')?Number(c.yield):null, price:(c.price!=null&&c.price!=='')?Number(c.price):null, input_cost:(c.inputCost!=null&&c.inputCost!=='')?Number(c.inputCost):null, other_cost:(c.otherCost!=null&&c.otherCost!=='')?Number(c.otherCost):null, repeat:c.repeat||null, link_id:c.linkId||null, in_forecast:(c.inForecast===false)?false:true, sort_idx:i }; }
-  function planCropFromDb(r){ var c={ crop:r.crop||'', field:r.field||'', ha:Number(r.ha)||0, plant:r.plant||'', harvest:r.harvest||'', yield:Number(r.yield_val)||0, price:Number(r.price)||0, inputCost:Number(r.input_cost)||0, otherCost:Number(r.other_cost)||0, repeat:r.repeat||'none' }; if(r.link_id) c.linkId=r.link_id; if(r.in_forecast===false) c.inForecast=false; return c; }
+  function planCropToDb(c,fid,i){ var row=_planCropToDbBase(c,fid,i); if(CAN_PLANCROP_PLAN) row.plan=_cropPlanOut(c); return row; }   /* -404 */
+  var _CROP_PLAN_KEYS=['payWhen','paySplit','sellMonth','c2','hedge'];
+  function _cropPlanOut(c){ var o={}; _CROP_PLAN_KEYS.forEach(function(k){ if(c && c[k]!=null && c[k]!=='') o[k]=c[k]; }); if(c && c.plan && c.plan.bmb) o.bmb=c.plan.bmb; if(c && c.plan && c.plan.bmbNext) o.bmbNext=c.plan.bmbNext; return Object.keys(o).length ? o : null; }
+  function _cropPlanIn(c, v){ if(!v) return c; if(typeof v==='string'){ try{ v=JSON.parse(v); }catch(e){ return c; } } if(!v || typeof v!=='object') return c;
+    _CROP_PLAN_KEYS.forEach(function(k){ if(v[k]!=null) c[k]=v[k]; }); if(v.bmb || v.bmbNext){ c.plan={}; if(v.bmb) c.plan.bmb=v.bmb; if(v.bmbNext) c.plan.bmbNext=v.bmbNext; } return c; }
+  function _planCropToDbBase(c,fid,i){ return { farm_id:fid, crop:c.crop||null, field:c.field||null, ha:(c.ha!=null&&c.ha!=='')?Number(c.ha):null, plant:c.plant||null, harvest:c.harvest||null, yield_val:(c.yield!=null&&c.yield!=='')?Number(c.yield):null, price:(c.price!=null&&c.price!=='')?Number(c.price):null, input_cost:(c.inputCost!=null&&c.inputCost!=='')?Number(c.inputCost):null, other_cost:(c.otherCost!=null&&c.otherCost!=='')?Number(c.otherCost):null, repeat:c.repeat||null, link_id:c.linkId||null, in_forecast:(c.inForecast===false)?false:true, sort_idx:i }; }
+  function planCropFromDb(r){ var c={ crop:r.crop||'', field:r.field||'', ha:Number(r.ha)||0, plant:r.plant||'', harvest:r.harvest||'', yield:Number(r.yield_val)||0, price:Number(r.price)||0, inputCost:Number(r.input_cost)||0, otherCost:Number(r.other_cost)||0, repeat:r.repeat||'none' }; if(r.link_id) c.linkId=r.link_id; if(r.in_forecast===false) c.inForecast=false; if(r.plan) _cropPlanIn(c, r.plan); return c; }
   function planEvtToDb(e,fid,i){ var row={ farm_id:fid, herd_local_id:(e.herdId!=null)?String(e.herdId):null, species:e.species||null, animal:e.animal||null, icon:e.icon||null, descr:e.desc||null, type:e.type||null, month:e.month||null, qty:(e.qty!=null&&e.qty!=='')?Number(e.qty):null, unit:e.unit||null, price:(e.price!=null&&e.price!=='')?Number(e.price):null, recur:e.recur||null, notes:e.notes||null, use_market:!!e.useMarket, done:!!e.done, sort_idx:i };
     /* -394 (B4 D5): a herd plan line stays out of the forecast until the farmer confirms it.
        Always sent as true or false; a row written before -394 holds null, which reads as
@@ -3166,7 +3188,8 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     stock_mark_type: 'stockMarkType', herd_mark: 'stockMark',
     bank_balance: 'bankBalance', bank_balance_at: 'bankBalanceAt',
     season_start_month: 'seasonStartMonth', budget_expense_target: 'budgetExpenseTarget',
-    price_alerts: 'priceAlerts'   /* -394 */
+    price_alerts: 'priceAlerts',   /* -394 */
+    country: 'country', tenure: 'tenure', vat_scheme: 'vatScheme', bmb_flags: 'bmbFlags'   /* -404 */
   };
   function _profAdopt(st, mine){
     var ack = _profAckGet();
@@ -3179,6 +3202,7 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
       if(v === undefined) return;
       if(col === 'partners'){ try{ v = (typeof v === 'string') ? JSON.parse(v) : v; }catch(e){ return; } }
       if(col === 'price_alerts') v = _alertsClean(v);
+      if(col === 'bmb_flags' && typeof v === 'string'){ try{ v = JSON.parse(v); }catch(e){ return; } }
       st[key] = v;
     });
     /* Settings may be on screen with the OLD value still in its inputs - and Save settings reads the
@@ -3293,7 +3317,7 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     farmId=farmId||farm.active();
     var one=null;
     try{
-      const r1=await client().from('farms').select(_PROF_CORE+','+_PROF_RAIN+',prefs'+(CAN_FARM_CONSENT?',consent_version,consent_accepted_at':'')+(CAN_FARM_ALERTS?',price_alerts':'')).eq('id',farmId).single();
+      const r1=await client().from('farms').select(_PROF_CORE+','+_PROF_RAIN+',prefs'+(CAN_FARM_CONSENT?',consent_version,consent_accepted_at':'')+(CAN_FARM_ALERTS?',price_alerts':'')+(CAN_FARM_BMB?',country,tenure,vat_scheme,bmb_flags':'')).eq('id',farmId).single();
       if(r1 && !r1.error && r1.data) one=r1.data;
     }catch(e){ one=null; }
     /* each part's read: from the one row when it came, else its own request as before */
@@ -3349,10 +3373,22 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
         }
       }catch(e){}
     }
+    /* -404 (B10): where the farm is, who farms it, the VAT scheme and Build my budget's flags and answers. Behind its probe. */
+    if(CAN_FARM_BMB){
+      try{
+        const rb=await part('country,tenure,vat_scheme,bmb_flags', function(){ return client().from('farms').select('country,tenure,vat_scheme,bmb_flags').eq('id',farmId).single(); });
+        if(!rb.error && rb.data && p){ _profNoteAck({ country:rb.data.country, tenure:rb.data.tenure, vat_scheme:rb.data.vat_scheme, bmb_flags:rb.data.bmb_flags });
+          var _bf=rb.data.bmb_flags; if(typeof _bf==='string'){ try{ _bf=JSON.parse(_bf); }catch(e){ _bf=null; } }
+          if(rb.data.country) p.country=rb.data.country; if(rb.data.tenure) p.tenure=rb.data.tenure; if(rb.data.vat_scheme) p.vatScheme=rb.data.vat_scheme; if(_bf && typeof _bf==='object') p.bmbFlags=_bf; }
+      }catch(e){}
+    }
     global.__AI_PROFILE_LOADED = true;   /* -391: the consent check waits for this */
     return p;
   };
   var _farmPrefs=null;
+  /* -404: the farm's Build my budget columns, sent only once the farm has them (a farm that never built keeps the server's nulls) */
+  function _bmbProfOut(st){ if(!CAN_FARM_BMB || !st) return {}; var o={}; if(st.country) o.country=String(st.country); if(st.tenure) o.tenure=String(st.tenure); if(st.vatScheme) o.vat_scheme=String(st.vatScheme);
+    if(st.bmbFlags && typeof st.bmbFlags==='object') o.bmb_flags=st.bmbFlags; return o; }
   var _profSnap=null;
   const profile = {
     // Update only the fields actually provided — never null out an existing value.
@@ -3422,7 +3458,8 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
       }
       /* -394: the Market price alerts, their own statement behind their own probe. */
       var alerts=(CAN_FARM_ALERTS && Array.isArray(st.priceAlerts)) ? { price_alerts: _alertsClean(st.priceAlerts) } : {};
-      var snap=JSON.stringify({c:core,e:extra,k:cons,p:pref,r:rainc,a:alerts}); if(snap===_profSnap) return;
+      var bmbc=_bmbProfOut(st);   /* -404 */
+      var snap=JSON.stringify({c:core,e:extra,k:cons,p:pref,r:rainc,a:alerts,b:bmbc}); if(snap===_profSnap) return;
       /* Only what differs from the row the server last confirmed. */
       var groups = [
         { all: core,  fatal: true },
@@ -3430,7 +3467,8 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
         { all: cons,  warn: 'Profile: privacy consent not recorded \u2014 run the consent migration in Supabase.' },
         { all: (pref ? { prefs: pref } : {}), warn: 'Profile: payments on account and year-end stock not saved', done: function(){ _farmPrefs = pref; } },
         { all: rainc, warn: 'Profile: rainfall location and settings not saved \u2014 run tools/uk-rainfall-schema.sql in Supabase.' },
-        { all: alerts, warn: 'Profile: price alerts not saved \u2014 run tools/uk-pilot-followup-columns.sql in Supabase.' }
+        { all: alerts, warn: 'Profile: price alerts not saved \u2014 run tools/uk-pilot-followup-columns.sql in Supabase.' },
+        { all: bmbc, warn: 'Profile: Build my budget answers not saved \u2014 run tools/uk-b10-404.sql in Supabase.' }   /* -404 */
       ];
       var extraOk = true, firstErr = null, stale = [];
       for(var gi = 0; gi < groups.length; gi++){
@@ -3982,6 +4020,10 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
                          evtToDb: planEvtToDb, evtFromDb: planEvtFromDb, alertsClean: _alertsClean,
                          migSpacing: _migSpacing, migAlerts: _migAlerts, migKey: _migKey, complyRtKey: _complyRtKey,
                          profileSnapFields: function(st){ return (CAN_FARM_ALERTS && Array.isArray(st && st.priceAlerts)) ? { price_alerts: _alertsClean(st.priceAlerts) } : {}; } },
+                /* -404 (B10): harness access to the herd / crop plan and the farm's Build my budget whitelists */
+                _b10: { herdToDb: herdToDb, herdFromDb: herdFromDb, cropToDb: planCropToDb, cropFromDb: planCropFromDb, profOut: _bmbProfOut, adoptMap: _PROF_COL_TO_KEY, capCols: CAP_COLS,
+                        caps: function(){ return { CAN_HERD_PLAN:CAN_HERD_PLAN, CAN_PLANCROP_PLAN:CAN_PLANCROP_PLAN, CAN_FARM_BMB:CAN_FARM_BMB }; },
+                        setCaps: function(on){ CAN_HERD_PLAN=!!on; CAN_PLANCROP_PLAN=!!on; CAN_FARM_BMB=!!on; } },
                 _ls: { herdToDb: herdToDb, herdFromDb: herdFromDb, moveToDb: moveToDb, moveFromDb: moveFromDb },
                 _util: { selectAll: selectAll, SELECT_ALL_MAX_ROWS: SELECT_ALL_MAX_ROWS },
                 /* -399 (8A): harness access to the Spreadsheet's whitelists, probes and keyed prune */
