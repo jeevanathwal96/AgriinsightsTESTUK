@@ -30,7 +30,7 @@
 <script defer src="vendor/chart.umd.js"></script>
 
 <script src="vendor/supabase.js"></script>
-<script src="ai-data-uk.js?v=uk138"></script>
+<script src="ai-data-uk.js?v=uk139"></script>
 <script src="ai-auth-uk.js?v=uk113"></script>
 <link rel="stylesheet" href="fonts.css"/>
 <style>
@@ -7044,6 +7044,16 @@ table.bg-xls td.on{outline:2px solid #217346;outline-offset:-2px}
 .bmb-body select{border:1.5px solid var(--br);border-radius:var(--rs);padding:6px 8px;font:inherit;font-size:13px;background:var(--wh);color:var(--t1);max-width:100%}
 .bmb-est{display:inline-block;font-size:10.5px;font-weight:700;color:var(--t3);background:var(--br2);border-radius:99px;padding:1px 7px;margin-left:6px;vertical-align:2px}
 .bmb-bench{font-size:12px;color:var(--t3);margin:4px 0 8px}
+.bmb-bench.bmb-px{margin:8px 0 6px;line-height:1.55}
+.pip.bmb-repl-tag{background:#eef0f2;color:#5b6570;border:1px solid #dde1e5;font-weight:700}
+.bmb-repl-acts{display:inline-flex;gap:8px;margin-left:6px}
+.bmb-repl{margin:10px 0 4px;padding:10px 12px;border:1px solid #dde1e5;border-radius:var(--rs);background:#f6f7f8;font-size:12.5px;color:var(--t2)}
+.bmb-repl-h{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:6px}
+.bmb-repl-h .pip{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px}
+.bmb-repl-row{display:grid;grid-template-columns:72px minmax(120px,1fr) 110px 90px auto;gap:6px 10px;align-items:center;padding:3px 0;border-top:1px solid #e6e9ec}
+.bmb-repl-row .n{text-align:right;font-variant-numeric:tabular-nums}
+.bmb-repl-f{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:8px}
+@media (max-width:640px){.bmb-repl-row{grid-template-columns:60px 1fr auto}.bmb-repl-row .n:nth-of-type(3){display:none}}
 .bmb-lock{margin:-6px 0 16px}
 .bmb-memo{display:flex;gap:8px;background:var(--bg);border:1px solid var(--br);border-radius:var(--rs);padding:10px 12px;font-size:13px;color:var(--t2);margin:10px 0}
 .bmb-inl{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--t2);margin-left:8px}
@@ -8668,6 +8678,7 @@ body.bmb-on{overflow:hidden}
       <div class="bg-scen-banner" id="bg-scen-banner" hidden></div>
       <div class="bg-lockbar" id="bg-lockbar" hidden></div>
       <div id="bmb-gapbar" class="bmb-host" hidden></div>
+      <div id="bmb-chgbar" class="bmb-host" hidden></div>
       <div class="bg-tools">
         <div class="bg-tools-l">
           <button class="bg-fpick" id="bg-f-btn" type="button" aria-haspopup="listbox"><span class="fl">Show</span><span>Whole farm</span><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
@@ -8743,6 +8754,7 @@ body.bmb-on{overflow:hidden}
   
   <div id="bgt-main">
     <div id="bmb-bar" hidden></div>
+    <div id="bmb-chg" hidden></div>
     <div class="bgt-hero green calm" id="bgt-hero">
       <div class="bgt-hero-eyebrow"><span class="bgt-hero-dot"></span><span id="bgt-hero-eyebrow-text">On track</span></div>
       <div class="bgt-hero-headline" id="bgt-hero-headline"></div>
@@ -11367,7 +11379,7 @@ body.bmb-on{overflow:hidden}
 
 </div>
 </div>
-<script src="js/app-0-7b51e69dd2.js"></script>
+<script src="js/app-0-110505ff03.js"></script>
 
 
 <div class="imp-bg" id="imp-hub-bg">
@@ -11923,7 +11935,7 @@ body.bmb-on{overflow:hidden}
 <div id="kpi-trail"></div>
 <script id="kpi-detail-js" src="js/app-1-fb7831f809.js"></script>
 
-<script id="bg-grid-js" src="js/app-2-d6a7d27be7.js"></script>
+<script id="bg-grid-js" src="js/app-2-367fea7b97.js"></script>
 
 <div class="simple-mode-badge" id="simple-badge">Simple View ON</div>
 </body>
