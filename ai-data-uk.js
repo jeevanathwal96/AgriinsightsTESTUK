@@ -399,7 +399,11 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
      One flag a table. Until it has run the app REFUSES to remove: a removal the server
      cannot store would come straight back on the next load. */
   let CAN_ORCH_FIX     = false;   /* orchard_sprays: removed_at/removed_reason/removed_by/changes */
-  let CAN_INPUT_FIX    = false;   /* crop_inputs:    the same four */
+  let CAN_INPUT_FIX    = false;
+  /* The phone app (UK in one app, phase 3 - 02-database/uk/uk-phone-pairing.sql in the SA repo,
+     run on this project 13 Oct 2026). */
+  let CAN_DEVICES      = false;   /* farm_devices: the phones added from Settings -> Your phone */
+  let CAN_ANIMAL_REG   = false;   /* animals.registered_at / passport_at / passport */   /* crop_inputs:    the same four */
   let CAN_HARV_FIX      = false;   // orchard_harvest:      the same four (-467, pick_treatment_corrections.sql)
   let CAN_TREAT_FIX     = false;   // livestock_treatments: the same four
   /* The rest of the record (uk-spray-ni-record.sql, signed off 23 Sep 2026): growth stage,
@@ -515,7 +519,8 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     ['budget_cells','ent_code'], ['budget_scenarios','is_live'],  /* -399 (8A) */
     ['budget_scenarios','yp'],   /* -401 (8B) */
     ['budget_cells','src'], ['budget_scenarios','kind'],   /* -403 (8E) */
-    ['herds','plan'], ['plan_crops','plan'], ['farms','bmb_flags']   /* -404 (B10) */
+    ['herds','plan'], ['plan_crops','plan'], ['farms','bmb_flags'],   /* -404 (B10) */
+    ['farm_devices','kind'], ['animals','registered_at']   /* the phone app, phase 3 */
   ];
 
   async function probeCaps(farmId){
@@ -573,6 +578,9 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     CAN_ORCH_PARTS    = keep(CAN_ORCH_PARTS,    'orchard_sprays','act');
     CAN_ORCH_FIX      = keep(CAN_ORCH_FIX,      'orchard_sprays','removed_at');
     CAN_INPUT_FIX     = keep(CAN_INPUT_FIX,     'crop_inputs','removed_at');
+    CAN_DEVICES       = keep(CAN_DEVICES,       'farm_devices','kind');
+    /* One ALTER per table in uk-phone-pairing.sql, so one column answers for all three. */
+    CAN_ANIMAL_REG    = keep(CAN_ANIMAL_REG,    'animals','registered_at');
     CAN_HARV_FIX       = keep(CAN_HARV_FIX,      'orchard_harvest','removed_at');
     CAN_TREAT_FIX      = keep(CAN_TREAT_FIX,     'livestock_treatments','removed_at');
     CAN_INPUT_NI      = keep(CAN_INPUT_NI,      'crop_inputs','bbch');
@@ -2129,13 +2137,58 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
   }
   function treatToDb(t,fid){ var row = { farm_id:fid, local_id:String(t.id), herd_local_id:(t.herd!=null)?String(t.herd):null, kind:t.kind||null, product:t.product||null, reg:t.reg||null, act:t.act||null, abx:(t.abx!=null)?!!t.abx:null, target:t.target||null, head:(t.head!=null)?parseInt(t.head,10):null, tags:t.tags||[], dose:t.dose||null, route:t.route||null, reason:t.reason||null, batch:t.batch||null, expiry:t.expiry||null, rx:t.rx||null, treat_date:t.date||null, by_who:t.by||null, cost:(t.cost!=null)?Number(t.cost):null, meat:(t.meat!=null)?parseInt(t.meat,10):null, milk:(t.milk!=null)?parseInt(t.milk,10):null }; if(CAN_TREAT_FIX) _fixCols(row,t); return row; }
   function treatFromDb(r){ var t={ id:r.local_id, herd:_numIf(r.herd_local_id), kind:r.kind||'', product:r.product||'', reg:r.reg||'', act:r.act||'', target:r.target||'', head:Number(r.head)||0, tags:r.tags||[], dose:r.dose||'', route:r.route||'', reason:r.reason||'', batch:r.batch||'', expiry:r.expiry||'', date:r.treat_date||'', by:r.by_who||'', cost:Number(r.cost)||0, meat:Number(r.meat)||0, milk:Number(r.milk)||0 }; if(r.abx) t.abx=true; if(r.rx) t.rx=r.rx; return _fixRead(t, r); }
-  function animalToDb(a,fid){ return { farm_id:fid, local_id:String(a.id), herd_local_id:(a.herd!=null)?String(a.herd):null, tag:a.tag||null, name:a.name||null, sex:a.sex||null, breed:a.breed||null, cls:a.cls||null, dob:a.dob||null, dam:a.dam||null, sire:a.sire||null, repro:(a.repro&&a.repro.length)?a.repro:null, status:a.status||null, due_approx:a.dueApprox||null, parity:a.parity||null, weight:(a.weight!=null?a.weight:null) }; }
-  function animalFromDb(r){ var a={ id:r.local_id, herd:_numIf(r.herd_local_id), tag:r.tag||'', sex:r.sex||'' }; if(r.name) a.name=r.name; if(r.breed) a.breed=r.breed; if(r.cls) a.cls=r.cls; if(r.dob) a.dob=r.dob; if(r.dam) a.dam=r.dam; if(r.sire) a.sire=r.sire; if(r.repro){ try{ a.repro=(typeof r.repro==='string'?JSON.parse(r.repro):r.repro); }catch(e){} } if(r.status) a.status=r.status; if(r.due_approx) a.dueApprox=r.due_approx; if(r.parity) a.parity=r.parity; if(r.weight!=null) a.weight=r.weight; return a; }
+  function animalToDb(a,fid){ return Object.assign({ farm_id:fid, local_id:String(a.id), herd_local_id:(a.herd!=null)?String(a.herd):null, tag:a.tag||null, name:a.name||null, sex:a.sex||null, breed:a.breed||null, cls:a.cls||null, dob:a.dob||null, dam:a.dam||null, sire:a.sire||null, repro:(a.repro&&a.repro.length)?a.repro:null, status:a.status||null, due_approx:a.dueApprox||null, parity:a.parity||null, weight:(a.weight!=null?a.weight:null) }, CAN_ANIMAL_REG ? {
+      /* The passport the desktop always kept and never saved (found 13 Oct 2026: a second computer,
+         or the phone, read every calf as unregistered), and the two dates the phone ticks: registered
+         with BCMS / ScotEID / APHIS, and the passport in the post. */
+      passport:a.passport||null, registered_at:a.registeredAt||null, passport_at:a.passportAt||null } : {}); }
+  function animalFromDb(r){ var a={ id:r.local_id, herd:_numIf(r.herd_local_id), tag:r.tag||'', sex:r.sex||'' }; if(r.name) a.name=r.name; if(r.breed) a.breed=r.breed; if(r.cls) a.cls=r.cls; if(r.dob) a.dob=r.dob; if(r.dam) a.dam=r.dam; if(r.sire) a.sire=r.sire; if(r.repro){ try{ a.repro=(typeof r.repro==='string'?JSON.parse(r.repro):r.repro); }catch(e){} } if(r.status) a.status=r.status; if(r.due_approx) a.dueApprox=r.due_approx; if(r.parity) a.parity=r.parity; if(r.weight!=null) a.weight=r.weight; if(r.passport) a.passport=r.passport; if(r.registered_at) a.registeredAt=r.registered_at; if(r.passport_at) a.passportAt=r.passport_at; return a; }
   function healthToDb(h,fid){ return { farm_id:fid, local_id:h.id?String(h.id):null, health_date:h.date||null, type:h.type||null, event:h.event||null, count:(h.count!=null)?parseInt(h.count,10):null, descr:h.desc||null, cost:(h.cost!=null)?Number(h.cost):null, supplier:h.supplier||null }; }
-  function healthFromDb(r){ return { date:r.health_date||'', type:r.type||'', event:r.event||'', count:Number(r.count)||0, desc:r.descr||'', cost:Number(r.cost)||0, supplier:r.supplier||'' }; }
+  /* A phone's health note names its herd (livestock_health.herd_local_id, added for the phone 13 Oct 2026). */
+  function healthFromDb(r){ var h={ date:r.health_date||'', type:r.type||'', event:r.event||'', count:Number(r.count)||0, desc:r.descr||'', cost:Number(r.cost)||0, supplier:r.supplier||'' }; if(r.herd_local_id!=null) h.herd=_numIf(r.herd_local_id); if(r.local_id) h.id=r.local_id; return h; }
   // Breeding & calving (reproduction). Table livestock_breedings — see livestock_breeding_schema.sql.
   function breedingToDb(b,fid){ return { farm_id:fid, local_id:String(b.id), herd_local_id:(b.herd!=null)?String(b.herd):null, season:b.season||null, sire:b.sire||null, females:(b.females!=null)?parseInt(b.females,10):null, start_date:b.start||null, end_date:b.end||null, gestation:(b.gestation!=null)?parseInt(b.gestation,10):null, pd_date:b.pdDate||null, in_calf:(b.inCalf!=null)?parseInt(b.inCalf,10):null, empty:(b.empty!=null)?parseInt(b.empty,10):null, born:(b.born!=null)?parseInt(b.born,10):null, stillborn:(b.stillborn!=null)?parseInt(b.stillborn,10):null, weaned:(b.weaned!=null)?parseInt(b.weaned,10):null, wean_weight:(b.weanWeight!=null)?Number(b.weanWeight):null, wean_date:b.weanDate||null, status:b.status||null }; }
   function breedingFromDb(r){ var b={ id:r.local_id, herd:_numIf(r.herd_local_id), season:r.season||'', sire:r.sire||'', females:(r.females!=null)?Number(r.females):null, start:r.start_date||'', end:r.end_date||'', gestation:Number(r.gestation)||283, pdDate:r.pd_date||'', inCalf:(r.in_calf!=null)?Number(r.in_calf):null, empty:(r.empty!=null)?Number(r.empty):null, born:Number(r.born)||0, stillborn:Number(r.stillborn)||0, weaned:(r.weaned!=null)?Number(r.weaned):0, status:r.status||'breeding' }; if(r.wean_weight!=null) b.weanWeight=Number(r.wean_weight); if(r.wean_date) b.weanDate=r.wean_date; return b; }
+
+  /* ---- the phone's movements (UK in one app, phase 3 - a port of SA's mobile Phase 0, step 4) ----
+     A herd's qty is not the sum of its moves (there is an opening number the farmer types), so the
+     answerable question is narrower: which moves is the stored count NOT counting yet? A move created
+     after its herd row was last written is one - a birth or a sale recorded on the phone at the gate,
+     or on another computer. */
+  var _LS_ADDS    = { born:1, bought:1 };
+  var _LS_NEUTRAL = { promote:1 };
+  function _lsPendingMoves(herdRows, moveRows){
+    var writtenAt = {};
+    (herdRows||[]).forEach(function(r){ if(r && r.local_id!=null) writtenAt[String(r.local_id)] = r.updated_at || null; });
+    var out = {};
+    (moveRows||[]).forEach(function(m){
+      if(!m || m.herd_local_id==null) return;
+      var reason = String(m.reason||'');
+      if(_LS_NEUTRAL[reason]) return;
+      var hid = String(m.herd_local_id), saved = writtenAt[hid];
+      /* No timestamp either side and there is no way to tell - say nothing rather than
+         double-count a move the stored figure already includes. */
+      if(!saved || !m.created_at) return;
+      if(!(m.created_at > saved)) return;            // already in the stored count
+      var q = parseInt(m.qty,10)||0; if(q<=0) return;
+      var signed = _LS_ADDS[reason] ? q : -q;
+      var o = out[hid] || (out[hid] = { delta:0, n:0, cls:{}, tagsOff:[] });
+      o.delta += signed; o.n++;
+      if(m.cls) o.cls[String(m.cls)] = (o.cls[String(m.cls)]||0) + signed;
+      /* The ear tags that LEFT (a phone sale or death on a tagged UK herd carries them in its note,
+         in the desktop's own "· ID UK 123456 700318, ..." form - _ukMoveIdMark). Those animals come
+         off the tag list here: left on it, _lsSyncHerd's ratchet (qty = number of tagged animals)
+         would put the sold head straight back. */
+      if(signed < 0) o.tagsOff = o.tagsOff.concat(_lsTagsInNote(m.note));
+    });
+    return out;
+  }
+  function _lsTagKey(t){ return String(t||'').replace(/\s+/g,'').toUpperCase(); }
+  function _lsTagsInNote(note){
+    var x = String(note||'').match(/(?:^|\u00b7\s*)ID\s+([^\u00b7]+)/);
+    if(!x) return [];
+    return x[1].split(/[,;]/).map(_lsTagKey).filter(function(t){ return /^UK\d{6,}/.test(t); });
+  }
 
   load.livestock = async function(farmId){
     farmId = farmId || farm.active();
@@ -2158,6 +2211,38 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     (hc.data||[]).forEach(function(r){ (byHerd[r.herd_local_id]=byHerd[r.herd_local_id]||[]).push({k:r.class_key,n:Number(r.count)||0,v:Number(r.class_value)||0}); });
     var herds=(hd.data||[]).map(function(r){ var h=herdFromDb(r); var cs=byHerd[r.local_id]; if(cs&&cs.length) h.classes=cs; return h; });
     var benchmarks={}; (bm.data||[]).forEach(function(r){ benchmarks[r.bench_key]=Number(r.bench_value); });
+    /* Moves recorded since this herd's counts were last written - from the phone at a gate, or from
+       another computer. Fold them in so the number on screen is the number the ledger supports, and
+       hand back what changed so the farmer is told rather than quietly shown a different figure.
+       (SA's mobile Phase 0, step 4 - the UK desktop never had it, so a phone's birth or sale never
+       reached a UK herd count.) */
+    var _lsPend=_lsPendingMoves(hd.data, mv.data), _lsRecon=[], _tagsOff={};
+    herds.forEach(function(h){
+      var p=_lsPend[String(h.id)];
+      if(!p) return;
+      if(p.tagsOff.length) _tagsOff[String(h.id)] = p.tagsOff;
+      if(!p.delta) return;
+      var stored=Number(h.qty)||0, derived=Math.max(0, stored+p.delta);
+      if(derived===stored) return;
+      _lsRecon.push({ herd:h.id, name:h.name||'', type:h.type||'', stored:stored, derived:derived, moves:p.n });
+      h.qty=derived;
+      if(h.classes){
+        Object.keys(p.cls).forEach(function(k){
+          var d=p.cls[k]; if(!d) return;
+          var c=null;
+          for(var i=0;i<h.classes.length;i++){ if(String(h.classes[i].k)===k){ c=h.classes[i]; break; } }
+          if(!c){ if(d<=0) return; c={k:k,n:0,v:Number(h.sell)||0}; h.classes.push(c); }
+          c.n=Math.max(0,(Number(c.n)||0)+d);
+        });
+      }
+    });
+    /* The animals a phone sale or death took off the farm, by ear tag, herd by herd. */
+    var animals=(an.data||[]).map(animalFromDb), animalsOff=[];
+    animals=animals.filter(function(a){
+      var off=_tagsOff[String(a.herd)];
+      if(off && off.indexOf(_lsTagKey(a.tag))>=0){ animalsOff.push(a.id); return false; }
+      return true;
+    });
     // Breeding — queried separately & resiliently: a farm whose Supabase hasn't run the
     // livestock_breeding migration must still load all its other livestock data.
     var breedings=[];
@@ -2171,7 +2256,8 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
                 ST_LS.treatments is right without knowing removal exists (the phone does the same). */
              treatments:(tr.data||[]).filter(function(r){ return !r.removed_at; }).map(treatFromDb),
              removedTreatments:(tr.data||[]).filter(function(r){ return !!r.removed_at; }).map(treatFromDb),
-             animals:(an.data||[]).map(animalFromDb), health:(he.data||[]).map(healthFromDb), breedings:breedings };
+             animals:animals, health:(he.data||[]).map(healthFromDb), breedings:breedings,
+             stockRecon:_lsRecon, animalsOff:animalsOff };
   };
 
   /* ---- FUEL ISSUES (diesel rebate logbook) ---------------------------------
@@ -4003,10 +4089,74 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
   load.prefetched = function(){ var o = {}; if (_pre) Object.keys(_pre.items).forEach(function(k){ o[k] = true; }); return o; };
 
   // ---- EXPORT --------------------------------------------------------------
-  global.AI = { __probeCaps: probeCaps, __client: client, __collapseRepeats: _collapseRepeats, __rowKey: _rowKey,
+  /* ---- PAIRING A PHONE (UK in one app, phase 3; a port of SA's ai-data.js pairing) -------------
+     The desktop half: mint a short-lived code, store only a HASH of the secret behind the QR, and let
+     the phone trade it for a session through the pair-device edge function (deployed to this project
+     13 Oct 2026). The phone signs in AS this account, so it sees exactly what this account sees.
+     Alphabet without I, O, 0 or 1 - this gets read aloud across a yard. */
+  const PAIR_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  function _pairHex(bytes){ var out=''; for(var i=0;i<bytes.length;i++) out += ('0'+bytes[i].toString(16)).slice(-2); return out; }
+  const pairing = {
+    available(){ return !!(global.crypto && global.crypto.subtle && global.crypto.getRandomValues); },
+    async create(){
+      const fid = farm.active();
+      if(!fid) throw new Error('No active farm');
+      if(!pairing.available()) throw new Error('This browser cannot make a secure code. Open the app over https and try again.');
+      const rnd = new Uint8Array(24); global.crypto.getRandomValues(rnd);
+      let code = ''; for(let i=0;i<8;i++) code += PAIR_ALPHABET[rnd[i] % PAIR_ALPHABET.length];
+      const secret = _pairHex(rnd.subarray(8));
+      const digest = await global.crypto.subtle.digest('SHA-256', new TextEncoder().encode(secret));
+      const hash = _pairHex(new Uint8Array(digest));
+      let uid = null;
+      try{ const u = await auth.currentUser(); uid = u && u.id; }catch(e){}
+      if(!uid) throw new Error('Sign in again before adding a phone.');
+      const r = await client().from('device_pair_tokens').insert({ farm_id: fid, created_by: uid, code: code, token_hash: hash }).select().single();
+      if(r.error) throw r.error;
+      /* Kept on its own row because the code row is deleted the moment a phone uses it: the list of
+         phones added is read from here. Every UK phone is the owner's for now - payslips are not on
+         the UK phone, so "whose phone is this?" has nothing to decide yet. */
+      let device = null;
+      if(CAN_DEVICES){
+        const d = await client().from('farm_devices').insert({ farm_id: fid, pair_code: code, kind: 'owner', created_by: uid }).select().single();
+        if(d.error) throw d.error;
+        device = d.data || null;
+      }
+      return { code: code, secret: secret, farmId: fid, device: device, expiresAt: (r.data && r.data.expires_at) || null, id: (r.data && r.data.id) || null };
+    },
+    async devices(){
+      const fid = farm.active(); if(!fid || !CAN_DEVICES) return null;
+      const r = await client().from('farm_devices').select('id,kind,pair_code,created_at').eq('farm_id', fid).order('created_at', { ascending: false });
+      if(r.error) throw r.error;
+      return r.data || [];
+    },
+    async forget(id){
+      if(!id || !CAN_DEVICES) return false;
+      const r = await client().from('farm_devices').delete().eq('id', id);
+      if(r.error) throw r.error;
+      return true;
+    },
+    canList(){ return CAN_DEVICES; },
+    /* The edge function DELETES a code once a phone redeems it, so a row that is still here means
+       no phone paired with it. */
+    async tokenState(id){
+      if(!id) return null;
+      const r = await client().from('device_pair_tokens').select('id,used_at,device_label').eq('id', id).limit(1);
+      if(r.error) throw r.error;
+      return (r.data && r.data[0]) || null;
+    },
+    /* Cancelling a code the farmer decided not to use: marked used, so it is dead. */
+    async revoke(id){
+      if(!id) return;
+      const r = await client().from('device_pair_tokens').update({ used_at: new Date().toISOString(), device_label: 'cancelled' }).eq('id', id);
+      if(r.error) throw r.error;
+      return true;
+    }
+  };
+
+  global.AI = { __probeCaps: probeCaps, __client: client, __lsPendingMoves: _lsPendingMoves, __lsTagsInNote: _lsTagsInNote, __lsTagKey: _lsTagKey, __collapseRepeats: _collapseRepeats, __rowKey: _rowKey,
                 rain: rain, init: client, projectRef: PROJECT_REF, auth, farm, sync: sync, load, txn, account, budget, recurring, asset, loans,
                 coopSettlement: coopSettlement, livestock: livestock, crop: crop, orchard: orchard, plan: plan, workers: workersSave, profile: profile,
-                documents: documents, fuel: fuel,
+                documents: documents, fuel: fuel, pairing: pairing,
                 rules: rules,
                 storage: storage,
                 importBatch: importBatch,

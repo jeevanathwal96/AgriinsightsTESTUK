@@ -30,8 +30,8 @@
 <script defer src="vendor/chart.umd.js"></script>
 
 <script src="vendor/supabase.js"></script>
-<script src="ai-data-uk.js?v=uk141"></script>
-<script src="ai-auth-uk.js?v=uk113"></script>
+<script src="ai-data-uk.js?v=uk142"></script>
+<script src="ai-auth-uk.js?v=uk114"></script>
 <link rel="stylesheet" href="fonts.css"/>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -10834,6 +10834,31 @@ body.bmb-on{overflow:hidden}
 
 
     <div class="set-sec">How the app works</div>
+    <div class="set-row" id="set-sec-phone">
+      
+      <div class="set-card set-span">
+        <div class="set-h"><span class="ic">&#128241;</span>Your phone</div>
+        <div class="hint" style="margin-top:-4px;font-size:12px">The phone app is where the rest of the farm day happens &mdash; a calf in the shed, diesel at the tank, a rain reading before breakfast. Pair it once and it works from the same books as this screen. The code below is not a password: it dies ten minutes after you ask for it, used or not.</div>
+        <div id="set-pair-idle" style="margin-top:12px">
+          <button type="button" class="btn-pri" id="set-pair-btn" onclick="aiPairOpen()">Add your phone</button>
+          <div id="set-pair-devs"></div>
+        </div>
+        <div id="set-pair-live" style="display:none;margin-top:14px">
+          <div style="display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap">
+            <div id="set-pair-qr" style="background:#fff;padding:10px;border-radius:12px;border:1px solid var(--br);line-height:0"></div>
+            <div style="min-width:210px;display:flex;flex-direction:column;gap:8px">
+              <div style="font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--t3)">Scan it, or type this in</div>
+              <div id="set-pair-code" style="font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:26px;font-weight:800;letter-spacing:.14em;color:var(--gd)"></div>
+              <div id="set-pair-exp" class="hint" style="font-size:12px"></div>
+              <div style="display:flex;gap:8px;margin-top:4px">
+                <button type="button" class="btn-sec" onclick="aiPairDone()">Done</button>
+                <button type="button" class="btn-sec" onclick="aiPairOpen()">New code</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
     <div class="set-row" id="set-sec-app">
       
       <div class="set-card set-span">
@@ -11383,7 +11408,7 @@ body.bmb-on{overflow:hidden}
 
 </div>
 </div>
-<script src="js/app-0-cdb391c384.js"></script>
+<script src="js/app-0-2d4d98faa2.js"></script>
 
 
 <div class="imp-bg" id="imp-hub-bg">
