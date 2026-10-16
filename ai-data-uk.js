@@ -2140,9 +2140,9 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
   function animalToDb(a,fid){ return Object.assign({ farm_id:fid, local_id:String(a.id), herd_local_id:(a.herd!=null)?String(a.herd):null, tag:a.tag||null, name:a.name||null, sex:a.sex||null, breed:a.breed||null, cls:a.cls||null, dob:a.dob||null, dam:a.dam||null, sire:a.sire||null, repro:(a.repro&&a.repro.length)?a.repro:null, status:a.status||null, due_approx:a.dueApprox||null, parity:a.parity||null, weight:(a.weight!=null?a.weight:null) }, CAN_ANIMAL_REG ? {
       /* The passport the desktop always kept and never saved (found 13 Oct 2026: a second computer,
          or the phone, read every calf as unregistered), and the two dates the phone ticks: registered
-         with BCMS / ScotEID / APHIS, and the passport in the post. */
+         with BCMS / ScotEID / DAERA, and the passport in the post. */
       passport:a.passport||null, registered_at:a.registeredAt||null, passport_at:a.passportAt||null } : {}); }
-  function animalFromDb(r){ var a={ id:r.local_id, herd:_numIf(r.herd_local_id), tag:r.tag||'', sex:r.sex||'' }; if(r.name) a.name=r.name; if(r.breed) a.breed=r.breed; if(r.cls) a.cls=r.cls; if(r.dob) a.dob=r.dob; if(r.dam) a.dam=r.dam; if(r.sire) a.sire=r.sire; if(r.repro){ try{ a.repro=(typeof r.repro==='string'?JSON.parse(r.repro):r.repro); }catch(e){} } if(r.status) a.status=r.status; if(r.due_approx) a.dueApprox=r.due_approx; if(r.parity) a.parity=r.parity; if(r.weight!=null) a.weight=r.weight; if(r.passport) a.passport=r.passport; if(r.registered_at) a.registeredAt=r.registered_at; if(r.passport_at) a.passportAt=r.passport_at; return a; }
+  function animalFromDb(r){ var a={ id:r.local_id, herd:_numIf(r.herd_local_id), tag:r.tag||'', sex:r.sex||'' }; if(r.name) a.name=r.name; if(r.breed) a.breed=r.breed; if(r.cls) a.cls=r.cls; if(r.dob) a.dob=r.dob; if(r.dam) a.dam=r.dam; if(r.sire) a.sire=r.sire; if(r.repro){ try{ a.repro=(typeof r.repro==='string'?JSON.parse(r.repro):r.repro); }catch(e){} } if(r.status) a.status=r.status; if(r.due_approx) a.dueApprox=r.due_approx; if(r.parity) a.parity=r.parity; if(r.weight!=null) a.weight=r.weight; if(r.passport) a.passport=r.passport; if(r.registered_at) a.registeredAt=r.registered_at; if(r.passport_at) a.passportAt=r.passport_at; if(r.created_at) a.createdAt=r.created_at; return a; }
   function healthToDb(h,fid){ return { farm_id:fid, local_id:h.id?String(h.id):null, health_date:h.date||null, type:h.type||null, event:h.event||null, count:(h.count!=null)?parseInt(h.count,10):null, descr:h.desc||null, cost:(h.cost!=null)?Number(h.cost):null, supplier:h.supplier||null }; }
   /* A phone's health note names its herd (livestock_health.herd_local_id, added for the phone 13 Oct 2026). */
   function healthFromDb(r){ var h={ date:r.health_date||'', type:r.type||'', event:r.event||'', count:Number(r.count)||0, desc:r.descr||'', cost:Number(r.cost)||0, supplier:r.supplier||'' }; if(r.herd_local_id!=null) h.herd=_numIf(r.herd_local_id); if(r.local_id) h.id=r.local_id; return h; }
@@ -2172,22 +2172,71 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
       if(!(m.created_at > saved)) return;            // already in the stored count
       var q = parseInt(m.qty,10)||0; if(q<=0) return;
       var signed = _LS_ADDS[reason] ? q : -q;
-      var o = out[hid] || (out[hid] = { delta:0, n:0, cls:{}, tagsOff:[] });
+      var o = out[hid] || (out[hid] = { delta:0, n:0, cls:{} });
       o.delta += signed; o.n++;
       if(m.cls) o.cls[String(m.cls)] = (o.cls[String(m.cls)]||0) + signed;
-      /* The ear tags that LEFT (a phone sale or death on a tagged UK herd carries them in its note,
-         in the desktop's own "· ID UK 123456 700318, ..." form - _ukMoveIdMark). Those animals come
-         off the tag list here: left on it, _lsSyncHerd's ratchet (qty = number of tagged animals)
-         would put the sold head straight back. */
-      if(signed < 0) o.tagsOff = o.tagsOff.concat(_lsTagsInNote(m.note));
+      /* The ear tags that left are read from every move by _lsAnimalsOnFarm (-409), not from these. */
     });
     return out;
   }
   function _lsTagKey(t){ return String(t||'').replace(/\s+/g,'').toUpperCase(); }
+  /* -409 (B10I item 3): EVERY "ID ..." part of the note, not only the first - a note the farmer began
+     "ID checked at mart" put its own words where the tags were looked for, and the sold animal stayed on
+     the list. Only things that read as tags count (UK + 6 or more digits, spaces stripped), so the
+     farmer's words never become one. The phone's tagsInNote (de6de79) reads it the same way. */
   function _lsTagsInNote(note){
-    var x = String(note||'').match(/(?:^|\u00b7\s*)ID\s+([^\u00b7]+)/);
-    if(!x) return [];
-    return x[1].split(/[,;]/).map(_lsTagKey).filter(function(t){ return /^UK\d{6,}/.test(t); });
+    var re = /(?:^|\u00b7\s*)ID\s+([^\u00b7]+)/g, x, out = [], s = String(note||'');
+    while((x = re.exec(s))){
+      x[1].split(/[,;]/).forEach(function(t){ var k=_lsTagKey(t); if(/^UK\d{6,}/.test(k) && out.indexOf(k)<0) out.push(k); });
+    }
+    return out;
+  }
+  /* A calendar date as YYYY-MM-DD from a server row ("2026-10-15", an ISO stamp) or the desktop's
+     own "15 Oct 2026"; '' when unreadable. */
+  function _lsISO(d){
+    var t=String(d||'').trim(); if(!t) return '';
+    if(/^\d{4}-\d{2}-\d{2}/.test(t)) return t.slice(0,10);
+    var m=t.match(/^(\d{1,2})\s+([A-Za-z]{3})[A-Za-z.]*\s+(\d{4})$/);
+    if(m){ var mi=['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'].indexOf(m[2].toLowerCase()); if(mi>=0) return m[3]+'-'+String(mi+1).padStart(2,'0')+'-'+String(m[1]).padStart(2,'0'); }
+    return '';
+  }
+  /* -409 (B10I item 3): a tag is for life - the LATEST move naming it wins. For each tag, the latest
+     move that took it off the farm (a sale, death, theft) against the latest that brought it back (a
+     purchase naming it, or the animal's row being made after the sale - a bought-back animal added
+     again). Moves are {reason, date, note} (app or server shape). Returns {off:{tag:date}, back:{tag:date}}.
+     Same rule as the phone's onFarm (cdc13d2). */
+  function _lsTagMoves(moves){
+    var off={}, back={}, offAt={};
+    (moves||[]).forEach(function(m){
+      if(!m) return;
+      var reason=String(m.reason||''), isOn=(reason==='bought'), isOff=!_LS_ADDS[reason] && !_LS_NEUTRAL[reason] && !!reason;
+      if(!isOn && !isOff) return;
+      var d=_lsISO(m.move_date!=null?m.move_date:m.date); if(!d) return;
+      var map=isOn?back:off, at=String(m.created_at||'');
+      _lsTagsInNote(m.note).forEach(function(k){
+        if(!map[k] || d>map[k]){ map[k]=d; if(isOff){ if(at) offAt[k]=at; else delete offAt[k]; } }
+        else if(isOff && d===map[k] && at && offAt[k] && at>offAt[k]) offAt[k]=at;
+      });
+    });
+    return { off:off, back:back, offAt:offAt };
+  }
+  /* Is this animal still on the farm, given _lsTagMoves? a = {tag, dob, created_at|createdAt}. */
+  function _lsTagOnFarm(st, a){
+    var k=_lsTagKey(a&&a.tag), d=st.off[k];
+    if(!k || !d) return true;
+    var dob=_lsISO(a.dob); if(dob && d<dob) return true;            // a move before it was born is not about it
+    /* Made after the sale: against the moment the sale was RECORDED when the row says (a farmer setting
+       up today who back-dates last week's sale must not see the animal kept), else the sale's date. */
+    var b=st.back[k], madeAt=String(a.created_at||a.createdAt||''), at=st.offAt&&st.offAt[k];
+    var madeAfter = at ? (!!madeAt && madeAt>at) : (!!_lsISO(madeAt) && _lsISO(madeAt)>d);
+    return (!!b && b>d) || madeAfter;
+  }
+  /* The animals still on the farm, from ALL the moves (not only the ones the herd count has not caught
+     up with): a sale the stored count already holds still keeps its animal off the list, so
+     _lsSyncHerd's ratchet (qty = number of tagged animals) can never put the head back on a later load. */
+  function _lsAnimalsOnFarm(animals, moves){
+    var st=_lsTagMoves(moves);
+    return (animals||[]).filter(function(a){ return _lsTagOnFarm(st, a); });
   }
 
   load.livestock = async function(farmId){
@@ -2216,11 +2265,10 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
        hand back what changed so the farmer is told rather than quietly shown a different figure.
        (SA's mobile Phase 0, step 4 - the UK desktop never had it, so a phone's birth or sale never
        reached a UK herd count.) */
-    var _lsPend=_lsPendingMoves(hd.data, mv.data), _lsRecon=[], _tagsOff={};
+    var _lsPend=_lsPendingMoves(hd.data, mv.data), _lsRecon=[];
     herds.forEach(function(h){
       var p=_lsPend[String(h.id)];
       if(!p) return;
-      if(p.tagsOff.length) _tagsOff[String(h.id)] = p.tagsOff;
       if(!p.delta) return;
       var stored=Number(h.qty)||0, derived=Math.max(0, stored+p.delta);
       if(derived===stored) return;
@@ -2236,13 +2284,11 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
         });
       }
     });
-    /* The animals a phone sale or death took off the farm, by ear tag, herd by herd. */
-    var animals=(an.data||[]).map(animalFromDb), animalsOff=[];
-    animals=animals.filter(function(a){
-      var off=_tagsOff[String(a.herd)];
-      if(off && off.indexOf(_lsTagKey(a.tag))>=0){ animalsOff.push(a.id); return false; }
-      return true;
-    });
+    /* The animals a sale or death took off the farm, by ear tag - the latest move naming a tag wins
+       (-409: a tag is for life; a sale then a later purchase of the same tag keeps the animal). */
+    var _onRows=_lsAnimalsOnFarm(an.data||[], mv.data||[]), animalsOff=[];
+    (an.data||[]).forEach(function(r){ if(_onRows.indexOf(r)<0) animalsOff.push(r.local_id); });
+    var animals=_onRows.map(animalFromDb);
     // Breeding — queried separately & resiliently: a farm whose Supabase hasn't run the
     // livestock_breeding migration must still load all its other livestock data.
     var breedings=[];
@@ -4153,7 +4199,7 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     }
   };
 
-  global.AI = { __probeCaps: probeCaps, __client: client, __lsPendingMoves: _lsPendingMoves, __lsTagsInNote: _lsTagsInNote, __lsTagKey: _lsTagKey, __collapseRepeats: _collapseRepeats, __rowKey: _rowKey,
+  global.AI = { __probeCaps: probeCaps, __client: client, __lsPendingMoves: _lsPendingMoves, __lsTagsInNote: _lsTagsInNote, __lsTagKey: _lsTagKey, __lsTagMoves: _lsTagMoves, __lsTagOnFarm: _lsTagOnFarm, __lsAnimalsOnFarm: _lsAnimalsOnFarm, __collapseRepeats: _collapseRepeats, __rowKey: _rowKey,
                 rain: rain, init: client, projectRef: PROJECT_REF, auth, farm, sync: sync, load, txn, account, budget, recurring, asset, loans,
                 coopSettlement: coopSettlement, livestock: livestock, crop: crop, orchard: orchard, plan: plan, workers: workersSave, profile: profile,
                 documents: documents, fuel: fuel, pairing: pairing,
