@@ -12,16 +12,16 @@
  */
 'use strict';
 
-var APP_VERSION = 'uk-2026-10-17-410';
+var APP_VERSION = 'uk-2026-10-17-411';
 var CACHE = 'agriinsights-uk-' + APP_VERSION;
 
 /* App shell precached on install. The ?v=-suffixed JS is intentionally left to
  * runtime caching so the existing ?v= cache-busting keeps working untouched. */
 var PRECACHE = [
   './index-uk.html',
-  './js/app-0-2a66be4641.js',   /* dist build: inline script 0 */
-  './js/app-1-fb7831f809.js',   /* dist build: inline script 1 */
-  './js/app-2-5c59ad8081.js',   /* dist build: inline script 2 */
+  './js/app-0-27e219b493.js',   /* dist build: inline script 0 */
+  './js/app-1-c045672853.js',   /* dist build: inline script 1 */
+  './js/app-2-5b4c52fde6.js',   /* dist build: inline script 2 */
   './manifest-uk.webmanifest',
   './fonts.css',
   './vendor/chart.umd.js',
@@ -92,12 +92,22 @@ function _sameBody(a, b){
   if (!a || !b) return Promise.resolve(false);
   return Promise.all([a.clone().text(), b.clone().text()]).then(function (t) { return t[0] === t[1]; }).catch(function () { return false; });
 }
-function _tellNewer(clientId){
+/* -411 (B11F item 3): the page asks which version this worker is; and the "newer page" message carries the
+   newer page's own release (its <meta name="ai-build">), so the page shows the bar only when it differs. */
+self.addEventListener('message', function (e) {
+  if (!e.data || e.data.type !== 'ai-version?') return;
+  var m = { type: 'ai-version', v: APP_VERSION };
+  if (e.ports && e.ports[0]) e.ports[0].postMessage(m); else if (e.source) e.source.postMessage(m);
+});
+function _buildOf(res){
+  return res.clone().text().then(function (t) { var m = String(t).match(/<meta name="ai-build" content="([^"]+)"/); return m ? m[1] : null; }).catch(function () { return null; });
+}
+function _tellNewer(clientId, build){
   if (!clientId) return;
   var tries = 0;
   (function send(){
     self.clients.get(clientId).then(function (c) {
-      if (c) { c.postMessage({ type: 'ai-new-version' }); return; }
+      if (c) { c.postMessage({ type: 'ai-new-version', build: build || null }); return; }
       if (++tries < 10) setTimeout(send, 1000);
     }).catch(function () {});
   })();
@@ -111,7 +121,7 @@ function _htmlResponse(e){
         var copy = res.clone();
         caches.open(CACHE).then(function (c) { return c.put('./index-uk.html', copy); }).catch(function () {});
         /* The cached copy was shown because the line was slow: say so if this one differs. */
-        if (servedCached) _sameBody(res, cached).then(function (same) { if (!same) _tellNewer(e.resultingClientId || e.clientId); });
+        if (servedCached) _sameBody(res, cached).then(function (same) { if (!same) _buildOf(res).then(function (b) { _tellNewer(e.resultingClientId || e.clientId, b); }); });
       }
       return res;
     });
