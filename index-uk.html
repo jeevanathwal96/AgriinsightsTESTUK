@@ -7,7 +7,7 @@
 
 <meta name="description" content="AgriInsights UK — making farm finances simple for UK farmers. Track costs, plan your season, stay ready for Making Tax Digital and keep your farm records straight."/>
 <meta name="theme-color" content="#1B4332"/>
-<meta name="ai-build" content="uk-2026-10-17-411"/>
+<meta name="ai-build" content="uk-2026-10-20-412"/>
 <meta name="color-scheme" content="light"/>
 <meta property="og:title" content="AgriInsights — Making Farm Finances Simple"/>
 <meta property="og:description" content="The farm finance app built for UK farmers. Track every pound, plan your season, stay MTD-ready — all in one place."/>
@@ -31,8 +31,8 @@
 <script defer src="vendor/chart.umd.js"></script>
 
 <script src="vendor/supabase.js"></script>
-<script src="ai-data-uk.js?v=uk143"></script>
-<script src="ai-auth-uk.js?v=uk114"></script>
+<script src="ai-data-uk.js?v=uk144"></script>
+<script src="ai-auth-uk.js?v=uk115"></script>
 <link rel="stylesheet" href="fonts.css"/>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -7144,7 +7144,9 @@ table.bg-g.bg-fit .lbl-i{white-space:normal}
 .bmb-in.est{border-style:dashed}
 .bmb-in:focus{outline:none;border-color:var(--gl);box-shadow:0 0 0 3px var(--gp)}
 .bmb-body select{border:1.5px solid var(--br);border-radius:var(--rs);padding:6px 8px;font:inherit;font-size:13px;background:var(--wh);color:var(--t1);max-width:100%}
-.bmb-est{display:inline-block;font-size:10.5px;font-weight:700;color:var(--t3);background:var(--br2);border-radius:99px;padding:1px 7px;margin-left:6px;vertical-align:2px}
+
+.bmb-est{display:inline;font-size:12px;font-weight:600;color:var(--ti-ct);background:none;border:0;padding:0;margin-left:6px;white-space:nowrap;vertical-align:baseline}
+.bmb-est::before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--ti-d);margin-right:5px;vertical-align:1px}
 .bmb-bench{font-size:12px;color:var(--t3);margin:4px 0 8px}
 .bmb-bench.bmb-px{margin:8px 0 6px;line-height:1.55}
 .pip.bmb-repl-tag{background:#eef0f2;color:#5b6570;border:1px solid #dde1e5;font-weight:700}
@@ -7159,7 +7161,7 @@ table.bg-g.bg-fit .lbl-i{white-space:normal}
 .bmb-lock{margin:-6px 0 16px}
 .bmb-memo{display:flex;gap:8px;background:var(--bg);border:1px solid var(--br);border-radius:var(--rs);padding:10px 12px;font-size:13px;color:var(--t2);margin:10px 0}
 .bmb-inl{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--t2);margin-left:8px}
-.bmb-flow{display:grid;grid-template-columns:minmax(160px,1.4fr) 110px 110px minmax(180px,1.6fr);gap:6px 10px;align-items:center;font-size:13px;color:var(--t2)}
+.bmb-flow{display:grid;grid-template-columns:var(--bmb-hc);gap:8px 10px;align-items:center;font-size:13px;color:var(--t2)}
 .bmb-flow .h{font-size:11.5px;font-weight:800;color:var(--t3);text-transform:uppercase;letter-spacing:.04em}
 .bmb-flow .h.r{text-align:right}
 .bmb-flow .nil{text-align:right;color:var(--t3);font-weight:700}
@@ -7245,11 +7247,42 @@ body.bmb-on{overflow:hidden}
 @media (max-width:760px){.bmb-big2,.bmb-two,.bmb-explain{grid-template-columns:1fr}.bmb-kpis{grid-template-columns:1fr 1fr}.bmb-flow{grid-template-columns:1fr 90px 90px}.bmb-flow .shape,.bmb-flow .h:last-child{grid-column:1/-1}.bmb-card{flex-direction:column}}
 
 .bmb-opt input,.bmb-inl input,.bmb-ticks input,.bmb-keep input,.bmb-flow input[type=checkbox]{width:auto!important;flex:0 0 auto;margin:3px 0 0;min-width:0}
-.bmb-row .fld .bmb-est{align-self:flex-start;margin:3px 0 0}
-.bmb-flow .bmb-est{display:block;width:max-content;margin:2px 0 0 auto}
-.bmb-flow .shape select,.bmb-inl select{width:auto!important;display:inline-block}
+.bmb-inl select{width:auto!important;display:inline-block}
 .bmb-inl{white-space:nowrap}
 .bmb-flow .shape{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+
+.bmb-box{--bmb-hc:minmax(150px,1.4fr) 104px 104px minmax(200px,1.6fr)}
+.bmb-body .bmb-in,.bmb-body select{height:34px;box-sizing:border-box}
+.bmb-u{display:inline-block;width:58px;padding-left:8px;text-align:left;color:var(--t2);font-size:13px;box-sizing:border-box;white-space:nowrap}
+.bmb-ro{display:inline-block;width:96px;height:34px;line-height:34px;box-sizing:border-box;padding:0 9.5px;text-align:right;vertical-align:middle;font-weight:700;color:var(--t1);font-variant-numeric:tabular-nums}
+.bmb-ro.nil{color:var(--t3)}
+.bmb-ib{display:inline-flex;align-items:center;white-space:nowrap;vertical-align:middle}
+.bmb-ts{display:inline-block;width:84px;text-align:left}
+.bmb-ts .bmb-est{margin-left:8px}
+.bmb-g{display:grid;grid-template-rows:auto auto;gap:5px 14px;margin:8px 0 6px}
+.bmb-g>.fld{display:contents}
+.bmb-g>.fld>label{grid-row:1;align-self:end;font-size:12.5px;font-weight:700;color:var(--t2);line-height:1.35}
+.bmb-g>.fld>.bx{grid-row:2;align-self:start;min-width:0}
+.bmb-g>.fld.c1>*{grid-column:1}.bmb-g>.fld.c2>*{grid-column:2}.bmb-g>.fld.c3>*{grid-column:3}.bmb-g>.fld.c4>*{grid-column:4}
+.bmb-g .rl{font-size:13px;font-weight:700;color:var(--t2);line-height:34px}
+.bmb-g.cc{grid-template-columns:200px 200px minmax(0,1fr)}
+.bmb-g.rc{grid-template-columns:repeat(4,170px)}
+.bmb-g.hc{grid-template-columns:var(--bmb-hc);column-gap:10px}
+.bmb-herd .bmb-g.hc .c2 .bmb-in,.bmb-herd .bmb-g.hc .c3 .bmb-in,.bmb-herd .bmb-g.hc .c2 select,.bmb-flow .n .bmb-in,.bmb-flow .n .bmb-ro{width:100%}
+.bmb-herd .bmb-g.hc .c1 select{width:100%}
+.bmb-flow .n{text-align:right}
+.bmb-flow .shape select{width:230px;max-width:100%}
+.bmb-body select.bmb-mo{width:84px}
+.bmb-t td>select{width:230px;max-width:100%}
+.bmb-sel{width:320px;max-width:100%}
+.bmb-sets{display:grid;gap:10px;margin:0 0 4px}
+.bmb-sets h4{margin:0!important}
+.bmb-setr{display:grid;grid-template-columns:110px minmax(0,1fr) auto;gap:12px;align-items:baseline;font-size:14px}
+.bmb-setr>span:first-child{color:var(--t3)}
+.bmb-setr .bmb-bench{margin:4px 0 0}
+.bmb-notm{margin:6px 0 0;padding-left:18px}
+.bmb-notm li{margin:3px 0;line-height:1.5}
+@media (max-width:760px){.bmb-box{--bmb-hc:1fr 90px 90px}.bmb-g.cc,.bmb-g.rc{grid-template-columns:repeat(2,minmax(0,1fr))}}
 </style>
 </head>
 <body>
@@ -10887,6 +10920,7 @@ body.bmb-on{overflow:hidden}
             <select id="set-vat" onchange="_setVatCatVis()">
               <option value="yes">Yes – 20% VAT</option>
               <option value="no">No – not VAT registered</option>
+              <option value="flat">No – on the flat-rate scheme for farmers</option>
             </select>
           </div>
         </div>
@@ -11521,7 +11555,7 @@ body.bmb-on{overflow:hidden}
 
 </div>
 </div>
-<script src="js/app-0-27e219b493.js"></script>
+<script src="js/app-0-7caa42b980.js"></script>
 
 
 <div class="imp-bg" id="imp-hub-bg">
@@ -12077,7 +12111,7 @@ body.bmb-on{overflow:hidden}
 <div id="kpi-trail"></div>
 <script id="kpi-detail-js" src="js/app-1-c045672853.js"></script>
 
-<script id="bg-grid-js" src="js/app-2-5b4c52fde6.js"></script>
+<script id="bg-grid-js" src="js/app-2-b9facc3fde.js"></script>
 
 <div class="simple-mode-badge" id="simple-badge">Simple View ON</div>
 </body>
