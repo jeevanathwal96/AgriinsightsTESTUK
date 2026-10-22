@@ -6,20 +6,23 @@
  *   - same-origin static -> stale-while-revalidate (instant load, refreshed in background)
  *   - old caches purged on activate (keyed by APP_VERSION)
  *
+ *   - -413: only the app page (index-uk.html, any ?query) writes or reads the shell entry; the scope's own folder and
+ *     index.html lead to the app (offline: their own copy, else the shell); every other page (privacy.html ...) has its own
+ *     cache entry and never falls back to the app
  * DEPLOY: bump APP_VERSION on every release so clients drop the old cache and
  * pick up new shell assets. Paths are relative to the SW scope, so this works
  * unchanged on both the TEST (/AgriInsightsTEST/) and LIVE (/AgriInsights/) repos.
  */
 'use strict';
 
-var APP_VERSION = 'uk-2026-10-20-412';
+var APP_VERSION = 'uk-2026-10-20-413';
 var CACHE = 'agriinsights-uk-' + APP_VERSION;
 
 /* App shell precached on install. The ?v=-suffixed JS is intentionally left to
  * runtime caching so the existing ?v= cache-busting keeps working untouched. */
 var PRECACHE = [
   './index-uk.html',
-  './js/app-0-7caa42b980.js',   /* dist build: inline script 0 */
+  './js/app-0-dfe4fa6697.js',   /* dist build: inline script 0 */
   './js/app-1-c045672853.js',   /* dist build: inline script 1 */
   './js/app-2-b9facc3fde.js',   /* dist build: inline script 2 */
   './manifest-uk.webmanifest',
@@ -112,6 +115,33 @@ function _tellNewer(clientId, build){
     }).catch(function () {});
   })();
 }
+/* -413 (UK -413): which page is this, resolved against this worker's scope (never a raw string): the app page itself
+   (index-uk.html, with any ?query such as ?demo=1), an entry that leads to it (the scope's own folder, index.html - on the
+   live site a redirect to index-uk.html), or any other page. Only the app page is the shell. */
+function _scopeURL(){ var base = (self.location && (self.location.href || (self.location.origin + '/'))) || 'http://localhost/';
+  try { return new URL((self.registration && self.registration.scope) || './', base); } catch (e) { return new URL('./', base); } }
+function _pageKind(url){ var sc = _scopeURL(); if (url.origin !== sc.origin) return 'other';
+  if (url.pathname === sc.pathname + 'index-uk.html') return 'app';
+  if (url.pathname === sc.pathname || url.pathname === sc.pathname + 'index.html') return 'entry';
+  return 'other'; }
+/* any page but the app: its own URL is its cache key (the query kept; a #hash is never sent) */
+function _ownKey(url){ return url.origin + url.pathname + url.search; }
+/* network-first under its own key; offline (or slower than HTML_TIMEOUT_MS with a copy) its own copy; never the shell -
+   except an entry to the app with no copy of its own, which gets the app (it leads there anyway) */
+function _pageResponse(e, url, kind){
+  var key = _ownKey(url), net = fetch(_freshHTML(e.request));
+  e.waitUntil(net.then(function (res) {
+    if (!res || !res.ok || res.type !== 'basic') return;
+    var cp = res.clone(); return caches.open(CACHE).then(function (c) { return c.put(key, cp); });
+  }).catch(function () {}));
+  var fallback = function () { return caches.match(key).then(function (m) { return m || (kind === 'entry' ? caches.match('./index-uk.html') : null); }); };
+  return new Promise(function (resolve) {
+    var done = false;
+    var timer = setTimeout(function () { caches.match(key).then(function (m) { if (done || !m) return; done = true; resolve(m); }); }, HTML_TIMEOUT_MS);
+    net.then(function (res) { if (done) return; done = true; clearTimeout(timer); resolve(res); },
+             function () { if (done) return; clearTimeout(timer); fallback().then(function (m) { if (done) return; done = true; resolve(m || Response.error()); }); });
+  });
+}
 function _htmlResponse(e){
   var req = e.request;
   return caches.match('./index-uk.html').then(function (cached) {
@@ -153,10 +183,12 @@ self.addEventListener('fetch', function (e) {
   var isHTML = req.mode === 'navigate' ||
                (req.headers.get('accept') || '').indexOf('text/html') !== -1;
 
-  // 2) HTML / navigation: network-first so a normal reload always gets the latest
-  //    deploy when online; fall back to the cached shell when offline.
+  // 2) HTML / navigation of the app page itself: network-first so a normal reload always gets the latest
+  //    deploy when online; fall back to the cached shell when offline. Only this path writes the shell (-413).
+  //    Any other page (privacy.html, the scope's folder, index.html, a later page) goes by its own URL (-413).
   if (isHTML) {
-    e.respondWith(_htmlResponse(e));
+    var kind = _pageKind(url);
+    e.respondWith(kind === 'app' ? _htmlResponse(e) : _pageResponse(e, url, kind));
     return;
   }
 
