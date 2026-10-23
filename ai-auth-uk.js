@@ -483,7 +483,7 @@
   function enterApp(){
     if (_entering) return Promise.resolve();
     _entering = true;
-    return hydrate().then(function () { _hydrated = true; _voOff(true); hideOverlay(); }).catch(function (e) {
+    return hydrate().then(function () { _hydrated = true; window.__AI_HYDRATED_AT = Date.now(); _voOff(true); hideOverlay(); }).catch(function (e) {   /* -414: the phone's HMRC list is written on the next change after this (a clean load writes nothing) */
       _entering = false;
       /* never left on "Opening your farm..." or on figures that may not be theirs */
       if (_revealed || AUTH_MODE === 'opening') { _unreveal('signin'); msgK('openFail', 'err'); }
@@ -792,6 +792,7 @@ function _sessionUid(){
         try { if (window.ST_FRUIT && orc && !_unsent('orchard')) { var _orcHas = (orc.blocks && orc.blocks.length); var _locHas = (ST_FRUIT.blocks && ST_FRUIT.blocks.length); if (_orcHas || !_locHas) { _obKeepLocal(orc.blocks, ST_FRUIT.blocks); ST_FRUIT.blocks = orc.blocks || []; ST_FRUIT.pricing = orc.pricing || {}; ST_FRUIT.sprayDiary = orc.sprayDiary || {}; ST_FRUIT.removedSprays = orc.removedSprays || []; ST_FRUIT.harvest = orc.harvest || []; ST_FRUIT.removedHarvest = orc.removedHarvest || []; if (orc.comply) ST_FRUIT.comply = orc.comply; try{ if(window.orComplyEnsure) orComplyEnsure(); }catch(_){} if (orc.market) ST_FRUIT.market = orc.market; if (typeof window.orRebuildPhi === 'function') { try { window.orRebuildPhi(); } catch (_) {} } } } } catch (e) { console.error('orchard apply', e); }
         try { if (window.ST_PLAN && !_unsent('plan')) { var _plHas = (pl && ((pl.crops&&pl.crops.length)||(pl.events&&pl.events.length))); var _plLoc = ((ST_PLAN.crops&&ST_PLAN.crops.length)||(ST_PLAN.events&&ST_PLAN.events.length)); if (pl && (_plHas || !_plLoc)) { ST_PLAN.crops = pl.crops || []; ST_PLAN.events = pl.events || []; ST_PLAN.fromBackend = true; if (typeof window.planSyncToCurrentYear === 'function') { try { window.planSyncToCurrentYear(); } catch (_) {} } } else if (!pl && typeof window.cropInitialPlanSync === 'function') { try { window.cropInitialPlanSync(true); } catch (_) {} } } } catch (e) { console.error('plan apply', e); }
         try { if (window.ST_WORK && wk && !_unsent('workers')) { var _wkHas = (wk.workers && wk.workers.length); var _wkLoc = (ST_WORK.workers && ST_WORK.workers.length); if (_wkHas || !_wkLoc) { ST_WORK.workers = wk.workers || []; if (wk.settingsRow && AI.workers && AI.workers.apply) { AI.workers.apply(ST_WORK, wk.settingsRow); } if (wk.payroll) { ST_WORK.paye = wk.payroll.paye || {}; ST_WORK.bonus = wk.payroll.bonus || {}; ST_WORK.extra = wk.payroll.extra || {}; ST_WORK.seasonal = wk.payroll.seasonal || {}; } ST_WORK.payRuns = wk.payRuns || []; } } } catch (e) { console.error('workers apply', e); }
+        /* -414: vatCategory arrives only from farms.vat_category (behind its probe); without the column it is absent and this device's stagger stays */
         try { if (window.ST && pf && !_unsent('settings')) { Object.keys(pf).forEach(function (k) { if (k.charAt(0) !== '_' && pf[k] != null) ST[k] = pf[k]; }); } } catch (e) { console.error('profile apply', e); }
         /* Rainfall. Where the farm is and how it keeps its book ride on the farm row;
            the server's copy wins unless this device has settings still to send. */

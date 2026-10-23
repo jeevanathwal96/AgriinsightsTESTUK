@@ -449,6 +449,10 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
   /* -412 (tools/uk-412-orchard-pay.sql): the orchard block planner's fields (pick months, pay weeks, cost, tonnage, bearing,
      juice share, sales channel) as one jsonb. NOT orchard_blocks.plan - that is a boolean already ("replanted, not bearing"). */
   let CAN_ORCH_PAY      = false;   /* orchard_blocks.pay */
+  /* -414 (tools/uk-414-tax-calendar.sql): the farm's VAT stagger - asked in onboarding and Settings, never saved (the UK farms
+     table had no column; the owner's check query failed with 42703) - and the phone's HMRC list. */
+  let CAN_FARM_VATCAT   = false;   /* farms.vat_category */
+  let CAN_TAX_PLAN      = false;   /* farms.tax_plan */
   /* ---- what this database actually has, asked once ------------------------
      Ported from SA -438, same reasoning. Every late-added column is gated on a
      CAN_* flag, and each flag cost its own round trip in series on every
@@ -524,6 +528,7 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     ['budget_cells','src'], ['budget_scenarios','kind'],   /* -403 (8E) */
     ['herds','plan'], ['plan_crops','plan'], ['farms','bmb_flags'],   /* -404 (B10) */
     ['orchard_blocks','pay'],   /* -412 */
+    ['farms','vat_category'], ['farms','tax_plan'],   /* -414 */
     ['farm_devices','kind'], ['animals','registered_at']   /* the phone app, phase 3 */
   ];
 
@@ -606,6 +611,8 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     CAN_PLANCROP_PLAN = keep(CAN_PLANCROP_PLAN, 'plan_crops','plan');   /* -404 */
     CAN_FARM_BMB      = keep(CAN_FARM_BMB,      'farms','bmb_flags');   /* -404 */
     CAN_ORCH_PAY      = keep(CAN_ORCH_PAY,      'orchard_blocks','pay');   /* -412 */
+    CAN_FARM_VATCAT   = keep(CAN_FARM_VATCAT,   'farms','vat_category');   /* -414 */
+    CAN_TAX_PLAN      = keep(CAN_TAX_PLAN,      'farms','tax_plan');       /* -414 */
   }
   probeCaps.reset = function(){ _colCache = Object.create(null); _colRpcDead = false; };
   probeCaps.seen  = function(){ return _colCache; };
@@ -3488,7 +3495,7 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     farmId=farmId||farm.active();
     var one=null;
     try{
-      const r1=await client().from('farms').select(_PROF_CORE+','+_PROF_RAIN+',prefs'+(CAN_FARM_CONSENT?',consent_version,consent_accepted_at':'')+(CAN_FARM_ALERTS?',price_alerts':'')+(CAN_FARM_BMB?',country,tenure,vat_scheme,bmb_flags':'')).eq('id',farmId).single();
+      const r1=await client().from('farms').select(_PROF_CORE+','+_PROF_RAIN+',prefs'+(CAN_FARM_CONSENT?',consent_version,consent_accepted_at':'')+(CAN_FARM_ALERTS?',price_alerts':'')+(CAN_FARM_BMB?',country,tenure,vat_scheme,bmb_flags':'')+(CAN_FARM_VATCAT?',vat_category':'')).eq('id',farmId).single();   /* -414 */
       if(r1 && !r1.error && r1.data) one=r1.data;
     }catch(e){ one=null; }
     /* each part's read: from the one row when it came, else its own request as before */
@@ -3553,14 +3560,51 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
           if(rb.data.country) p.country=rb.data.country; if(rb.data.tenure) p.tenure=rb.data.tenure; if(rb.data.vat_scheme) p.vatScheme=rb.data.vat_scheme; if(_bf && typeof _bf==='object') p.bmbFlags=_bf; }
       }catch(e){}
     }
+    /* -414: the VAT stagger, behind its probe. The server's answer wins; while the server has none, the FIRST load after the column
+       exists carries this device's answer across once (a marker per farm; named in load.healed() so the sign-in load saves the
+       profile straight after). No column: nothing read, nothing sent - the hydrate never touches this device's answer. */
+    if(CAN_FARM_VATCAT){
+      try{
+        const rv=await part('vat_category', function(){ return client().from('farms').select('vat_category').eq('id',farmId).single(); });
+        if(!rv.error && rv.data && p){ _profNoteAck({ vat_category: rv.data.vat_category });
+          var _vc=_vatCatClean(rv.data.vat_category);
+          if(_vc) p.vatCategory=_vc;
+          else _migVatCat(_vatCatSaved(farmId), farmId); }
+      }catch(e){}
+    }
     global.__AI_PROFILE_LOADED = true;   /* -391: the consent check waits for this */
     return p;
   };
+  /* -414: the stagger values the farms.vat_category check list allows (tools/uk-414-tax-calendar.sql) */
+  var _VAT_CATS = ['quarterly','quarterly2','quarterly3','monthly','annual'];
+  function _vatCatClean(v){ v = (v == null) ? '' : String(v); return _VAT_CATS.indexOf(v) >= 0 ? v : null; }
+  /* the stagger this device SAVED for this farm (its local snapshot, owner.farm = this farm) - never the in-memory default of a
+     fresh device: a cleared browser loading first must not push stagger 1 over the answer another device holds */
+  function _vatCatSaved(fid){
+    try{ for(var i = 0; i < localStorage.length; i++){ var k = localStorage.key(i); if(!/^agri_uk_state_v\d+$/.test(k)) continue;
+      var sn = JSON.parse(localStorage.getItem(k) || 'null'); if(sn && sn.owner && String(sn.owner.farm) === String(fid) && sn.ST) return _vatCatClean(sn.ST.vatCategory); } }catch(e){}
+    return null;
+  }
+  function _migVatCat(local, fid){
+    if(!CAN_FARM_VATCAT || !fid || _migDone('vatcat', fid)) return 0;
+    var v = _vatCatClean(local); _migMark('vatcat', fid, v ? 1 : 0);
+    if(!v) return 0; _MIGRATED['farms.vat_category'] = 1; return 1;
+  }
   var _farmPrefs=null;
   /* -404: the farm's Build my budget columns, sent only once the farm has them (a farm that never built keeps the server's nulls) */
   function _bmbProfOut(st){ if(!CAN_FARM_BMB || !st) return {}; var o={}; if(st.country) o.country=String(st.country); if(st.tenure) o.tenure=String(st.tenure); if(st.vatScheme) o.vat_scheme=String(st.vatScheme);
     if(st.bmbFlags && typeof st.bmbFlags==='object') o.bmb_flags=st.bmbFlags; return o; }
   var _profSnap=null;
+  /* -414: the tax calendar's answer, written down for the phone (farms.tax_plan) - the SA -463 writer. */
+  const taxPlan = {
+    async save(plan){
+      const fid=farm.active(); if(!fid || !CAN_TAX_PLAN || !plan) return false;
+      const r=await client().from('farms').update({ tax_plan: plan }).eq('id', fid).select('tax_plan,updated_at');
+      try { if (!r.error && (r.data || []).length) _profNoteAck(r.data[0]); } catch (e) {}
+      if(r.error){ console.warn('Tax plan not saved - run tools/uk-414-tax-calendar.sql. (' + (r.error.message || r.error) + ')'); return false; }
+      return true;
+    }
+  };
   const profile = {
     // Update only the fields actually provided — never null out an existing value.
     // Core columns (always present) save first and independently of the
@@ -3630,7 +3674,8 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
       /* -394: the Market price alerts, their own statement behind their own probe. */
       var alerts=(CAN_FARM_ALERTS && Array.isArray(st.priceAlerts)) ? { price_alerts: _alertsClean(st.priceAlerts) } : {};
       var bmbc=_bmbProfOut(st);   /* -404 */
-      var snap=JSON.stringify({c:core,e:extra,k:cons,p:pref,r:rainc,a:alerts,b:bmbc}); if(snap===_profSnap) return;
+      var vatc=(CAN_FARM_VATCAT && _vatCatClean(st.vatCategory)) ? { vat_category: _vatCatClean(st.vatCategory) } : {};   /* -414: D save */
+      var snap=JSON.stringify({c:core,e:extra,k:cons,p:pref,r:rainc,a:alerts,b:bmbc,v:vatc}); if(snap===_profSnap) return;
       /* Only what differs from the row the server last confirmed. */
       var groups = [
         { all: core,  fatal: true },
@@ -3639,7 +3684,8 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
         { all: (pref ? { prefs: pref } : {}), warn: 'Profile: payments on account and year-end stock not saved', done: function(){ _farmPrefs = pref; } },
         { all: rainc, warn: 'Profile: rainfall location and settings not saved \u2014 run tools/uk-rainfall-schema.sql in Supabase.' },
         { all: alerts, warn: 'Profile: price alerts not saved \u2014 run tools/uk-pilot-followup-columns.sql in Supabase.' },
-        { all: bmbc, warn: 'Profile: Build my budget answers not saved \u2014 run tools/uk-b10-404.sql in Supabase.' }   /* -404 */
+        { all: bmbc, warn: 'Profile: Build my budget answers not saved \u2014 run tools/uk-b10-404.sql in Supabase.' },   /* -404 */
+        { all: vatc, warn: 'Profile: VAT stagger not saved \u2014 run tools/uk-414-tax-calendar.sql in Supabase.' }   /* -414 */
       ];
       var extraOk = true, firstErr = null, stale = [];
       for(var gi = 0; gi < groups.length; gi++){
@@ -4241,6 +4287,11 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
   global.AI = { __probeCaps: probeCaps, __client: client, __lsPendingMoves: _lsPendingMoves, __lsTagsInNote: _lsTagsInNote, __lsTagKey: _lsTagKey, __lsTagMoves: _lsTagMoves, __lsTagOnFarm: _lsTagOnFarm, __lsAnimalsOnFarm: _lsAnimalsOnFarm, __collapseRepeats: _collapseRepeats, __rowKey: _rowKey,
                 rain: rain, init: client, projectRef: PROJECT_REF, auth, farm, sync: sync, load, txn, account, budget, recurring, asset, loans,
                 coopSettlement: coopSettlement, livestock: livestock, crop: crop, orchard: orchard, plan: plan, workers: workersSave, profile: profile,
+                taxPlan: taxPlan,   /* -414 */
+                /* -414: harness access to the stagger's probe, clean list and one-time carry */
+                _b414: { vatCats: _VAT_CATS, clean: _vatCatClean, migVatCat: _migVatCat, saved: _vatCatSaved, migKey: _migKey, capCols: CAP_COLS,
+                         caps: function(){ return { CAN_FARM_VATCAT: CAN_FARM_VATCAT, CAN_TAX_PLAN: CAN_TAX_PLAN }; }, setCaps: function(on, tp){ CAN_FARM_VATCAT = !!on; CAN_TAX_PLAN = (tp === undefined) ? !!on : !!tp; },
+                         migrated: function(){ return Object.assign({}, _MIGRATED); } },
                 documents: documents, fuel: fuel, pairing: pairing,
                 rules: rules,
                 storage: storage,
