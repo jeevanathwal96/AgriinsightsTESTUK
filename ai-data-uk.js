@@ -453,6 +453,9 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
      table had no column; the owner's check query failed with 42703) - and the phone's HMRC list. */
   let CAN_FARM_VATCAT   = false;   /* farms.vat_category */
   let CAN_TAX_PLAN      = false;   /* farms.tax_plan */
+  /* -415 (tools/uk-415-home-money.sql): the phone's money feed and how the farm pays PAYE */
+  let CAN_HOME_MONEY    = false;   /* farms.home_money */
+  let CAN_FARM_PAYEFREQ = false;   /* farms.paye_frequency */
   /* ---- what this database actually has, asked once ------------------------
      Ported from SA -438, same reasoning. Every late-added column is gated on a
      CAN_* flag, and each flag cost its own round trip in series on every
@@ -529,6 +532,7 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     ['herds','plan'], ['plan_crops','plan'], ['farms','bmb_flags'],   /* -404 (B10) */
     ['orchard_blocks','pay'],   /* -412 */
     ['farms','vat_category'], ['farms','tax_plan'],   /* -414 */
+    ['farms','home_money'], ['farms','paye_frequency'],   /* -415 */
     ['farm_devices','kind'], ['animals','registered_at']   /* the phone app, phase 3 */
   ];
 
@@ -613,6 +617,8 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     CAN_ORCH_PAY      = keep(CAN_ORCH_PAY,      'orchard_blocks','pay');   /* -412 */
     CAN_FARM_VATCAT   = keep(CAN_FARM_VATCAT,   'farms','vat_category');   /* -414 */
     CAN_TAX_PLAN      = keep(CAN_TAX_PLAN,      'farms','tax_plan');       /* -414 */
+    CAN_HOME_MONEY    = keep(CAN_HOME_MONEY,    'farms','home_money');     /* -415 */
+    CAN_FARM_PAYEFREQ = keep(CAN_FARM_PAYEFREQ, 'farms','paye_frequency'); /* -415 */
   }
   probeCaps.reset = function(){ _colCache = Object.create(null); _colRpcDead = false; };
   probeCaps.seen  = function(){ return _colCache; };
@@ -3367,7 +3373,8 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     bank_balance: 'bankBalance', bank_balance_at: 'bankBalanceAt',
     season_start_month: 'seasonStartMonth', budget_expense_target: 'budgetExpenseTarget',
     price_alerts: 'priceAlerts',   /* -394 */
-    country: 'country', tenure: 'tenure', vat_scheme: 'vatScheme', bmb_flags: 'bmbFlags'   /* -404 */
+    country: 'country', tenure: 'tenure', vat_scheme: 'vatScheme', bmb_flags: 'bmbFlags',   /* -404 */
+    paye_frequency: 'payeFreq'   /* -415 */
   };
   function _profAdopt(st, mine){
     var ack = _profAckGet();
@@ -3572,6 +3579,16 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
           else _migVatCat(_vatCatSaved(farmId), farmId); }
       }catch(e){}
     }
+    /* -415: how the farm pays PAYE, the same way (no column: nothing read, nothing sent) */
+    if(CAN_FARM_PAYEFREQ){
+      try{
+        const rq=await part('paye_frequency', function(){ return client().from('farms').select('paye_frequency').eq('id',farmId).single(); });
+        if(!rq.error && rq.data && p){ _profNoteAck({ paye_frequency: rq.data.paye_frequency });
+          var _pq=_payeFreqClean(rq.data.paye_frequency);
+          if(_pq) p.payeFreq=_pq;
+          else _migPayeFreq(_payeFreqSaved(farmId), farmId); }
+      }catch(e){}
+    }
     global.__AI_PROFILE_LOADED = true;   /* -391: the consent check waits for this */
     return p;
   };
@@ -3584,6 +3601,19 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     try{ for(var i = 0; i < localStorage.length; i++){ var k = localStorage.key(i); if(!/^agri_uk_state_v\d+$/.test(k)) continue;
       var sn = JSON.parse(localStorage.getItem(k) || 'null'); if(sn && sn.owner && String(sn.owner.farm) === String(fid) && sn.ST) return _vatCatClean(sn.ST.vatCategory); } }catch(e){}
     return null;
+  }
+  /* -415: the PAYE frequencies the farms.paye_frequency check list allows */
+  var _PAYE_FREQS = ['monthly','quarterly'];
+  function _payeFreqClean(v){ v = (v == null) ? '' : String(v); return _PAYE_FREQS.indexOf(v) >= 0 ? v : null; }
+  function _payeFreqSaved(fid){
+    try{ for(var i = 0; i < localStorage.length; i++){ var k = localStorage.key(i); if(!/^agri_uk_state_v\d+$/.test(k)) continue;
+      var sn = JSON.parse(localStorage.getItem(k) || 'null'); if(sn && sn.owner && String(sn.owner.farm) === String(fid) && sn.ST) return _payeFreqClean(sn.ST.payeFreq); } }catch(e){}
+    return null;
+  }
+  function _migPayeFreq(local, fid){
+    if(!CAN_FARM_PAYEFREQ || !fid || _migDone('payefreq', fid)) return 0;
+    var v = _payeFreqClean(local); _migMark('payefreq', fid, v ? 1 : 0);
+    if(!v || v === 'monthly') return 0; _MIGRATED['farms.paye_frequency'] = 1; return 1;
   }
   function _migVatCat(local, fid){
     if(!CAN_FARM_VATCAT || !fid || _migDone('vatcat', fid)) return 0;
@@ -3602,6 +3632,16 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
       const r=await client().from('farms').update({ tax_plan: plan }).eq('id', fid).select('tax_plan,updated_at');
       try { if (!r.error && (r.data || []).length) _profNoteAck(r.data[0]); } catch (e) {}
       if(r.error){ console.warn('Tax plan not saved - run tools/uk-414-tax-calendar.sql. (' + (r.error.message || r.error) + ')'); return false; }
+      return true;
+    }
+  };
+  /* -415 class 7: the phone's money, worked out on the one engine, written down for the phone (farms.home_money) - the SA -469 writer. */
+  const homeMoney = {
+    async save(snap){
+      const fid=farm.active(); if(!fid || !CAN_HOME_MONEY || !snap) return false;
+      const r=await client().from('farms').update({ home_money: snap }).eq('id', fid).select('home_money,updated_at');
+      try { if (!r.error && (r.data || []).length) _profNoteAck(r.data[0]); } catch (e) {}
+      if(r.error){ console.warn('Phone money figures not saved - run tools/uk-415-home-money.sql. (' + (r.error.message || r.error) + ')'); return false; }
       return true;
     }
   };
@@ -3675,7 +3715,8 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
       var alerts=(CAN_FARM_ALERTS && Array.isArray(st.priceAlerts)) ? { price_alerts: _alertsClean(st.priceAlerts) } : {};
       var bmbc=_bmbProfOut(st);   /* -404 */
       var vatc=(CAN_FARM_VATCAT && _vatCatClean(st.vatCategory)) ? { vat_category: _vatCatClean(st.vatCategory) } : {};   /* -414: D save */
-      var snap=JSON.stringify({c:core,e:extra,k:cons,p:pref,r:rainc,a:alerts,b:bmbc,v:vatc}); if(snap===_profSnap) return;
+      var payq=(CAN_FARM_PAYEFREQ && _payeFreqClean(st.payeFreq)) ? { paye_frequency: _payeFreqClean(st.payeFreq) } : {};   /* -415 */
+      var snap=JSON.stringify({c:core,e:extra,k:cons,p:pref,r:rainc,a:alerts,b:bmbc,v:vatc,q:payq}); if(snap===_profSnap) return;
       /* Only what differs from the row the server last confirmed. */
       var groups = [
         { all: core,  fatal: true },
@@ -3685,7 +3726,8 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
         { all: rainc, warn: 'Profile: rainfall location and settings not saved \u2014 run tools/uk-rainfall-schema.sql in Supabase.' },
         { all: alerts, warn: 'Profile: price alerts not saved \u2014 run tools/uk-pilot-followup-columns.sql in Supabase.' },
         { all: bmbc, warn: 'Profile: Build my budget answers not saved \u2014 run tools/uk-b10-404.sql in Supabase.' },   /* -404 */
-        { all: vatc, warn: 'Profile: VAT stagger not saved \u2014 run tools/uk-414-tax-calendar.sql in Supabase.' }   /* -414 */
+        { all: vatc, warn: 'Profile: VAT stagger not saved \u2014 run tools/uk-414-tax-calendar.sql in Supabase.' },   /* -414 */
+        { all: payq, warn: 'Profile: how you pay PAYE not saved \u2014 run tools/uk-415-home-money.sql in Supabase.' }   /* -415 */
       ];
       var extraOk = true, firstErr = null, stale = [];
       for(var gi = 0; gi < groups.length; gi++){
@@ -4288,6 +4330,9 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
                 rain: rain, init: client, projectRef: PROJECT_REF, auth, farm, sync: sync, load, txn, account, budget, recurring, asset, loans,
                 coopSettlement: coopSettlement, livestock: livestock, crop: crop, orchard: orchard, plan: plan, workers: workersSave, profile: profile,
                 taxPlan: taxPlan,   /* -414 */
+                homeMoney: homeMoney,   /* -415 */
+                _b415: { payeFreqs: _PAYE_FREQS, clean: _payeFreqClean, migPayeFreq: _migPayeFreq, saved: _payeFreqSaved,
+                         caps: function(){ return { CAN_HOME_MONEY: CAN_HOME_MONEY, CAN_FARM_PAYEFREQ: CAN_FARM_PAYEFREQ }; }, setCaps: function(hm, pq){ CAN_HOME_MONEY = !!hm; CAN_FARM_PAYEFREQ = (pq === undefined) ? !!hm : !!pq; } },
                 /* -414: harness access to the stagger's probe, clean list and one-time carry */
                 _b414: { vatCats: _VAT_CATS, clean: _vatCatClean, migVatCat: _migVatCat, saved: _vatCatSaved, migKey: _migKey, capCols: CAP_COLS,
                          caps: function(){ return { CAN_FARM_VATCAT: CAN_FARM_VATCAT, CAN_TAX_PLAN: CAN_TAX_PLAN }; }, setCaps: function(on, tp){ CAN_FARM_VATCAT = !!on; CAN_TAX_PLAN = (tp === undefined) ? !!on : !!tp; },

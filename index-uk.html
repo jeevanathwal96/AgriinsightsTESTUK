@@ -7,7 +7,7 @@
 
 <meta name="description" content="AgriInsights UK — making farm finances simple for UK farmers. Track costs, plan your season, stay ready for Making Tax Digital and keep your farm records straight."/>
 <meta name="theme-color" content="#1B4332"/>
-<meta name="ai-build" content="uk-2026-10-22-414"/>
+<meta name="ai-build" content="uk-2026-10-25-416"/>
 <meta name="color-scheme" content="light"/>
 <meta property="og:title" content="AgriInsights — Making Farm Finances Simple"/>
 <meta property="og:description" content="The farm finance app built for UK farmers. Track every pound, plan your season, stay MTD-ready — all in one place."/>
@@ -31,7 +31,7 @@
 <script defer src="vendor/chart.umd.js"></script>
 
 <script src="vendor/supabase.js"></script>
-<script src="ai-data-uk.js?v=uk145"></script>
+<script src="ai-data-uk.js?v=uk146"></script>
 <script src="ai-auth-uk.js?v=uk116"></script>
 <link rel="stylesheet" href="fonts.css"/>
 <style>
@@ -7149,6 +7149,7 @@ table.bg-g.bg-fit .lbl-i{white-space:normal}
 .bmb-est{display:inline;font-size:12px;font-weight:600;color:var(--ti-ct);background:none;border:0;padding:0;margin-left:6px;white-space:nowrap;vertical-align:baseline}
 .bmb-est::before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--ti-d);margin-right:5px;vertical-align:1px}
 .bmb-bench{font-size:12px;color:var(--t3);margin:4px 0 8px}
+.bmb-nyet{display:inline;font-size:12px;font-weight:600;color:var(--ti-ct);white-space:nowrap;margin-right:6px}.bmb-nyet::before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--ti-d);margin-right:5px;vertical-align:1px}   
 .bmb-bench.bmb-px{margin:8px 0 6px;line-height:1.55}
 .pip.bmb-repl-tag{background:#eef0f2;color:#5b6570;border:1px solid #dde1e5;font-weight:700}
 .bmb-repl-acts{display:inline-flex;gap:8px;margin-left:6px}
@@ -7268,12 +7269,16 @@ body.bmb-on{overflow:hidden}
 .bmb-g .rl{font-size:13px;font-weight:700;color:var(--t2);line-height:34px}
 .bmb-g.cc{grid-template-columns:200px 200px minmax(0,1fr)}
 .bmb-g.rc{grid-template-columns:repeat(4,170px)}
+.bmb-g.sf{grid-template-columns:repeat(2,170px)}
+.bmb-body .bmb-in.bad{border-color:var(--rd,#B42318);box-shadow:0 0 0 2px rgba(180,35,24,.12)}
 .bmb-g.hc{grid-template-columns:var(--bmb-hc);column-gap:10px}
 .bmb-herd .bmb-g.hc .c2 .bmb-in,.bmb-herd .bmb-g.hc .c3 .bmb-in,.bmb-herd .bmb-g.hc .c2 select,.bmb-flow .n .bmb-in,.bmb-flow .n .bmb-ro{width:100%}
 .bmb-herd .bmb-g.hc .c1 select{width:100%}
 .bmb-flow .n{text-align:right}
 .bmb-flow .shape select{width:230px;max-width:100%}
 .bmb-body select.bmb-mo{width:84px}
+.bmb-fin td{padding-top:0!important;border-top:0!important}.bmb-finr{display:flex;flex-wrap:wrap;gap:6px 18px;align-items:center}.bmb-finr label{display:inline-flex!important;align-items:center;gap:6px;font-size:12.5px;color:var(--t2);width:auto!important;flex:none;white-space:nowrap;margin:0}
+.bmb-finr .bmb-in{width:64px!important;text-align:right;flex:none;margin:0!important}.bmb-finr .bmb-fu{font-size:12px;color:var(--t3);white-space:nowrap;display:inline;width:auto}.bmb-finw{margin-top:4px;font-size:12px}
 .bmb-t td>select{width:230px;max-width:100%}
 .bmb-sel{width:320px;max-width:100%}
 .bmb-sets{display:grid;gap:10px;margin:0 0 4px}
@@ -7357,7 +7362,7 @@ body.bmb-on{overflow:hidden}
 
       <div class="ob-left-footer">
         Made for UK farmers<br>
-        Works offline · Your accountant can open it too<br>
+        Works offline · Exports ready for your accountant<br>
         Saved privately to your own account
       </div>
     </div>
@@ -7943,7 +7948,7 @@ body.bmb-on{overflow:hidden}
       A guide to help you plan — not your final tax bill. Your accountant works out the exact amount.
     </div>
   </div>
-  <div id="hmrc-reminders" style="margin-bottom:14px"></div>
+  
 
 <div id="seasonal-card" style="margin-bottom:18px"></div>
 
@@ -8687,7 +8692,7 @@ body.bmb-on{overflow:hidden}
       <div class="acc-icon"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg></div>
       <div class="acc-hdr-mid">
         <div class="acc-title">Accountant Pack</div>
-        <div class="acc-hdr-sub" id="acc-hdr-sub">Year-end exports · Sage &amp; Xero CSVs · invite by email</div>
+        <div class="acc-hdr-sub" id="acc-hdr-sub">Year-end exports · Sage &amp; Xero CSVs</div>
       </div>
       <div class="acc-badge" id="acc-badge">4 exports</div>
       <svg class="acc-chev" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
@@ -8713,11 +8718,12 @@ body.bmb-on{overflow:hidden}
             <div class="acc-btn-txt"><div class="acc-btn-t">General Ledger</div><div class="acc-btn-d">Full GL with debits &amp; credits</div></div>
           </button>
         </div>
-        <div class="acc-inv">
+        
+        <div class="acc-inv" hidden style="display:none">
           <input type="email" id="acc-email" placeholder="accountant@example.co.uk" />
           <button class="acc-inv-btn" id="acc-inv-btn" onclick="accInviteAccountant()">+ Invite accountant</button>
         </div>
-        <div class="acc-invited" id="acc-invited"></div>
+        <div class="acc-invited" id="acc-invited" hidden></div>
       </div>
     </div>
   </div>
@@ -10969,6 +10975,13 @@ body.bmb-on{overflow:hidden}
             <option value="annual">Once a year — Annual Accounting Scheme</option>
           </select>
       </div>
+        <div id="set-payefreq-wrap" style="margin-top:12px">
+          <label for="set-payefreq">How you pay PAYE <span class="set-ihint"><button type="button" class="set-i" onclick="setPop(this,event)" aria-label="About paying PAYE quarterly">i</button><span class="set-pop"><b>Monthly or quarterly.</b> HMRC lets you pay PAYE and National Insurance every quarter when you expect to pay under £1,500 a month on average. Quarterly payments are due on 22 July, 22 October, 22 January and 22 April.</span></span></label>
+          <select id="set-payefreq">
+            <option value="monthly">Every month — by the 22nd</option>
+            <option value="quarterly">Every quarter — under £1,500 a month on average</option>
+          </select>
+        </div>
       </div>
     </div>
 
@@ -11557,7 +11570,7 @@ body.bmb-on{overflow:hidden}
 
 </div>
 </div>
-<script src="js/app-0-2b6244af8f.js"></script>
+<script src="js/app-0-4ffd9125ab.js"></script>
 
 
 <div class="imp-bg" id="imp-hub-bg">
@@ -12113,7 +12126,7 @@ body.bmb-on{overflow:hidden}
 <div id="kpi-trail"></div>
 <script id="kpi-detail-js" src="js/app-1-efae67bbfc.js"></script>
 
-<script id="bg-grid-js" src="js/app-2-8a36ffdecd.js"></script>
+<script id="bg-grid-js" src="js/app-2-52696f2d02.js"></script>
 
 <div class="simple-mode-badge" id="simple-badge">Simple View ON</div>
 </body>
