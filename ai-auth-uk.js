@@ -782,9 +782,12 @@ function _sessionUid(){
            and load.rules answers null rather than throwing. */
         _tk('rules').catch(function (e) { console.error('rules load', e); return null; }),
         /* The rain book. Never fatal: an older project has no rainfall tables. */
-        (AI.load.rainfall ? _tk('rainfall').catch(function () { return null; }) : Promise.resolve(null))
+        (AI.load.rainfall ? _tk('rainfall').catch(function () { return null; }) : Promise.resolve(null)),
+        /* -421: the phone's HMRC marks (farm_documents FILING rows). Never fatal. */
+        (AI.load.documents ? _tk('documents').catch(function (e) { console.error('documents load', e); return null; }) : Promise.resolve(null))
       ]).then(function (r) {
         var ls = r[0], cr = r[1], orc = r[2], pl = r[3], wk = r[4], pf = r[5], coop = r[6], rl = r[7], rn = r[8];
+        try { if (window.ST && Array.isArray(r[9]) && typeof window.ukPhoneDocsApply === 'function') window.ukPhoneDocsApply(r[9]); } catch (e) { console.error('documents apply', e); }   /* -421 */
         /* Never load over an area that still has something unsent on this device. */
         var _unsent = function (a) { try { return !!(AI.sync && AI.sync.isUnsent(a)); } catch (e) { return false; } };
         try { if (window.ST_LS && ls && !_unsent('livestock')) { var _lsHas = ((ls.herds&&ls.herds.length)||(ls.fields&&ls.fields.length)||(ls.animals&&ls.animals.length)); var _lsLoc = ((ST_LS.herd&&ST_LS.herd.length)||(ST_LS.fields&&ST_LS.fields.length)); if (_lsHas || !_lsLoc) { ST_LS.fields = ls.fields || []; ST_LS.herd = ls.herds || []; if (ls.benchmarks) ST_LS.benchmarks = ls.benchmarks; ST_LS.moves = ls.moves || []; ST_LS.treatments = ls.treatments || []; ST_LS.removedTreatments = ls.removedTreatments || []; ST_LS.animals = ls.animals || []; ST_LS.health = ls.health || []; ST_LS.breedings = ls.breedings || []; /* Herds whose stored count did not yet include a move recorded elsewhere - the phone at a gate, or another computer (UK phone, phase 3). load.livestock has folded them in; this is what the farmer is told on the Dashboard. Never saved to localStorage. */ ST_LS._stockRecon = (ls.stockRecon && ls.stockRecon.length) ? ls.stockRecon : null; /* Animals a phone sale or death took off by ear tag: already off the list above; their rows go from the server too, as the desktop's own "Which animals left?" does. */ if (ls.animalsOff && ls.animalsOff.length && AI.livestock && AI.livestock.removeAnimal) { ls.animalsOff.forEach(function (id) { AI.livestock.removeAnimal(id).catch(function (e) { console.error('animal off', e); }); }); } } } } catch (e) { console.error('livestock apply', e); }

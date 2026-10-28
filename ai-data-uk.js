@@ -2615,10 +2615,12 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
   const documents = {
     async saveAll(docs){
       docs=docs||[]; const fid=farm.active(); if(!fid) return;
-      const snap=JSON.stringify(docs); if(snap===_docSnap) return;
-      if(docs.length){
+      /* -421: the phone's rows (its HMRC marks, FILING; PERMIT) are never written from here - see above */
+      var own=docs.filter(function(d){ var t=String((d && (d.doc_type||d.type))||'MD'); return !!d && t!=='FILING' && t!=='PERMIT'; });
+      const snap=JSON.stringify(own); if(snap===_docSnap) return;
+      if(own.length){
         const e=(await client().from('farm_documents')
-          .upsert(docs.map(function(d){ return docToDb(d,fid); }),{onConflict:'farm_id,local_id'})).error;
+          .upsert(own.map(function(d){ return docToDb(d,fid); }),{onConflict:'farm_id,local_id'})).error;
         /* A missing migration must not take the whole save down with it — the
            certificate is already on the device and can be re-pushed later. */
         if(e){ console.warn('Documents not saved online yet — run removal_certificate_schema.sql in Supabase. ('+(e.message||e)+')'); return false; }
