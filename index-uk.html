@@ -7,7 +7,7 @@
 
 <meta name="description" content="AgriInsights UK — making farm finances simple for UK farmers. Track costs, plan your season, stay ready for Making Tax Digital and keep your farm records straight."/>
 <meta name="theme-color" content="#1B4332"/>
-<meta name="ai-build" content="uk-2026-11-01-425"/>
+<meta name="ai-build" content="uk-2026-11-07-426f"/>
 <meta name="color-scheme" content="light"/>
 <meta property="og:title" content="AgriInsights — Making Farm Finances Simple"/>
 <meta property="og:description" content="The farm finance app built for UK farmers. Track every pound, plan your season, stay MTD-ready — all in one place."/>
@@ -4481,6 +4481,19 @@ select.tx-fctl{padding-right:30px}
 .tx-keep{text-decoration:underline;cursor:pointer;font-weight:700;color:#92400E}
 .tx-sug{display:inline-block;max-width:136px;overflow:hidden;text-overflow:ellipsis;margin-left:6px;padding:2px 9px;border-radius:999px;font-size:11px;font-weight:700;color:#B45309;background:#FFF8E8;border:1.5px solid #F2DFB4;cursor:pointer;white-space:nowrap;vertical-align:middle}
 .tx-sug:hover{background:#FEF0D2}
+
+.ukw-q{display:flex;flex-direction:column;gap:8px;margin:8px 0 2px;cursor:default;white-space:normal}
+.ukw-chip{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:600;line-height:1.35;color:#7A4A10;background:#FFF7EB;border:1px solid #F5D9A8;border-radius:999px;padding:5px 12px}
+.ukw-chip i{width:6px;height:6px;border-radius:50%;background:#D97706;flex:none}
+.ukw-btns{display:flex;flex-wrap:wrap;gap:8px}
+.ukw-b{font:600 12.5px inherit;font-family:inherit;color:#374151;background:#fff;border:1px solid #E5E7EB;border-radius:999px;padding:8px 14px;cursor:pointer}
+.ukw-b.pri{color:#fff;background:#1B4332;border-color:#1B4332}
+.ukw-sub{font-size:12.5px;color:#6B7280}
+.ukw-note{display:flex;flex-direction:column;gap:10px;background:#fff;border:1px solid #E5E7EB;border-radius:14px;padding:16px;margin:0 0 14px}
+.ukw-note-h{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:14px}
+.ukw-est{font-size:11.5px;font-weight:600;color:#4B5563;background:#EEF0F2;border-radius:999px;padding:3px 10px}
+.ukw-note p{margin:0;font-size:13.5px;line-height:1.5;color:#374151}.ukw-note a{color:#1B4332;text-decoration:underline;cursor:pointer}
+.ukw-facts{background:var(--bg);border:1px solid var(--br2);border-radius:10px;padding:11px 13px;margin-bottom:14px;font-size:12.5px;line-height:1.55;color:var(--t2)}
 
 .tx-link-chip{display:inline-block;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:-3px;margin-left:6px;padding:1px 7px;border-radius:999px;font-size:11px;font-weight:700;color:var(--gd);background:var(--gb);border:1px solid var(--gp);cursor:pointer}
 .tx-link-chip:hover{background:var(--gp)}
@@ -8982,7 +8995,7 @@ body.bmb-on{overflow:hidden}
         <button class="bgt-btn" onclick="bgtAddCat()">+ Add category budget</button>
       </div>
       <div id="bgt-cats"></div>
-      <div class="bgt-card-s" style="margin-top:10px">Tap a row to see its transactions · tap the target to change it.</div>
+      <div class="bgt-card-s" id="bgt-cats-foot" style="margin-top:10px">Tap a row to see its transactions · tap the target to change it.</div>
     </div>
 
     <div class="bgt-card" id="bgt-months-card">
@@ -9218,7 +9231,7 @@ body.bmb-on{overflow:hidden}
   
   <div class="info-box">
     <div class="ib-t"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="var(--gd)" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg> Capital allowances — farm assets</div>
-    <div class="ib-d">Tractors, machinery and most farm equipment are written off <strong>in full the year you buy them</strong> under the Annual Investment Allowance (up to &pound;1m a year). Cars and anything over the limit go into a pool written down at <strong>14%</strong> a year (6% for solar and integral features), and new farm buildings at <strong>3%</strong> a year. These come off your taxable profit and flow into Tax &amp; HMRC and your Self Assessment figures.</div>
+    <div class="ib-d">Tractors, machinery and most farm equipment are written off <strong>in full the year you buy them</strong> under the Annual Investment Allowance (up to &pound;1m a year). Cars and anything over the limit go into a pool written down at <strong>14%</strong> a year (6% for solar and integral features), <span id="ast-ib-sba">and new farm buildings at <strong>3%</strong> a year</span>. These come off your taxable profit and flow into Tax &amp; HMRC and your Self Assessment figures.</div>
   </div>
 
   </div>
@@ -9260,7 +9273,7 @@ body.bmb-on{overflow:hidden}
         <div id="ast-subtype-note" style="font-size:11px;color:var(--t3);margin-top:5px"></div>
       </div>
       <div class="fg2" style="margin-bottom:10px">
-        <div><label>Purchase date</label><input id="ast-date" type="date"/></div>
+        <div><label>Purchase date</label><input id="ast-date" type="date" onchange="astCarRefresh()"/></div>
         <div><label>Purchase price (£)</label><input id="ast-price" type="number" placeholder="0" oninput="calcAssetDepr();try{astFillTxnPicker()}catch(e){}"/></div>
       </div>
       <div class="fg2" style="margin-bottom:10px" id="ast-depr-row">
@@ -9285,6 +9298,15 @@ body.bmb-on{overflow:hidden}
         <input id="ast-contract" type="date"/>
         <div style="font-size:11px;color:var(--t4);margin-top:4px;line-height:1.45">Change it if you signed earlier. HMRC wants this date on the building&rsquo;s statement.</div>
         <div id="ast-inuse-note" style="display:none;background:#FFF3E0;border:1px solid #F5D9A8;border-radius:var(--rs);padding:10px 12px;margin-top:9px;font-size:12px;line-height:1.6;color:#7a4a10"></div>
+      </div>
+      
+      <div id="ast-car-wrap" style="display:none;background:var(--bg);border:1px solid var(--br2);border-radius:var(--rs);padding:12px;margin-bottom:10px">
+        <div id="ast-car-use-wrap" style="margin-bottom:10px"><label>Business use (%) <span style="font-weight:400;color:var(--t3);font-size:11px">— the share of its miles for the farm</span></label>
+          <input id="ast-car-use" type="number" min="0" max="100" step="1" placeholder="100" oninput="calcAssetDepr()"/>
+          <div style="font-size:11px;color:var(--t4);margin-top:4px;line-height:1.45">Private use cuts the allowance by the same share.</div></div>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:600;font-size:13px;margin:0"><input type="checkbox" id="ast-car-zero" onchange="astCarRefresh();calcAssetDepr()" style="width:auto;margin:0"/> New and zero-emission (0 g/km)</label>
+        <div id="ast-car-zero-note" style="font-size:11px;color:var(--t4);margin-top:4px;line-height:1.45"></div>
+        <div id="ast-car-sale" style="display:none;margin-top:10px"></div>
       </div>
       <div id="ast-treat-note" style="display:none;background:#FFFDF5;border:1px solid #EFE3C0;border-radius:var(--rs);padding:9px 11px;margin-bottom:10px;font-size:11.5px;color:#7a5d12;line-height:1.45"></div>
       <div id="ast-depr-preview" style="background:var(--gb);border:1px solid var(--gp);border-radius:var(--rs);padding:10px 12px;margin-bottom:12px;font-size:13px;display:none"></div>
@@ -11572,7 +11594,7 @@ body.bmb-on{overflow:hidden}
 
 </div>
 </div>
-<script src="js/app-0-7d1f0b3ff3.js"></script>
+<script src="js/app-0-4364cf593f.js"></script>
 
 
 <div class="imp-bg" id="imp-hub-bg">
