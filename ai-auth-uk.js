@@ -59,6 +59,9 @@
       '#ai-auth .inbox{text-align:center;}' +
       '#ai-auth .inbox .big{font-size:34px;line-height:1;margin-bottom:10px;}' +
       /* -400 (B9, D2): a signed-in farmer never sees the sign-in form while the farm opens. */
+      /* -432e F5: Forgot password? is a real button; a visible focus ring */
+      '#ai-auth button.ai-link{width:auto;margin:0;padding:2px 0;background:none;border:0;color:' + FOREST + ';font-weight:700;text-decoration:underline;cursor:pointer;font-size:12.5px;}' +
+      '#ai-auth .card button:focus-visible{outline:3px solid #2D6A4F !important;outline-offset:2px !important;}' +
       '#ai-auth .opening{text-align:center;padding:18px 0 6px;font-size:14px;font-weight:700;color:' + FOREST + ';}' +
       '#ai-auth .opening .spin,#ai-vo-chip .spin{display:inline-block;width:18px;height:18px;border-radius:50%;border:2.5px solid #cdd2c9;border-top-color:' + FOREST + ';animation:aiSpin .8s linear infinite;vertical-align:middle;}' +
       '#ai-auth .opening .spin{width:26px;height:26px;}' +
@@ -75,11 +78,11 @@
     var o = document.createElement('div');
     o.id = 'ai-auth';
     o.innerHTML =
-      '<div class="card">' +
+      '<div class="card" role="dialog" aria-modal="true" aria-labelledby="ai-h1">' +
         /* Single-language product: English. This is a UK build of a UK product — it does
            not share a codebase with the South African one, so there is no second language
            to switch to and no toggle to render. */
-        '<h1>AgriInsights</h1>' +
+        '<h1 id="ai-h1">AgriInsights</h1>' +
         '<p class="sub" id="ai-sub">Sign in to your farm</p>' +
         '<div class="tabs" id="ai-tabs">' +
           '<button class="tab on" id="ai-tab-in">Sign in</button>' +
@@ -91,7 +94,7 @@
           '<input id="ai-email" type="email" autocomplete="username" placeholder="you@farm.co.uk"/>' +
           '<label for="ai-pass">Password</label>' +
           '<input id="ai-pass" type="password" autocomplete="current-password" placeholder="Your password"/>' +
-          '<div style="text-align:right;margin-top:8px"><span id="ai-forgot" style="color:' + FOREST + ';font-weight:700;text-decoration:underline;cursor:pointer;font-size:12.5px">Forgot password?</span></div>' +
+          '<div style="text-align:right;margin-top:8px"><button type="button" id="ai-forgot" class="ai-link">Forgot password?</button></div>' +
           '<button id="ai-signin">Sign in</button>' +
         '</div>' +
         /* ── forgot password: ask for the address, then reuse the inbox screen ── */
@@ -132,7 +135,7 @@
         '</div>' +
         /* ── -400: shown to a farmer who is already signed in, while their farm loads ── */
         '<div id="ai-pane-opening" style="display:none"><div class="opening" aria-hidden="true"><div class="spin"></div></div></div>' +
-        '<div class="msg" id="ai-msg"></div>' +
+        '<div class="msg" id="ai-msg" role="alert" aria-live="assertive"></div>' +
         '<div style="margin-top:16px;padding-top:14px;border-top:1px solid #dfe3da;text-align:center">' +
           '<div style="font-size:12px;color:#6b716a;margin-bottom:9px" id="ai-demo-q">Just want to look around first?</div>' +
           '<button id="ai-demo" style="background:' + GOLD + ';color:#12271b;font-weight:800;margin-top:0">🌱 Explore the demo</button>' +
@@ -162,7 +165,7 @@
     /* The demo's "Create your farm →" leaves a flag so the farmer lands where they
        were heading — the sign-up form — instead of a sign-in card with no way on. */
     try {
-      if (localStorage.getItem('ai_uk_auth_mode') === 'signup') { setMode('signup'); }
+      if (localStorage.getItem('ai_uk_auth_mode') === 'signup') { setMode('signup'); WANT_SIGNUP = true; }   /* -432e F4 class: kept until the card is shown */
       localStorage.removeItem('ai_uk_auth_mode');
     } catch (e) {}
     /* -400 (5a): signed in already (THIS project's token): the card says "Opening your farm..." from its first
@@ -248,7 +251,7 @@
   function _esc(s){ return String(s || '').replace(/[&<>"]/g, function(c){
     return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]; }); }
 
-  var AUTH_MODE = 'signin', AUTH_EMAIL = '', INBOX_KIND = 'signup';
+  var AUTH_MODE = 'signin', AUTH_EMAIL = '', INBOX_KIND = 'signup', WANT_SIGNUP = false;
   function setMode(m){
     AUTH_MODE = m;
     var show = function(id, on){ var el = document.getElementById(id); if (el) el.style.display = on ? '' : 'none'; };
@@ -471,6 +474,10 @@
   }
   /* The figures shown were not this account's or farm's after all, or the open failed: cover them again. */
   function _unreveal(mode){
+    /* -432e F4 class: a stale session put the card on "Opening your farm..." and the "no session -> sign in" that
+       followed lost the demo's "Create your farm ->" ask. The farmer's own ask wins, once. */
+    if (mode === 'signin' && WANT_SIGNUP) mode = 'signup';
+    WANT_SIGNUP = false;
     if (_revealed) { _revealed = false; _voOff(false); }
     var o = document.getElementById('ai-auth'); if (o) o.style.display = 'flex';
     if (mode) setMode(mode);
