@@ -26,151 +26,134 @@
   }
   window.__aiObKeepLocal = _obKeepLocal;   /* -412: tools/uk-412-harness.html */
 
-  var FOREST = '#1F4D2C', GOLD = '#C8962C', CREAM = '#F7F6F1', INK = '#1A2622';
+  /* ══ -433 O1 / O2 (owner 14 Nov 2026): the welcome is a split screen - the promise, a real screen of the app and three
+     trust lines on the left; "Create your farm" first and "Sign in" second on the right, with "Explore a sample farm".
+     "Check your email" shows the address with "Wrong address? Change it", Open Gmail / Open Outlook, and "Send it again"
+     after 30 seconds. The look is the signed-off prototype's (.ob4, index-uk.html); every id the sign-in, sign-up, reset
+     and recovery paths use is kept, so nothing downstream changes. Wording: prototype/strings.js (signed off). ══ */
+  var IC = {
+    arrow: '<svg class="i" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>',
+    check: '<svg class="i" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>',
+    warn: '<svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
+    info: '<svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>',
+    eye: '<svg class="i" viewBox="0 0 24 24" style="width:16px;height:16px"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>',
+    compass: '<svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>',
+    trend: '<svg class="i" viewBox="0 0 24 24" style="width:20px;height:20px;stroke-width:2.4"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>',
+    pin: '<svg class="i" viewBox="0 0 24 24" style="width:17px;height:17px"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>',
+    shield: '<svg class="i" viewBox="0 0 24 24" style="width:17px;height:17px"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>',
+    phone: '<svg class="i" viewBox="0 0 24 24" style="width:17px;height:17px"><rect x="6" y="2" width="12" height="20" rx="2.5"/><line x1="11" y1="18" x2="13" y2="18"/></svg>',
+    mail: '<svg class="i" viewBox="0 0 24 24" style="color:#2D6A4F"><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="22 6 12 13 2 6"/></svg>',
+    ext: '<svg class="i" viewBox="0 0 24 24" style="width:16px;height:16px"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>',
+    clock: '<svg class="i" viewBox="0 0 24 24" style="width:13px;height:13px"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>'
+  };
+  function W8(k, v){ var s = (AUTH_T.en[k] != null) ? AUTH_T.en[k] : k; if (v) s = s.replace(/\{(\w+)\}/g, function(m, n){ return (n in v) ? String(v[n]) : m; }); return s; }
 
   // ---- styles + overlay injected on DOM ready ------------------------------
   function injectUI() {
     var css = document.createElement('style');
     css.textContent =
-      '#ai-auth{position:fixed;inset:0;z-index:99999;background:' + FOREST +
-        ';display:flex;align-items:center;justify-content:center;' +
-        'font-family:"Plus Jakarta Sans",system-ui,sans-serif;}' +
-      '#ai-auth .card{background:' + CREAM + ';width:340px;max-width:90vw;border-radius:18px;' +
-        'padding:30px 26px;box-shadow:0 20px 60px rgba(0,0,0,.35);}' +
-      '#ai-auth h1{margin:0 0 4px;font-size:22px;color:' + FOREST + ';font-weight:800;}' +
-      '#ai-auth p.sub{margin:0 0 20px;font-size:13px;color:#6b716a;}' +
-      '#ai-auth label{display:block;font-size:12px;font-weight:600;color:' + INK +
-        ';margin:12px 0 5px;}' +
-      '#ai-auth input{width:100%;box-sizing:border-box;padding:11px 12px;border:1px solid #cdd2c9;' +
-        'border-radius:10px;font-size:15px;font-family:inherit;}' +
-      '#ai-auth input:focus{outline:none;border-color:' + FOREST + ';}' +
-      '#ai-auth button{width:100%;margin-top:18px;padding:12px;border:0;border-radius:10px;' +
-        'background:' + FOREST + ';color:#fff;font-size:15px;font-weight:700;font-family:inherit;cursor:pointer;}' +
-      '#ai-auth button:disabled{opacity:.6;cursor:default;}' +
-      '#ai-auth .msg{margin-top:14px;font-size:13px;min-height:18px;}' +
-      '#ai-auth .msg.err{color:#a6432a;}#ai-auth .msg.ok{color:' + FOREST + ';}' +
-      /* ── sign-up additions (Phase 1). Same visual language as the card above. ── */
-      '#ai-auth .tabs{display:flex;gap:4px;background:#eceee6;border-radius:12px;padding:4px;margin:0 0 4px;}' +
-      '#ai-auth .tab{flex:1;text-align:center;padding:9px 6px;border-radius:9px;font-size:13.5px;font-weight:700;' +
-        'color:#6b716a;cursor:pointer;border:0;background:transparent;font-family:inherit;margin:0;width:auto;}' +
-      '#ai-auth .tab.on{background:#fff;color:' + FOREST + ';box-shadow:0 1px 3px rgba(0,0,0,.10);}' +
-      '#ai-auth .hint{font-size:11.5px;color:#6b716a;margin-top:6px;line-height:1.4;}' +
-      '#ai-auth .ghost{background:transparent;color:' + FOREST + ';border:1.5px solid #cdd2c9;font-weight:700;}' +
-      '#ai-auth .inbox{text-align:center;}' +
-      '#ai-auth .inbox .big{font-size:34px;line-height:1;margin-bottom:10px;}' +
-      /* -400 (B9, D2): a signed-in farmer never sees the sign-in form while the farm opens. */
-      /* -432e F5: Forgot password? is a real button; a visible focus ring */
-      '#ai-auth button.ai-link{width:auto;margin:0;padding:2px 0;background:none;border:0;color:' + FOREST + ';font-weight:700;text-decoration:underline;cursor:pointer;font-size:12.5px;}' +
-      '#ai-auth .card button:focus-visible{outline:3px solid #2D6A4F !important;outline-offset:2px !important;}' +
-      '#ai-auth .opening{text-align:center;padding:18px 0 6px;font-size:14px;font-weight:700;color:' + FOREST + ';}' +
-      '#ai-auth .opening .spin,#ai-vo-chip .spin{display:inline-block;width:18px;height:18px;border-radius:50%;border:2.5px solid #cdd2c9;border-top-color:' + FOREST + ';animation:aiSpin .8s linear infinite;vertical-align:middle;}' +
+      '#ai-auth{position:fixed;inset:0;z-index:99999;display:flex;font-family:"Plus Jakarta Sans",system-ui,sans-serif;}' +
+      '#ai-auth>.wl{flex:1;width:100%;min-width:0}' +
+      '#ai-auth .opening{text-align:center;padding:18px 0 6px;font-size:14px;font-weight:700;color:#1B4332;}' +
+      '#ai-auth .opening .spin,#ai-vo-chip .spin{display:inline-block;width:18px;height:18px;border-radius:50%;border:2.5px solid #cdd2c9;border-top-color:#1B4332;animation:aiSpin .8s linear infinite;vertical-align:middle;}' +
       '#ai-auth .opening .spin{width:26px;height:26px;}' +
       '@keyframes aiSpin{to{transform:rotate(360deg)}}' +
-      '#ai-vo-chip{position:fixed;top:10px;left:50%;transform:translateX(-50%);z-index:99990;background:#fff;color:' + FOREST + ';border:1px solid #cdd2c9;' +
+      '#ai-vo-chip{position:fixed;top:10px;left:50%;transform:translateX(-50%);z-index:99990;background:#fff;color:#1B4332;border:1px solid #cdd2c9;' +
         'border-radius:999px;padding:5px 12px 5px 9px;font:600 12.5px "Plus Jakarta Sans",system-ui,sans-serif;box-shadow:0 2px 10px rgba(0,0,0,.12);display:flex;align-items:center;gap:7px;transition:opacity .4s;}' +
       '#ai-vo-chip .spin{width:12px;height:12px;border-width:2px;}' +
-      'html.ai-viewonly body{cursor:progress;}html.ai-viewonly input,html.ai-viewonly textarea,html.ai-viewonly select{caret-color:transparent;}' +
-      '#ai-signout{position:fixed;bottom:14px;left:14px;z-index:99998;background:' + FOREST +
-        ';color:#fff;border:0;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:600;' +
-        'font-family:"Plus Jakarta Sans",sans-serif;cursor:pointer;opacity:.85;}';
+      'html.ai-viewonly body{cursor:progress;}html.ai-viewonly input,html.ai-viewonly textarea,html.ai-viewonly select{caret-color:transparent;}';
     document.head.appendChild(css);
 
+    var pass = function (id, auto, ph, hint) {
+      return '<div class="f"><label class="fl" for="' + id + '">' + _esc(W8(id === 'ai-pass' ? 'lblPass' : id === 'ai-np-pass2' ? 'lblNew2' : id === 'ai-np-pass' ? 'lblNew' : 'lblPass')) + '</label><div class="inwrap">' +
+        '<input class="inp" id="' + id + '" type="password" autocomplete="' + auto + '" placeholder="' + _esc(ph || '') + '" aria-describedby="' + id + '-err' + (hint ? ' ' + id + '-hint' : '') + '" maxlength="300">' +
+        '<button type="button" class="side" data-pass="' + id + '" aria-pressed="false" aria-label="' + _esc(W8('showPass')) + '">' + IC.eye + '<span>' + _esc(W8('show')) + '</span></button></div>' +
+        (hint ? '<div class="fh" id="' + id + '-hint">' + IC.check + '<span>' + _esc(hint) + '</span></div>' : '') + '<div class="err" id="' + id + '-err" hidden></div></div>';
+    };
+    var email = function (id, auto) {
+      return '<div class="f"><label class="fl" for="' + id + '">' + _esc(W8('lblEmail')) + '</label><input class="inp" id="' + id + '" type="email" inputmode="email" autocomplete="' + auto + '" spellcheck="false" placeholder="' + _esc(W8('phEmail')) + '" aria-describedby="' + id + '-err" maxlength="400"><div class="err" id="' + id + '-err" hidden></div></div>';
+    };
     var o = document.createElement('div');
-    o.id = 'ai-auth';
+    o.id = 'ai-auth'; o.className = 'ob4';
     o.innerHTML =
-      '<div class="card" role="dialog" aria-modal="true" aria-labelledby="ai-h1">' +
-        /* Single-language product: English. This is a UK build of a UK product — it does
-           not share a codebase with the South African one, so there is no second language
-           to switch to and no toggle to render. */
-        '<h1 id="ai-h1">AgriInsights</h1>' +
-        '<p class="sub" id="ai-sub">Sign in to your farm</p>' +
-        '<div class="tabs" id="ai-tabs">' +
-          '<button class="tab on" id="ai-tab-in">Sign in</button>' +
-          '<button class="tab" id="ai-tab-up">Create account</button>' +
-        '</div>' +
-        /* ── sign-in pane (unchanged fields + ids, so nothing downstream breaks) ── */
-        '<div id="ai-pane-in">' +
-          '<label for="ai-email">Email</label>' +
-          '<input id="ai-email" type="email" autocomplete="username" placeholder="you@farm.co.uk"/>' +
-          '<label for="ai-pass">Password</label>' +
-          '<input id="ai-pass" type="password" autocomplete="current-password" placeholder="Your password"/>' +
-          '<div style="text-align:right;margin-top:8px"><button type="button" id="ai-forgot" class="ai-link">Forgot password?</button></div>' +
-          '<button id="ai-signin">Sign in</button>' +
-        '</div>' +
-        /* ── forgot password: ask for the address, then reuse the inbox screen ── */
-        '<div id="ai-pane-reset" style="display:none">' +
-          '<label for="ai-rs-email">Email</label>' +
-          '<input id="ai-rs-email" type="email" autocomplete="username" placeholder="you@farm.co.uk"/>' +
-          '<div class="hint" id="ai-rs-hint">We’ll email you a link to choose a new password.</div>' +
-          '<button id="ai-reset">Email me a reset link</button>' +
-          '<button id="ai-reset-back" class="ghost" style="margin-top:8px">← Back to sign in</button>' +
-        '</div>' +
-        /* ── the screen the reset link lands on: choose a new password ── */
-        '<div id="ai-pane-newpass" style="display:none">' +
-          '<label for="ai-np-pass">New password</label>' +
-          '<input id="ai-np-pass" type="password" autocomplete="new-password" placeholder="At least 8 characters"/>' +
-          '<label for="ai-np-pass2">Type it again</label>' +
-          '<input id="ai-np-pass2" type="password" autocomplete="new-password" placeholder="At least 8 characters"/>' +
-          '<button id="ai-savepass">Save new password</button>' +
-        '</div>' +
-        /* ── create-account pane. Two fields only: the 5-step wizard already collects
-              the farm details, and asking twice doubles the work for the farmer. ── */
-        '<div id="ai-pane-up" style="display:none">' +
-          '<label for="ai-su-email">Email</label>' +
-          '<input id="ai-su-email" type="email" autocomplete="username" placeholder="you@farm.co.uk"/>' +
-          '<label for="ai-su-pass">Choose a password</label>' +
-          '<input id="ai-su-pass" type="password" autocomplete="new-password" placeholder="At least 8 characters"/>' +
-          '<div class="hint" id="ai-su-hint">You’ll use this to sign in on any device — your phone, the farm office, anywhere.</div>' +
-          '<button id="ai-signup">Create my account</button>' +
-        '</div>' +
-        /* ── "check your email" pane: shown because email confirmation is ON ── */
-        '<div id="ai-pane-inbox" style="display:none">' +
-          '<div class="inbox">' +
-            '<div class="big">📬</div>' +
-            '<div id="ai-inbox-title" style="font-size:18px;font-weight:800;color:' + FOREST + ';margin-bottom:6px">Check your email</div>' +
-            '<div id="ai-inbox-body" style="font-size:13px;color:#6b716a;line-height:1.5">We sent a confirmation link to <b id="ai-inbox-email"></b>. Tap it and you’re in.</div>' +
+      '<div class="wl">' +
+        '<section class="wl-left" id="ai-wl-left" aria-label="AgriInsights"></section>' +
+        '<section class="wl-right"><div class="wl-top"></div>' +
+          '<div class="wl-form" role="dialog" aria-modal="true" aria-labelledby="ai-h1">' +
+            '<div class="seg" role="tablist" id="ai-tabs" aria-label="' + _esc(W8('tabUp')) + ' / ' + _esc(W8('tabIn')) + '">' +
+              '<button type="button" role="tab" class="tab" id="ai-tab-up" tabindex="0"></button>' +
+              '<button type="button" role="tab" class="tab" id="ai-tab-in" tabindex="0"></button>' +
+            '</div>' +
+            '<svg class="mailpic" id="ai-mailpic" style="display:none" viewBox="0 0 120 96" fill="none" aria-hidden="true"><rect x="10" y="22" width="100" height="66" rx="10" fill="#fff" stroke="#1B4332" stroke-width="2.5"/><path d="M12 28l48 34 48-34" stroke="#1B4332" stroke-width="2.5" stroke-linejoin="round"/><rect x="30" y="6" width="60" height="44" rx="6" fill="#D8F3DC" stroke="#2D6A4F" stroke-width="2"/><path d="M44 26l10 9 20-18" stroke="#1B4332" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 86l36-26M108 86L72 60" stroke="#1B4332" stroke-width="2.5"/></svg>' +
+            '<h2 class="wl-h" id="ai-h1" tabindex="-1"></h2>' +
+            '<p class="wl-p" id="ai-sub"></p>' +
+            '<div class="msg" id="ai-msg" role="alert" aria-live="assertive"></div>' +
+            /* ── sign-in pane (same fields + ids, so nothing downstream breaks) ── */
+            '<form id="ai-pane-in" novalidate>' + email('ai-email', 'username') + pass('ai-pass', 'current-password', W8('phPass')) +
+              '<div class="forgot"><button type="button" id="ai-forgot" class="lnk ai-link"></button></div>' +
+              '<button type="submit" class="btn btn-pri full" id="ai-signin" style="margin-top:18px;height:54px"><span class="bl"></span>' + IC.arrow + '</button></form>' +
+            /* ── forgot password ── */
+            '<form id="ai-pane-reset" style="display:none" novalidate>' + email('ai-rs-email', 'email') +
+              '<button type="submit" class="btn btn-pri full" id="ai-reset" style="margin-top:22px;height:54px"><span class="bl"></span>' + IC.arrow + '</button>' +
+              '<p style="margin-top:22px"><button type="button" class="lnk" id="ai-reset-back"></button></p></form>' +
+            /* ── the screen the reset link lands on: choose a new password ── */
+            '<form id="ai-pane-newpass" style="display:none" novalidate>' + pass('ai-np-pass', 'new-password', '', W8('passHint')) + pass('ai-np-pass2', 'new-password', '') +
+              '<button type="submit" class="btn btn-pri full" id="ai-savepass" style="margin-top:22px;height:54px"><span class="bl"></span>' + IC.arrow + '</button></form>' +
+            /* ── create-account pane: two fields; the wizard collects the farm ── */
+            '<form id="ai-pane-up" style="display:none" novalidate>' + email('ai-su-email', 'email') + pass('ai-su-pass', 'new-password', '', W8('passHint')) +
+              '<button type="submit" class="btn btn-pri full" id="ai-signup" style="margin-top:22px;height:54px"><span class="bl"></span>' + IC.arrow + '</button></form>' +
+            /* ── O2 check your email (confirmation and reset) ── */
+            '<div id="ai-pane-inbox" style="display:none">' +
+              
+              '<div id="ai-inbox-title" class="ob4-sr"></div><div id="ai-inbox-body" class="ob4-sr"></div>' +
+              '<div class="addr">' + IC.mail + '<div style="min-width:0"><div class="em" id="ai-inbox-email" style="overflow-wrap:anywhere"></div><div style="font-size:13px;color:var(--mut);margin-top:2px" id="ai-inbox-wrong"><span id="ai-inbox-wrong-t"></span> <button type="button" class="lnk" style="font-size:13px" id="ai-inbox-change"></button></div></div></div>' +
+              '<div class="mailbtns"><button type="button" class="btn btn-sec" style="height:50px" data-mail="gmail">' + IC.ext + '<span id="ai-gmail"></span></button><button type="button" class="btn btn-sec" style="height:50px" data-mail="outlook">' + IC.ext + '<span id="ai-outlook"></span></button></div>' +
+              '<div class="resend"><span id="ai-spam"></span><br><span id="ai-resend-box"><button type="button" class="lnk" id="ai-resend"><span class="bl"></span></button><span class="cd" id="ai-resend-cd" aria-hidden="true"></span></span></div>' +
+            '</div>' +
+            /* ── -400: shown to a farmer who is already signed in, while their farm loads ── */
+            '<div id="ai-pane-opening" style="display:none"><div class="opening" aria-hidden="true"><div class="spin"></div></div></div>' +
+            '<div id="ai-demo-box"><div class="or" id="ai-or"></div><button type="button" class="btn btn-gold full" id="ai-demo" style="height:52px">' + IC.compass + '<span id="ai-demo-t"></span></button><div class="gold-sub" id="ai-demo-q"></div></div>' +
           '</div>' +
-          '<button id="ai-resend" class="ghost">Resend the email</button>' +
-          '<button id="ai-inbox-back" class="ghost" style="margin-top:8px">Already confirmed? Sign in</button>' +
-        '</div>' +
-        /* ── -400: shown to a farmer who is already signed in, while their farm loads ── */
-        '<div id="ai-pane-opening" style="display:none"><div class="opening" aria-hidden="true"><div class="spin"></div></div></div>' +
-        '<div class="msg" id="ai-msg" role="alert" aria-live="assertive"></div>' +
-        '<div style="margin-top:16px;padding-top:14px;border-top:1px solid #dfe3da;text-align:center">' +
-          '<div style="font-size:12px;color:#6b716a;margin-bottom:9px" id="ai-demo-q">Just want to look around first?</div>' +
-          '<button id="ai-demo" style="background:' + GOLD + ';color:#12271b;font-weight:800;margin-top:0">🌱 Explore the demo</button>' +
-        '</div>' +
+          '<div class="wl-foot" id="ai-foot"><span class="fine" id="ai-fine" style="text-align:left;max-width:300px"></span><button type="button" class="lnk" style="font-size:13px" id="ai-inbox-back"></button></div>' +
+        '</section>' +
       '</div>';
     document.body.appendChild(o);
 
-    document.getElementById('ai-signin').addEventListener('click', doSignIn);
-    document.getElementById('ai-pass').addEventListener('keydown', function (e) {
-      if (e.key === 'Enter') doSignIn();
+    var on = function (id, ev, fn) { var el = document.getElementById(id); if (el) el.addEventListener(ev, fn); };
+    on('ai-pane-in', 'submit', function (e) { e.preventDefault(); doSignIn(); });
+    on('ai-pane-up', 'submit', function (e) { e.preventDefault(); doSignUp(); });
+    on('ai-pane-reset', 'submit', function (e) { e.preventDefault(); doReset(); });
+    on('ai-pane-newpass', 'submit', function (e) { e.preventDefault(); doSavePassword(); });
+    on('ai-tab-in', 'click', function(){ setMode('signin'); _focusH(); });
+    on('ai-tab-up', 'click', function(){ setMode('signup'); _focusH(); });
+    on('ai-inbox-back', 'click', function(){ setMode('signin'); _focusH(); });
+    on('ai-resend', 'click', doResend);
+    on('ai-forgot', 'click', function(){ var em = (document.getElementById('ai-email') || {}).value || ''; setMode('reset'); var r = document.getElementById('ai-rs-email'); if (r && em) r.value = em; _focusH(); });
+    on('ai-reset-back', 'click', function(){ setMode('signin'); _focusH(); });
+    on('ai-inbox-change', 'click', function(){ CHANGING = true; setMode('signup'); var e = document.getElementById('ai-su-email'); if (e) { e.value = AUTH_EMAIL; try { e.focus(); e.select(); } catch (x) {} } });
+    o.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-pass]');
+      if (b) { var i = document.getElementById(b.getAttribute('data-pass')); var show = i.type === 'password'; i.type = show ? 'text' : 'password'; b.setAttribute('aria-pressed', String(show)); b.setAttribute('aria-label', W8(show ? 'hidePass' : 'showPass')); b.querySelector('span').textContent = W8(show ? 'hide' : 'show'); return; }
+      var m = e.target.closest('[data-mail]');
+      if (m) { try { var w = window.open(m.getAttribute('data-mail') === 'outlook' ? 'https://outlook.live.com/mail/' : 'https://mail.google.com/', '_blank', 'noopener'); if (w) { try { w.opener = null; } catch (x) {} } } catch (x) {} return; }
+      var p = e.target.closest('[data-policy]');
+      if (p) { try { if (typeof window.aiPolicyOpen === 'function') window.aiPolicyOpen(p.getAttribute('data-policy')); } catch (x) {} }
     });
-    document.getElementById('ai-signup').addEventListener('click', doSignUp);
-    document.getElementById('ai-su-pass').addEventListener('keydown', function (e) {
-      if (e.key === 'Enter') doSignUp();
-    });
-    document.getElementById('ai-tab-in').addEventListener('click', function(){ setMode('signin'); });
-    document.getElementById('ai-tab-up').addEventListener('click', function(){ setMode('signup'); });
-    document.getElementById('ai-inbox-back').addEventListener('click', function(){ setMode('signin'); });
-    document.getElementById('ai-resend').addEventListener('click', doResend);
-    document.getElementById('ai-forgot').addEventListener('click', function(){ setMode('reset'); });
-    document.getElementById('ai-reset-back').addEventListener('click', function(){ setMode('signin'); });
-    document.getElementById('ai-reset').addEventListener('click', doReset);
-    document.getElementById('ai-rs-email').addEventListener('keydown', function (e) { if (e.key === 'Enter') doReset(); });
-    document.getElementById('ai-savepass').addEventListener('click', doSavePassword);
-    document.getElementById('ai-np-pass2').addEventListener('keydown', function (e) { if (e.key === 'Enter') doSavePassword(); });
-    applyAuthCopy();
-    /* The demo's "Create your farm →" leaves a flag so the farmer lands where they
-       were heading — the sign-up form — instead of a sign-in card with no way on. */
+    o.addEventListener('input', function (e) { var el = e.target; if (el && el.id) _fieldErr(el.id, null); if (el && el.id === 'ai-su-pass') { var h = document.getElementById('ai-su-pass-hint'); if (h) h.style.color = Array.from(el.value).length >= 8 ? '#2D6A4F' : ''; } });
+    /* the two tabs: arrows move between them (both stay in the Tab order) */
+    ['ai-tab-in', 'ai-tab-up'].forEach(function (id) { on(id, 'keydown', function (e) { if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { e.preventDefault(); setMode(id === 'ai-tab-up' ? 'signin' : 'signup'); var t = document.getElementById(id === 'ai-tab-up' ? 'ai-tab-in' : 'ai-tab-up'); if (t) t.focus(); } }); });
+    window.addEventListener('resize', _placeProof);
+    /* a device that has signed in before opens on Sign in; a new visitor on Create your farm (O1) */
+    var first = 'signup'; try { if (localStorage.getItem('ai_uk_had_account') === '1') first = 'signin'; } catch (e) {}
+    setMode(first);
+    /* The demo's "Create your farm ->" leaves a flag so the farmer lands where they were heading - the sign-up form. */
     try {
       if (localStorage.getItem('ai_uk_auth_mode') === 'signup') { setMode('signup'); WANT_SIGNUP = true; }   /* -432e F4 class: kept until the card is shown */
       localStorage.removeItem('ai_uk_auth_mode');
     } catch (e) {}
-    /* -400 (5a): signed in already (THIS project's token): the card says "Opening your farm..." from its first
-       paint - the sign-in form is never shown to a farmer who does not need it. start() puts the form back if
-       the session turns out not to open. */
+    /* D5: signed out from setup - say the half-filled answers were cleared from this computer */
+    try { var fl = sessionStorage.getItem('ai_uk_ob433_flash'); if (fl) { sessionStorage.removeItem('ai_uk_ob433_flash'); setMode('signin'); msgK('signedOutCleared', 'ok'); } } catch (e) {}
+    /* -400 (5a): signed in already (THIS project's token): the card says "Opening your farm..." from its first paint. */
     try { if (!window.__AI_GUEST && !RECOVERY && !window.__AI_BACKEND_BLOCKED && _sessionUid()) setMode('opening'); } catch (e) {}
     var demoBtn = document.getElementById('ai-demo');
     if (demoBtn) demoBtn.addEventListener('click', function () {
@@ -178,81 +161,84 @@
       location.href = location.pathname + '?demo=1';
     });
   }
+  function _focusH(){ setTimeout(function(){ var h = document.getElementById('ai-h1'); if (h) try { h.focus(); } catch (e) {} }, 20); }
+  function _placeProof(){
+    var el = document.getElementById('ai-pimg'); if (!el) return;
+    el.style.backgroundImage = 'url(img/ob433/proof-uk.jpg)'; el.style.backgroundSize = '100% auto'; el.style.backgroundPosition = '0 0';
+  }
+  function _leftHtml(mode){
+    var trust = '<div class="trust"><div class="tr"><div class="ti">' + IC.pin + '</div><b>' + _esc(W8('t1b')) + '</b><span>' + _esc(W8('t1s')) + '</span></div>' +
+      '<div class="tr"><div class="ti">' + IC.shield + '</div><b>' + _esc(W8('t2b')) + '</b><span>' + _esc(W8('t2s')) + '</span></div>' +
+      '<div class="tr"><div class="ti">' + IC.phone + '</div><b>' + _esc(W8('t3b')) + '</b><span>' + _esc(W8('t3s')) + '</span></div></div>';
+    var brand = '<div class="brandrow"><div class="bm"><img src="img/logomark.png?v=225" alt=""></div><div class="bn">Agri<span>Insights</span></div></div>';
+    if (mode === 'inbox' && INBOX_KIND !== 'reset') {
+      return brand + '<div style="margin:auto 0"><h1 class="promise" style="font-size:40px;margin-top:0">' + _esc(W8('ePromise1')) + ' <em>' + _esc(W8('ePromise2')) + '</em></h1>' +
+        '<ol class="next3" style="list-style:none"><li class="n3 done"><div class="c">' + IC.check.replace('class="i"', 'class="i" style="width:16px;height:16px;stroke-width:3"') + '</div><div><b>' + _esc(W8('eN1')) + '</b><span>' + _esc(AUTH_EMAIL) + '</span></div></li>' +
+        '<li class="n3 on" aria-current="step"><div class="c">2</div><div><b>' + _esc(W8('eN2')) + '</b><span>' + _esc(W8('eN2s')) + '</span></div></li>' +
+        '<li class="n3"><div class="c">3</div><div><b>' + _esc(W8('eN3')) + '</b><span>' + _esc(W8('eN3s')) + '</span></div></li></ol></div>' + trust;
+    }
+    return brand + '<h1 class="promise">' + _esc(W8('promise1')) + ' <em>' + _esc(W8('promise2')) + '</em></h1>' +
+      '<p class="promise-sub">' + _esc(W8('wSub')) + '</p>' +
+      '<figure class="proof"><div class="proof-frame"><div class="proof-bar"><img src="img/logomark.png?v=225" alt="">Oakvale Farm<span class="pill">' + _esc(W8('samplePill')) + '</span></div>' +
+      '<div class="proof-img" id="ai-pimg" role="img" aria-label="' + _esc(W8('proofCap')) + '"></div></div>' +
+      '<div class="proof-chip"><div class="ic">' + IC.trend + '</div><div><div class="k">' + _esc(W8('chipK')) + '</div><div class="v">' + _esc(W8('chipV')) + '<span>' + _esc(W8('healthy')) + '</span></div></div></div></figure>' +
+      '<figcaption class="proof-cap">' + _esc(W8('proofCap')) + '</figcaption>' + trust;
+  }
 
   function msg(text, kind) {
     var m = document.getElementById('ai-msg');
-    if (m) { m.textContent = text || ''; m.className = 'msg ' + (kind || ''); }
+    if (!m) return;
+    if (!text) { m.innerHTML = ''; m.className = 'msg'; return; }
+    m.className = 'msg ' + (kind === 'err' ? 'formerr' : 'okmsg');
+    m.innerHTML = (kind === 'err' ? IC.warn : IC.info) + '<span>' + _esc(text) + '</span>';
+  }
+  function _fieldErr(id, text){
+    var inp = document.getElementById(id), box = document.getElementById(id + '-err');
+    if (inp) { if (text) inp.setAttribute('aria-invalid', 'true'); else inp.removeAttribute('aria-invalid'); }
+    if (box) { box.hidden = !text; box.innerHTML = text ? IC.warn + '<span>' + _esc(text) + '</span>' : ''; }
+    if (text && inp) { try { inp.focus(); } catch (e) {} }
   }
 
-  /* ── Sign-up (Phase 1) ────────────────────────────────────────────────────
-     This overlay owns its copy rather than reading the app's strings: it renders
-     before the app has booted, so nothing in the app is available to read yet. */
-  var AUTH_T = {
-    en: { subIn:'Sign in to your farm', subUp:'Start your farm’s records', subInbox:'One more step',
-          tabIn:'Sign in', tabUp:'Create account', signin:'Sign in', signup:'Create my account',
-          lblEmail:'Email', lblPass:'Password', lblNewPass:'Choose a password',
-          phEmail:'you@farm.co.uk', phPass:'Your password', phNewPass:'At least 8 characters',
-          hint:'You’ll use this to sign in on any device — your phone, the farm office, anywhere.',
-          demoQ:'Just want to look around first?', demo:'🌱 Explore the demo',
-          inboxTitle:'Check your email', inboxBody1:'We sent a confirmation link to ', inboxBody2:'. Tap it and you’re in.',
-          resend:'Resend the email', back:'Already confirmed? Sign in',
-          needBoth:'Enter your email and password.', badEmail:'That doesn’t look like an email address — check for a missing .co.uk or .com.',
-          shortPass:'Too short — use at least 8 characters.', creating:'Creating your account…',
-          sent:'Email sent — check your inbox.', resent:'Sent again — check your inbox.',
-          wait:'Wait ', waitSuffix:'s before asking again.', offline:'You appear to be offline. Connect to the internet to continue.',
-          subReset:'Reset your password', subNewPass:'Choose a new password',
-          forgot:'Forgot password?', lblRsEmail:'Email', rsHint:'We’ll email you a link to choose a new password.',
-          resetBtn:'Email me a reset link', resetBack:'← Back to sign in',
-          lblNew:'New password', lblNew2:'Type it again', savePass:'Save new password',
-          resetTitle:'Check your email', resetBody1:'We sent a password-reset link to ', resetBody2:'. Open it to choose a new password.',
-          resetSent:'Reset link sent — check your inbox.', mismatch:'Those two passwords are not the same.',
-          savingPass:'Saving your new password…', passSaved:'Password changed — signing you in…',
-          recoverExpired:'That reset link has expired. Ask for a new one.',
-          subOpening:'Opening your farm\u2026', openFail:'We could not open your farm just now. Check your connection, then sign in again.' }
-  };
-  /* Messages are remembered by KEY, not by the text already on screen, so re-rendering
-     the card cannot leave a stale line under it. */
+  /* This overlay owns its copy rather than reading the app's strings: it renders before the app has booted. The -433
+     lines are the signed-off prototype wording (prototype/strings.js, resolved for the UK by uk-433/gen/strings-uk.mjs). */
+  var AUTH_T = { en: {"tabIn": "Sign in", "tabUp": "Create your farm", "createH": "Create your farm", "createP": "Two fields now, then about two minutes on your farm.", "changeP": "Type the right address. We’ll send the link there instead.", "signinH": "Welcome back", "signinP": "Sign in to your farm", "subReset": "Reset your password", "rsHint": "We’ll email you a link to choose a new password.", "subNewPass": "Choose a new password", "inboxTitle": "Check your email", "eP": "We sent a link to confirm it is you. Open it on this computer or your phone.", "resetTitle": "Check your email", "resetSentP": "If there’s a farm with {email}, we’ve sent it a link to choose a new password.", "lblEmail": "Email", "lblPass": "Password", "lblNew": "New password", "lblNew2": "Type it again", "phEmail": "you@farm.co.uk", "phPass": "Your password", "passHint": "At least 8 characters", "show": "Show", "hide": "Hide", "showPass": "Show password", "hidePass": "Hide password", "signin": "Sign in", "signup": "Create your farm", "resetBtn": "Email me a reset link", "resetBack": "Back to sign in", "savePass": "Save new password", "forgot": "Forgot password?", "or": "or", "demo": "Explore a sample farm", "demoQ": "No account needed. Nothing is saved.", "eWrong": "Wrong address?", "eChange": "Change it", "eGmail": "Open Gmail", "eOutlook": "Open Outlook", "eSpam": "Nothing there? Look in spam or junk.", "resend": "Send it again", "resendIn": "in {t}", "back": "Already confirmed? Sign in", "resent": "Sent again. Check your inbox.", "resetSent": "Sent again. Check your inbox.", "notYet": "Confirm your email first. We sent the link to {email}.", "fine": "You read and accept our {privacy} and {terms} during setup.", "privacy": "Privacy notice", "terms": "Terms of use", "needBoth": "Enter your email and password.", "emailEmpty": "Enter your email address.", "emailLong": "That email address is too long. Check it.", "badEmail": "That doesn’t look like an email address. Check for a missing .co.uk or .com.", "passEmpty": "Enter a password.", "shortPass": "Too short. Use at least 8 characters.", "longPass": "Use 128 characters or fewer.", "mismatch": "Those two passwords are not the same.", "creating": "Creating your account…", "signing": "Signing in…", "noMatch": "That email and password don’t match. Check them, or reset your password.", "savingPass": "Saving your new password…", "passSaved": "Password changed. Signing you in…", "recoverExpired": "That reset link has expired. Ask for a new one.", "offline": "You appear to be offline. Connect to the internet to continue.", "signedOutCleared": "You’re signed out. The answers you’d started were cleared from this computer.", "promise1": "Every pound on your farm,", "promise2": "clear in minutes.", "wSub": "See each month whether the farm is making money, where it goes, and what is due to HMRC. Without the paperwork.", "samplePill": "Sample farm", "proofCap": "The real app, showing the Oakvale sample farm", "chipK": "Is my farm profitable?", "chipV": "Yes · 35.2% margin", "healthy": "Healthy", "t1b": "Made for UK farms", "t1s": "England, Wales, Scotland and NI rules", "t2b": "Your data is yours", "t2s": "UK GDPR; run by a UK company", "t3b": "On your phone too", "t3s": "Works where the signal is weak", "ePromise1": "One quick check,", "ePromise2": "then your farm.", "eN1": "Account created", "eN2": "Confirm your email", "eN2s": "So only you can get into your farm’s records.", "eN3": "Tell us about your farm", "eN3s": "About two minutes. Then you are in.", "subOpening": "Opening your farm…", "openFail": "We could not open your farm just now. Check your connection, then sign in again."} };
   var MSG_KEY = null, MSG_KIND = '';
   function msgK(key, kind){ MSG_KIND = kind || ''; msg(T()[key], kind); MSG_KEY = key; }
   function T(){ return AUTH_T.en; }
   function _txt(id, s){ var el = document.getElementById(id); if (el) el.textContent = s; }
-  function _ph(id, s){ var el = document.getElementById(id); if (el) el.placeholder = s; }
+  function _btn(id, s){ var el = document.getElementById(id); if (!el) return; var b = el.querySelector('.bl'); if (b) b.textContent = s; else el.textContent = s; }
   function applyAuthCopy(){
     var t = T(), pane = AUTH_MODE;
-    _txt('ai-sub', pane === 'signup'  ? t.subUp
-                 : pane === 'inbox'   ? (INBOX_KIND === 'reset' ? t.subReset : t.subInbox)
-                 : pane === 'reset'   ? t.subReset
-                 : pane === 'newpass' ? t.subNewPass
-                 : pane === 'opening' ? t.subOpening
-                 : t.subIn);
-    _txt('ai-forgot', t.forgot); _txt('ai-rs-hint', t.rsHint);
-    _txt('ai-reset', t.resetBtn); _txt('ai-reset-back', t.resetBack); _txt('ai-savepass', t.savePass);
-    _ph('ai-rs-email', t.phEmail); _ph('ai-np-pass', t.phNewPass); _ph('ai-np-pass2', t.phNewPass);
-    var rsL = document.querySelector('#ai-pane-reset label'); if (rsL) rsL.textContent = t.lblRsEmail;
-    var npL = document.querySelectorAll('#ai-pane-newpass label');
-    if (npL.length >= 2) { npL[0].textContent = t.lblNew; npL[1].textContent = t.lblNew2; }
+    var left = document.getElementById('ai-wl-left'); if (left) { left.innerHTML = _leftHtml(pane); _placeProof(); }
+    var H = { signup: CHANGING ? t.createH : t.createH, signin: t.signinH, reset: t.subReset, newpass: t.subNewPass, inbox: t.inboxTitle, opening: t.subOpening }[pane] || t.signinH;
+    if (pane === 'inbox' && INBOX_KIND === 'reset') H = t.resetTitle;
+    _txt('ai-h1', H);
+    _txt('ai-sub', pane === 'signup' ? (CHANGING ? t.changeP : t.createP)
+                 : pane === 'inbox' ? (INBOX_KIND === 'reset' ? W8('resetSentP', { email: AUTH_EMAIL }) : t.eP)
+                 : pane === 'reset' ? t.rsHint
+                 : pane === 'newpass' ? ''
+                 : pane === 'opening' ? ''
+                 : t.signinP);
     _txt('ai-tab-in', t.tabIn); _txt('ai-tab-up', t.tabUp);
-    _txt('ai-signin', t.signin); _txt('ai-signup', t.signup);
-    _txt('ai-su-hint', t.hint); _txt('ai-demo-q', t.demoQ); _txt('ai-demo', t.demo);
+    _btn('ai-signin', t.signin); _btn('ai-signup', t.signup); _btn('ai-reset', t.resetBtn); _btn('ai-savepass', t.savePass);
+    _txt('ai-forgot', t.forgot); _txt('ai-reset-back', t.resetBack);
+    _txt('ai-or', t.or); _txt('ai-demo-t', t.demo); _txt('ai-demo-q', t.demoQ);
     _txt('ai-inbox-title', INBOX_KIND === 'reset' ? t.resetTitle : t.inboxTitle);
-    _txt('ai-resend', t.resend); _txt('ai-inbox-back', t.back);
-    _ph('ai-email', t.phEmail); _ph('ai-pass', t.phPass);
-    _ph('ai-su-email', t.phEmail); _ph('ai-su-pass', t.phNewPass);
-    var labs = document.querySelectorAll('#ai-pane-in label, #ai-pane-up label');
-    if (labs.length >= 4) { labs[0].textContent = t.lblEmail; labs[1].textContent = t.lblPass;
-                            labs[2].textContent = t.lblEmail; labs[3].textContent = t.lblNewPass; }
-    var b = document.getElementById('ai-inbox-body');
-    if (b) b.innerHTML = (INBOX_KIND === 'reset' ? t.resetBody1 : t.inboxBody1) +
-                         '<b id="ai-inbox-email">' + _esc(AUTH_EMAIL) + '</b>' +
-                         (INBOX_KIND === 'reset' ? t.resetBody2 : t.inboxBody2);
-    if (MSG_KEY && t[MSG_KEY]) { var mEl = document.getElementById('ai-msg');
-      if (mEl) { mEl.textContent = t[MSG_KEY]; mEl.className = 'msg ' + MSG_KIND; } }
+    _txt('ai-inbox-body', INBOX_KIND === 'reset' ? W8('resetSentP', { email: AUTH_EMAIL }) : t.eP);
+    _txt('ai-inbox-email', AUTH_EMAIL); _txt('ai-inbox-wrong-t', t.eWrong); _txt('ai-inbox-change', t.eChange);
+    var wr = document.getElementById('ai-inbox-wrong'); if (wr) wr.style.display = INBOX_KIND === 'reset' ? 'none' : '';
+    _txt('ai-gmail', t.eGmail); _txt('ai-outlook', t.eOutlook); _txt('ai-spam', t.eSpam);
+    _btn('ai-resend', t.resend); _txt('ai-inbox-back', INBOX_KIND === 'reset' ? t.resetBack : t.back);
+    var fine = document.getElementById('ai-fine');
+    if (fine) fine.innerHTML = _esc(t.fine).replace('{privacy}', '<button type="button" class="lnk" data-policy="privacy">' + _esc(t.privacy) + '</button>').replace('{terms}', '<button type="button" class="lnk" data-policy="terms">' + _esc(t.terms) + '</button>');
+    if (MSG_KEY && t[MSG_KEY]) msg(t[MSG_KEY], MSG_KIND);
   }
   function _esc(s){ return String(s || '').replace(/[&<>"]/g, function(c){
     return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]; }); }
 
-  var AUTH_MODE = 'signin', AUTH_EMAIL = '', INBOX_KIND = 'signup', WANT_SIGNUP = false;
+  var AUTH_MODE = 'signin', AUTH_EMAIL = '', INBOX_KIND = 'signup', WANT_SIGNUP = false, CHANGING = false;
   function setMode(m){
+    if (m !== 'signup') CHANGING = false;
     AUTH_MODE = m;
     var show = function(id, on){ var el = document.getElementById(id); if (el) el.style.display = on ? '' : 'none'; };
     show('ai-pane-in',      m === 'signin');
@@ -261,82 +247,90 @@
     show('ai-pane-reset',   m === 'reset');
     show('ai-pane-newpass', m === 'newpass');
     show('ai-pane-opening', m === 'opening');
-    /* Tabs only make sense while choosing between signing in and signing up. Mid-
-       confirmation, mid-reset, or on the new-password screen they are a way to lose
-       your place. */
+    show('ai-mailpic', m === 'inbox');
+    var wf = document.querySelector('#ai-auth .wl-form'); if (wf) wf.classList.toggle('ob4-inbox', m === 'inbox');
+    /* Tabs only while choosing between signing in and creating; never mid-confirmation, mid-reset or on the new password. */
     show('ai-tabs',       m === 'signin' || m === 'signup');
-    /* Nor should "look around the demo" sit under a half-finished password reset. */
-    var demoBox = document.getElementById('ai-demo-q');
-    if (demoBox && demoBox.parentNode) demoBox.parentNode.style.display = (m === 'newpass' || m === 'opening') ? 'none' : '';
+    show('ai-demo-box',   m === 'signin' || m === 'signup');
+    show('ai-fine',       m === 'signup');
+    show('ai-inbox-back', m === 'inbox');
     var ti = document.getElementById('ai-tab-in'), tu = document.getElementById('ai-tab-up');
-    if (ti) ti.className = 'tab' + (m === 'signin' ? ' on' : '');
-    if (tu) tu.className = 'tab' + (m === 'signup' ? ' on' : '');
+    if (ti) { ti.className = 'tab' + (m === 'signin' ? ' on' : ''); ti.setAttribute('aria-selected', String(m === 'signin')); }
+    if (tu) { tu.className = 'tab' + (m === 'signup' ? ' on' : ''); tu.setAttribute('aria-selected', String(m === 'signup')); }
+    ['ai-email','ai-pass','ai-su-email','ai-su-pass','ai-rs-email','ai-np-pass','ai-np-pass2'].forEach(function (id) { _fieldErr(id, null); });
     MSG_KEY = null; msg('');
     applyAuthCopy();
+    if (m === 'inbox') _resendDraw();
   }
 
   function _validEmail(s){ return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(s); }
+  function _vEmail(v){ v = String(v || '').trim(); if (!v) return W8('emailEmpty'); if (v.length > 254) return W8('emailLong'); if (!_validEmail(v)) return W8('badEmail'); return null; }
+  function _vPass(v){ v = String(v || ''); if (!v) return W8('passEmpty'); if (Array.from(v).length < 8) return W8('shortPass'); if (Array.from(v).length > 128) return W8('longPass'); return null; }
+  function _busy(btn, on, label){ if (!btn) return; btn.disabled = !!on; if (on) btn.setAttribute('aria-busy', 'true'); else btn.removeAttribute('aria-busy'); var b = btn.querySelector('.bl'); if (b && label) b.textContent = label; }
 
   function doSignUp(){
     try { localStorage.removeItem('ai_uk_guest'); window.__AI_GUEST = false; } catch (e) {}
-    var t = T(), btn = document.getElementById('ai-signup');
+    var btn = document.getElementById('ai-signup');
+    if (btn && btn.disabled) return;
     var email = (document.getElementById('ai-su-email').value || '').trim();
     var pass  = document.getElementById('ai-su-pass').value || '';
-    if (!_validEmail(email)) { msgK('badEmail', 'err'); return; }
-    if (pass.length < 8)     { msgK('shortPass', 'err'); return; }
-    btn.disabled = true; msgK('creating', 'ok');
+    if (!email && !pass) { _fieldErr('ai-su-email', W8('needBoth')); return; }
+    var e1 = _vEmail(email), e2 = _vPass(pass);
+    _fieldErr('ai-su-pass', e2); _fieldErr('ai-su-email', e1);
+    if (e1 || e2) return;
+    if (navigator.onLine === false) { msgK('offline', 'err'); return; }
+    _busy(btn, true, W8('creating')); MSG_KEY = null; msg('');
     AI.auth.signUp(email, pass).then(function (r) {
-      btn.disabled = false;
-      AUTH_EMAIL = email;
+      _busy(btn, false, W8('signup'));
+      AUTH_EMAIL = email; INBOX_KIND = 'signup';
+      try { localStorage.setItem('ai_uk_had_account', '1'); } catch (e) {}
       if (r && r.session) { return enterApp(); }   // only if confirmation is ever turned off
-      /* Deliberately NOT branching on r.already: showing a different screen for an
-         address that is already registered would leak exactly what Supabase's
-         anti-enumeration behaviour is protecting. Everyone sees the same screen,
-         and the "Already confirmed? Sign in" button is the way out. */
-      setMode('inbox'); msgK('sent', 'ok');
+      /* Deliberately NOT branching on r.already: a different screen for an address that is already registered would
+         leak exactly what Supabase's anti-enumeration behaviour protects. Everyone sees the same screen. */
+      SENT_AT = Date.now();
+      setMode('inbox'); _focusH();
     }).catch(function (e) {
-      btn.disabled = false;
+      _busy(btn, false, W8('signup'));
       var raw = (e && e.message) ? e.message : '';
       if (_isOfflineErr(e)) { msgK('offline', 'err'); } else { msg(raw || 'Could not create your account.', 'err'); }
     });
   }
 
   function doReset(){
-    var t = T(), btn = document.getElementById('ai-reset');
+    var btn = document.getElementById('ai-reset');
+    if (btn && btn.disabled) return;
     var email = (document.getElementById('ai-rs-email').value || '').trim();
-    if (!_validEmail(email)) { msgK('badEmail', 'err'); return; }
-    btn.disabled = true; msg('…', 'ok');
+    var e1 = _vEmail(email); _fieldErr('ai-rs-email', e1); if (e1) return;
+    if (navigator.onLine === false) { msgK('offline', 'err'); return; }
+    _busy(btn, true);
     AI.auth.resetPassword(email).then(function () {
-      btn.disabled = false;
-      AUTH_EMAIL = email; INBOX_KIND = 'reset';
-      /* Same screen as sign-up confirmation, different words. Shown whether or not
-         the address exists — telling someone "no such account" is exactly the
-         enumeration leak the sign-up flow already avoids. */
-      setMode('inbox'); msgK('resetSent', 'ok');
+      _busy(btn, false);
+      AUTH_EMAIL = email; INBOX_KIND = 'reset'; SENT_AT = Date.now();
+      /* Same screen whether or not the address exists: no enumeration leak. */
+      setMode('inbox'); _focusH();
     }).catch(function (e) {
-      btn.disabled = false;
+      _busy(btn, false);
       var raw = (e && e.message) ? e.message : '';
       if (_isOfflineErr(e)) { msgK('offline', 'err'); } else { msg(raw || 'Could not send the email.', 'err'); }
     });
   }
 
   function doSavePassword(){
-    var t = T(), btn = document.getElementById('ai-savepass');
+    var btn = document.getElementById('ai-savepass');
+    if (btn && btn.disabled) return;
     var p1 = document.getElementById('ai-np-pass').value || '';
     var p2 = document.getElementById('ai-np-pass2').value || '';
-    if (p1.length < 8) { msgK('shortPass', 'err'); return; }
-    if (p1 !== p2)     { msgK('mismatch', 'err'); return; }
-    btn.disabled = true; msgK('savingPass', 'ok');
+    var e1 = _vPass(p1); _fieldErr('ai-np-pass', e1); if (e1) return;
+    if (p1 !== p2) { _fieldErr('ai-np-pass2', W8('mismatch')); return; }
+    _busy(btn, true, W8('savingPass'));
     AI.auth.updatePassword(p1).then(function () {
       msgK('passSaved', 'ok');
-      /* The recovery link already signed them in, so there is nothing left to ask
-         for. Drop the token out of the address bar first — a reset link left in
-         history is a live credential. */
+      /* The recovery link already signed them in. Drop the token out of the address bar first. */
       try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
       RECOVERY = false;
       return enterApp();
     }).catch(function (e) {
-      btn.disabled = false;
+      _busy(btn, false, W8('savePass'));
       var raw = (e && e.message) ? e.message : '';
       if (_isOfflineErr(e)) { msgK('offline', 'err'); }
       else if (/session|expired|token/i.test(raw)) { msgK('recoverExpired', 'err'); }
@@ -344,34 +338,39 @@
     });
   }
 
-  var RESEND_AT = 0, RESEND_TIMER = null;
+  /* O2: "Send it again" after 30 seconds (Supabase also limits these; its own wait is honoured if it asks for longer) */
+  var SENT_AT = 0, RESEND_WAIT = 30000, RESEND_TIMER = null;
+  function _resendDraw(){
+    var btn = document.getElementById('ai-resend'), cd = document.getElementById('ai-resend-cd'); if (!btn || !cd) return;
+    var left = Math.max(0, Math.ceil((SENT_AT + RESEND_WAIT - Date.now()) / 1000));
+    if (left > 0) {
+      btn.disabled = true; cd.innerHTML = IC.clock + _esc(W8('resendIn', { t: '0:' + String(Math.min(59, left)).padStart(2, '0') }));
+      if (!RESEND_TIMER) RESEND_TIMER = setInterval(_resendDraw, 1000);
+    } else {
+      btn.disabled = false; cd.innerHTML = '';
+      if (RESEND_TIMER) { clearInterval(RESEND_TIMER); RESEND_TIMER = null; }
+    }
+  }
   function doResend(){
-    var t = T(), btn = document.getElementById('ai-resend');
-    var left = Math.ceil((RESEND_AT - Date.now()) / 1000);
-    if (left > 0) { msg(t.wait + left + t.waitSuffix, 'err'); return; }
+    var btn = document.getElementById('ai-resend');
+    if (Date.now() < SENT_AT + RESEND_WAIT) { _resendDraw(); return; }
     btn.disabled = true;
-    /* One button, two jobs — whichever email brought the farmer to this screen. */
-    var again = (INBOX_KIND === 'reset')
-      ? AI.auth.resetPassword(AUTH_EMAIL)
-      : AI.auth.resendConfirm(AUTH_EMAIL);
+    var again = (INBOX_KIND === 'reset') ? AI.auth.resetPassword(AUTH_EMAIL) : AI.auth.resendConfirm(AUTH_EMAIL);
     again.then(function () {
-      msgK(INBOX_KIND === 'reset' ? 'resetSent' : 'resent', 'ok');
-      RESEND_AT = Date.now() + 60000;             // Supabase rate-limits these server-side too
-      var tick = function () {
-        var s = Math.ceil((RESEND_AT - Date.now()) / 1000);
-        if (s > 0) { btn.textContent = T().resend + ' (' + s + ')'; }
-        else { btn.textContent = T().resend; btn.disabled = false; clearInterval(RESEND_TIMER); RESEND_TIMER = null; }
-      };
-      tick(); if (RESEND_TIMER) clearInterval(RESEND_TIMER); RESEND_TIMER = setInterval(tick, 1000);
+      SENT_AT = Date.now(); RESEND_WAIT = 30000;
+      msgK(INBOX_KIND === 'reset' ? 'resetSent' : 'resent', 'ok'); _resendDraw();
     }).catch(function (e) {
+      var raw = (e && e.message) ? e.message : '', m = /(\d+)\s*seconds?/i.exec(raw);
+      if (m) { SENT_AT = Date.now(); RESEND_WAIT = (+m[1]) * 1000; _resendDraw(); return; }
       btn.disabled = false;
-      msg((e && e.message) ? e.message : 'Could not send the email.', 'err');
+      if (_isOfflineErr(e)) msgK('offline', 'err'); else msg(raw || 'Could not send the email.', 'err');
     });
   }
   function hideOverlay() {
     var o = document.getElementById('ai-auth');
     if (o) o.style.display = 'none';
-    // Sign-out now lives in the header avatar menu (appSignOut) — no floating button.
+    if (RESEND_TIMER) { clearInterval(RESEND_TIMER); RESEND_TIMER = null; }
+    // Sign-out lives in the header avatar menu (appSignOut) - no floating button.
   }
 
   // ---- offline session: reveal the cached app instead of trapping on login ----
@@ -503,21 +502,24 @@
     // Signing in with a real account always leaves guest mode behind.
     try { localStorage.removeItem('ai_uk_guest'); window.__AI_GUEST = false; } catch (e) {}
     var btn = document.getElementById('ai-signin');
+    if (btn && btn.disabled) return;
     var email = (document.getElementById('ai-email').value || '').trim();
     var pass = document.getElementById('ai-pass').value || '';
-    if (!email || !pass) { msgK('needBoth', 'err'); return; }
-    btn.disabled = true; msg('Signing in…', 'ok');
+    if (!email && !pass) { _fieldErr('ai-email', W8('needBoth')); return; }
+    var e1 = email ? (_validEmail(email) ? null : W8('badEmail')) : W8('emailEmpty'), e2 = pass ? null : W8('passEmpty');
+    _fieldErr('ai-pass', e2); _fieldErr('ai-email', e1); if (e1 || e2) return;
+    if (navigator.onLine === false) { msgK('offline', 'err'); return; }
+    _busy(btn, true, W8('signing')); MSG_KEY = null; msg('');
     AI.auth.signIn(email, pass)
-      .then(function () { return enterApp(); })
+      .then(function () { try { localStorage.setItem('ai_uk_had_account', '1'); } catch (e) {} return enterApp(); })
       .catch(function (e) {
-        btn.disabled = false;
+        _busy(btn, false, W8('signin'));
         var raw = (e && e.message) ? e.message : '';
         var offline = !navigator.onLine || /failed to fetch|networkerror|load failed|fetch/i.test(raw);
-        if (offline) {
-          msgK('offline', 'err');
-        } else {
-          msg(raw || 'Sign-in failed. Check your details.', 'err');
-        }
+        if (offline) { msgK('offline', 'err'); }
+        else if (/not confirmed/i.test(raw)) { AUTH_EMAIL = email; INBOX_KIND = 'signup'; SENT_AT = 0; setMode('inbox'); msg(W8('notYet', { email: email }), 'err'); }
+        else if (/invalid login|invalid credentials|invalid email or password/i.test(raw)) { msgK('noMatch', 'err'); try { document.getElementById('ai-pass').focus(); } catch (x) {} }
+        else { msg(raw || 'Sign-in failed. Check your details.', 'err'); }
       });
   }
 
