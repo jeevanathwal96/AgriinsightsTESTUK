@@ -2204,8 +2204,11 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
      answerable question is narrower: which moves is the stored count NOT counting yet? A move created
      after its herd row was last written is one - a birth or a sale recorded on the phone at the gate,
      or on another computer. */
-  var _LS_ADDS    = { born:1, bought:1 };
+  /* -433c (ported from -440 R1): a move IN (the register's "Add", a split herd's new half, a transfer from another holding) is an
+     arrival, the same as a birth or a purchase. It was missing here, so a reload took the added animals off again (stored 50, derived 48). */
+  var _LS_ADDS    = { born:1, bought:1, moved_in:1 };
   var _LS_NEUTRAL = { promote:1 };
+  var _LS_SAME_SAVE_MS = 30000, _LS_DESKTOP_ID = /^m(\d{13,16}|[0-9a-z]{8}\d{0,3}[ab]?)$/;
   function _lsPendingMoves(herdRows, moveRows){
     var writtenAt = {};
     (herdRows||[]).forEach(function(r){ if(r && r.local_id!=null) writtenAt[String(r.local_id)] = r.updated_at || null; });
@@ -2219,6 +2222,13 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
          double-count a move the stored figure already includes. */
       if(!saved || !m.created_at) return;
       if(!(m.created_at > saved)) return;            // already in the stored count
+      /* -433c (ported from -441, rows written before the fix): the desktop wrote a herd BEFORE the moves of the same save, so
+         each such move is a few milliseconds newer than its herd and read as "not counted yet" - counted twice on every reload
+         until the herd was saved again. Since -433c the desktop writes moves first, so a move with a desktop-minted id
+         (lsRecordMove "m"+base-36 time, a split's "...a"/"...b", a plan sale "m"+time) created within _LS_SAME_SAVE_MS after
+         its herd row is that legacy same-save case and is already in the count. A phone move ("m_c...") or any other id is
+         still applied however soon it lands. */
+      if(_LS_DESKTOP_ID.test(String(m.local_id||''))){ var _gap=Date.parse(m.created_at)-Date.parse(saved); if(isFinite(_gap) && _gap<=_LS_SAME_SAVE_MS) return; }
       var q = parseInt(m.qty,10)||0; if(q<=0) return;
       var signed = _LS_ADDS[reason] ? q : -q;
       var o = out[hid] || (out[hid] = { delta:0, n:0, cls:{} });
@@ -2258,7 +2268,7 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     var off={}, back={}, offAt={};
     (moves||[]).forEach(function(m){
       if(!m) return;
-      var reason=String(m.reason||''), isOn=(reason==='bought'), isOff=!_LS_ADDS[reason] && !_LS_NEUTRAL[reason] && !!reason;
+      var reason=String(m.reason||''), isOn=(reason==='bought'||reason==='moved_in'), isOff=!_LS_ADDS[reason] && !_LS_NEUTRAL[reason] && !!reason;
       if(!isOn && !isOff) return;
       var d=_lsISO(m.move_date!=null?m.move_date:m.date); if(!d) return;
       var map=isOn?back:off, at=String(m.created_at||'');
@@ -2640,6 +2650,12 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
       const camps=(stls.fields||[]), herds=(stls.herd||[]), bench=(stls.benchmarks||{});
       const moves=(stls.moves||[]), treats=(stls.treatments||[]), animals=(stls.animals||[]);
       if(camps.length){ const e=(await client().from('livestock_fields').upsert(camps.map(function(c){return campToDb(c,fid);}),{onConflict:'farm_id,local_id'})).error; if(e) throw e; }
+      /* -433c (P0, ported from -440 R1): the moves go up BEFORE the herds. The load-time reconcile (_lsPendingMoves) counts a move as
+         "not in the stored count yet" when its created_at is after its herd row's updated_at - true for a move recorded on the phone or
+         another computer, but it was also true for a move saved in the SAME save as its herd (herds first, then moves), so every reload
+         applied it a second time. Moves first: a move saved with its herd is always older than the herd's write.
+         Append-only log: upsert by local_id, no prune (no delete UI except animals→removeAnimal). */
+      if(moves.length){ const e=(await client().from('livestock_moves').upsert(moves.map(function(m){return moveToDb(m,fid);}),{onConflict:'farm_id,local_id'})).error; if(e) throw e; }
       if(herds.length){
         var hrows=herds.map(function(h){return herdToDb(h,fid);});
         var he=(await client().from('herds').upsert(hrows,{onConflict:'farm_id,local_id'})).error;
@@ -2672,8 +2688,6 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
           const e=(await client().from('livestock_benchmarks').delete()
                 .eq('farm_id',fid).in('bench_key',goneBm)).error; if(e) throw e; _srvForgetRows('livestock_benchmarks','bench_key',goneBm);
         } }
-      // append-only logs: upsert by local_id, no prune (no delete UI except animals→removeAnimal)
-      if(moves.length){ const e=(await client().from('livestock_moves').upsert(moves.map(function(m){return moveToDb(m,fid);}),{onConflict:'farm_id,local_id'})).error; if(e) throw e; }
       { var trRows=treats.map(function(t){return treatToDb(t,fid);});
         (stls.removedTreatments||[]).forEach(function(t){ if(t && t.id!=null) trRows.push(treatToDb(t,fid)); });
         if(trRows.length) await _upsertSplit('livestock_treatments', trRows); }
