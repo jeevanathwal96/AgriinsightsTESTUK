@@ -3659,7 +3659,7 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
       if(st.farmName) core.name=st.farmName;
       if(st.ownerName) core.owner_name=st.ownerName;
       if(st.region) core.region=st.region;
-      if(st.farmHa!=null && st.farmHa!=='') core.farm_ha=Number(st.farmHa);
+      if(st.farmHa!=null && st.farmHa!=='' && Number(st.farmHa)>0) core.farm_ha=Number(st.farmHa);   /* -434 R9: a blank (0 in memory) never overwrites the server's blank */
       if(st.farmType) core.farm_type=st.farmType;
       if(st.fyStartMonth!=null) core.fy_start_month=parseInt(st.fyStartMonth,10);
       if(st.lang) core.lang=st.lang;
