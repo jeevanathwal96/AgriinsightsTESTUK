@@ -15,7 +15,7 @@
  */
 'use strict';
 
-var APP_VERSION = 'uk-2026-11-17-435';
+var APP_VERSION = 'uk-2026-11-18-436';
 var CACHE = 'agriinsights-uk-' + APP_VERSION;
 
 /* App shell precached on install. The ?v=-suffixed JS is intentionally left to
@@ -24,10 +24,10 @@ var PRECACHE = [
   './index-uk.html',
   './js/app-0-ae04c4b373.js',   /* dist build: inline script 0 */
   './js/app-1-58596889f9.js',   /* dist build: inline script 1 */
-  './js/app-2-1f18b869d1.js',   /* dist build: inline script 2 */
+  './js/app-2-eb69cf1cd7.js',   /* dist build: inline script 2 */
   './js/app-3-51946c10df.js',   /* dist build: inline script 3 */
   './js/app-4-32ab38abe9.js',   /* dist build: inline script 4 */
-  './js/app-5-a70f63f9ff.js',   /* dist build: inline script 5 */
+  './js/app-5-44b03415c2.js',   /* dist build: inline script 5 */
   './manifest-uk.webmanifest',
   './fonts.css',
   './vendor/chart.umd.js',
