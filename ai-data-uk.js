@@ -416,6 +416,7 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
   /* uk-spray-record-more.sql: where it was sprayed, finish time and weather on both spray
      tables, and the crop saved with each field application. */
   let CAN_INPUT_NI2    = false;   /* crop_inputs:    situation/time_end/weather/crop_at/eppo_at */
+  let CAN_INPUT_NUT    = false;   /* crop_inputs:    n_pct/p2o5_pct/k2o_pct/qty/qty_unit/applied/area_ha/organic_kind/n_form (Sustainability Phase 2, tools/uk-sus2-schema.sql: one ALTER, so one column answers) */
   let CAN_ORCH_NI2     = false;   /* orchard_sprays: situation/time_end/weather */
   /* uk-workers-pay-fields.sql. The tax code, age, Wages Order grade, apprentice and visa
      flags - and now the pension opt-out - were captured on the worker form and never
@@ -456,6 +457,10 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
   /* -415 (tools/uk-415-home-money.sql): the phone's money feed and how the farm pays PAYE */
   let CAN_HOME_MONEY    = false;   /* farms.home_money */
   let CAN_FARM_PAYEFREQ = false;   /* farms.paye_frequency */
+  /* -442-sus7 (B7, tools/uk-sus7-phone.sql, NOT RUN): crop_compliance_readings.local_id + unique (farm_id, local_id). With it the
+     water readings are saved by keyed upsert + keyed prune, so a reading another device (the phone) added is never deleted; without
+     it the -441 replace-all runs exactly as before. */
+  let CAN_CCR_KEYED     = false;   /* crop_compliance_readings.local_id */
   /* ---- what this database actually has, asked once ------------------------
      Ported from SA -438, same reasoning. Every late-added column is gated on a
      CAN_* flag, and each flag cost its own round trip in series on every
@@ -533,7 +538,9 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     ['orchard_blocks','pay'],   /* -412 */
     ['farms','vat_category'], ['farms','tax_plan'],   /* -414 */
     ['farms','home_money'], ['farms','paye_frequency'],   /* -415 */
-    ['farm_devices','kind'], ['animals','registered_at']   /* the phone app, phase 3 */
+    ['farm_devices','kind'], ['animals','registered_at'],   /* the phone app, phase 3 */
+    ['crop_inputs','n_pct'],   /* Sustainability Phase 2 (-435-sus2) */
+    ['crop_compliance_readings','local_id']   /* -442-sus7 (B7) */
   ];
 
   async function probeCaps(farmId){
@@ -618,7 +625,25 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     CAN_FARM_VATCAT   = keep(CAN_FARM_VATCAT,   'farms','vat_category');   /* -414 */
     CAN_TAX_PLAN      = keep(CAN_TAX_PLAN,      'farms','tax_plan');       /* -414 */
     CAN_HOME_MONEY    = keep(CAN_HOME_MONEY,    'farms','home_money');     /* -415 */
+    CAN_INPUT_NUT     = keep(CAN_INPUT_NUT,     'crop_inputs','n_pct');    /* Sustainability Phase 2 */
     CAN_FARM_PAYEFREQ = keep(CAN_FARM_PAYEFREQ, 'farms','paye_frequency'); /* -415 */
+    CAN_CCR_KEYED     = keep(CAN_CCR_KEYED,     'crop_compliance_readings','local_id'); /* -442-sus7 (B7) */
+  }
+  /* -442-sus7 (B8): the server-side merges in tools/uk-sus7-phone.sql (NOT RUN). A function the project does not have answers
+     PGRST202 ("Could not find the function ... in the schema cache"; 42883 from Postgres, 404 over HTTP): that is a definite
+     "not there", remembered for the session, and the caller falls back to its -441 write. Anything else (a refused call, no
+     connection) is an error the caller reports, so the save is retried and nothing is marked saved. */
+  var _rpcGone = Object.create(null);
+  function _rpcMissing(e){
+    if(!e) return false;
+    var code = String(e.code || ''), msg = String(e.message || '');
+    return code === 'PGRST202' || code === '42883' || e.status === 404 || /Could not find the function/i.test(msg);
+  }
+  async function _mergeRpc(name, args){
+    if(_rpcGone[name]) return { missing: true };
+    var r = await client().rpc(name, args);
+    if(r && r.error){ if(_rpcMissing(r.error)){ _rpcGone[name] = true; return { missing: true }; } return { error: r.error }; }
+    return { data: r ? r.data : null };
   }
   probeCaps.reset = function(){ _colCache = Object.create(null); _colRpcDead = false; };
   probeCaps.seen  = function(){ return _colCache; };
@@ -2204,8 +2229,8 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
      answerable question is narrower: which moves is the stored count NOT counting yet? A move created
      after its herd row was last written is one - a birth or a sale recorded on the phone at the gate,
      or on another computer. */
-  /* -433c (ported from -440 R1): a move IN (the register's "Add", a split herd's new half, a transfer from another holding) is an
-     arrival, the same as a birth or a purchase. It was missing here, so a reload took the added animals off again (stored 50, derived 48). */
+  /* -440 (R1): a move IN (the register's "Add", a split herd's new half, a transfer from another holding) is an arrival, the same as a
+     birth or a purchase. It was missing here, so a reload took the added animals off again (stored 50, derived 48). */
   var _LS_ADDS    = { born:1, bought:1, moved_in:1 };
   var _LS_NEUTRAL = { promote:1 };
   var _LS_SAME_SAVE_MS = 30000, _LS_DESKTOP_ID = /^m(\d{13,16}|[0-9a-z]{8}\d{0,3}[ab]?)$/;
@@ -2222,12 +2247,11 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
          double-count a move the stored figure already includes. */
       if(!saved || !m.created_at) return;
       if(!(m.created_at > saved)) return;            // already in the stored count
-      /* -433c (ported from -441, rows written before the fix): the desktop wrote a herd BEFORE the moves of the same save, so
-         each such move is a few milliseconds newer than its herd and read as "not counted yet" - counted twice on every reload
-         until the herd was saved again. Since -433c the desktop writes moves first, so a move with a desktop-minted id
-         (lsRecordMove "m"+base-36 time, a split's "...a"/"...b", a plan sale "m"+time) created within _LS_SAME_SAVE_MS after
-         its herd row is that legacy same-save case and is already in the count. A phone move ("m_c...") or any other id is
-         still applied however soon it lands. */
+      /* -441 (rows written before -440): the desktop wrote a herd BEFORE the moves of the same save, so each such move is a few
+         seconds newer than its herd and read as "not counted yet" - counted twice on every reload until the herd was saved again.
+         Since -440 the desktop writes moves first, so a move with a desktop-minted id (lsRecordMove "m"+base-36 time, a split's
+         "...a"/"...b", a plan sale "m"+time) created within _LS_SAME_SAVE_MS after its herd row is that legacy same-save case and is
+         already in the count. A phone move ("m_c...") or any other id is still applied however soon it lands. */
       if(_LS_DESKTOP_ID.test(String(m.local_id||''))){ var _gap=Date.parse(m.created_at)-Date.parse(saved); if(isFinite(_gap) && _gap<=_LS_SAME_SAVE_MS) return; }
       var q = parseInt(m.qty,10)||0; if(q<=0) return;
       var signed = _LS_ADDS[reason] ? q : -q;
@@ -2338,7 +2362,8 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
           var d=p.cls[k]; if(!d) return;
           var c=null;
           for(var i=0;i<h.classes.length;i++){ if(String(h.classes[i].k)===k){ c=h.classes[i]; break; } }
-          if(!c){ if(d<=0) return; c={k:k,n:0,v:Number(h.sell)||0}; h.classes.push(c); }
+          /* -441: a class the phone adds is worth what a head of the herd already is (sell, else its classes' value per head), not £0 */
+          if(!c){ if(d<=0) return; var _pv=Number(h.sell)||0; if(!(_pv>0)){ var _n=0,_s=0; h.classes.forEach(function(x){ var xn=Number(x.n)||0, xv=Number(x.v)||0; if(xn>0&&xv>0){ _n+=xn; _s+=xn*xv; } }); _pv=_n>0?Math.round(_s/_n*100)/100:0; } c={k:k,n:0,v:_pv}; h.classes.push(c); }
           c.n=Math.max(0,(Number(c.n)||0)+d);
         });
       }
@@ -2650,9 +2675,9 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
       const camps=(stls.fields||[]), herds=(stls.herd||[]), bench=(stls.benchmarks||{});
       const moves=(stls.moves||[]), treats=(stls.treatments||[]), animals=(stls.animals||[]);
       if(camps.length){ const e=(await client().from('livestock_fields').upsert(camps.map(function(c){return campToDb(c,fid);}),{onConflict:'farm_id,local_id'})).error; if(e) throw e; }
-      /* -433c (P0, ported from -440 R1): the moves go up BEFORE the herds. The load-time reconcile (_lsPendingMoves) counts a move as
-         "not in the stored count yet" when its created_at is after its herd row's updated_at - true for a move recorded on the phone or
-         another computer, but it was also true for a move saved in the SAME save as its herd (herds first, then moves), so every reload
+      /* -440 (R1): the moves go up BEFORE the herds. The load-time reconcile (_lsPendingMoves) counts a move as "not in the
+         stored count yet" when its created_at is after its herd row's updated_at - true for a move recorded on the phone or another
+         computer, but it was also true for a move saved in the SAME save as its herd (herds first, then moves), so every reload
          applied it a second time. Moves first: a move saved with its herd is always older than the herd's write.
          Append-only log: upsert by local_id, no prune (no delete UI except animals→removeAnimal). */
       if(moves.length){ const e=(await client().from('livestock_moves').upsert(moves.map(function(m){return moveToDb(m,fid);}),{onConflict:'farm_id,local_id'})).error; if(e) throw e; }
@@ -2722,6 +2747,9 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     },
     async addHealth(h){ const fid=farm.active(); if(!fid||!h) return; const row=healthToDb(h,fid); /* local_id has always been sent; using it on the way in too means a retry writes the dosing once (-411). */ const q=(row.local_id!=null&&row.local_id!=='')?client().from('livestock_health').upsert(row,{onConflict:'farm_id,local_id'}):client().from('livestock_health').insert(row); const e=(await q).error; if(e) throw e; return true; },
     async removeAnimal(localId){ const fid=farm.active(); if(!fid||localId==null) return; const e=(await client().from('animals').delete().eq('farm_id',fid).eq('local_id',String(localId))).error; if(e) throw e; _lsSnap=null; return true; },
+    /* -438-sus5r (U18): a "Register correction" is an ordinary movement and can be deleted, which puts the count back. Moves are
+       append-only in saveAll (no prune), so the one the farmer deletes is removed here by key. */
+    async removeMove(localId){ const fid=farm.active(); if(!fid||localId==null) return; const e=(await client().from('livestock_moves').delete().eq('farm_id',fid).eq('local_id',String(localId))).error; if(e) throw e; _lsSnap=null; return true; },
     async removeHerd(localId){ const fid=farm.active(); if(!fid||localId==null) return; const e=(await client().from('herds').delete().eq('farm_id',fid).eq('local_id',String(localId))).error; if(e) throw e; _lsSnap=null; return true; },
     async removeCamp(localId){ const fid=farm.active(); if(!fid||localId==null) return; const e=(await client().from('livestock_fields').delete().eq('farm_id',fid).eq('local_id',String(localId))).error; if(e) throw e; _lsSnap=null; return true; }
   };
@@ -2771,9 +2799,29 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     if(CAN_INPUT_FIX) _fixCols(row, i);
     if(CAN_INPUT_NI) _nxToDb(i,row);
     if(CAN_INPUT_NI2) _nx2ToDb(i,row,true);
+    if(CAN_INPUT_NUT) _nutToDb(i,row);
     return row; }
-  function cinFromDb(r){ return _nxFromDb(r, { id:r.local_id, land:_numIf(r.land_local_id), date:r.input_date||'', product:r.product||'', reg:r.reg||'', kind:r.kind||'', rate:r.rate||'', batch:r.batch||'', by:r.by_who||'', operatorCert:r.operator_cert||'', targetFor:r.target_for||'', phi:Number(r.phi)||0, costPerHa:Number(r.cost_per_ha)||0, act:r.act||undefined, water:r.water_vol||undefined, wind:r.wind||undefined, time:r.applied_time||undefined, removed:r.removed_at?{at:r.removed_at, reason:r.removed_reason||'', by:r.removed_by||''}:undefined,
-    changes:(Array.isArray(r.changes)&&r.changes.length)?r.changes:undefined }); }
+  /* Sustainability Phase 2: the structured nutrient fields. rate stays text for display; the engine reads only these. */
+  function _nutN(v){ var x=(v===''||v==null)?null:Number(v); return (typeof x==='number'&&isFinite(x))?x:null; }
+  function _nutToDb(i,row){
+    var pc=function(v){ var x=_nutN(v); return (x!==null&&x>=0&&x<=100)?x:null; };
+    row.n_pct=pc(i.nPct); row.p2o5_pct=pc(i.p2o5Pct); row.k2o_pct=pc(i.k2oPct);
+    var q=_nutN(i.qty); row.qty=(q!==null&&q>=0)?q:null;
+    row.qty_unit=['kg/ha','t/ha','L/ha','m3/ha','kg','t','L','m3'].indexOf(i.qtyUnit)>=0?i.qtyUnit:null;
+    row.applied=(i.applied===false)?false:(i.kind==='fertiliser'?true:null);
+    var a=_nutN(i.areaHa); row.area_ha=(a!==null&&a>0)?a:null;
+    row.organic_kind=['cattle_slurry','pig_slurry','cattle_fym','pig_fym','sheep_fym','horse_fym','duck_fym','poultry_litter','layer_manure','digestate'].indexOf(i.organicKind)>=0?i.organicKind:null;
+    row.n_form=['urea_untreated','urea_protected','urea_liquid','other'].indexOf(i.nForm)>=0?i.nForm:null;
+    if(CAN_SUS_COL['crop_inputs.closed_reason']){ row.closed_reason=['crop_exception','facts','organic','wales_18a','none'].indexOf(i.closedReason)>=0?i.closedReason:null; var av=_nutN(i.availPct); row.avail_pct=(av!==null&&av>=0&&av<=100)?av:null; }   /* -439-sus6 */
+    return row; }
+  function _nutFromDb(r,o){
+    if(r.n_pct!=null) o.nPct=Number(r.n_pct); if(r.p2o5_pct!=null) o.p2o5Pct=Number(r.p2o5_pct); if(r.k2o_pct!=null) o.k2oPct=Number(r.k2o_pct);
+    if(r.qty!=null) o.qty=Number(r.qty); if(r.qty_unit) o.qtyUnit=r.qty_unit; if(r.applied===false) o.applied=false;
+    if(r.area_ha!=null) o.areaHa=Number(r.area_ha); if(r.organic_kind) o.organicKind=r.organic_kind; if(r.n_form) o.nForm=r.n_form;
+    if(r.closed_reason) o.closedReason=r.closed_reason; if(r.avail_pct!=null) o.availPct=Number(r.avail_pct);   /* -439-sus6 */
+    return o; }
+  function cinFromDb(r){ return _nutFromDb(r, _nxFromDb(r, { id:r.local_id, land:_numIf(r.land_local_id), date:r.input_date||'', product:r.product||'', reg:r.reg||'', kind:r.kind||'', rate:r.rate||'', batch:r.batch||'', by:r.by_who||'', operatorCert:r.operator_cert||'', targetFor:r.target_for||'', phi:Number(r.phi)||0, costPerHa:Number(r.cost_per_ha)||0, act:r.act||undefined, water:r.water_vol||undefined, wind:r.wind||undefined, time:r.applied_time||undefined, removed:r.removed_at?{at:r.removed_at, reason:r.removed_reason||'', by:r.removed_by||''}:undefined,
+    changes:(Array.isArray(r.changes)&&r.changes.length)?r.changes:undefined })); }
 
   // ---- crop compliance: relational (Option A) — settings row + areas + children
   // ST_CROP.compliance is one farm-level record: flat scalar settings, tracked{}/
@@ -2805,6 +2853,7 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     _srvNote('crop_compliance_areas',      ca && ca.data);
     _srvNote('crop_compliance_logs',       cl && cl.data);
     _srvNote('crop_compliance_docs',       cd && cd.data);
+    _ccrNoteLoad(farmId, cr && cr.data);   /* -442-sus7 (B7): before _srvNote, which collapses repeats in place */
     _srvNote('crop_compliance_readings',   cr && cr.data);
     _srvNote('crop_compliance_log_photos', cp && cp.data);
     // compliance: reconstruct the farm-level record from its tables. Authoritative
@@ -2822,7 +2871,8 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
       // attach log photos to their log by (area_key, log_idx)
       (cp&&cp.data||[]).forEach(function(r){ var arr=logs[r.area_key]; if(arr && arr[r.log_idx]){ arr[r.log_idx].photos.push({name:r.name||'',kind:r.kind||'',url:r.url||''}); } });
       var docs={}; (cd.data||[]).forEach(function(r){ (docs[r.area_key]=docs[r.area_key]||[]).push({name:r.name||'',kind:r.kind||'',expiry:r.expiry||'',added:r.added||'',url:r.url||''}); });
-      var waterReadings=(cr.data||[]).map(function(r){ return {date:r.reading_date||'',m3:(r.m3!=null?Number(r.m3):0)}; });
+      /* -442-sus7 (B7): a keyed row brings its local_id back as the reading's id (only then: before the SQL the shape is unchanged) */
+      var waterReadings=(cr.data||[]).map(function(r){ var o={date:r.reading_date||'',m3:(r.m3!=null?Number(r.m3):0)}; if(r.local_id!=null && r.local_id!=='') o.id=String(r.local_id); return o; });
       /* The scalars go FLAT, alongside tracked/cadence/logs/docs/waterReadings - not nested
          under a `settings` key. Both other sides of this contract are flat: the UI reads
          ST_CROP.compliance.waterLicence, and cropCfg's own save reads c[f[0]] off
@@ -2841,12 +2891,57 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
              compliance:compliance };
   };
 
+  /* -442-sus7 (B7): the water readings, keyed. What this device loaded or wrote (by local_id, the only rows it may prune), what it
+     last sent (an unchanged reading is not sent again), and the server ids of rows written before the SQL (local_id null) that it
+     loaded: each of those is re-written with a local_id and the old row deleted by its id - never a row it did not load. */
+  var _ccr = { farm: null, loaded: false, known: Object.create(null), sent: Object.create(null), legacy: [] };
+  function _ccrFor(fid){ if(_ccr.farm !== fid) _ccr = { farm: fid, loaded: false, known: Object.create(null), sent: Object.create(null), legacy: [] }; return _ccr; }
+  function _ccrRow(fid, rd, i){ return { farm_id: fid, local_id: String(rd.id), area_key: 'water', reading_date: rd.date || null, m3: (rd.m3 != null && rd.m3 !== '') ? Number(rd.m3) : null, sort_idx: i }; }
+  function _ccrNoteLoad(fid, rows){
+    if(!Array.isArray(rows)) return;
+    var m = _ccrFor(fid); m.loaded = true; m.known = Object.create(null); m.sent = Object.create(null); m.legacy = [];
+    rows.forEach(function(r){ if(!r) return;
+      if(r.local_id != null && r.local_id !== ''){ var k = String(r.local_id); m.known[k] = 1;
+        m.sent[k] = JSON.stringify({ farm_id: fid, local_id: k, area_key: r.area_key || 'water', reading_date: r.reading_date || null, m3: (r.m3 != null) ? Number(r.m3) : null, sort_idx: (r.sort_idx != null) ? Number(r.sort_idx) : null }); }
+      else if(r.id != null) m.legacy.push(r.id); });
+  }
+  async function _ccrSaveKeyed(fid, readings, fresh){
+    var T = 'crop_compliance_readings', m = _ccrFor(fid), keep = Object.create(null), byKey = Object.create(null), order = [];
+    (readings || []).forEach(function(rd){ if(!rd || rd.id == null || rd.id === '') return; var k = String(rd.id); if(!(k in byKey)) order.push(k); byKey[k] = rd; });
+    var rows = order.map(function(k, i){ keep[k] = 1; return _ccrRow(fid, byKey[k], i); });
+    var up = rows.filter(function(r){ return m.sent[r.local_id] !== JSON.stringify(r); });
+    if(up.length){ const e = (await client().from(T).upsert(up, { onConflict: 'farm_id,local_id' })).error; if(e) throw e;
+      up.forEach(function(r){ m.sent[r.local_id] = JSON.stringify(r); m.known[r.local_id] = 1; }); }
+    /* rows written before the SQL: a device that loaded them re-wrote every one above (it holds them all, with new ids), so
+       their old ids go. A device that never loaded this table (the start-up catch-up) removes only the old rows it has just
+       re-written, matched on date and m3 and counted, so two equal readings stay two - the -368 rule for never-loaded tables. */
+    var old = [];
+    if(m.loaded){ old = m.legacy.slice(); }
+    else {
+      var fr = rows.filter(function(r){ return fresh && fresh[r.local_id]; });
+      if(fr.length){
+        const cur = await selectAll(function(){ return client().from(T).select('id,local_id,reading_date,m3').eq('farm_id', fid); });
+        if(cur.error) throw cur.error;
+        var pool = Object.create(null);
+        (cur.data || []).forEach(function(r){ if(r.local_id != null && r.local_id !== '') return; var k = String(r.reading_date || '') + '|' + ((r.m3 != null) ? Number(r.m3) : ''); (pool[k] = pool[k] || []).push(r.id); });
+        fr.forEach(function(r){ var k = String(r.reading_date || '') + '|' + ((r.m3 != null) ? r.m3 : ''); if(pool[k] && pool[k].length) old.push(pool[k].shift()); });
+      }
+    }
+    for(var i = 0; i < old.length; i += 100){ const e = (await client().from(T).delete().eq('farm_id', fid).in('id', old.slice(i, i + 100))).error; if(e) throw e; }
+    if(m.loaded) m.legacy = [];
+    /* keyed prune: only readings this device loaded or wrote and no longer holds */
+    var gone = Object.keys(m.known).filter(function(k){ return !keep[k]; });
+    for(var j = 0; j < gone.length; j += 100){ const e = (await client().from(T).delete().eq('farm_id', fid).in('local_id', gone.slice(j, j + 100))).error; if(e) throw e; }
+    gone.forEach(function(k){ delete m.known[k]; delete m.sent[k]; });
+  }
   var _cropSnap=null;
   var _cropCfgSnap=null;
   var _cropCfgGate=Promise.resolve();   // serializes saveConfig so concurrent/rapid calls never overlap (delete-all+insert would otherwise race into duplicate rows)
   const crop = {
     /* May this device remove an input? Only once the server can store the removal. */
     canFix(){ return CAN_INPUT_FIX; },
+    /* Sustainability Phase 2: can the server keep N%, the amount and the area? Without it they stay on this device. */
+    canNut(){ return CAN_INPUT_NUT; },
     async saveAll(stc){
       if(!stc) return;
       const fid=farm.active(); if(!fid) return;
@@ -2868,6 +2963,10 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
       try{ await _prev; }catch(e){}
       try {
       const c=stc.compliance||{};
+      /* -442-sus7 (B7): every water reading gets its own id once the server can key them - a reading saved before keeps its
+         figures and is given one here, on its next save */
+      var _ccrFresh=Object.create(null);
+      if(CAN_CCR_KEYED) (c.waterReadings||[]).forEach(function(rd){ if(rd && (rd.id==null || rd.id==='')){ rd.id='wr'+Date.now().toString(36)+Math.random().toString(36).slice(2,7); _ccrFresh[rd.id]=1; } });
       const snap=JSON.stringify({s:stc.season,c:c});
       if(snap===_cropCfgSnap) return true;
       // season on the farm row
@@ -2887,9 +2986,12 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
       // log photos: replace-all, one row per photo, keyed to its log by (area_key, log_idx)
       var photoRows=[]; Object.keys(L).forEach(function(area){ (L[area]||[]).forEach(function(g,li){ (g.photos||[]).forEach(function(p,pi){ photoRows.push({farm_id:fid,area_key:area,log_idx:li,name:p.name||null,kind:p.kind||null,url:p.url||null,sort_idx:pi}); }); }); });
       await replaceAllRows('crop_compliance_log_photos', fid, photoRows);
-      // water meter readings: replace-all
+      // water meter readings: keyed upsert + keyed prune once the server has local_id (-442-sus7, B7); before that, replace-all as -441
+      if(CAN_CCR_KEYED){ await _ccrSaveKeyed(fid, c.waterReadings||[], _ccrFresh); }
+      else {
       var rdRows=[]; (c.waterReadings||[]).forEach(function(rd,i){ rdRows.push({farm_id:fid,area_key:'water',reading_date:rd.date||null,m3:(rd.m3!=null?Number(rd.m3):null),sort_idx:i}); });
       await replaceAllRows('crop_compliance_readings', fid, rdRows);
+      }
       _cropCfgSnap=snap;
       return true;
       } finally { _rel(); }
@@ -3345,6 +3447,23 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     try{ var k = _profAckKey(), raw = k ? localStorage.getItem(k) : null; if(raw) _profAck = JSON.parse(raw); }catch(e){ _profAck = null; }
     return _profAck;
   }
+  /* -442-sus7 (B8): the rain settings as THIS device last held them in step with the server - set when the app takes the
+     server's rain settings into ST_RAIN (profile.rainAdopted, from ai-auth's hydrate) and after each of this device's merges.
+     Not the ack: the ack is refreshed by every re-read (the stale retry, the stock-count check), which does not touch ST_RAIN,
+     so a key another device changed would read as "changed here" and be sent back over theirs. Persisted per farm, as the ack. */
+  var _rainBase = null, _rainBaseFarm = null;
+  function _rainBaseKey(){ var fid = farm.active(); return fid ? SYNC_KEY.replace('unsent', 'rainbase') + fid : null; }
+  function _rainBaseGet(){
+    var fid = farm.active();
+    if(_rainBase && _rainBaseFarm === fid) return _rainBase;
+    _rainBaseFarm = fid; _rainBase = null;
+    try{ var k = _rainBaseKey(), raw = k ? localStorage.getItem(k) : null; if(raw) _rainBase = JSON.parse(raw); }catch(e){ _rainBase = null; }
+    return _rainBase;
+  }
+  function _rainBaseSet(v){
+    _rainBase = (v && typeof v === 'object') ? JSON.parse(JSON.stringify(v)) : null; _rainBaseFarm = farm.active();
+    try{ var k = _rainBaseKey(); if(k){ if(_rainBase) localStorage.setItem(k, JSON.stringify(_rainBase)); else localStorage.removeItem(k); } }catch(e){}
+  }
   function _profAckClear(){ try{ var k = _profAckKey(); if(k) localStorage.removeItem(k); }catch(e){} _profAck = null; }
   function _stableJson(v){
     if(v === null || typeof v !== 'object') return JSON.stringify(v);
@@ -3662,6 +3781,8 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     }
   };
   const profile = {
+    /* -442-sus7 (B8): ai-auth's hydrate has just taken the server's rain settings into ST_RAIN */
+    rainAdopted(p){ if(typeof p === 'string'){ try{ p = JSON.parse(p); }catch(e){ p = null; } } _rainBaseSet(p); },
     // Update only the fields actually provided — never null out an existing value.
     // Core columns (always present) save first and independently of the
     // registration columns (vat_registered/utr/vat_number, added by
@@ -3733,6 +3854,24 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
       var vatc=(CAN_FARM_VATCAT && _vatCatClean(st.vatCategory)) ? { vat_category: _vatCatClean(st.vatCategory) } : {};   /* -414: D save */
       var payq=(CAN_FARM_PAYEFREQ && _payeFreqClean(st.payeFreq)) ? { paye_frequency: _payeFreqClean(st.payeFreq) } : {};   /* -415 */
       var snap=JSON.stringify({c:core,e:extra,k:cons,p:pref,r:rainc,a:alerts,b:bmbc,v:vatc,q:payq}); if(snap===_profSnap) return;
+      /* -442-sus7 (B8): the rain settings are merged on the server (farm_rain_prefs_merge, tools/uk-sus7-phone.sql), so a key another
+         device set - the phone's NVZ answer - is never written over. Only the keys that differ from the server's last copy go; a key
+         this device does not hold is never sent. A project without the function keeps the -441 whole write in the rain group. */
+      var rainMergeErr = null;
+      if(rainc.rain_prefs && !_rpcGone['farm_rain_prefs_merge']){
+        var _rp = rainc.rain_prefs, _ack = _profAckGet(), _old = _rainBaseGet() || (_ack ? _ack.rain_prefs : undefined);
+        if(typeof _old === 'string'){ try{ _old = JSON.parse(_old); }catch(e){ _old = null; } }
+        var _have = !!(_old && typeof _old === 'object'), _rpatch = {};
+        Object.keys(_rp).forEach(function(k){ if(!_have || !(k in _old) || !_profSameValue(_old[k], _rp[k])) _rpatch[k] = _rp[k]; });
+        delete rainc.rain_prefs;
+        if(Object.keys(_rpatch).length){
+          var _rm = await _mergeRpc('farm_rain_prefs_merge', { p_farm: fid, p_patch: _rpatch });
+          if(_rm.missing) rainc.rain_prefs = _rp;
+          else if(_rm.error){ rainMergeErr = _rm.error; try{ console.warn('Profile: rainfall settings not saved (' + (_rm.error.message || _rm.error) + ')'); }catch(e){} }
+          /* the base becomes this device's last copy plus what it just sent - NOT the server's merged copy (see _rainBase) */
+          else _rainBaseSet(Object.assign({}, _have ? _old : {}, _rpatch));
+        }
+      }
       /* Only what differs from the row the server last confirmed. */
       var groups = [
         { all: core,  fatal: true },
@@ -3745,7 +3884,7 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
         { all: vatc, warn: 'Profile: VAT stagger not saved \u2014 run tools/uk-414-tax-calendar.sql in Supabase.' },   /* -414 */
         { all: payq, warn: 'Profile: how you pay PAYE not saved \u2014 run tools/uk-415-home-money.sql in Supabase.' }   /* -415 */
       ];
-      var extraOk = true, firstErr = null, stale = [];
+      var extraOk = !rainMergeErr, firstErr = rainMergeErr, stale = [];
       for(var gi = 0; gi < groups.length; gi++){
         var g = groups[gi];
         g.body = _profChanged(g.all);
@@ -3876,6 +4015,370 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
       return true;
     }
   };
+
+  /* ══ SUSTAINABILITY-UK-SYNC-BEGIN (Phase 1 and 1b, PREBUILD-CHECK-V53 §4.4) ═════════════════════════════════════
+     Eleven tables (tools/uk-sus1-schema.sql, NOT RUN yet), each keyed (farm_id, local_id).
+     - Keyed upsert of only the rows that changed since this device last sent them; keyed prune of only the rows this
+       device LOADED or WROTE that it no longer holds (never replaceAllRows, never a row another device wrote since).
+     - One CAN_SUS_* flag per table, probed with a FILTER (?local_id=is.null&limit=1), never select=. A table that is not
+       there yet (42P01 / PGRST205, or the column 42703 / PGRST204) turns the flag off: the feature saves on this device
+       only and shows no error. A probe that could not reach the server is not an answer and is asked again.
+     - One save lane, 'sus', FIFO like every other writer (AI.sync); the catch-up re-sends from the live ST_SUS. */
+  var CAN_SUS = { sus_settings: false, manure_stores: false, manure_store_readings: false, livestock_spans: false, sheep_inventory: false,
+                  sus_tasks: false, sus_task_history: false, sus_results: false, livestock_batches: false, livestock_counts: false, manure_moves: false,
+                  soil_tests: false, fert_store: false,   /* Phase 2 (-435-sus2): tools/uk-sus2-schema.sql, NOT RUN */
+                  habitats: false, solar_readings: false,   /* Phase 4 (-436-sus4): tools/uk-sus4-schema.sql, NOT RUN */
+                  share_consents: false,   /* Phase 5 (-437-sus5): tools/uk-sus5-schema.sql (run 15 Nov 2026) */
+                  livestock_register_imports: false };   /* -438-sus5r: the keeper's register files, owned by Livestock (tools/uk-sus5r-schema.sql, NOT RUN) */
+  /* Phase 2 columns on Phase 1 tables (one ALTER each in uk-sus2-schema.sql): probed the same way, on the new column */
+  var CAN_SUS_COL = { 'manure_moves.field_local_id': false, 'sus_settings.n_fields': false, 'sus_settings.asks': false,
+                      /* -439-sus6 (tools/uk-sus6-schema.sql, NOT RUN): one ALTER per table, each probed on its first new column. Until it has
+                         run the answers stay on this device (hydrate keeps them) and nothing errors. */
+                      'crop_inputs.closed_reason': false, 'manure_moves.closed_reason': false, 'livestock_batches.off_n': false, 'livestock_counts.housed_months': false,
+                      'habitats.history': false, 'sus_settings.farm_facts': false };   /* Phase 5: who's asking answers (uk-sus5 ALTER) */
+  var _susColAsked = Object.create(null);
+  var _susAsked = Object.create(null);       /* table -> true once a definite answer came back this session */
+  function _susMissing(e){ var c = String((e && e.code) || ''); return c === '42P01' || c === 'PGRST205' || c === '42703' || c === 'PGRST204' || /does not exist|schema cache|Could not find the/i.test(String((e && e.message) || '')); }
+  /* -439 (release safety check): a browser without the pilot asks about, and reads, only the sharing log (so "Clear my records"
+     keeps it, owner decisions 11-12) plus the column checks every farm's saves use (keyed water readings, the crop input N
+     columns). The other Sustainability tables wait until the pilot is on - 17 fewer requests on every app open. */
+  function _susPilot(){ try{ return !!(window.SUS_FLAGS && window.SUS_FLAGS.pilot); }catch(e){ return false; } }
+  function _susForAll(t){ return t === 'share_consents'; }
+  async function _susProbe(){
+    var want = Object.keys(CAN_SUS).filter(function(t){ return !_susAsked[t] && (_susPilot() || _susForAll(t)); });
+    if(!want.length) return;
+    await Promise.all(want.map(async function(t){
+      try{
+        const r = await client().from(t).select('local_id').is('local_id', null).limit(1);
+        if(!r.error){ CAN_SUS[t] = true; _susAsked[t] = true; return; }
+        if(_susMissing(r.error)){ CAN_SUS[t] = false; _susAsked[t] = true; return; }
+      }catch(e){}
+      /* could not ask: no answer, ask again next time */
+    }));
+    var wantC = Object.keys(CAN_SUS_COL).filter(function(k){ return !_susColAsked[k]; });
+    await Promise.all(wantC.map(async function(k){
+      var p = k.split('.');
+      try{
+        const r = await client().from(p[0]).select(p[1]).is(p[1], null).limit(1);
+        if(!r.error){ CAN_SUS_COL[k] = true; _susColAsked[k] = true; return; }
+        if(_susMissing(r.error)){ CAN_SUS_COL[k] = false; _susColAsked[k] = true; return; }
+      }catch(e){}
+    }));
+  }
+  function _d(v){ return (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}/.test(v)) ? v.slice(0, 10) : null; }
+  function _n(v){ var x = (v === '' || v == null) ? null : Number(v); return (typeof x === 'number' && isFinite(x)) ? x : null; }
+  function _i(v){ var x = _n(v); return x === null ? null : Math.round(x); }
+  function _t(v, max){ if(v == null || v === '') return null; var s = String(v); return max && s.length > max ? s.slice(0, max) : s; }
+  function _b(v){ return v === true ? true : v === false ? false : null; }
+  function _in(v, list){ return list.indexOf(v) >= 0 ? v : null; }
+  function _ts(v){ if(typeof v !== 'string' || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(v)) return null; var t = Date.parse(v); return isNaN(t) ? null : new Date(t).toISOString(); }
+  /* app shape <-> row, one pair per table. The app keeps each list in ST_SUS under the key on the left. */
+  var SUS_TABLES = {
+    stores: { t: 'manure_stores',
+      to: function(x, fid){ return { farm_id: fid, local_id: String(x.id), kind: _in(x.kind, ['lagoon','tank','midden','heap']) || 'lagoon', name: _t(x.name, 80),
+        capacity_m3: _n(x.capacityM3), capacity_t: _n(x.capacityT), covered: _b(x.covered), built_or_changed: _d(x.builtOrChanged),
+        open_area_m2: _n(x.openAreaM2), removed: !!x.removed }; },
+      from: function(r){ return { id: r.local_id, kind: r.kind, name: r.name || '', capacityM3: _n(r.capacity_m3), capacityT: _n(r.capacity_t), covered: _b(r.covered),
+        builtOrChanged: _d(r.built_or_changed), openAreaM2: _n(r.open_area_m2), removed: !!r.removed }; } },
+    readings: { t: 'manure_store_readings',
+      to: function(x, fid){ return { farm_id: fid, local_id: String(x.id), store_local_id: String(x.store), read_on: _d(x.on), fill_frac: Math.max(0, Math.min(1, _n(x.frac) || 0)), source: _in(x.source, ['typed','photo','estimate']) || 'typed' }; },
+      from: function(r){ return { id: r.local_id, store: r.store_local_id, on: _d(r.read_on), frac: _n(r.fill_frac), source: r.source || 'typed' }; },
+      ok: function(x){ return x && x.store && _d(x.on); } },
+    spans: { t: 'livestock_spans',
+      to: function(x, fid){ return { farm_id: fid, local_id: String(x.id), kind: _in(x.kind, ['away','notours']) || 'away', species: _in(x.species, ['cattle','sheep']) || 'cattle',
+        role: _t(x.role, 30), herd_local_id: x.herd != null ? String(x.herd) : null, cls: _t(x.cls, 30), n: Math.max(1, _i(x.n) || 1), from_date: _d(x.from), to_date: _d(x.to),
+        where_name: _t(x.where, 120), where_cph: _t(x.cph, 20), occupier: _in(x.occupier, ['us','them']) }; },
+      from: function(r){ return { id: r.local_id, kind: r.kind, species: r.species, role: r.role || '', herd: r.herd_local_id, cls: r.cls || '', n: _i(r.n) || 0,
+        from: _d(r.from_date), to: _d(r.to_date), where: r.where_name || '', cph: r.where_cph || '', occupier: r.occupier || null }; },
+      ok: function(x){ return x && _d(x.from) && _i(x.n) > 0; } },
+    inventory: { t: 'sheep_inventory',
+      to: function(x, fid){ return { farm_id: fid, local_id: 'inv-' + _i(x.year), year: _i(x.year), counted_on: _d(x.countedOn), ewes: _i(x.ewes), rams: _i(x.rams), other: _i(x.other),
+        goats: _i(x.goats), filed_on: _d(x.filedOn), filed_via: _t(x.filedVia, 80) }; },
+      from: function(r){ return { id: r.local_id, year: _i(r.year), countedOn: _d(r.counted_on), ewes: _i(r.ewes), rams: _i(r.rams), other: _i(r.other), goats: _i(r.goats),
+        filedOn: _d(r.filed_on), filedVia: r.filed_via || '' }; },
+      key: function(x){ return 'inv-' + _i(x.year); }, ok: function(x){ return x && _i(x.year) > 2000; } },
+    tasks: { t: 'sus_tasks',
+      to: function(x, fid){ return { farm_id: fid, local_id: String(x.id), rule_id: _t(x.rule, 60) || String(x.id).split(':')[0], kind: _in(x.kind, ['law','scheme','buyer','money','setup']) || 'setup',
+        area: _t(x.area, 30), status: _in(x.status, ['open','done','later','notforus']) || 'open', due: _d(x.due), until_date: _d(x.until),
+        done_at: x.doneAt || null, done_by: x.doneBy || null, note: _t(x.note, 500) }; },
+      from: function(r){ return { id: r.local_id, rule: r.rule_id, kind: r.kind, area: r.area || '', status: r.status, due: _d(r.due), until: _d(r.until_date),
+        doneAt: r.done_at || null, doneBy: r.done_by || null, note: r.note || '' }; } },
+    history: { t: 'sus_task_history',
+      to: function(x, fid){ return { farm_id: fid, local_id: String(x.id), task_local_id: String(x.task), what: _t(x.what, 40) || 'note', note: _t(x.note, 500), at: x.at || new Date().toISOString(), by_user: x.by || null }; },
+      from: function(r){ return { id: r.local_id, task: r.task_local_id, what: r.what, note: r.note || '', at: r.at, by: r.by_user || null }; } },
+    results: { t: 'sus_results',
+      to: function(x, fid){ return { farm_id: fid, local_id: String(x.period) + ':' + String(x.metric), period: String(x.period), metric: String(x.metric), value: _n(x.value),
+        value_text: _t(x.text, 200), status: _t(x.status, 30), law_set: _t(x.lawSet, 40), factor_set: _t(x.factorSet, 40), inputs_hash: _t(x.hash, 40), computed_at: x.at || null }; },
+      from: function(r){ return { id: r.local_id, period: r.period, metric: r.metric, value: _n(r.value), text: r.value_text || null, status: r.status || null,
+        lawSet: r.law_set || null, factorSet: r.factor_set || null, hash: r.inputs_hash || null, at: r.computed_at || null }; },
+      key: function(x){ return String(x.period) + ':' + String(x.metric); } },
+    batches: { t: 'livestock_batches',
+      to: function(x, fid){ return Object.assign({ farm_id: fid, local_id: String(x.id), species: _in(x.species, ['pig','poultry']) || 'pig', type: _t(x.type, 30), stage: _t(x.stage, 30), name: _t(x.name, 80),
+        placed: _d(x.placed), cleared: _d(x.cleared), n_placed: _i(x.n), deaths: _i(x.deaths), house: _in(x.where, ['house','range','field']),
+        field_local_id: x.field != null ? String(x.field) : null, holding: _in(x.holding, ['own','other']), other_name: _t(x.otherName, 120),
+        occupier: _in(x.occupier, ['us','them']), empty_weeks: _i(x.emptyWeeks), repeats: _b(x.repeats), source: _in(x.source, ['eaml','flock_sheet','typed']) || 'typed' },
+        (CAN_SUS_COL['livestock_batches.off_n'] ? { off_n: _i(x.offN), crust: _in(x.crust, ['crust','none','cover']), range_share: (_n(x.rangeShare) !== null && _n(x.rangeShare) >= 0 && _n(x.rangeShare) <= 100) ? _n(x.rangeShare) : null } : {})); },
+      from: function(r){ return { id: r.local_id, species: r.species, type: r.type || '', stage: r.stage || '', name: r.name || '', placed: _d(r.placed), cleared: _d(r.cleared),
+        n: _i(r.n_placed), deaths: _i(r.deaths), where: r.house || null, field: r.field_local_id, holding: r.holding || 'own', otherName: r.other_name || '',
+        occupier: r.occupier || null, emptyWeeks: _i(r.empty_weeks), repeats: !!r.repeats, source: r.source || 'typed',
+        offN: 'off_n' in r ? _i(r.off_n) : undefined, crust: 'crust' in r ? (r.crust || null) : undefined, rangeShare: 'range_share' in r ? _n(r.range_share) : undefined }; } },
+    counts: { t: 'livestock_counts',
+      to: function(x, fid){ return Object.assign({ farm_id: fid, local_id: String(x.id), species: _in(x.species, ['goat','deer','horse','donkey','pony','alpaca','llama']) || 'horse',
+        age_band: _in(x.ageBand, ['gt3','2_3','1_2','u1']), milking: _b(x.milking), n: Math.max(0, _i(x.n) || 0), ownership: _in(x.ownership, ['ours','notours']) || 'ours',
+        occupier: _in(x.occupier, ['us','them']), changes: Array.isArray(x.changes) && x.changes.length ? x.changes : null },
+        (CAN_SUS_COL['livestock_counts.housed_months'] ? { housed_months: (_n(x.housedMonths) !== null && _n(x.housedMonths) >= 0 && _n(x.housedMonths) <= 12) ? _n(x.housedMonths) : null, assume_proxy: x.assumeProxy === true } : {})); },
+      from: function(r){ return { id: r.local_id, species: r.species, ageBand: r.age_band || null, milking: _b(r.milking), n: _i(r.n) || 0, ownership: r.ownership || 'ours',
+        occupier: r.occupier || null, changes: Array.isArray(r.changes) ? r.changes : [],
+        housedMonths: 'housed_months' in r ? _n(r.housed_months) : undefined, assumeProxy: 'assume_proxy' in r ? r.assume_proxy === true : undefined }; } },
+    manureMoves: { t: 'manure_moves',
+      to: function(x, fid){ return Object.assign({ farm_id: fid, local_id: String(x.id), store_local_id: x.store != null ? String(x.store) : null, moved_on: _d(x.on),
+        kind: _in(x.kind, ['export','import','spread','clear-out']) || 'clear-out', manure: _t(x.manure, 30), qty: _n(x.qty), unit: _in(x.unit, ['t','m3']),
+        to_name: _t(x.toName, 120), to_cph: _t(x.toCph, 20), kg_n: _n(x.kgN) },
+        /* Phase 2: a spreading on a field (the 250 kg/ha limit and the closed period), only once the columns are there */
+        CAN_SUS_COL['manure_moves.field_local_id'] ? { field_local_id: x.field != null && x.field !== '' ? String(x.field) : null, area_ha: _n(x.areaHa) } : {},
+        CAN_SUS_COL['manure_moves.closed_reason'] ? { closed_reason: _in(x.closedReason, ['crop_exception','facts','organic','wales_18a','none']) } : {}); },
+      from: function(r){ return { id: r.local_id, store: r.store_local_id, on: _d(r.moved_on), kind: r.kind, manure: r.manure || '', qty: _n(r.qty), unit: r.unit || 't',
+        toName: r.to_name || '', toCph: r.to_cph || '', kgN: _n(r.kg_n), field: r.field_local_id || null, areaHa: _n(r.area_ha), closedReason: 'closed_reason' in r ? (r.closed_reason || null) : undefined }; },
+      ok: function(x){ return x && _d(x.on); } },
+    /* Phase 2 (-435-sus2). Soil tests per field, owned by Crops (or a Livestock field). An SNS Index on its own is a row too. */
+    soilTests: { t: 'soil_tests',
+      to: function(x, fid){ return { farm_id: fid, local_id: String(x.id), land_local_id: x.land != null ? String(x.land) : null, land_kind: _in(x.landKind, ['crop','ls']) || 'crop',
+        sampled_on: _d(x.on), ph: _n(x.ph), p_idx: _n(x.p), k_idx: _n(x.k), mg_idx: _n(x.mg), om_pct: _n(x.om), sns_index: _i(x.sns),
+        soil_group: _in(x.soil, ['light_sand','shallow','medium','deep_clay','organic','peat']), lab: _t(x.lab, 120), attachment_id: _t(x.attachment, 64) }; },
+      from: function(r){ return { id: r.local_id, land: r.land_local_id, landKind: r.land_kind || 'crop', on: _d(r.sampled_on), ph: _n(r.ph), p: _n(r.p_idx), k: _n(r.k_idx), mg: _n(r.mg_idx),
+        om: _n(r.om_pct), sns: _i(r.sns_index), soil: r.soil_group || null, lab: r.lab || '', attachment: r.attachment_id || null }; },
+      ok: function(x){ return x && x.land != null; } },
+    /* The fertiliser store: what was bought and not spread yet (bought is not applied; v25). Crops owns it. */
+    fertStore: { t: 'fert_store',
+      to: function(x, fid){ return { farm_id: fid, local_id: String(x.id), product: _t(x.product, 120) || 'Fertiliser', product_key: _t(x.key, 40), n_pct: _n(x.nPct), p2o5_pct: _n(x.p2o5Pct), k2o_pct: _n(x.k2oPct),
+        n_form: _in(x.nForm, ['urea_untreated','urea_protected','urea_liquid','other']), qty: _n(x.qty), qty_unit: _in(x.qtyUnit, ['kg','t','L']) || 't', bought_on: _d(x.on),
+        supplier: _t(x.supplier, 120), note: _t(x.note, 300), removed: !!x.removed }; },
+      from: function(r){ return { id: r.local_id, product: r.product || '', key: r.product_key || null, nPct: _n(r.n_pct), p2o5Pct: _n(r.p2o5_pct), k2oPct: _n(r.k2o_pct), nForm: r.n_form || null,
+        qty: _n(r.qty), qtyUnit: r.qty_unit || 't', on: _d(r.bought_on), supplier: r.supplier || '', note: r.note || '', removed: !!r.removed }; },
+      ok: function(x){ return x && _d(x.on); } },
+    /* Phase 4 (-436-sus4). Habitats: hedges by length, woodland, ponds, margins and other habitat by area, linked to a field; an
+       optional photo is a path in the private Attachments bucket (never the image itself). Sustainability holds them: no
+       module owned them before. */
+    habitats: { t: 'habitats',
+      to: function(x, fid){ return Object.assign({ farm_id: fid, local_id: String(x.id), kind: _in(x.kind, ['hedge','woodland','pond','margin','other']) || 'other', name: _t(x.name, 120),
+        length_m: x.kind === 'hedge' ? _n(x.lengthM) : null, area_ha: x.kind === 'hedge' ? null : _n(x.areaHa), land_local_id: x.land != null && x.land !== '' ? String(x.land) : null,
+        land_kind: _in(x.landKind, ['crop','ls']), photo_path: _t(x.photo, 300), photo_name: _t(x.photoName, 120), note: _t(x.note, 500), removed: !!x.removed },
+        (CAN_SUS_COL['habitats.history'] ? { added_on: _d(x.addedOn), history: Array.isArray(x.history) && x.history.length ? x.history.filter(function(y){ return y && _d(y.on); }).slice(0, 200).map(function(y){ return { on: _d(y.on), lengthM: _n(y.lengthM), areaHa: _n(y.areaHa), removed: !!y.removed }; }) : null } : {})); },
+      from: function(r){ return { id: r.local_id, kind: r.kind, name: r.name || '', lengthM: _n(r.length_m), areaHa: _n(r.area_ha), land: r.land_local_id, landKind: r.land_kind || null,
+        photo: r.photo_path || null, photoName: r.photo_name || '', note: r.note || '', removed: !!r.removed,
+        addedOn: 'added_on' in r ? _d(r.added_on) : undefined, history: 'history' in r ? (Array.isArray(r.history) ? r.history : null) : undefined }; },
+      ok: function(x){ return x && (x.kind === 'hedge' ? _n(x.lengthM) > 0 : _n(x.areaHa) > 0); } },
+    /* Solar generation the farmer reads off the inverter or the export meter, per year or per month ('2026' | '2026-07'). */
+    solar: { t: 'solar_readings',
+      to: function(x, fid){ return { farm_id: fid, local_id: String(x.id), period: /^\d{4}(-\d{2})?$/.test(String(x.period || '')) ? String(x.period) : null,
+        generated_kwh: _n(x.genKwh), exported_kwh: _n(x.expKwh), read_on: _d(x.on), note: _t(x.note, 300) }; },
+      from: function(r){ return { id: r.local_id, period: r.period, genKwh: _n(r.generated_kwh), expKwh: _n(r.exported_kwh), on: _d(r.read_on), note: r.note || '' }; },
+      ok: function(x){ return x && /^\d{4}(-\d{2})?$/.test(String(x.period || '')) && _n(x.genKwh) >= 0 && (x.expKwh == null || x.expKwh === '' || _n(x.expKwh) >= 0); } },
+    /* Phase 5 (-437-sus5). The sharing log: one row per send the farmer confirmed after the preview, with the preview's
+       SHA-256 (the log matches the preview). Append-only: keep:true means this device never prunes a row, and the server
+       has no delete policy (uk-sus5-schema.sql). Withdrawing and "ask them to delete" only stamp withdrawn_at and
+       delete_asked_at on rows already there. */
+    consents: { t: 'share_consents', keep: true,
+      to: function(x, fid){ return { farm_id: fid, local_id: String(x.id), recipient: _t(x.recipient, 200),
+        record_set: { asker: _t(x.recipientId, 40), keys: (Array.isArray(x.records) ? x.records : []).map(function(k){ return String(k).slice(0, 40); }).slice(0, 20),
+                      labels: (Array.isArray(x.labels) ? x.labels : []).map(function(k){ return String(k).slice(0, 120); }).slice(0, 20), year: _i(x.year), channel: _in(x.channel, ['download','email']) || 'download' },
+        format: _in(x.format, ['pdf','csv','both']), preview_hash: /^[0-9a-f]{64}$/.test(String(x.hash || '')) ? String(x.hash) : null, sent_at: _ts(x.sentAt),
+        sent_by: /^[0-9a-f-]{36}$/i.test(String(x.sentBy || '')) ? String(x.sentBy) : null, withdrawn_at: _ts(x.withdrawnAt), delete_asked_at: _ts(x.deleteAskedAt) }; },
+      from: function(r){ var rs = r.record_set || {}; return { id: r.local_id, recipient: r.recipient || '', recipientId: rs.asker || null, records: rs.keys || [], labels: rs.labels || [], year: rs.year || null, channel: rs.channel || 'download',
+        format: r.format, hash: r.preview_hash, sentAt: r.sent_at, sentBy: r.sent_by || null, withdrawnAt: r.withdrawn_at || null, deleteAskedAt: r.delete_asked_at || null }; },
+      ok: function(x){ return x && /^[0-9a-f]{64}$/.test(String(x.hash || '')) && !!_ts(x.sentAt) && !!_t(x.recipient) && !!_in(x.format, ['pdf','csv','both']); } }
+  };
+  /* -438-sus5r (register option C). Livestock -> Register: one row per imported file. Only the columns decision 9 keeps (tag,
+     sex, breed, date or year of birth, dam, dates on and off; a sheep batch count), the refused lines with their reason, and the
+     farmer's answers per difference with who and when. The newer file for a species supersedes the older one, which is kept 12
+     months (the app prunes it by key after that). Rows are held compact: {t,s,b,d,y,m,on,off,n}. */
+  function _regRows(list){ return (Array.isArray(list) ? list : []).slice(0, 20000).map(function(r){ var o = {}; if(!r) return o;
+      if(r.t) o.t = String(r.t).slice(0, 40); if(r.s === 'F' || r.s === 'M') o.s = r.s; if(r.b) o.b = String(r.b).slice(0, 60); if(_d(r.d)) o.d = _d(r.d); if(_i(r.y) > 1900 && _i(r.y) < 2200) o.y = _i(r.y);
+      if(r.m) o.m = String(r.m).slice(0, 40); if(_d(r.on)) o.on = _d(r.on); if(_d(r.off)) o.off = _d(r.off); if(_i(r.n) > 0) o.n = _i(r.n); return o; }); }
+  SUS_TABLES.regImports = { t: 'livestock_register_imports',
+    to: function(x, fid){ return { farm_id: fid, local_id: String(x.id), species: _in(x.species, ['cattle','sheep']) || 'cattle', file_name: _t(x.file, 200), as_of: _d(x.asOf),
+      imported_on: _d(x.importedOn), imported_by: /^[0-9a-f-]{36}$/i.test(String(x.importedBy || '')) ? String(x.importedBy) : null, rows: _regRows(x.rows),
+      refused: (Array.isArray(x.refused) ? x.refused : []).slice(0, 500).map(function(r){ return { line: _i(r && r.line) || 0, why: _t(r && r.why, 120) || '' }; }),
+      answers: (x.answers && typeof x.answers === 'object' && Object.keys(x.answers).length) ? x.answers : null, superseded: !!x.superseded }; },
+    from: function(r){ return { id: r.local_id, species: r.species, file: r.file_name || '', asOf: _d(r.as_of), importedOn: _d(r.imported_on), importedBy: r.imported_by || null,
+      rows: Array.isArray(r.rows) ? r.rows : [], refused: Array.isArray(r.refused) ? r.refused : [], answers: (r.answers && typeof r.answers === 'object') ? r.answers : {}, superseded: !!r.superseded }; },
+    ok: function(x){ return x && _in(x.species, ['cattle','sheep']) && !!_d(x.asOf) && Array.isArray(x.rows); },
+    /* -442-sus7 (B8): on a file the server already holds, the answers are merged one key at a time (the phone answers too) */
+    answersRpc: 'livestock_register_answer_merge' };
+  function _susSetToDb(s, fid){ s = s || {}; return Object.assign({ farm_id: fid, local_id: 'farm', rented_ha: _n(s.rentedHa), rented_ask: _in(s.rentedAsk, ['yes','no','unsure']), rented_note: _t(s.rentedNote, 200),
+      ewe_size: _in(s.eweSize, ['lt60','ge60']), suckler_size: _in(s.sucklerSize, ['le500','gt500']), dairy_yield_band: _in(s.dairyYield, ['lt6000','6000_9000','gt9000']),
+      housing: (s.housing && typeof s.housing === 'object' && Object.keys(s.housing).length) ? s.housing : null, away_ask: _in(s.awayAsk, ['yes','no','unsure']),
+      pig_feed: _in(s.pigFeed, ['dry','liquid']),   /* -438-sus5r: the register moved to livestock_register_imports; sus_settings.register is no longer written */
+      setup_state: (s.setup && typeof s.setup === 'object' && Object.keys(s.setup).length) ? s.setup : null, law_set: _t(s.lawSet, 40), factor_set: _t(s.factorSet, 40),
+      /* Phase 2: Red Tractor membership (the urea standard) lives in schemes (uk-sus1 column); the N max answers per field in n_fields */
+      schemes: (s.schemes && typeof s.schemes === 'object' && Object.keys(s.schemes).length) ? s.schemes : null,
+      /* Phase 4: targets and the baseline (uk-sus1 columns: nothing to ALTER). Nothing is pre-set; a review date is kept. */
+      targets: (s.targets && typeof s.targets === 'object' && Object.keys(s.targets).length) ? s.targets : null, targets_reviewed_at: _d(s.targetsReviewedAt),
+      baseline_year: (_i(s.baselineYear) > 2000 && _i(s.baselineYear) < 2100) ? _i(s.baselineYear) : null },
+      CAN_SUS_COL['sus_settings.n_fields'] ? { n_fields: (s.nFields && typeof s.nFields === 'object' && Object.keys(s.nFields).length) ? s.nFields : null } : {},
+      /* Phase 5: who's asking (the farmer's yes / not mine, added from the library, withdrawn, allowed again) */
+      CAN_SUS_COL['sus_settings.asks'] ? { asks: (s.asks && s.asks.items && typeof s.asks.items === 'object' && Object.keys(s.asks.items).length) ? s.asks : null } : {},
+      /* -439-sus6: the farm facts the owner's decisions ask for (lambing month, the store tick, the weeks start, the AN tick, the WFP soil answer) */
+      CAN_SUS_COL['sus_settings.farm_facts'] ? { farm_facts: { lambingMonth: (_i(s.lambingMonth) >= 1 && _i(s.lambingMonth) <= 12) ? _i(s.lambingMonth) : null, assumeEmptied: s.assumeEmptied === true,
+        weeksFrom: /^\d{2}-\d{2}$/.test(String(s.weeksFrom || '')) ? s.weeksFrom : null, assumeAnMfg: s.assumeAnMfg === true, wfpSoil: _in(s.wfpSoil, ['yes','no']),
+        /* -440: the new answers ride in the same jsonb (no new column): NVZ "not sure", the kind of a generic beef herd, the crust per store,
+           whether the ewes come in to lamb, and the Red Tractor answer given in Crops */
+        nvzAsk: _in(s.nvzAsk, ['unsure']), beefKind: _kinds(s.beefKind), storeCrust: _crusts(s.storeCrust), ewesIn: _in(s.ewesIn, ['yes','no']), soilAns: _in(s.soilAns, ['sandy','other']) } } : {}); }
+  function _kinds(o){ var r = {}; if (o && typeof o === 'object') Object.keys(o).slice(0, 200).forEach(function(k){ var v = _in(o[k], ['suckler','store_cattle']); if (v) r[String(k).slice(0, 40)] = v; }); return Object.keys(r).length ? r : null; }
+  function _crusts(o){ var r = {}; if (o && typeof o === 'object') Object.keys(o).slice(0, 200).forEach(function(k){ var v = _in(o[k], ['crust','none']); if (v) r[String(k).slice(0, 60)] = v; }); return Object.keys(r).length ? r : null; }
+  function _susSetFromDb(r){ return { rentedHa: _n(r.rented_ha), rentedAsk: r.rented_ask || null, rentedNote: r.rented_note || '', eweSize: r.ewe_size || null, sucklerSize: r.suckler_size || null,
+      dairyYield: r.dairy_yield_band || null, housing: r.housing || {}, awayAsk: r.away_ask || null, pigFeed: r.pig_feed || null,
+      setup: r.setup_state || {}, lawSet: r.law_set || null, factorSet: r.factor_set || null, schemes: r.schemes || {}, nFields: r.n_fields || {},
+      targets: r.targets || {}, targetsReviewedAt: _d(r.targets_reviewed_at), baselineYear: _i(r.baseline_year), asks: Object.prototype.hasOwnProperty.call(r, 'asks') ? (r.asks || {}) : undefined,
+      lambingMonth: r.farm_facts ? (r.farm_facts.lambingMonth || null) : undefined, assumeEmptied: r.farm_facts ? r.farm_facts.assumeEmptied === true : undefined, weeksFrom: r.farm_facts ? (r.farm_facts.weeksFrom || null) : undefined,
+      assumeAnMfg: r.farm_facts ? r.farm_facts.assumeAnMfg === true : undefined, wfpSoil: r.farm_facts ? (r.farm_facts.wfpSoil || null) : undefined,
+      nvzAsk: r.farm_facts ? (r.farm_facts.nvzAsk || null) : undefined, beefKind: r.farm_facts ? (r.farm_facts.beefKind || {}) : undefined,
+      storeCrust: r.farm_facts ? (r.farm_facts.storeCrust || {}) : undefined, ewesIn: r.farm_facts ? (r.farm_facts.ewesIn || null) : undefined, soilAns: r.farm_facts ? (r.farm_facts.soilAns || null) : undefined }; }   /* no asks column yet: this device keeps its own */
+  /* what this device last sent (or loaded) per table and row, and which rows it knows the server holds */
+  var _susSent = Object.create(null), _susKnown = Object.create(null), _susSid = Object.create(null);
+  function _susSids(t){ return (_susSid[t] = _susSid[t] || Object.create(null)); }   /* -442-sus7: local_id -> the server's uuid */
+  /* -442-sus7 (B8): what changed since the copy this device last sent or loaded, as a patch for sus_settings_merge (column names;
+     a jsonb column as only its changed keys, a key this device removed sent as null). With no earlier copy only what this device
+     holds is sent - never a null - so a first save cannot clear another device's answers. */
+  var _SUS_JSONB = { housing: 1, schemes: 1, setup_state: 1, targets: 1, n_fields: 1, asks: 1, farm_facts: 1, register: 1 };
+  function _susSame(a, b){ return _stableJson(a === undefined ? null : a) === _stableJson(b === undefined ? null : b); }
+  function _susObjPatch(oldO, newO, havePrev){
+    var o = {}, a = (oldO && typeof oldO === 'object' && !Array.isArray(oldO)) ? oldO : {}, b = (newO && typeof newO === 'object' && !Array.isArray(newO)) ? newO : {};
+    Object.keys(b).forEach(function(k){ if(!havePrev){ if(b[k] != null) o[k] = b[k]; } else if(!(k in a) || !_susSame(a[k], b[k])) o[k] = (b[k] === undefined ? null : b[k]); });
+    if(havePrev) Object.keys(a).forEach(function(k){ if(!(k in b) && a[k] != null) o[k] = null; });
+    return o;
+  }
+  function _susSetPatch(row, prevJson){
+    var prev = null; try{ prev = prevJson ? JSON.parse(prevJson) : null; }catch(e){ prev = null; }
+    var p = {};
+    Object.keys(row).forEach(function(k){
+      if(k === 'farm_id' || k === 'local_id' || k === 'register') return;
+      if(_SUS_JSONB[k]){ var o = _susObjPatch(prev ? prev[k] : null, row[k], !!prev); if(Object.keys(o).length) p[k] = o; return; }
+      if(prev ? !_susSame(prev[k], row[k]) : row[k] != null) p[k] = (row[k] === undefined ? null : row[k]);
+    });
+    return p;
+  }
+  function _susMem(t){ return (_susSent[t] = _susSent[t] || Object.create(null)); }
+  function _susKnow(t){ return (_susKnown[t] = _susKnown[t] || Object.create(null)); }
+  /* -442-sus7 (B8): the register answers of files the server holds. Returns {missing:true} when the project has no merge function
+     (the caller then sends the files whole, as -441), {gone:true} when the table is not there; throws any other refusal. */
+  async function _susAnswersMerge(T, tbl, fid, merged, mem){
+    var sids = _susSids(tbl), need = merged.map(function(u){ return u[0]; }).filter(function(k){ return !sids[k]; });
+    if(need.length){
+      const r = await client().from(tbl).select('id,local_id').eq('farm_id', fid).in('local_id', need);
+      if(r.error){ if(_susMissing(r.error)) return { gone: true }; throw r.error; }
+      (r.data || []).forEach(function(x){ sids[String(x.local_id)] = x.id; });
+    }
+    /* the rest of each row first, without the answers - only when something other than the answers changed */
+    var rest = [];
+    merged.forEach(function(u){ var prev = null; try{ prev = mem[u[0]] ? JSON.parse(mem[u[0]]) : null; }catch(e){}
+      var a = Object.assign({}, u[2]); delete a.answers; var b = prev ? Object.assign({}, prev) : null; if(b) delete b.answers;
+      if(!b || _stableJson(a) !== _stableJson(b)) rest.push(a); });
+    if(rest.length){
+      const e = (await client().from(tbl).upsert(rest, { onConflict: 'farm_id,local_id' })).error;
+      if(e){ if(_susMissing(e)) return { gone: true }; throw e; }
+    }
+    for(const u of merged){
+      var prevA = {}; try{ prevA = (mem[u[0]] ? JSON.parse(mem[u[0]]).answers : null) || {}; }catch(e){ prevA = {}; }
+      var patch = _susObjPatch(prevA, u[2].answers || {}, !!mem[u[0]]), keys = Object.keys(patch);
+      if(!keys.length) continue;
+      var sid = sids[u[0]];
+      if(!sid){ const e3 = (await client().from(tbl).upsert([u[2]], { onConflict: 'farm_id,local_id' })).error; if(e3) throw e3; continue; }   /* not on the server after all: it goes whole */
+      for(const k of keys){
+        var mr = await _mergeRpc(T.answersRpc, { p_farm: fid, p_import_id: sid, p_key: k, p_answer: patch[k] });
+        if(mr.missing) return { missing: true };
+        if(mr.error) throw mr.error;
+      }
+    }
+    return { ok: true };
+  }
+  const sus = {
+    caps(){ return Object.assign({}, CAN_SUS); },
+    anyTable(){ return Object.keys(CAN_SUS).some(function(t){ return CAN_SUS[t]; }); },
+    async saveAll(state){
+      state = state || {}; const fid = farm.active(); if(!fid) return true;
+      await _susProbe();
+      var unanswered = Object.keys(CAN_SUS).some(function(t){ return !_susAsked[t] && (_susPilot() || _susForAll(t)); });   /* -439: a table the pilot-off probe skips on purpose is not 'unanswered' */
+      /* settings: one row */
+      if(CAN_SUS.sus_settings && state.settings){
+        var row = _susSetToDb(state.settings, fid), j = JSON.stringify(row), m = _susMem('sus_settings');
+        if(m.farm !== j){
+          /* -442-sus7 (B8): merged on the server, so an answer another device (the phone) gave is kept; only what changed here goes.
+             A project without the function keeps the -441 whole-row upsert. */
+          var patch = _susSetPatch(row, m.farm), mr = Object.keys(patch).length ? await _mergeRpc('sus_settings_merge', { p_farm: fid, p_patch: patch }) : { data: null };
+          if(mr.missing){
+            const e = (await client().from('sus_settings').upsert(row, { onConflict: 'farm_id,local_id' })).error;
+            if(e){ if(_susMissing(e)){ CAN_SUS.sus_settings = false; } else throw e; }
+            else { m.farm = j; _susKnow('sus_settings').farm = 1; }
+          } else if(mr.error){ if(_susMissing(mr.error)){ CAN_SUS.sus_settings = false; } else throw mr.error; }
+          else { m.farm = j; _susKnow('sus_settings').farm = 1; }
+        }
+      }
+      for(const key of Object.keys(SUS_TABLES)){
+        const T = SUS_TABLES[key], tbl = T.t; if(!CAN_SUS[tbl]) continue;
+        const list = (state[key] || []).filter(function(x){ return x && (T.ok ? T.ok(x) : x.id != null); });
+        const mem = _susMem(tbl), known = _susKnow(tbl), keep = Object.create(null), up = [];
+        list.forEach(function(x){ var r = T.to(x, fid), k = r.local_id; keep[k] = 1; var s = JSON.stringify(r); if(mem[k] !== s) up.push([k, s, r]); });
+        if(up.length){
+          /* -442-sus7 (B8): a register file the server already holds is sent without its answers (one upsert, the same columns in
+             every row - a missing key in a batched upsert would be written as null), then each answer this device changed goes
+             through livestock_register_answer_merge. New files, and every file on a project without the function, go whole as before. */
+          var whole = up, merged = [];
+          if(T.answersRpc && !_rpcGone[T.answersRpc]){
+            whole = up.filter(function(u){ return !known[u[0]]; }); merged = up.filter(function(u){ return !!known[u[0]]; });
+          }
+          var mres = merged.length ? await _susAnswersMerge(T, tbl, fid, merged, mem) : null;
+          if(mres && mres.missing){ whole = whole.concat(merged); merged = []; }
+          else if(mres && mres.gone){ CAN_SUS[tbl] = false; continue; }
+          if(whole.length){
+            const e = (await client().from(tbl).upsert(whole.map(function(u){ return u[2]; }), { onConflict: 'farm_id,local_id' })).error;
+            if(e){ if(_susMissing(e)){ CAN_SUS[tbl] = false; continue; } throw e; }
+          }
+          up.forEach(function(u){ mem[u[0]] = u[1]; known[u[0]] = 1; });
+          list.forEach(function(x){ if(x._new) delete x._new; });
+        }
+        /* keyed prune: only rows this device loaded or wrote, and no longer holds - plus the removals the app has kept
+           since an earlier session (state.gone), so a row removed before a reload can never come back */
+        if(T.keep) continue;   /* Phase 5: the sharing log is append-only, never pruned from a device */
+        const pend = ((state.gone && state.gone[key]) || []).map(String);
+        const gone = Object.keys(known).concat(pend).filter(function(k, i, a){ return !keep[k] && a.indexOf(k) === i; });
+        if(gone.length){
+          const e2 = (await client().from(tbl).delete().eq('farm_id', fid).in('local_id', gone)).error;
+          if(e2){ if(_susMissing(e2)){ CAN_SUS[tbl] = false; continue; } throw e2; }
+          gone.forEach(function(k){ delete known[k]; delete mem[k]; });
+          if(state.gone && state.gone[key]) state.gone[key] = state.gone[key].filter(function(k){ return gone.indexOf(String(k)) < 0; });
+        }
+      }
+      /* a probe that could not reach the server: the lane retries on its timer, so nothing is marked saved */
+      if(unanswered){ var err = new Error('Failed to fetch (Sustainability tables not checked yet)'); err.status = 0; throw err; }
+      return true;
+    }
+  };
+  /* The sign-in read. null = no Sustainability table on this project (or nothing could be asked): the device keeps its own. */
+  load.sus = async function(farmId){
+    farmId = farmId || farm.active(); if(!farmId) return null;
+    await _susProbe();
+    if(!sus.anyTable()) return null;
+    var out = { tables: {} };
+    var reads = [];
+    var pilot = _susPilot();
+    if(pilot && CAN_SUS.sus_settings) reads.push(client().from('sus_settings').select('*').eq('farm_id', farmId).eq('local_id', 'farm').limit(1).then(function(r){
+      if(r.error) return; var row = (r.data || [])[0];
+      if(row){ out.settings = _susSetFromDb(row); _susMem('sus_settings').farm = JSON.stringify(_susSetToDb(out.settings, farmId)); _susKnow('sus_settings').farm = 1; }
+      else out.settings = null; }));
+    Object.keys(SUS_TABLES).forEach(function(key){
+      var T = SUS_TABLES[key]; if(!CAN_SUS[T.t] || !(pilot || _susForAll(T.t))) return;
+      reads.push(selectAll(function(){ return client().from(T.t).select('*').eq('farm_id', farmId); }).then(function(r){
+        if(r.error) return;
+        var mem = _susMem(T.t), known = _susKnow(T.t);
+        var sids = _susSids(T.t);   /* -442-sus7: the server id, for the merge functions that take it */
+        out.tables[key] = (r.data || []).map(function(row){ var x = T.from(row); mem[row.local_id] = JSON.stringify(T.to(x, farmId)); known[row.local_id] = 1; if(row.id != null) sids[row.local_id] = row.id; return x; });
+      }).catch(function(){}));
+    });
+    await Promise.all(reads);
+    return out;
+  };
+  /* ══ SUSTAINABILITY-UK-SYNC-END ══ */
 
   // ---- SAVE QUEUES -----------------------------------------------------------
   /* One save at a time per area, in the order the farmer made the changes.
@@ -4014,7 +4517,8 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     rain:      function(){ return global.ST_RAIN ? _syncRawCall('rain.saveAll', rain, [global.ST_RAIN]) : true; },
     documents: function(){ return (global.ST && global.ST.docs) ? _syncRawCall('documents.saveAll', documents, [global.ST.docs]) : true; },
     budget:    function(){ return (global.ST && global.ST.budgets) ? _syncRawCall('budget.save', budget, [global.ST.budgets]) : true; },
-    rules:     function(){ var list = (typeof global.catRules === 'function') ? global.catRules() : (global.ST && global.ST.catRules); return list ? _syncRawCall('rules.saveAll', rules, [list]) : true; }
+    rules:     function(){ var list = (typeof global.catRules === 'function') ? global.catRules() : (global.ST && global.ST.catRules); return list ? _syncRawCall('rules.saveAll', rules, [list]) : true; },
+    sus:       function(){ return global.ST_SUS ? _syncRawCall('sus.saveAll', sus, [global.ST_SUS]) : true; }
   };
   /* Is this area's data actually on the device right now? */
   var _CATCHUP_HAS = {
@@ -4029,7 +4533,8 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     rain:      function(){ return !!global.ST_RAIN; },
     documents: function(){ return !!(global.ST && global.ST.docs); },
     budget:    function(){ return !!(global.ST && global.ST.budgets); },
-    rules:     function(){ return !!(typeof global.catRules === 'function' || (global.ST && global.ST.catRules)); }
+    rules:     function(){ return !!(typeof global.catRules === 'function' || (global.ST && global.ST.catRules)); },
+    sus:       function(){ return !!global.ST_SUS; }
   };
   /* The app loads its own copy from this device (loadState) on the window 'load' event, while
      sign-in starts on DOMContentLoaded - so the catch-up below could run FIRST, with the state
@@ -4093,6 +4598,7 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
   _syncWrap('rain',      'rain',      rain,        'removeGauge', true);
   _syncWrap('documents', 'documents', documents,   'saveAll');
   _syncWrap('rules',     'rules',     rules,       'saveAll');
+  _syncWrap('sus',       'sus',       sus,         'saveAll');   /* Sustainability Phase 1 (-434-sus1) */
   /* -411: the six writers that saved outside the queues. A failure used to print one
      console line under a green status and the next load wiped the row. Assets, recurring
      bills, co-op settlements and import batches go in as operations - replayed with the
@@ -4342,7 +4848,7 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     }
   };
 
-  global.AI = { __probeCaps: probeCaps, __client: client, __lsPendingMoves: _lsPendingMoves, __lsTagsInNote: _lsTagsInNote, __lsTagKey: _lsTagKey, __lsTagMoves: _lsTagMoves, __lsTagOnFarm: _lsTagOnFarm, __lsAnimalsOnFarm: _lsAnimalsOnFarm, __collapseRepeats: _collapseRepeats, __rowKey: _rowKey,
+  global.AI = { __probeCaps: probeCaps, __client: client, __ccrReset: function(){ _ccr = { farm: null, loaded: false, known: Object.create(null), sent: Object.create(null), legacy: [] }; _cropCfgSnap = null; },   /* -442-sus7: harness - a second device's empty reading memory */ __lsPendingMoves: _lsPendingMoves, __lsTagsInNote: _lsTagsInNote, __lsTagKey: _lsTagKey, __lsTagMoves: _lsTagMoves, __lsTagOnFarm: _lsTagOnFarm, __lsAnimalsOnFarm: _lsAnimalsOnFarm, __collapseRepeats: _collapseRepeats, __rowKey: _rowKey,
                 rain: rain, init: client, projectRef: PROJECT_REF, auth, farm, sync: sync, load, txn, account, budget, recurring, asset, loans,
                 coopSettlement: coopSettlement, livestock: livestock, crop: crop, orchard: orchard, plan: plan, workers: workersSave, profile: profile,
                 taxPlan: taxPlan,   /* -414 */
@@ -4354,6 +4860,8 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
                          caps: function(){ return { CAN_FARM_VATCAT: CAN_FARM_VATCAT, CAN_TAX_PLAN: CAN_TAX_PLAN }; }, setCaps: function(on, tp){ CAN_FARM_VATCAT = !!on; CAN_TAX_PLAN = (tp === undefined) ? !!on : !!tp; },
                          migrated: function(){ return Object.assign({}, _MIGRATED); } },
                 documents: documents, fuel: fuel, pairing: pairing,
+                sus: sus,   /* Sustainability Phase 1 (-434-sus1): eleven keyed tables, CAN_SUS probes, the 'sus' lane */
+                _sus: { tables: SUS_TABLES, setToDb: _susSetToDb, setFromDb: _susSetFromDb, caps: function(){ return Object.assign({}, CAN_SUS); }, colCaps: function(){ return Object.assign({}, CAN_SUS_COL); }, cinToDb: function(i, fid){ return cinToDb(i, fid); }, setNut: function(on){ CAN_INPUT_NUT = !!on; }, setCaps: function(o){ Object.keys(o||{}).forEach(function(t){ if(t in CAN_SUS){ CAN_SUS[t] = !!o[t]; _susAsked[t] = true; } if(t in CAN_SUS_COL){ CAN_SUS_COL[t] = !!o[t]; _susColAsked[t] = true; } }); } },
                 rules: rules,
                 storage: storage,
                 importBatch: importBatch,

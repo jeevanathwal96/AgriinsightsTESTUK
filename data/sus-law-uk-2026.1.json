@@ -1,0 +1,3955 @@
+{
+ "id": "sus-law-uk",
+ "version": "2026.1",
+ "compiled": "2026-11-14",
+ "about": "UK legal values for the Sustainability engine (sus-engine-uk.js). Every row carries source, source_url, status, version and checked_on. Nations: E England, W Wales, S Scotland, N Northern Ireland. Phase 0 (PREBUILD-CHECK-V53 §4.2). Phase 2 (-435-sus2) adds crop N max (nmax), closed periods per product (fym, absolute, exceptions), soil testing (soil) and the Red Tractor urea standard (limits.urea_rt). Phase 4 (-436-sus4, 15 Nov 2026) adds abstraction thresholds per nation (R14). The register import (-438-sus5r, 15 Nov 2026) adds the reporting windows per nation (register: birth_days, death_days, move_days_cattle, move_days_sheep; RESEARCH-DECISIONS-NOV-2026.md section E). -439-sus6 (15 Nov 2026): owner standing rule, nothing from the mock-up. Closed periods never refuse (record with a reason), Scotland bagged-N exceptions, worst-4-months SSAFO, NI goats 5 Jan, crop-available N per nation in law, NI register rows confirmed, Scotland WFP soil pH P K C, and every product choice labelled.",
+ "status_values": {
+  "confirmed": "read from the regulation or the regulator's page on checked_on",
+  "estimate": "not a legal value, or not confirmed; always shown tagged",
+  "pending": "read from a dated source, but one reading is still open; the app takes the lower figure and tags it \"to confirm\"",
+  "assumption": "no published figure: a labelled assumption the farmer ticks (or changes) before it is used; never a silent default",
+  "product_choice": "our own rule (a UX threshold or a cautious reading), not law or science; labelled as ours wherever it shows"
+ },
+ "limits": {
+  "whole_farm_manure_n": {
+   "value": 170,
+   "label": "Livestock manure N per hectare of the holding a year",
+   "unit": "kg N/ha/yr",
+   "source": "SI 2015/668 reg 7(1); WSI 2021/77; SSI 2008/298; NISR 2019/81 reg 9",
+   "source_by_nation": { "E": "SI 2015/668 reg 7(1)", "W": "WSI 2021/77", "S": "SSI 2008/298", "N": "NISR 2019/81 reg 9" },
+   "source_url": "https://www.legislation.gov.uk/uksi/2015/668/regulation/7",
+   "status": "confirmed",
+   "version": "2026.1",
+   "checked_on": "2026-11-14",
+   "note": "Holding = own land plus land rented or otherwise at the occupier's disposal (SI 2015/668 reg 2(1))."
+  },
+  "field_organic_n": {
+   "value": 250,
+   "label": "Organic manure N on any hectare in 12 months",
+   "unit": "kg N/ha",
+   "source": "SI 2015/668 reg 8 (England); WSI 2021/77 (Wales); SSI 2008/298 reg 15(1) (Scotland); none found in NISR 2019/81",
+   "source_url": "https://www.legislation.gov.uk/uksi/2015/668/regulation/8",
+   "status": "confirmed",
+   "version": "2026.1",
+   "checked_on": "2026-11-15",
+   "note": "Total N from all organic manures spread on any one hectare in any 12 months. Manure deposited directly by grazing animals is not included (gov.uk NVZ guidance, updated 1 Jan 2024). Certified compost has its own 500/1,000 kg limits. -439-sus6: Scotland confirmed (reg 15(1): 250 kg in any 12 months, grazing excluded; compost 500 in 24 months). NI: the full NISR 2019/81 text has no field limit (250 appears only as the grassland derogation for the holding), so none is applied in NI.",
+   "applies": {
+    "E": "nvz",
+    "W": "all",
+    "S": "nvz",
+    "N": null
+   }
+  },
+  "urea_rt": {
+   "value": {
+    "from": "01-15",
+    "to": "03-31",
+    "nations": [
+     "E"
+    ]
+   },
+   "label": "Untreated solid urea may be applied only from 15 January to 31 March (protected urea at other times)",
+   "source": "Red Tractor Combinable Crops and Sugar Beet standard, urea (from 1 April 2024); AHDB news",
+   "source_url": "https://redtractor.org.uk/wp-content/uploads/sites/10/2024/03/New-UREA-standard-01-April-2024.pdf",
+   "status": "confirmed",
+   "version": "2026.1",
+   "checked_on": "2026-11-14",
+   "note": "An assurance standard for Red Tractor members in England, not law (Defra Option 4). Checked on the application date, never the invoice date. Liquid urea has a FACTS-adviser exception; incorporated fertiliser is exempt.",
+   "kind": "assurance",
+   "also_url": "https://ahdb.org.uk/news/how-do-new-rules-on-urea-use-in-england-affect-farmers"
+  }
+ },
+ "occupier_rule": {
+  "value": "occupier",
+  "label": "Stock on land (including outdoor pigs) counts on the holding of whoever has the land at their disposal (the occupier). A tenant who occupies counts it; the landowner counts it only if they keep occupation (licence or contract B&B).",
+  "source": "SI 2015/668 reg 2(1) \"holding\" and reg 7(1)",
+  "source_url": "https://www.legislation.gov.uk/uksi/2015/668/regulation/2",
+  "status": "confirmed",
+  "version": "2026.1",
+  "checked_on": "2026-11-14",
+  "note": "Tenancy type is not the test; occupation is. Ask \"who occupies the land while the stock is there?\"; never default.",
+  "unanswered": {
+   "value": "count_here",
+   "label": "Until you say who occupies the land, other people's stock on it counts on this farm (the higher, cautious figure)",
+   "source": "Our rule (owner decision \"occupier\" a, 15 Nov 2026); the occupier test is SI 2015/668 reg 2(1)",
+   "source_url": "https://www.legislation.gov.uk/uksi/2015/668/regulation/2",
+   "status": "product_choice",
+   "version": "2026.1",
+   "checked_on": "2026-11-15"
+  }
+ },
+ "nations": {
+  "E": {
+   "name": "England",
+   "nvz_scope": "map",
+   "manure_n": {
+    "bands": {
+     "value": {
+      "calf_under": 2,
+      "young_under": 12,
+      "mid_under": 24
+     },
+     "label": "Cattle age bands (months): calf under 2; 2 to 12; 12 to 24; 24 and over",
+     "unit": "months",
+     "source": "Nitrate Pollution Prevention Regulations 2015 (SI 2015/668), Schedule 1",
+     "source_url": "https://www.legislation.gov.uk/uksi/2015/668/schedule/1",
+     "status": "confirmed",
+     "version": "2026.1",
+     "checked_on": "2026-11-14"
+    },
+    "per_head": {
+     "calf": {
+      "value": 8.4,
+      "label": "Calves under 2 months",
+      "unit": "kg N per head a year",
+      "species": "cattle",
+      "source": "Nitrate Pollution Prevention Regulations 2015 (SI 2015/668), Schedule 1",
+      "source_url": "https://www.legislation.gov.uk/uksi/2015/668/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "beef_young": {
+      "value": 33.2,
+      "label": "Beef cattle 2 to 12 months",
+      "unit": "kg N per head a year",
+      "species": "cattle",
+      "source": "Nitrate Pollution Prevention Regulations 2015 (SI 2015/668), Schedule 1",
+      "source_url": "https://www.legislation.gov.uk/uksi/2015/668/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "beef_mid": {
+      "value": 50.0,
+      "label": "Beef cattle 12 to 24 months",
+      "unit": "kg N per head a year",
+      "species": "cattle",
+      "source": "Nitrate Pollution Prevention Regulations 2015 (SI 2015/668), Schedule 1",
+      "source_url": "https://www.legislation.gov.uk/uksi/2015/668/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "beef_older": {
+      "value": 50.0,
+      "label": "Beef cattle 24 months and over, for slaughter",
+      "unit": "kg N per head a year",
+      "species": "cattle",
+      "source": "Nitrate Pollution Prevention Regulations 2015 (SI 2015/668), Schedule 1",
+      "source_url": "https://www.legislation.gov.uk/uksi/2015/668/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "dairy_young": {
+      "value": 34.7,
+      "label": "Dairy heifers 2 to 12 months",
+      "unit": "kg N per head a year",
+      "species": "cattle",
+      "source": "Nitrate Pollution Prevention Regulations 2015 (SI 2015/668), Schedule 1",
+      "source_url": "https://www.legislation.gov.uk/uksi/2015/668/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "dairy_heifer": {
+      "value": 61.0,
+      "label": "Dairy heifers 12 months to first calving",
+      "unit": "kg N per head a year",
+      "species": "cattle",
+      "source": "Nitrate Pollution Prevention Regulations 2015 (SI 2015/668), Schedule 1",
+      "source_url": "https://www.legislation.gov.uk/uksi/2015/668/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "dairy_lt6000": {
+      "value": 77.0,
+      "label": "Dairy cows under 6,000 litres a year",
+      "unit": "kg N per head a year",
+      "species": "cattle",
+      "source": "Nitrate Pollution Prevention Regulations 2015 (SI 2015/668), Schedule 1",
+      "source_url": "https://www.legislation.gov.uk/uksi/2015/668/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "dairy_6000_9000": {
+      "value": 100.7,
+      "label": "Dairy cows 6,000 to 9,000 litres a year",
+      "unit": "kg N per head a year",
+      "species": "cattle",
+      "source": "Nitrate Pollution Prevention Regulations 2015 (SI 2015/668), Schedule 1",
+      "source_url": "https://www.legislation.gov.uk/uksi/2015/668/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "dairy_gt9000": {
+      "value": 115.0,
+      "label": "Dairy cows over 9,000 litres a year",
+      "unit": "kg N per head a year",
+      "species": "cattle",
+      "source": "Nitrate Pollution Prevention Regulations 2015 (SI 2015/668), Schedule 1",
+      "source_url": "https://www.legislation.gov.uk/uksi/2015/668/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "suckler_le500": {
+      "value": 61.0,
+      "label": "Breeding cows (beef) 500 kg or less",
+      "unit": "kg N per head a year",
+      "species": "cattle",
+      "source": "Nitrate Pollution Prevention Regulations 2015 (SI 2015/668), Schedule 1",
+      "source_url": "https://www.legislation.gov.uk/uksi/2015/668/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "suckler_gt500": {
+      "value": 82.9,
+      "label": "Breeding cows (beef) over 500 kg",
+      "unit": "kg N per head a year",
+      "species": "cattle",
+      "source": "Nitrate Pollution Prevention Regulations 2015 (SI 2015/668), Schedule 1",
+      "source_url": "https://www.legislation.gov.uk/uksi/2015/668/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "bull_nonbreeding": {
+      "value": 54.0,
+      "label": "Bulls for slaughter (non-breeding)",
+      "unit": "kg N per head a year",
+      "species": "cattle",
+      "source": "Nitrate Pollution Prevention Regulations 2015 (SI 2015/668), Schedule 1",
+      "source_url": "https://www.legislation.gov.uk/uksi/2015/668/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "bull_breeding_young": {
+      "value": 50.0,
+      "label": "Breeding bulls under 24 months",
+      "unit": "kg N per head a year",
+      "species": "cattle",
+      "source": "Nitrate Pollution Prevention Regulations 2015 (SI 2015/668), Schedule 1",
+      "source_url": "https://www.legislation.gov.uk/uksi/2015/668/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "bull_breeding": {
+      "value": 48.2,
+      "label": "Breeding bulls 24 months and over",
+      "unit": "kg N per head a year",
+      "species": "cattle",
+      "source": "Nitrate Pollution Prevention Regulations 2015 (SI 2015/668), Schedule 1",
+      "source_url": "https://www.legislation.gov.uk/uksi/2015/668/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "ewe_lt60": {
+      "value": 7.7,
+      "label": "Ewes under 60 kg after lambing (suckled lambs to 6 months included)",
+      "unit": "kg N per head a year",
+      "species": "sheep",
+      "source": "Nitrate Pollution Prevention Regulations 2015 (SI 2015/668), Schedule 1",
+      "source_url": "https://www.legislation.gov.uk/uksi/2015/668/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "ewe_ge60": {
+      "value": 12.0,
+      "label": "Ewes 60 kg or more after lambing (suckled lambs to 6 months included)",
+      "unit": "kg N per head a year",
+      "species": "sheep",
+      "source": "Nitrate Pollution Prevention Regulations 2015 (SI 2015/668), Schedule 1",
+      "source_url": "https://www.legislation.gov.uk/uksi/2015/668/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "ram": {
+      "value": 12.0,
+      "label": "Rams after tupping, at their own weight (60 kg or more)",
+      "unit": "kg N per head a year",
+      "species": "sheep",
+      "source": "Nitrate Pollution Prevention Regulations 2015 (SI 2015/668), Schedule 1",
+      "source_url": "https://www.legislation.gov.uk/uksi/2015/668/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14",
+      "note": "Rams fall in the \"after lambing or tupping\" rows by their own weight, nearly always 60 kg or more (FIGURES-CHECK item 4)."
+     },
+     "sheep_6_9m": {
+      "value": 2.0,
+      "label": "Sheep 6 to 9 months",
+      "unit": "kg N per head a year",
+      "species": "sheep",
+      "source": "Nitrate Pollution Prevention Regulations 2015 (SI 2015/668), Schedule 1",
+      "source_url": "https://www.legislation.gov.uk/uksi/2015/668/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "sheep_9m_plus": {
+      "value": 1.4,
+      "label": "Sheep 9 months to tupping or slaughter",
+      "unit": "kg N per head a year",
+      "species": "sheep",
+      "source": "Nitrate Pollution Prevention Regulations 2015 (SI 2015/668), Schedule 1",
+      "source_url": "https://www.legislation.gov.uk/uksi/2015/668/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "lamb_suckled": {
+      "value": 0.0,
+      "label": "Lambs to 6 months: inside the ewe figure",
+      "unit": "kg N per head a year",
+      "species": "sheep",
+      "source": "Nitrate Pollution Prevention Regulations 2015 (SI 2015/668), Schedule 1",
+      "source_url": "https://www.legislation.gov.uk/uksi/2015/668/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14",
+      "note": "The ewe figure includes suckled lambs until 6 months (Schedule 1 note to the grazing table); never counted twice."
+     },
+     "sow_aa": {
+      "value": 16.1,
+      "label": "Sows with litters, diet with synthetic amino acids",
+      "unit": "kg N per head a year",
+      "species": "pigs",
+      "source": "Nitrate Pollution Prevention Regulations 2015 (SI 2015/668), Schedule 1",
+      "source_url": "https://www.legislation.gov.uk/uksi/2015/668/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "sow": {
+      "value": 17.9,
+      "label": "Sows with litters, diet without synthetic amino acids",
+      "unit": "kg N per head a year",
+      "species": "pigs",
+      "source": "Nitrate Pollution Prevention Regulations 2015 (SI 2015/668), Schedule 1",
+      "source_url": "https://www.legislation.gov.uk/uksi/2015/668/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "maiden_gilt": {
+      "value": 13.9,
+      "label": "Maiden gilts, before their first litter",
+      "unit": "kg N per head a year",
+      "species": "pigs",
+      "source": "Nitrate Pollution Prevention Regulations 2015 (SI 2015/668), Schedule 1",
+      "source_url": "https://www.legislation.gov.uk/uksi/2015/668/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14",
+      "note": "38 g N a day (FIGURES-CHECK England row: missing class added)."
+     },
+     "pig_7_13": {
+      "value": 1.5,
+      "label": "Pigs 7 to 13 kg",
+      "unit": "kg N per head a year",
+      "species": "pigs",
+      "source": "Nitrate Pollution Prevention Regulations 2015 (SI 2015/668), Schedule 1",
+      "source_url": "https://www.legislation.gov.uk/uksi/2015/668/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "pig_13_31": {
+      "value": 5.2,
+      "label": "Pigs 13 to 31 kg",
+      "unit": "kg N per head a year",
+      "species": "pigs",
+      "source": "Nitrate Pollution Prevention Regulations 2015 (SI 2015/668), Schedule 1",
+      "source_url": "https://www.legislation.gov.uk/uksi/2015/668/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "pig_31_66": {
+      "value": 8.8,
+      "label": "Pigs 31 to 66 kg",
+      "unit": "kg N per head a year",
+      "species": "pigs",
+      "source": "Nitrate Pollution Prevention Regulations 2015 (SI 2015/668), Schedule 1",
+      "source_url": "https://www.legislation.gov.uk/uksi/2015/668/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "pig_66_plus": {
+      "value": 12.0,
+      "label": "Pigs 66 kg and over, for slaughter",
+      "unit": "kg N per head a year",
+      "species": "pigs",
+      "source": "Nitrate Pollution Prevention Regulations 2015 (SI 2015/668), Schedule 1",
+      "source_url": "https://www.legislation.gov.uk/uksi/2015/668/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "boar_66_150": {
+      "value": 12.0,
+      "label": "Breeding boars 66 to 150 kg",
+      "unit": "kg N per head a year",
+      "species": "pigs",
+      "source": "Nitrate Pollution Prevention Regulations 2015 (SI 2015/668), Schedule 1",
+      "source_url": "https://www.legislation.gov.uk/uksi/2015/668/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "boar_150_plus": {
+      "value": 17.5,
+      "label": "Breeding boars over 150 kg",
+      "unit": "kg N per head a year",
+      "species": "pigs",
+      "source": "Nitrate Pollution Prevention Regulations 2015 (SI 2015/668), Schedule 1",
+      "source_url": "https://www.legislation.gov.uk/uksi/2015/668/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "layer_caged": {
+      "value": 0.41,
+      "label": "Laying hens 17 weeks and over, caged (per bird place)",
+      "unit": "kg N per head a year",
+      "species": "poultry",
+      "source": "Nitrate Pollution Prevention Regulations 2015 (SI 2015/668), Schedule 1",
+      "source_url": "https://www.legislation.gov.uk/uksi/2015/668/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "layer_free": {
+      "value": 0.55,
+      "label": "Laying hens 17 weeks and over, not caged / free range (per bird place)",
+      "unit": "kg N per head a year",
+      "species": "poultry",
+      "source": "Nitrate Pollution Prevention Regulations 2015 (SI 2015/668), Schedule 1",
+      "source_url": "https://www.legislation.gov.uk/uksi/2015/668/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "pullet": {
+      "value": 0.23,
+      "label": "Laying hens under 17 weeks (per bird place)",
+      "unit": "kg N per head a year",
+      "species": "poultry",
+      "source": "Nitrate Pollution Prevention Regulations 2015 (SI 2015/668), Schedule 1",
+      "source_url": "https://www.legislation.gov.uk/uksi/2015/668/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "broiler": {
+      "value": 0.39,
+      "label": "Broilers (per bird place)",
+      "unit": "kg N per head a year",
+      "species": "poultry",
+      "source": "Nitrate Pollution Prevention Regulations 2015 (SI 2015/668), Schedule 1",
+      "source_url": "https://www.legislation.gov.uk/uksi/2015/668/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "breeder_lt25": {
+      "value": 0.31,
+      "label": "Breeding chickens under 25 weeks (per bird place)",
+      "unit": "kg N per head a year",
+      "species": "poultry",
+      "source": "Nitrate Pollution Prevention Regulations 2015 (SI 2015/668), Schedule 1",
+      "source_url": "https://www.legislation.gov.uk/uksi/2015/668/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "breeder_ge25": {
+      "value": 0.74,
+      "label": "Breeding chickens 25 weeks and over (per bird place)",
+      "unit": "kg N per head a year",
+      "species": "poultry",
+      "source": "Nitrate Pollution Prevention Regulations 2015 (SI 2015/668), Schedule 1",
+      "source_url": "https://www.legislation.gov.uk/uksi/2015/668/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "turkey_m": {
+      "value": 1.37,
+      "label": "Turkeys, male (per bird place)",
+      "unit": "kg N per head a year",
+      "species": "poultry",
+      "source": "Nitrate Pollution Prevention Regulations 2015 (SI 2015/668), Schedule 1",
+      "source_url": "https://www.legislation.gov.uk/uksi/2015/668/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "turkey_f": {
+      "value": 1.03,
+      "label": "Turkeys, female (per bird place)",
+      "unit": "kg N per head a year",
+      "species": "poultry",
+      "source": "Nitrate Pollution Prevention Regulations 2015 (SI 2015/668), Schedule 1",
+      "source_url": "https://www.legislation.gov.uk/uksi/2015/668/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "duck": {
+      "value": 0.91,
+      "label": "Ducks (per bird place)",
+      "unit": "kg N per head a year",
+      "species": "poultry",
+      "source": "Nitrate Pollution Prevention Regulations 2015 (SI 2015/668), Schedule 1",
+      "source_url": "https://www.legislation.gov.uk/uksi/2015/668/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "goat": {
+      "value": 15.0,
+      "label": "Goats",
+      "unit": "kg N per head a year",
+      "species": "other",
+      "source": "Nitrate Pollution Prevention Regulations 2015 (SI 2015/668), Schedule 1",
+      "source_url": "https://www.legislation.gov.uk/uksi/2015/668/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "deer_red": {
+      "value": 15.3,
+      "label": "Red deer",
+      "unit": "kg N per head a year",
+      "species": "other",
+      "source": "Nitrate Pollution Prevention Regulations 2015 (SI 2015/668), Schedule 1",
+      "source_url": "https://www.legislation.gov.uk/uksi/2015/668/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "deer_other": {
+      "value": 12.0,
+      "label": "Other deer",
+      "unit": "kg N per head a year",
+      "species": "other",
+      "source": "Nitrate Pollution Prevention Regulations 2015 (SI 2015/668), Schedule 1",
+      "source_url": "https://www.legislation.gov.uk/uksi/2015/668/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "horse": {
+      "value": 21.2,
+      "label": "Horses, ponies and donkeys",
+      "unit": "kg N per head a year",
+      "species": "other",
+      "source": "Nitrate Pollution Prevention Regulations 2015 (SI 2015/668), Schedule 1",
+      "source_url": "https://www.legislation.gov.uk/uksi/2015/668/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     }
+    }
+   },
+   "storage": {
+    "nvz": {
+     "cattle": {
+      "value": {
+       "from": "10-01",
+       "to": "03-01",
+       "inclusive": true
+      },
+      "label": "Slurry other than pig: 1 October to 1 March",
+      "unit": "MM-DD storage window",
+      "basis": "window",
+      "source": "SI 2015/668 reg 25(7)(a)-(b); rain and washings on top, reg 25(3)",
+      "source_url": "https://www.legislation.gov.uk/uksi/2015/668/regulation/25",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14",
+      "note": "Days counted inclusive of both dates (152 in a non-leap winter): reg 25(7) \"begins with 1st October and ends with the following 1st March\" (source audit L6)."
+     },
+     "pig": {
+      "value": {
+       "from": "10-01",
+       "to": "04-01",
+       "inclusive": true
+      },
+      "label": "Pig slurry: 1 October to 1 April",
+      "unit": "MM-DD storage window",
+      "basis": "window",
+      "source": "SI 2015/668 reg 25(7)(a)-(b); rain and washings on top, reg 25(3)",
+      "source_url": "https://www.legislation.gov.uk/uksi/2015/668/regulation/25",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14",
+      "note": "Inclusive: 183 days in a non-leap winter (spec §10 said 182)."
+     },
+     "poultry": {
+      "value": {
+       "from": "10-01",
+       "to": "04-01",
+       "inclusive": true
+      },
+      "label": "Poultry manure: 1 October to 1 April",
+      "unit": "MM-DD storage window",
+      "basis": "window",
+      "source": "SI 2015/668 reg 25(7)(a)-(b); rain and washings on top, reg 25(3)",
+      "source_url": "https://www.legislation.gov.uk/uksi/2015/668/regulation/25",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     }
+    },
+    "off_nvz": {
+     "cattle": {
+      "value": 4,
+      "label": "SSAFO: the slurry of the worst (fullest) 4 months, for stores built or substantially changed since 1 March 1991",
+      "unit": "months",
+      "basis": "worst_months",
+      "built_after": "1991-03-01",
+      "source": "Water Resources (Control of Pollution) (Silage, Slurry and Agricultural Fuel Oil) (England) Regulations 2010 (SSAFO, SI 2010/639), Schedule 2",
+      "source_url": "https://www.legislation.gov.uk/uksi/2010/639/schedule/2",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-15",
+      "note": "Stores built before 1 Mar 1991 and not substantially changed have no statutory minimum. Ask for the build date (manure_stores.built_or_changed). Sch 2 para 6(2): \"the maximum quantity of slurry likely to be produced in any four month period\", so the need is the highest 4-month inflow in the year, not 4 months from 1 October (source audit L5)."
+     },
+     "pig": {
+      "value": 4,
+      "label": "SSAFO: the slurry of the worst (fullest) 4 months (pig slurry too), for stores built or substantially changed since 1 March 1991",
+      "unit": "months",
+      "basis": "worst_months",
+      "built_after": "1991-03-01",
+      "source": "Water Resources (Control of Pollution) (Silage, Slurry and Agricultural Fuel Oil) (England) Regulations 2010 (SSAFO, SI 2010/639), Schedule 2",
+      "source_url": "https://www.legislation.gov.uk/uksi/2010/639/schedule/2",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-15",
+      "note": " Sch 2 para 6(2): \"the maximum quantity of slurry likely to be produced in any four month period\", so the need is the highest 4-month inflow in the year, not 4 months from 1 October (source audit L5)."
+     },
+     "poultry": null,
+     "poultry_note": "SSAFO covers slurry; no off-NVZ storage period for solid poultry manure."
+    }
+   },
+   "closed": {
+    "value": {
+     "scope": "nvz",
+     "slurry": {
+      "grass": {
+       "sandy": [
+        "09-01",
+        "12-31"
+       ],
+       "other": [
+        "10-15",
+        "01-31"
+       ]
+      },
+      "arable": {
+       "sandy": [
+        "08-01",
+        "12-31"
+       ],
+       "other": [
+        "10-01",
+        "01-31"
+       ]
+      }
+     },
+     "bagN": {
+      "grass": [
+       "09-15",
+       "01-15"
+      ],
+      "arable": [
+       "09-01",
+       "01-15"
+      ]
+     },
+     "fym": null,
+     "exceptions": {
+      "bagN": [
+       {
+        "crop": "winter_osr",
+        "max": 30,
+        "until": "10-31"
+       },
+       {
+        "crop": "asparagus",
+        "max": 50
+       },
+       {
+        "crop": "brassica",
+        "max": 100,
+        "every4w": 50
+       },
+       {
+        "crop": "grass",
+        "max": 80,
+        "each": 40,
+        "until": "10-31"
+       },
+       {
+        "crop": "salad_onion",
+        "max": 40
+       },
+       {
+        "crop": "bulb_onion",
+        "max": 40
+       },
+       {
+        "crop": "parsley",
+        "max": 40
+       }
+      ],
+      "bagN_note": "Some crops may get limited manufactured N in the closed period; other crops need written advice from a FACTS-qualified adviser.",
+      "slurry_sandy_arable_early": {
+       "from": "08-01",
+       "to": "09-15",
+       "sown_by": "09-15"
+      },
+      "slurry_note": "Sandy or shallow tillage land sown on or before 15 September may take high readily available N manure from 1 August to 15 September."
+     },
+     "no_exception_in_law": {
+      "bagN": {
+       "grass": false,
+       "arable": false
+      },
+      "slurry": true,
+      "fym": false
+     },
+     "lawful_routes": [
+      {
+       "value": {
+        "id": "crop_exception",
+        "products": [
+         "manufactured"
+        ],
+        "crops": "table",
+        "until_table": true
+       },
+       "label": "Crop exception (limited manufactured N for listed crops)",
+       "source": "SI 2015/668 reg 22 and its table",
+       "source_url": "https://www.legislation.gov.uk/uksi/2015/668/regulation/22",
+       "status": "confirmed",
+       "version": "2026.1",
+       "checked_on": "2026-11-15"
+      },
+      {
+       "value": {
+        "id": "facts",
+        "products": [
+         "manufactured"
+        ],
+        "crops": "not_table"
+       },
+       "label": "Written advice from a FACTS-qualified adviser (crops not in the table)",
+       "source": "SI 2015/668 reg 22(4); advice kept (reg 33)",
+       "source_url": "https://www.legislation.gov.uk/uksi/2015/668/regulation/22",
+       "status": "confirmed",
+       "version": "2026.1",
+       "checked_on": "2026-11-15"
+      },
+      {
+       "value": {
+        "id": "organic",
+        "products": [
+         "high_ran"
+        ],
+        "until_table": true
+       },
+       "label": "Organic holding (up to 150 kg N/ha, listed crops, FACTS advice)",
+       "source": "SI 2015/668 reg 21",
+       "source_url": "https://www.legislation.gov.uk/uksi/2015/668/regulation/21",
+       "status": "confirmed",
+       "version": "2026.1",
+       "checked_on": "2026-11-18",
+       "note": "-441c: reg 21(1) listed crops (the reg 22 table) or any other crop with FACTS advice; reg 21(3) winter oilseed rape and 21(5)(a) grassland: no N after 31 October. So not offered on those crops after 31 Oct."
+      }
+     ],
+     "record_rule": {
+      "value": {
+       "never_refuse": true
+      },
+      "label": "Every spreading is recorded, inside a closed period too: it is saved with a warning and a reason (\"None: possible breach\" is a reason)",
+      "source": "SI 2015/668 reg 31 (records of every application)",
+      "source_url": "https://www.legislation.gov.uk/uksi/2015/668",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-15",
+      "note": "RESEARCH-DECISIONS-NOV-2026 A; owner decision \"closed\" option a, 15 Nov 2026. Refusing would block lawful entries and the mandatory record."
+     }
+    },
+    "label": "Closed periods (MM-DD, inclusive; a period may run over New Year)",
+    "source": "GOV.UK, Using nitrogen fertilisers in nitrate vulnerable zones; production RN_CLOSED (reviewed 2026-09-18)",
+    "source_url": "https://www.gov.uk/guidance/using-nitrogen-fertilisers-in-nitrate-vulnerable-zones",
+    "status": "confirmed",
+    "version": "2026.1",
+    "checked_on": "2026-11-14",
+    "note": "\"slurry\" = organic manure with high readily available N (slurry, poultry manure, liquid digestate). Phase 2: \"fym\" = solid manure with low readily available N (none in England, Wales and Scotland; NI 31 Oct-31 Jan, reg 7(4)). \"no_exception_in_law\" only changes the wording; the app never refuses a date (-439-sus6)."
+   },
+   "sheep_return": {
+    "value": {
+     "count_from": "12-01",
+     "count_to": "12-01",
+     "due": "12-31",
+     "accepted_until": null
+    },
+    "label": "Count on 1 December; return by 31 December",
+    "route": "the Defra annual inventory service (online, or the paper form Defra sends)",
+    "species": [
+     "sheep",
+     "goats"
+    ],
+    "source": "GOV.UK, Sheep and goat keepers: complete your annual inventory (page last updated 10 Nov 2025)",
+    "source_url": "https://www.gov.uk/guidance/sheep-and-goat-keepers-complete-your-annual-inventory",
+    "status": "confirmed",
+    "version": "2026.1",
+    "checked_on": "2026-11-14"
+   },
+   "nmax": {
+    "value": {
+     "scope": "nvz",
+     "rule": "table",
+     "crops": {
+      "winter_wheat": {
+       "n": 220,
+       "std": 8.0,
+       "label": "Autumn or early winter sown wheat",
+       "adj": [
+        "yield",
+        "milling",
+        "shallow"
+       ]
+      },
+      "spring_wheat": {
+       "n": 180,
+       "std": 7.0,
+       "label": "Spring-sown wheat",
+       "adj": [
+        "yield",
+        "milling"
+       ]
+      },
+      "winter_barley": {
+       "n": 180,
+       "std": 6.5,
+       "label": "Winter barley",
+       "adj": [
+        "yield",
+        "shallow"
+       ]
+      },
+      "spring_barley": {
+       "n": 150,
+       "std": 5.5,
+       "label": "Spring barley",
+       "adj": [
+        "yield"
+       ]
+      },
+      "winter_osr": {
+       "n": 250,
+       "std": 3.5,
+       "label": "Winter oilseed rape",
+       "adj": [
+        "osr"
+       ]
+      },
+      "sugar_beet": {
+       "n": 120,
+       "std": null,
+       "label": "Sugar beet",
+       "adj": []
+      },
+      "potatoes": {
+       "n": 270,
+       "std": null,
+       "label": "Potatoes",
+       "adj": []
+      },
+      "forage_maize": {
+       "n": 150,
+       "std": null,
+       "label": "Forage maize",
+       "adj": []
+      },
+      "field_beans": {
+       "n": 0,
+       "std": null,
+       "label": "Field beans",
+       "adj": []
+      },
+      "peas": {
+       "n": 0,
+       "std": null,
+       "label": "Peas",
+       "adj": []
+      },
+      "grass": {
+       "n": 300,
+       "std": null,
+       "label": "Grass",
+       "adj": [
+        "cuts3"
+       ]
+      },
+      "veg_low": {
+       "n": 180,
+       "std": null,
+       "label": "Asparagus, carrots, radishes, swedes",
+       "adj": []
+      },
+      "veg_mid": {
+       "n": 280,
+       "std": null,
+       "label": "Celery, courgettes, dwarf beans, lettuce, onions, parsnips, runner beans, sweetcorn, turnips",
+       "adj": []
+      },
+      "veg_high": {
+       "n": 370,
+       "std": null,
+       "label": "Beetroot, Brussels sprouts, cabbage, calabrese, cauliflower, leeks",
+       "adj": []
+      }
+     },
+     "adj": {
+      "per_tonne": 20,
+      "milling": 40,
+      "shallow": 20,
+      "cuts3": 40,
+      "straw": 80,
+      "part_tonnes": "pending"
+     }
+    },
+    "label": "Crop N max: the most nitrogen (manufactured plus crop-available N from organic manures) over the area of each crop, kg N/ha",
+    "source": "SI 2015/668 reg 12 and its table (revised; no known outstanding effects); gov.uk Using nitrogen fertilisers in NVZs (updated 1 Jan 2024)",
+    "source_url": "https://www.legislation.gov.uk/uksi/2015/668/regulation/12",
+    "status": "pending",
+    "version": "2026.1",
+    "checked_on": "2026-11-14",
+    "note": "Confirmed: the limits, the standard yields and \"an additional 20kg per hectare ... for every tonne that the expected yield exceeds the standard yield\" (wheat and barley), +40 milling wheat, +20 shallow soils (not over sandstone) for winter wheat and barley, +40 grass cut three times, +80 after straw or paper sludge. Pending (change 69): whether part tonnes count. The regulation and gov.uk say \"every tonne\" and neither mentions part tonnes, so the app counts FULL tonnes only (the lower figure) and tags any part tonne \"to confirm\". Expected yield: the farmer's estimate from farm records (gov.uk); the regulation does not define it. Oilseed rape: the 30 kg autumn cap and the half-tonne rise are shown as a note, not added."
+   },
+   "soil": {
+    "value": {
+     "law": true,
+     "every_years": 5,
+     "what": "pH, P, K, Mg and N (N may be an assessment of soil N supply)",
+     "scope": "cultivated agricultural land"
+    },
+    "label": "Soil test results no more than 5 years old before spreading on cultivated land (Farming Rules for Water)",
+    "source": "SI 2018/151 reg 5 (Reduction and Prevention of Agricultural Diffuse Pollution (England) Regulations 2018)",
+    "source_url": "https://www.legislation.gov.uk/uksi/2018/151/regulation/5",
+    "status": "confirmed",
+    "version": "2026.1",
+    "checked_on": "2026-11-14"
+   },
+   "abstraction": {
+    "licence_over": {
+     "value": 20,
+     "label": "A licence is usually needed to take more than 20 m³ a day",
+     "unit": "m3 a day",
+     "source": "Environment Agency, Check if you need a licence to abstract water (Water Resources Act 1991 s.24, as amended by the Water Act 2003)",
+     "source_url": "https://www.gov.uk/guidance/check-if-you-need-a-licence-to-abstract-water",
+     "status": "confirmed",
+     "version": "2026.1",
+     "checked_on": "2026-11-15",
+     "note": "Read 10 Nov 2026 (the factor table row water.abstraction_licence_threshold). Summed across points on the same source."
+    }
+   },
+   "register": {
+    "birth_days": {
+     "value": 27,
+     "label": "Calf births registered by day 27",
+     "source": "GOV.UK, What to do after a calf is born (updated 8 Nov 2022): apply for a passport by day 27",
+     "source_url": "https://www.gov.uk/guidance/what-to-do-after-a-calf-is-born",
+     "status": "confirmed",
+     "version": "2026.1",
+     "checked_on": "2026-11-15"
+    },
+    "death_days": {
+     "value": 7,
+     "label": "Cattle deaths reported within 7 days",
+     "source": "GOV.UK, Report and record cattle deaths on the holding: report to BCMS and return the passport within 7 days",
+     "source_url": "https://www.gov.uk/guidance/report-and-record-cattle-deaths-on-the-holding",
+     "status": "confirmed",
+     "version": "2026.1",
+     "checked_on": "2026-11-15"
+    },
+    "move_days_cattle": {
+     "value": 3,
+     "label": "Cattle moves reported within 3 days",
+     "source": "GOV.UK, Keep a holding register for cattle (updated 28 Jun 2023): report moves to BCMS within 3 days",
+     "source_url": "https://www.gov.uk/guidance/keep-a-holding-register-for-cattle",
+     "status": "confirmed",
+     "version": "2026.1",
+     "checked_on": "2026-11-15"
+    },
+    "move_days_sheep": {
+     "value": 3,
+     "label": "Sheep moves reported by the receiving keeper within 3 days",
+     "source": "The Sheep and Goats (Records, Identification and Movement) (England) Order 2009 as amended (SI 2014/331 art. 9): receiving keeper reports within 3 days",
+     "source_url": "https://www.gov.uk/guidance/sheep-and-goat-keepers-how-to-keep-a-holding-register",
+     "status": "confirmed",
+     "version": "2026.1",
+     "checked_on": "2026-11-15"
+    }
+   },
+   "crop_available_n": {
+    "value": {
+     "cattle_slurry": 0.4,
+     "pig_slurry": 0.5,
+     "poultry": 0.3,
+     "fym": 0.1,
+     "other": 0.1
+    },
+    "label": "Share of total N counted as available to the crop, by manure",
+    "source": "SI 2015/668 reg 14(3), table \"on and after 1 January 2014\"",
+    "source_url": "https://www.legislation.gov.uk/uksi/2015/668/regulation/14",
+    "status": "confirmed",
+    "version": "2026.1",
+    "checked_on": "2026-11-15",
+    "note": "Source audit L12. Digestate: no default; the supplier's analysis is asked (source audit L13)."
+   }
+  },
+  "W": {
+   "name": "Wales",
+   "nvz_scope": "whole_territory",
+   "manure_n": {
+    "bands": {
+     "value": {
+      "calf_under": 3,
+      "young_under": 13,
+      "mid_under": 25
+     },
+     "label": "Cattle age bands (months): calf under 3; 3 to 13; 13 to 25; 25 and over",
+     "unit": "months",
+     "source": "Water Resources (Control of Agricultural Pollution) (Wales) Regulations 2021 (WSI 2021/77), Schedule 1",
+     "source_url": "https://www.legislation.gov.uk/wsi/2021/77/schedule/1",
+     "status": "confirmed",
+     "version": "2026.1",
+     "checked_on": "2026-11-14"
+    },
+    "per_head": {
+     "calf": {
+      "value": 8.4,
+      "label": "Calves under 3 months",
+      "unit": "kg N per head a year",
+      "species": "cattle",
+      "source": "Water Resources (Control of Agricultural Pollution) (Wales) Regulations 2021 (WSI 2021/77), Schedule 1",
+      "source_url": "https://www.legislation.gov.uk/wsi/2021/77/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "beef_young": {
+      "value": 33.2,
+      "label": "Beef cattle 3 to 13 months",
+      "unit": "kg N per head a year",
+      "species": "cattle",
+      "source": "Water Resources (Control of Agricultural Pollution) (Wales) Regulations 2021 (WSI 2021/77), Schedule 1",
+      "source_url": "https://www.legislation.gov.uk/wsi/2021/77/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "beef_mid": {
+      "value": 50.0,
+      "label": "Beef cattle 13 to 25 months",
+      "unit": "kg N per head a year",
+      "species": "cattle",
+      "source": "Water Resources (Control of Agricultural Pollution) (Wales) Regulations 2021 (WSI 2021/77), Schedule 1",
+      "source_url": "https://www.legislation.gov.uk/wsi/2021/77/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "beef_older": {
+      "value": 50.0,
+      "label": "Beef cattle 25 months and over, for slaughter",
+      "unit": "kg N per head a year",
+      "species": "cattle",
+      "source": "Water Resources (Control of Agricultural Pollution) (Wales) Regulations 2021 (WSI 2021/77), Schedule 1",
+      "source_url": "https://www.legislation.gov.uk/wsi/2021/77/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "dairy_young": {
+      "value": 34.7,
+      "label": "Dairy heifers 3 to 13 months",
+      "unit": "kg N per head a year",
+      "species": "cattle",
+      "source": "Water Resources (Control of Agricultural Pollution) (Wales) Regulations 2021 (WSI 2021/77), Schedule 1",
+      "source_url": "https://www.legislation.gov.uk/wsi/2021/77/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "dairy_heifer": {
+      "value": 61.0,
+      "label": "Dairy heifers 13 months to first calving",
+      "unit": "kg N per head a year",
+      "species": "cattle",
+      "source": "Water Resources (Control of Agricultural Pollution) (Wales) Regulations 2021 (WSI 2021/77), Schedule 1",
+      "source_url": "https://www.legislation.gov.uk/wsi/2021/77/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "dairy_lt6000": {
+      "value": 77.0,
+      "label": "Dairy cows under 6,000 litres a year",
+      "unit": "kg N per head a year",
+      "species": "cattle",
+      "source": "Water Resources (Control of Agricultural Pollution) (Wales) Regulations 2021 (WSI 2021/77), Schedule 1",
+      "source_url": "https://www.legislation.gov.uk/wsi/2021/77/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "dairy_6000_9000": {
+      "value": 100.7,
+      "label": "Dairy cows 6,000 to 9,000 litres a year",
+      "unit": "kg N per head a year",
+      "species": "cattle",
+      "source": "Water Resources (Control of Agricultural Pollution) (Wales) Regulations 2021 (WSI 2021/77), Schedule 1",
+      "source_url": "https://www.legislation.gov.uk/wsi/2021/77/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "dairy_gt9000": {
+      "value": 115.0,
+      "label": "Dairy cows over 9,000 litres a year",
+      "unit": "kg N per head a year",
+      "species": "cattle",
+      "source": "Water Resources (Control of Agricultural Pollution) (Wales) Regulations 2021 (WSI 2021/77), Schedule 1",
+      "source_url": "https://www.legislation.gov.uk/wsi/2021/77/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "suckler_le500": {
+      "value": 61.0,
+      "label": "Breeding cows (beef) 500 kg or less",
+      "unit": "kg N per head a year",
+      "species": "cattle",
+      "source": "Water Resources (Control of Agricultural Pollution) (Wales) Regulations 2021 (WSI 2021/77), Schedule 1",
+      "source_url": "https://www.legislation.gov.uk/wsi/2021/77/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "suckler_gt500": {
+      "value": 82.9,
+      "label": "Breeding cows (beef) over 500 kg",
+      "unit": "kg N per head a year",
+      "species": "cattle",
+      "source": "Water Resources (Control of Agricultural Pollution) (Wales) Regulations 2021 (WSI 2021/77), Schedule 1",
+      "source_url": "https://www.legislation.gov.uk/wsi/2021/77/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "bull_nonbreeding": {
+      "value": 54.0,
+      "label": "Bulls for slaughter (non-breeding)",
+      "unit": "kg N per head a year",
+      "species": "cattle",
+      "source": "Water Resources (Control of Agricultural Pollution) (Wales) Regulations 2021 (WSI 2021/77), Schedule 1",
+      "source_url": "https://www.legislation.gov.uk/wsi/2021/77/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "bull_breeding_young": {
+      "value": 50.0,
+      "label": "Breeding bulls under 25 months",
+      "unit": "kg N per head a year",
+      "species": "cattle",
+      "source": "Water Resources (Control of Agricultural Pollution) (Wales) Regulations 2021 (WSI 2021/77), Schedule 1",
+      "source_url": "https://www.legislation.gov.uk/wsi/2021/77/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "bull_breeding": {
+      "value": 48.2,
+      "label": "Breeding bulls 25 months and over",
+      "unit": "kg N per head a year",
+      "species": "cattle",
+      "source": "Water Resources (Control of Agricultural Pollution) (Wales) Regulations 2021 (WSI 2021/77), Schedule 1",
+      "source_url": "https://www.legislation.gov.uk/wsi/2021/77/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "ewe_lt60": {
+      "value": 7.7,
+      "label": "Ewes under 60 kg after lambing (suckled lambs to 6 months included)",
+      "unit": "kg N per head a year",
+      "species": "sheep",
+      "source": "Water Resources (Control of Agricultural Pollution) (Wales) Regulations 2021 (WSI 2021/77), Schedule 1",
+      "source_url": "https://www.legislation.gov.uk/wsi/2021/77/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "ewe_ge60": {
+      "value": 12.0,
+      "label": "Ewes 60 kg or more after lambing (suckled lambs to 6 months included)",
+      "unit": "kg N per head a year",
+      "species": "sheep",
+      "source": "Water Resources (Control of Agricultural Pollution) (Wales) Regulations 2021 (WSI 2021/77), Schedule 1",
+      "source_url": "https://www.legislation.gov.uk/wsi/2021/77/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "ram": {
+      "value": 12.0,
+      "label": "Rams after tupping, at their own weight (60 kg or more)",
+      "unit": "kg N per head a year",
+      "species": "sheep",
+      "source": "Water Resources (Control of Agricultural Pollution) (Wales) Regulations 2021 (WSI 2021/77), Schedule 1",
+      "source_url": "https://www.legislation.gov.uk/wsi/2021/77/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14",
+      "note": "Rams fall in the \"after lambing or tupping\" rows by their own weight, nearly always 60 kg or more (FIGURES-CHECK item 4)."
+     },
+     "sheep_6_9m": {
+      "value": 2.0,
+      "label": "Sheep 6 to 9 months",
+      "unit": "kg N per head a year",
+      "species": "sheep",
+      "source": "Water Resources (Control of Agricultural Pollution) (Wales) Regulations 2021 (WSI 2021/77), Schedule 1",
+      "source_url": "https://www.legislation.gov.uk/wsi/2021/77/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "sheep_9m_plus": {
+      "value": 1.4,
+      "label": "Sheep 9 months to tupping or slaughter",
+      "unit": "kg N per head a year",
+      "species": "sheep",
+      "source": "Water Resources (Control of Agricultural Pollution) (Wales) Regulations 2021 (WSI 2021/77), Schedule 1",
+      "source_url": "https://www.legislation.gov.uk/wsi/2021/77/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "lamb_suckled": {
+      "value": 0.0,
+      "label": "Lambs to 6 months: inside the ewe figure",
+      "unit": "kg N per head a year",
+      "species": "sheep",
+      "source": "Water Resources (Control of Agricultural Pollution) (Wales) Regulations 2021 (WSI 2021/77), Schedule 1",
+      "source_url": "https://www.legislation.gov.uk/wsi/2021/77/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14",
+      "note": "The ewe figure includes suckled lambs until 6 months (Schedule 1 note to the grazing table); never counted twice."
+     },
+     "sow_aa": {
+      "value": 16.1,
+      "label": "Sows with litters, diet with synthetic amino acids",
+      "unit": "kg N per head a year",
+      "species": "pigs",
+      "source": "Water Resources (Control of Agricultural Pollution) (Wales) Regulations 2021 (WSI 2021/77), Schedule 1",
+      "source_url": "https://www.legislation.gov.uk/wsi/2021/77/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "sow": {
+      "value": 17.9,
+      "label": "Sows with litters, diet without synthetic amino acids",
+      "unit": "kg N per head a year",
+      "species": "pigs",
+      "source": "Water Resources (Control of Agricultural Pollution) (Wales) Regulations 2021 (WSI 2021/77), Schedule 1",
+      "source_url": "https://www.legislation.gov.uk/wsi/2021/77/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "maiden_gilt": {
+      "value": 13.9,
+      "label": "Maiden gilts, before their first litter",
+      "unit": "kg N per head a year",
+      "species": "pigs",
+      "source": "Water Resources (Control of Agricultural Pollution) (Wales) Regulations 2021 (WSI 2021/77), Schedule 1",
+      "source_url": "https://www.legislation.gov.uk/wsi/2021/77/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14",
+      "note": "38 g N a day (FIGURES-CHECK England row: missing class added)."
+     },
+     "pig_7_13": {
+      "value": 1.5,
+      "label": "Pigs 7 to 13 kg",
+      "unit": "kg N per head a year",
+      "species": "pigs",
+      "source": "Water Resources (Control of Agricultural Pollution) (Wales) Regulations 2021 (WSI 2021/77), Schedule 1",
+      "source_url": "https://www.legislation.gov.uk/wsi/2021/77/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "pig_13_31": {
+      "value": 5.2,
+      "label": "Pigs 13 to 31 kg",
+      "unit": "kg N per head a year",
+      "species": "pigs",
+      "source": "Water Resources (Control of Agricultural Pollution) (Wales) Regulations 2021 (WSI 2021/77), Schedule 1",
+      "source_url": "https://www.legislation.gov.uk/wsi/2021/77/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "pig_31_66": {
+      "value": 8.8,
+      "label": "Pigs 31 to 66 kg",
+      "unit": "kg N per head a year",
+      "species": "pigs",
+      "source": "Water Resources (Control of Agricultural Pollution) (Wales) Regulations 2021 (WSI 2021/77), Schedule 1",
+      "source_url": "https://www.legislation.gov.uk/wsi/2021/77/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "pig_66_plus": {
+      "value": 12.0,
+      "label": "Pigs 66 kg and over, for slaughter",
+      "unit": "kg N per head a year",
+      "species": "pigs",
+      "source": "Water Resources (Control of Agricultural Pollution) (Wales) Regulations 2021 (WSI 2021/77), Schedule 1",
+      "source_url": "https://www.legislation.gov.uk/wsi/2021/77/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "boar_66_150": {
+      "value": 12.0,
+      "label": "Breeding boars 66 to 150 kg",
+      "unit": "kg N per head a year",
+      "species": "pigs",
+      "source": "Water Resources (Control of Agricultural Pollution) (Wales) Regulations 2021 (WSI 2021/77), Schedule 1",
+      "source_url": "https://www.legislation.gov.uk/wsi/2021/77/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "boar_150_plus": {
+      "value": 17.5,
+      "label": "Breeding boars over 150 kg",
+      "unit": "kg N per head a year",
+      "species": "pigs",
+      "source": "Water Resources (Control of Agricultural Pollution) (Wales) Regulations 2021 (WSI 2021/77), Schedule 1",
+      "source_url": "https://www.legislation.gov.uk/wsi/2021/77/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "layer_caged": {
+      "value": 0.41,
+      "label": "Laying hens 17 weeks and over, caged (per bird place)",
+      "unit": "kg N per head a year",
+      "species": "poultry",
+      "source": "Water Resources (Control of Agricultural Pollution) (Wales) Regulations 2021 (WSI 2021/77), Schedule 1",
+      "source_url": "https://www.legislation.gov.uk/wsi/2021/77/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "layer_free": {
+      "value": 0.55,
+      "label": "Laying hens 17 weeks and over, not caged / free range (per bird place)",
+      "unit": "kg N per head a year",
+      "species": "poultry",
+      "source": "Water Resources (Control of Agricultural Pollution) (Wales) Regulations 2021 (WSI 2021/77), Schedule 1",
+      "source_url": "https://www.legislation.gov.uk/wsi/2021/77/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "pullet": {
+      "value": 0.23,
+      "label": "Laying hens under 17 weeks (per bird place)",
+      "unit": "kg N per head a year",
+      "species": "poultry",
+      "source": "Water Resources (Control of Agricultural Pollution) (Wales) Regulations 2021 (WSI 2021/77), Schedule 1",
+      "source_url": "https://www.legislation.gov.uk/wsi/2021/77/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "broiler": {
+      "value": 0.39,
+      "label": "Broilers (per bird place)",
+      "unit": "kg N per head a year",
+      "species": "poultry",
+      "source": "Water Resources (Control of Agricultural Pollution) (Wales) Regulations 2021 (WSI 2021/77), Schedule 1",
+      "source_url": "https://www.legislation.gov.uk/wsi/2021/77/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "breeder_lt25": {
+      "value": 0.31,
+      "label": "Breeding chickens under 25 weeks (per bird place)",
+      "unit": "kg N per head a year",
+      "species": "poultry",
+      "source": "Water Resources (Control of Agricultural Pollution) (Wales) Regulations 2021 (WSI 2021/77), Schedule 1",
+      "source_url": "https://www.legislation.gov.uk/wsi/2021/77/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "breeder_ge25": {
+      "value": 0.74,
+      "label": "Breeding chickens 25 weeks and over (per bird place)",
+      "unit": "kg N per head a year",
+      "species": "poultry",
+      "source": "Water Resources (Control of Agricultural Pollution) (Wales) Regulations 2021 (WSI 2021/77), Schedule 1",
+      "source_url": "https://www.legislation.gov.uk/wsi/2021/77/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "turkey_m": {
+      "value": 1.37,
+      "label": "Turkeys, male (per bird place)",
+      "unit": "kg N per head a year",
+      "species": "poultry",
+      "source": "Water Resources (Control of Agricultural Pollution) (Wales) Regulations 2021 (WSI 2021/77), Schedule 1",
+      "source_url": "https://www.legislation.gov.uk/wsi/2021/77/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "turkey_f": {
+      "value": 1.03,
+      "label": "Turkeys, female (per bird place)",
+      "unit": "kg N per head a year",
+      "species": "poultry",
+      "source": "Water Resources (Control of Agricultural Pollution) (Wales) Regulations 2021 (WSI 2021/77), Schedule 1",
+      "source_url": "https://www.legislation.gov.uk/wsi/2021/77/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "duck": {
+      "value": 0.91,
+      "label": "Ducks (per bird place)",
+      "unit": "kg N per head a year",
+      "species": "poultry",
+      "source": "Water Resources (Control of Agricultural Pollution) (Wales) Regulations 2021 (WSI 2021/77), Schedule 1",
+      "source_url": "https://www.legislation.gov.uk/wsi/2021/77/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "goat": {
+      "value": 15.0,
+      "label": "Goats",
+      "unit": "kg N per head a year",
+      "species": "other",
+      "source": "Water Resources (Control of Agricultural Pollution) (Wales) Regulations 2021 (WSI 2021/77), Schedule 1",
+      "source_url": "https://www.legislation.gov.uk/wsi/2021/77/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "deer_red": {
+      "value": 15.3,
+      "label": "Red deer",
+      "unit": "kg N per head a year",
+      "species": "other",
+      "source": "Water Resources (Control of Agricultural Pollution) (Wales) Regulations 2021 (WSI 2021/77), Schedule 1",
+      "source_url": "https://www.legislation.gov.uk/wsi/2021/77/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "deer_other": {
+      "value": 12.0,
+      "label": "Other deer",
+      "unit": "kg N per head a year",
+      "species": "other",
+      "source": "Water Resources (Control of Agricultural Pollution) (Wales) Regulations 2021 (WSI 2021/77), Schedule 1",
+      "source_url": "https://www.legislation.gov.uk/wsi/2021/77/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "horse": {
+      "value": 21.2,
+      "label": "Horses, ponies and donkeys",
+      "unit": "kg N per head a year",
+      "species": "other",
+      "source": "Water Resources (Control of Agricultural Pollution) (Wales) Regulations 2021 (WSI 2021/77), Schedule 1",
+      "source_url": "https://www.legislation.gov.uk/wsi/2021/77/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     }
+    }
+   },
+   "storage": {
+    "whole_territory": true,
+    "nvz": {
+     "cattle": {
+      "value": {
+       "from": "10-01",
+       "to": "03-01",
+       "inclusive": true
+      },
+      "label": "Slurry other than pig: 1 October to 1 March",
+      "unit": "MM-DD storage window",
+      "basis": "window",
+      "source": "WSI 2021/77 reg 29(5)(a)-(b) (all dates inclusive)",
+      "source_url": "https://www.legislation.gov.uk/wsi/2021/77/regulation/29",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "pig": {
+      "value": {
+       "from": "10-01",
+       "to": "04-01",
+       "inclusive": true
+      },
+      "label": "Pig slurry: 1 October to 1 April",
+      "unit": "MM-DD storage window",
+      "basis": "window",
+      "source": "WSI 2021/77 reg 29(5)(a)-(b) (all dates inclusive)",
+      "source_url": "https://www.legislation.gov.uk/wsi/2021/77/regulation/29",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "poultry": {
+      "value": {
+       "from": "10-01",
+       "to": "04-01",
+       "inclusive": true
+      },
+      "label": "Poultry manure: 1 October to 1 April",
+      "unit": "MM-DD storage window",
+      "basis": "window",
+      "source": "WSI 2021/77 reg 29(5)(a)-(b) (all dates inclusive)",
+      "source_url": "https://www.legislation.gov.uk/wsi/2021/77/regulation/29",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     }
+    }
+   },
+   "closed": {
+    "value": {
+     "scope": "all",
+     "slurry": {
+      "grass": {
+       "sandy": [
+        "09-01",
+        "12-31"
+       ],
+       "other": [
+        "10-15",
+        "01-15"
+       ]
+      },
+      "arable": {
+       "sandy": [
+        "08-01",
+        "12-31"
+       ],
+       "other": [
+        "10-01",
+        "01-31"
+       ]
+      }
+     },
+     "bagN": {
+      "grass": [
+       "09-15",
+       "01-15"
+      ],
+      "arable": [
+       "09-01",
+       "01-15"
+      ]
+     },
+     "fym": null,
+     "exceptions": {
+      "bagN": [
+       {
+        "crop": "winter_osr",
+        "max": 30,
+        "until": "10-31"
+       },
+       {
+        "crop": "asparagus",
+        "max": 50
+       },
+       {
+        "crop": "brassica",
+        "max": 100,
+        "every4w": 50
+       },
+       {
+        "crop": "grass",
+        "max": 80,
+        "each": 40,
+        "until": "10-31"
+       },
+       {
+        "crop": "salad_onion",
+        "max": 40
+       },
+       {
+        "crop": "bulb_onion",
+        "max": 40
+       },
+       {
+        "crop": "parsley",
+        "max": 40
+       }
+      ],
+      "bagN_note": "Some crops may get limited manufactured N in the closed period; other crops need written advice from a FACTS-qualified adviser.",
+      "slurry_sandy_arable_early": {
+       "from": "08-01",
+       "to": "09-15",
+       "sown_by": "09-15"
+      },
+      "slurry_note": "Sandy or shallow tillage land sown on or before 15 September may take high readily available N manure from 1 August to 15 September (WSI 2021/77 reg 19)."
+     },
+     "no_exception_in_law": {
+      "bagN": {
+       "grass": false,
+       "arable": false
+      },
+      "slurry": true,
+      "fym": false
+     },
+     "lawful_routes": [
+      {
+       "value": {
+        "id": "crop_exception",
+        "products": [
+         "manufactured"
+        ],
+        "crops": "table",
+        "until_table": true
+       },
+       "label": "Crop exception (limited manufactured N for listed crops)",
+       "source": "WSI 2021/77 reg 22 and Schedule 4",
+       "source_url": "https://www.legislation.gov.uk/wsi/2021/77/regulation/22",
+       "status": "confirmed",
+       "version": "2026.1",
+       "checked_on": "2026-11-15"
+      },
+      {
+       "value": {
+        "id": "facts",
+        "products": [
+         "manufactured"
+        ],
+        "crops": "not_table"
+       },
+       "label": "Written advice from a FACTS-qualified adviser (crops not in the table)",
+       "source": "WSI 2021/77 reg 22; advice kept 5 years (reg 42)",
+       "source_url": "https://www.legislation.gov.uk/wsi/2021/77/regulation/22",
+       "status": "confirmed",
+       "version": "2026.1",
+       "checked_on": "2026-11-15"
+      },
+      {
+       "value": {
+        "id": "organic",
+        "products": [
+         "high_ran"
+        ],
+        "until_table": true
+       },
+       "label": "Organic holding (up to 150 kg N/ha, listed crops, FACTS advice)",
+       "source": "WSI 2021/77 reg 20 and Schedule 4",
+       "source_url": "https://www.legislation.gov.uk/wsi/2021/77/regulation/20",
+       "status": "confirmed",
+       "version": "2026.1",
+       "checked_on": "2026-11-18",
+       "note": "-441c: missing before. Reg 20: Schedule 4 crops, or other crops with FACTS advice, max 150 kg total N/ha from the start of the closed period to the end of February. Reg 20 sets no date of its own; Schedule 4 note (a) (no N on winter oilseed rape or grass after 31 October) is part of the table it points to, so it is applied (the stricter reading)."
+      },
+      {
+       "value": {
+        "id": "wales_18a",
+        "products": [
+         "high_ran"
+        ],
+        "from": "2026-10-15",
+        "to": "2026-11-15",
+        "not": [
+         "poultry"
+        ],
+        "max_m3_ha": 30,
+        "gap_weeks": 3
+       },
+       "label": "Wales 2026 window: slurry allowed 15 Oct to 15 Nov 2026 (no more than 30 m³/ha at a time, 3 weeks apart; not poultry manure)",
+       "source": "WSI 2021/77 reg 18A, inserted by WSI 2026/121 (in force 15 Oct 2026)",
+       "source_url": "https://www.legislation.gov.uk/wsi/2021/77/regulation/18A",
+       "status": "confirmed",
+       "version": "2026.1",
+       "checked_on": "2026-11-15"
+      }
+     ],
+     "record_rule": {
+      "value": {
+       "never_refuse": true
+      },
+      "label": "Every spreading is recorded, inside a closed period too: it is saved with a warning and a reason (\"None: possible breach\" is a reason)",
+      "source": "WSI 2021/77 reg 40 (records of every application)",
+      "source_url": "https://www.legislation.gov.uk/wsi/2021/77",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-15",
+      "note": "RESEARCH-DECISIONS-NOV-2026 A; owner decision \"closed\" option a, 15 Nov 2026. Refusing would block lawful entries and the mandatory record."
+     }
+    },
+    "label": "Closed periods (MM-DD, inclusive; a period may run over New Year)",
+    "source": "WSI 2021/77 regs 18 and 22; GOV.WALES guidance; production RN_CLOSED (reviewed 2026-09-18)",
+    "source_url": "https://www.gov.wales/water-resources-control-agricultural-pollution-wales-regulations-2021-guidance-farmers-and-land",
+    "status": "confirmed",
+    "version": "2026.1",
+    "checked_on": "2026-11-14",
+    "note": "Phase 2: \"fym\" = solid manure with low readily available N (none in England, Wales and Scotland; NI 31 Oct-31 Jan, reg 7(4)). \"no_exception_in_law\" only changes the wording; the app never refuses a date (-439-sus6)."
+   },
+   "sheep_return": {
+    "value": {
+     "count_from": "12-01",
+     "count_to": "12-01",
+     "due": "12-31",
+     "accepted_until": null
+    },
+    "label": "Count on 1 December; send it between 1 and 31 December",
+    "route": "your EIDCymru account (no paper form)",
+    "species": [
+     "sheep",
+     "goats"
+    ],
+    "source": "GOV.WALES, Sheep and goat annual inventory (page last updated 7 Apr 2026; names 1 December 2026)",
+    "source_url": "https://www.gov.wales/node/72458",
+    "status": "confirmed",
+    "version": "2026.1",
+    "checked_on": "2026-11-14"
+   },
+   "nmax": {
+    "value": {
+     "scope": "all",
+     "rule": "table",
+     "crops": {
+      "winter_wheat": {
+       "n": 220,
+       "std": 8.0,
+       "label": "Autumn or early winter sown wheat",
+       "adj": [
+        "yield",
+        "milling",
+        "shallow"
+       ]
+      },
+      "spring_wheat": {
+       "n": 180,
+       "std": 7.0,
+       "label": "Spring-sown wheat",
+       "adj": [
+        "yield",
+        "milling"
+       ]
+      },
+      "winter_barley": {
+       "n": 180,
+       "std": 6.5,
+       "label": "Winter barley",
+       "adj": [
+        "yield",
+        "shallow"
+       ]
+      },
+      "spring_barley": {
+       "n": 150,
+       "std": 5.5,
+       "label": "Spring barley",
+       "adj": [
+        "yield"
+       ]
+      },
+      "winter_osr": {
+       "n": 250,
+       "std": 3.5,
+       "label": "Winter oilseed rape",
+       "adj": [
+        "osr"
+       ]
+      },
+      "sugar_beet": {
+       "n": 120,
+       "std": null,
+       "label": "Sugar beet",
+       "adj": [],
+       "status": "pending",
+       "note": "The revised table on legislation.gov.uk lists sugar beet twice (150 and 120); the app uses 120, the lower, until checked."
+      },
+      "potatoes": {
+       "n": 270,
+       "std": null,
+       "label": "Potatoes",
+       "adj": []
+      },
+      "forage_maize": {
+       "n": 150,
+       "std": null,
+       "label": "Forage maize",
+       "adj": []
+      },
+      "field_beans": {
+       "n": 0,
+       "std": null,
+       "label": "Field beans",
+       "adj": []
+      },
+      "peas": {
+       "n": 0,
+       "std": null,
+       "label": "Peas",
+       "adj": []
+      },
+      "grass": {
+       "n": 300,
+       "std": null,
+       "label": "Grass",
+       "adj": [
+        "cuts3"
+       ]
+      },
+      "veg_low": {
+       "n": 150,
+       "std": null,
+       "label": "Asparagus, carrots, radish, swedes",
+       "adj": []
+      },
+      "veg_mid": {
+       "n": 250,
+       "std": null,
+       "label": "Celery, courgettes, dwarf beans, lettuce, onions, parsnips, runner beans, sweetcorn, turnips",
+       "adj": []
+      },
+      "veg_high": {
+       "n": 350,
+       "std": null,
+       "label": "Beetroot, Brussels sprouts, cabbage, calabrese, cauliflower, leeks",
+       "adj": []
+      }
+     },
+     "adj": {
+      "per_tonne": 20,
+      "milling": 40,
+      "shallow": 20,
+      "cuts3": 40,
+      "straw": 80,
+      "part_tonnes": "pending"
+     }
+    },
+    "label": "Crop N max (Wales), kg N/ha over the area of each crop",
+    "source": "WSI 2021/77 reg 10 and its table, notes (a)-(f) (revised; no known outstanding effects)",
+    "source_url": "https://www.legislation.gov.uk/wsi/2021/77/regulation/10",
+    "status": "pending",
+    "version": "2026.1",
+    "checked_on": "2026-11-14",
+    "note": "Same structure as England: note (c) \"for every tonne that the expected yield exceeds the standard yield\"; part tonnes not mentioned, so full tonnes only, tagged \"to confirm\". Vegetable limits differ from England (150/250/350)."
+   },
+   "soil": {
+    "value": {
+     "law": false,
+     "every_years": 5,
+     "what": "pH, P, K, Mg (SOM test optional)",
+     "scope": "Sustainable Farming Scheme universal action UA1 (scheme): 20% of fields with improved land by 31 Dec 2026, results by 15 Jan 2027"
+    },
+    "label": "Soil testing in Wales is a scheme action (SFS UA1), not a law the app can check",
+    "source": "NFU Cymru, SFS guidance 2026 briefing quoting Welsh Government guidance (secondary; the WG PDF returned 404)",
+    "source_url": "https://www.nfu-cymru.org.uk/",
+    "status": "confirmed",
+    "version": "2026.1",
+    "checked_on": "2026-11-15",
+    "note": "Source audit L19: 20% of fields with improved land tested by 31 Dec 2026, results recorded by 15 Jan 2027; tests since 1 Jan 2022 count; retest after 5 years."
+   },
+   "abstraction": {
+    "licence_over": {
+     "value": 20,
+     "label": "A licence is usually needed to take 20 m³ or more a day from one source of supply",
+     "unit": "m3 a day",
+     "source": "Natural Resources Wales, Advice for farmers in periods of dry weather",
+     "source_url": "https://naturalresources.wales/guidance-and-advice/environmental-topics/water-management-and-quality/advice-for-farmers-in-periods-of-dry-weather/",
+     "status": "confirmed",
+     "version": "2026.1",
+     "checked_on": "2026-11-15",
+     "note": "Source audit L18: \"20 cubic metres (4,400 gallons) or more ... per day\"; up to 20 m³ a day per source of supply is exempt."
+    }
+   },
+   "register": {
+    "birth_days": {
+     "value": 27,
+     "label": "Calf births registered by day 27",
+     "source": "GOV.UK, What to do after a calf is born (England and Wales): apply for a passport by day 27",
+     "source_url": "https://www.gov.uk/guidance/what-to-do-after-a-calf-is-born",
+     "status": "confirmed",
+     "version": "2026.1",
+     "checked_on": "2026-11-15",
+     "note": "Wales cattle move to EIDCymru on 7 Jun 2027; re-check then.",
+     "review_by": "2027-06-07"
+    },
+    "death_days": {
+     "value": 7,
+     "label": "Cattle deaths reported within 7 days",
+     "source": "GOV.UK, Report and record cattle deaths on the holding (England and Wales): within 7 days",
+     "source_url": "https://www.gov.uk/guidance/report-and-record-cattle-deaths-on-the-holding",
+     "status": "confirmed",
+     "version": "2026.1",
+     "checked_on": "2026-11-15"
+    },
+    "move_days_cattle": {
+     "value": 3,
+     "label": "Cattle moves reported within 3 days",
+     "source": "GOV.UK, Keep a holding register for cattle (England and Wales): report moves within 3 days",
+     "source_url": "https://www.gov.uk/guidance/keep-a-holding-register-for-cattle",
+     "status": "confirmed",
+     "version": "2026.1",
+     "checked_on": "2026-11-15"
+    },
+    "move_days_sheep": {
+     "value": 3,
+     "label": "Sheep moves reported by the receiving keeper within 3 days",
+     "source": "The Sheep and Goats (Records, Identification and Movement) (Wales) Order 2015 (WSI 2015/1992 art. 25(3))",
+     "source_url": "https://www.legislation.gov.uk/wsi/2015/1992/article/25",
+     "status": "confirmed",
+     "version": "2026.1",
+     "checked_on": "2026-11-15"
+    }
+   },
+   "crop_available_n": {
+    "value": {
+     "cattle_slurry": 0.4,
+     "pig_slurry": 0.5,
+     "poultry": 0.3,
+     "fym": 0.1,
+     "other": 0.1
+    },
+    "label": "Share of total N counted as available to the crop, by manure",
+    "source": "WSI 2021/77 reg 9",
+    "source_url": "https://www.legislation.gov.uk/wsi/2021/77/regulation/9",
+    "status": "confirmed",
+    "version": "2026.1",
+    "checked_on": "2026-11-15",
+    "note": "Source audit L12 (same table as England). Digestate: no default; the supplier's analysis is asked (source audit L13)."
+   }
+  },
+  "S": {
+   "name": "Scotland",
+   "nvz_scope": "map",
+   "manure_n": {
+    "bands": {
+     "value": {
+      "calf_under": 3,
+      "young_under": 13,
+      "mid_under": 25
+     },
+     "label": "Cattle age bands (months): calf under 3; 3 to 13; 13 to 25; 25 and over",
+     "unit": "months",
+     "source": "Action Programme for Nitrate Vulnerable Zones (Scotland) Regulations 2008 (SSI 2008/298), Schedule 1 (as substituted by SSI 2009/447)",
+     "source_url": "https://www.legislation.gov.uk/ssi/2008/298/schedule/1",
+     "status": "confirmed",
+     "version": "2026.1",
+     "checked_on": "2026-11-14"
+    },
+    "per_head": {
+     "calf": {
+      "value": 8.4,
+      "label": "Calves under 3 months",
+      "unit": "kg N per head a year",
+      "species": "cattle",
+      "source": "Action Programme for Nitrate Vulnerable Zones (Scotland) Regulations 2008 (SSI 2008/298), Schedule 1 (as substituted by SSI 2009/447)",
+      "source_url": "https://www.legislation.gov.uk/ssi/2008/298/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "beef_young": {
+      "value": 33.2,
+      "label": "Beef cattle 3 to 13 months",
+      "unit": "kg N per head a year",
+      "species": "cattle",
+      "source": "Action Programme for Nitrate Vulnerable Zones (Scotland) Regulations 2008 (SSI 2008/298), Schedule 1 (as substituted by SSI 2009/447)",
+      "source_url": "https://www.legislation.gov.uk/ssi/2008/298/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "beef_mid": {
+      "value": 50.0,
+      "label": "Beef cattle 13 to 25 months",
+      "unit": "kg N per head a year",
+      "species": "cattle",
+      "source": "Action Programme for Nitrate Vulnerable Zones (Scotland) Regulations 2008 (SSI 2008/298), Schedule 1 (as substituted by SSI 2009/447)",
+      "source_url": "https://www.legislation.gov.uk/ssi/2008/298/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "beef_older": {
+      "value": 50.0,
+      "label": "Beef cattle 25 months and over, for slaughter",
+      "unit": "kg N per head a year",
+      "species": "cattle",
+      "source": "Action Programme for Nitrate Vulnerable Zones (Scotland) Regulations 2008 (SSI 2008/298), Schedule 1 (as substituted by SSI 2009/447)",
+      "source_url": "https://www.legislation.gov.uk/ssi/2008/298/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "dairy_young": {
+      "value": 34.7,
+      "label": "Dairy heifers 3 to 13 months",
+      "unit": "kg N per head a year",
+      "species": "cattle",
+      "source": "Action Programme for Nitrate Vulnerable Zones (Scotland) Regulations 2008 (SSI 2008/298), Schedule 1 (as substituted by SSI 2009/447)",
+      "source_url": "https://www.legislation.gov.uk/ssi/2008/298/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "dairy_heifer": {
+      "value": 61.0,
+      "label": "Dairy heifers 13 months to first calving",
+      "unit": "kg N per head a year",
+      "species": "cattle",
+      "source": "Action Programme for Nitrate Vulnerable Zones (Scotland) Regulations 2008 (SSI 2008/298), Schedule 1 (as substituted by SSI 2009/447)",
+      "source_url": "https://www.legislation.gov.uk/ssi/2008/298/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "dairy_lt6000": {
+      "value": 77.0,
+      "label": "Dairy cows under 6,000 litres a year",
+      "unit": "kg N per head a year",
+      "species": "cattle",
+      "source": "Action Programme for Nitrate Vulnerable Zones (Scotland) Regulations 2008 (SSI 2008/298), Schedule 1 (as substituted by SSI 2009/447)",
+      "source_url": "https://www.legislation.gov.uk/ssi/2008/298/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "dairy_6000_9000": {
+      "value": 100.7,
+      "label": "Dairy cows 6,000 to 9,000 litres a year",
+      "unit": "kg N per head a year",
+      "species": "cattle",
+      "source": "Action Programme for Nitrate Vulnerable Zones (Scotland) Regulations 2008 (SSI 2008/298), Schedule 1 (as substituted by SSI 2009/447)",
+      "source_url": "https://www.legislation.gov.uk/ssi/2008/298/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "dairy_gt9000": {
+      "value": 115.0,
+      "label": "Dairy cows over 9,000 litres a year",
+      "unit": "kg N per head a year",
+      "species": "cattle",
+      "source": "Action Programme for Nitrate Vulnerable Zones (Scotland) Regulations 2008 (SSI 2008/298), Schedule 1 (as substituted by SSI 2009/447)",
+      "source_url": "https://www.legislation.gov.uk/ssi/2008/298/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "suckler_le500": {
+      "value": 61.0,
+      "label": "Breeding cows (beef) 500 kg or less",
+      "unit": "kg N per head a year",
+      "species": "cattle",
+      "source": "Action Programme for Nitrate Vulnerable Zones (Scotland) Regulations 2008 (SSI 2008/298), Schedule 1 (as substituted by SSI 2009/447)",
+      "source_url": "https://www.legislation.gov.uk/ssi/2008/298/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "suckler_gt500": {
+      "value": 82.9,
+      "label": "Breeding cows (beef) over 500 kg",
+      "unit": "kg N per head a year",
+      "species": "cattle",
+      "source": "Action Programme for Nitrate Vulnerable Zones (Scotland) Regulations 2008 (SSI 2008/298), Schedule 1 (as substituted by SSI 2009/447)",
+      "source_url": "https://www.legislation.gov.uk/ssi/2008/298/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "bull_nonbreeding": {
+      "value": 54.0,
+      "label": "Bulls for slaughter (non-breeding)",
+      "unit": "kg N per head a year",
+      "species": "cattle",
+      "source": "Action Programme for Nitrate Vulnerable Zones (Scotland) Regulations 2008 (SSI 2008/298), Schedule 1 (as substituted by SSI 2009/447)",
+      "source_url": "https://www.legislation.gov.uk/ssi/2008/298/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "bull_breeding_young": {
+      "value": 50.0,
+      "label": "Breeding bulls under 25 months",
+      "unit": "kg N per head a year",
+      "species": "cattle",
+      "source": "Action Programme for Nitrate Vulnerable Zones (Scotland) Regulations 2008 (SSI 2008/298), Schedule 1 (as substituted by SSI 2009/447)",
+      "source_url": "https://www.legislation.gov.uk/ssi/2008/298/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "bull_breeding": {
+      "value": 48.2,
+      "label": "Breeding bulls 25 months and over",
+      "unit": "kg N per head a year",
+      "species": "cattle",
+      "source": "Action Programme for Nitrate Vulnerable Zones (Scotland) Regulations 2008 (SSI 2008/298), Schedule 1 (as substituted by SSI 2009/447)",
+      "source_url": "https://www.legislation.gov.uk/ssi/2008/298/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "ewe_lt60": {
+      "value": 7.7,
+      "label": "Ewes under 60 kg after lambing (suckled lambs to 6 months included)",
+      "unit": "kg N per head a year",
+      "species": "sheep",
+      "source": "Action Programme for Nitrate Vulnerable Zones (Scotland) Regulations 2008 (SSI 2008/298), Schedule 1 (as substituted by SSI 2009/447)",
+      "source_url": "https://www.legislation.gov.uk/ssi/2008/298/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "ewe_ge60": {
+      "value": 12.0,
+      "label": "Ewes 60 kg or more after lambing (suckled lambs to 6 months included)",
+      "unit": "kg N per head a year",
+      "species": "sheep",
+      "source": "Action Programme for Nitrate Vulnerable Zones (Scotland) Regulations 2008 (SSI 2008/298), Schedule 1 (as substituted by SSI 2009/447)",
+      "source_url": "https://www.legislation.gov.uk/ssi/2008/298/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "ram": {
+      "value": 12.0,
+      "label": "Rams after tupping, at their own weight (60 kg or more)",
+      "unit": "kg N per head a year",
+      "species": "sheep",
+      "source": "Action Programme for Nitrate Vulnerable Zones (Scotland) Regulations 2008 (SSI 2008/298), Schedule 1 (as substituted by SSI 2009/447)",
+      "source_url": "https://www.legislation.gov.uk/ssi/2008/298/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14",
+      "note": "Rams fall in the \"after lambing or tupping\" rows by their own weight, nearly always 60 kg or more (FIGURES-CHECK item 4)."
+     },
+     "sheep_6_9m": {
+      "value": 2.0,
+      "label": "Sheep 6 to 9 months",
+      "unit": "kg N per head a year",
+      "species": "sheep",
+      "source": "Action Programme for Nitrate Vulnerable Zones (Scotland) Regulations 2008 (SSI 2008/298), Schedule 1 (as substituted by SSI 2009/447)",
+      "source_url": "https://www.legislation.gov.uk/ssi/2008/298/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "sheep_9m_plus": {
+      "value": 1.4,
+      "label": "Sheep 9 months to tupping or slaughter",
+      "unit": "kg N per head a year",
+      "species": "sheep",
+      "source": "Action Programme for Nitrate Vulnerable Zones (Scotland) Regulations 2008 (SSI 2008/298), Schedule 1 (as substituted by SSI 2009/447)",
+      "source_url": "https://www.legislation.gov.uk/ssi/2008/298/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "lamb_suckled": {
+      "value": 0.0,
+      "label": "Lambs to 6 months: inside the ewe figure",
+      "unit": "kg N per head a year",
+      "species": "sheep",
+      "source": "Action Programme for Nitrate Vulnerable Zones (Scotland) Regulations 2008 (SSI 2008/298), Schedule 1 (as substituted by SSI 2009/447)",
+      "source_url": "https://www.legislation.gov.uk/ssi/2008/298/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14",
+      "note": "The ewe figure includes suckled lambs until 6 months (Schedule 1 note to the grazing table); never counted twice."
+     },
+     "sow_aa": {
+      "value": 16.1,
+      "label": "Sows with litters, diet with synthetic amino acids",
+      "unit": "kg N per head a year",
+      "species": "pigs",
+      "source": "Action Programme for Nitrate Vulnerable Zones (Scotland) Regulations 2008 (SSI 2008/298), Schedule 1 (as substituted by SSI 2009/447)",
+      "source_url": "https://www.legislation.gov.uk/ssi/2008/298/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "sow": {
+      "value": 17.9,
+      "label": "Sows with litters, diet without synthetic amino acids",
+      "unit": "kg N per head a year",
+      "species": "pigs",
+      "source": "Action Programme for Nitrate Vulnerable Zones (Scotland) Regulations 2008 (SSI 2008/298), Schedule 1 (as substituted by SSI 2009/447)",
+      "source_url": "https://www.legislation.gov.uk/ssi/2008/298/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "maiden_gilt": {
+      "value": 13.9,
+      "label": "Maiden gilts, before their first litter",
+      "unit": "kg N per head a year",
+      "species": "pigs",
+      "source": "Action Programme for Nitrate Vulnerable Zones (Scotland) Regulations 2008 (SSI 2008/298), Schedule 1 (as substituted by SSI 2009/447)",
+      "source_url": "https://www.legislation.gov.uk/ssi/2008/298/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14",
+      "note": "38 g N a day (FIGURES-CHECK England row: missing class added)."
+     },
+     "pig_7_13": {
+      "value": 1.5,
+      "label": "Pigs 7 to 13 kg",
+      "unit": "kg N per head a year",
+      "species": "pigs",
+      "source": "Action Programme for Nitrate Vulnerable Zones (Scotland) Regulations 2008 (SSI 2008/298), Schedule 1 (as substituted by SSI 2009/447)",
+      "source_url": "https://www.legislation.gov.uk/ssi/2008/298/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "pig_13_31": {
+      "value": 5.2,
+      "label": "Pigs 13 to 31 kg",
+      "unit": "kg N per head a year",
+      "species": "pigs",
+      "source": "Action Programme for Nitrate Vulnerable Zones (Scotland) Regulations 2008 (SSI 2008/298), Schedule 1 (as substituted by SSI 2009/447)",
+      "source_url": "https://www.legislation.gov.uk/ssi/2008/298/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "pig_31_66": {
+      "value": 8.8,
+      "label": "Pigs 31 to 66 kg",
+      "unit": "kg N per head a year",
+      "species": "pigs",
+      "source": "Action Programme for Nitrate Vulnerable Zones (Scotland) Regulations 2008 (SSI 2008/298), Schedule 1 (as substituted by SSI 2009/447)",
+      "source_url": "https://www.legislation.gov.uk/ssi/2008/298/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "pig_66_plus": {
+      "value": 12.0,
+      "label": "Pigs 66 kg and over, for slaughter",
+      "unit": "kg N per head a year",
+      "species": "pigs",
+      "source": "Action Programme for Nitrate Vulnerable Zones (Scotland) Regulations 2008 (SSI 2008/298), Schedule 1 (as substituted by SSI 2009/447)",
+      "source_url": "https://www.legislation.gov.uk/ssi/2008/298/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "boar_66_150": {
+      "value": 12.0,
+      "label": "Breeding boars 66 to 150 kg",
+      "unit": "kg N per head a year",
+      "species": "pigs",
+      "source": "Action Programme for Nitrate Vulnerable Zones (Scotland) Regulations 2008 (SSI 2008/298), Schedule 1 (as substituted by SSI 2009/447)",
+      "source_url": "https://www.legislation.gov.uk/ssi/2008/298/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "boar_150_plus": {
+      "value": 17.5,
+      "label": "Breeding boars over 150 kg",
+      "unit": "kg N per head a year",
+      "species": "pigs",
+      "source": "Action Programme for Nitrate Vulnerable Zones (Scotland) Regulations 2008 (SSI 2008/298), Schedule 1 (as substituted by SSI 2009/447)",
+      "source_url": "https://www.legislation.gov.uk/ssi/2008/298/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "layer_caged": {
+      "value": 0.41,
+      "label": "Laying hens 17 weeks and over, caged (per bird place)",
+      "unit": "kg N per head a year",
+      "species": "poultry",
+      "source": "Action Programme for Nitrate Vulnerable Zones (Scotland) Regulations 2008 (SSI 2008/298), Schedule 1 (as substituted by SSI 2009/447)",
+      "source_url": "https://www.legislation.gov.uk/ssi/2008/298/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "layer_free": {
+      "value": 0.55,
+      "label": "Laying hens 17 weeks and over, not caged / free range (per bird place)",
+      "unit": "kg N per head a year",
+      "species": "poultry",
+      "source": "Action Programme for Nitrate Vulnerable Zones (Scotland) Regulations 2008 (SSI 2008/298), Schedule 1 (as substituted by SSI 2009/447)",
+      "source_url": "https://www.legislation.gov.uk/ssi/2008/298/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "pullet": {
+      "value": 0.23,
+      "label": "Laying hens under 17 weeks (per bird place)",
+      "unit": "kg N per head a year",
+      "species": "poultry",
+      "source": "Action Programme for Nitrate Vulnerable Zones (Scotland) Regulations 2008 (SSI 2008/298), Schedule 1 (as substituted by SSI 2009/447)",
+      "source_url": "https://www.legislation.gov.uk/ssi/2008/298/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "broiler": {
+      "value": 0.39,
+      "label": "Broilers (per bird place)",
+      "unit": "kg N per head a year",
+      "species": "poultry",
+      "source": "Action Programme for Nitrate Vulnerable Zones (Scotland) Regulations 2008 (SSI 2008/298), Schedule 1 (as substituted by SSI 2009/447)",
+      "source_url": "https://www.legislation.gov.uk/ssi/2008/298/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "breeder_lt25": {
+      "value": 0.31,
+      "label": "Breeding chickens under 25 weeks (per bird place)",
+      "unit": "kg N per head a year",
+      "species": "poultry",
+      "source": "Action Programme for Nitrate Vulnerable Zones (Scotland) Regulations 2008 (SSI 2008/298), Schedule 1 (as substituted by SSI 2009/447)",
+      "source_url": "https://www.legislation.gov.uk/ssi/2008/298/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "breeder_ge25": {
+      "value": 0.74,
+      "label": "Breeding chickens 25 weeks and over (per bird place)",
+      "unit": "kg N per head a year",
+      "species": "poultry",
+      "source": "Action Programme for Nitrate Vulnerable Zones (Scotland) Regulations 2008 (SSI 2008/298), Schedule 1 (as substituted by SSI 2009/447)",
+      "source_url": "https://www.legislation.gov.uk/ssi/2008/298/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "turkey_m": {
+      "value": 1.37,
+      "label": "Turkeys, male (per bird place)",
+      "unit": "kg N per head a year",
+      "species": "poultry",
+      "source": "Action Programme for Nitrate Vulnerable Zones (Scotland) Regulations 2008 (SSI 2008/298), Schedule 1 (as substituted by SSI 2009/447)",
+      "source_url": "https://www.legislation.gov.uk/ssi/2008/298/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "turkey_f": {
+      "value": 1.03,
+      "label": "Turkeys, female (per bird place)",
+      "unit": "kg N per head a year",
+      "species": "poultry",
+      "source": "Action Programme for Nitrate Vulnerable Zones (Scotland) Regulations 2008 (SSI 2008/298), Schedule 1 (as substituted by SSI 2009/447)",
+      "source_url": "https://www.legislation.gov.uk/ssi/2008/298/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "duck": {
+      "value": 0.91,
+      "label": "Ducks (per bird place)",
+      "unit": "kg N per head a year",
+      "species": "poultry",
+      "source": "Action Programme for Nitrate Vulnerable Zones (Scotland) Regulations 2008 (SSI 2008/298), Schedule 1 (as substituted by SSI 2009/447)",
+      "source_url": "https://www.legislation.gov.uk/ssi/2008/298/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "goat": {
+      "value": 15.0,
+      "label": "Goats",
+      "unit": "kg N per head a year",
+      "species": "other",
+      "source": "Action Programme for Nitrate Vulnerable Zones (Scotland) Regulations 2008 (SSI 2008/298), Schedule 1 (as substituted by SSI 2009/447)",
+      "source_url": "https://www.legislation.gov.uk/ssi/2008/298/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "deer_red": {
+      "value": 15.3,
+      "label": "Red deer",
+      "unit": "kg N per head a year",
+      "species": "other",
+      "source": "Action Programme for Nitrate Vulnerable Zones (Scotland) Regulations 2008 (SSI 2008/298), Schedule 1 (as substituted by SSI 2009/447)",
+      "source_url": "https://www.legislation.gov.uk/ssi/2008/298/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "deer_other": {
+      "value": 12.0,
+      "label": "Other deer",
+      "unit": "kg N per head a year",
+      "species": "other",
+      "source": "Action Programme for Nitrate Vulnerable Zones (Scotland) Regulations 2008 (SSI 2008/298), Schedule 1 (as substituted by SSI 2009/447)",
+      "source_url": "https://www.legislation.gov.uk/ssi/2008/298/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "horse": {
+      "value": 21.2,
+      "label": "Horses, ponies and donkeys",
+      "unit": "kg N per head a year",
+      "species": "other",
+      "source": "Action Programme for Nitrate Vulnerable Zones (Scotland) Regulations 2008 (SSI 2008/298), Schedule 1 (as substituted by SSI 2009/447)",
+      "source_url": "https://www.legislation.gov.uk/ssi/2008/298/schedule/1",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     }
+    }
+   },
+   "storage": {
+    "nvz": {
+     "cattle": {
+      "value": 154,
+      "label": "Cattle slurry: 22 weeks",
+      "unit": "days",
+      "basis": "weeks",
+      "weeks": 22,
+      "source": "SSI 2008/298 reg 7(2)(a)-(c); rain and cleaning water on top, reg 7(3)",
+      "source_url": "https://www.legislation.gov.uk/ssi/2008/298/regulation/7",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "pig": {
+      "value": 182,
+      "label": "Pig slurry: 26 weeks",
+      "unit": "days",
+      "basis": "weeks",
+      "weeks": 26,
+      "source": "SSI 2008/298 reg 7(2)(a)-(c); rain and cleaning water on top, reg 7(3)",
+      "source_url": "https://www.legislation.gov.uk/ssi/2008/298/regulation/7",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "poultry": {
+      "value": 182,
+      "label": "Housed poultry manure: 26 weeks",
+      "unit": "days",
+      "basis": "weeks",
+      "weeks": 26,
+      "source": "SSI 2008/298 reg 7(2)(a)-(c); rain and cleaning water on top, reg 7(3)",
+      "source_url": "https://www.legislation.gov.uk/ssi/2008/298/regulation/7",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     }
+    },
+    "off_nvz": {
+     "cattle": {
+      "value": 154,
+      "label": "Every farm from 1 Jan 2026: 22 weeks for housed cattle",
+      "unit": "days",
+      "basis": "weeks",
+      "weeks": 22,
+      "source": "SEPA general binding rule, the storage of slurry (paragraph 1(a)); previously exempt stores had until 1 Jan 2026 to comply (SSI 2021/412)",
+      "source_url": "https://beta.sepa.scot/regulation/authorisations-and-compliance/easr-authorisations/water-activities/pollution-control/land-activities/the-storage-of-slurry/",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14",
+      "note": "Clears the B2 Scotland off-NVZ item: SEPA GBR text read 14 Nov 2026; the page states no start date, the 1 Jan 2026 date is the transitional deadline in SSI 2021/412."
+     },
+     "pig": {
+      "value": 182,
+      "label": "Every farm from 1 Jan 2026: 26 weeks for housed pigs",
+      "unit": "days",
+      "basis": "weeks",
+      "weeks": 26,
+      "source": "SEPA general binding rule, the storage of slurry (paragraph 1(a)); previously exempt stores had until 1 Jan 2026 to comply (SSI 2021/412)",
+      "source_url": "https://beta.sepa.scot/regulation/authorisations-and-compliance/easr-authorisations/water-activities/pollution-control/land-activities/the-storage-of-slurry/",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "poultry": null,
+     "poultry_note": "The SEPA slurry GBR covers pig and cattle slurry; no off-NVZ poultry manure period found."
+    },
+    "assumed_start": {
+     "value": "10-01",
+     "label": "The law sets the weeks but no start date: we assume they run from 1 October (you can change it)",
+     "source": "No start date in SSI 2008/298 reg 7 or the SEPA slurry GBR (source audit L4)",
+     "source_url": "https://www.legislation.gov.uk/ssi/2008/298/regulation/7",
+     "status": "assumption",
+     "version": "2026.1",
+     "checked_on": "2026-11-15",
+     "note": "Owner decision \"weeks\" a, kept as a labelled assumption: shown as \"assumed from 1 October\". The farmer can pick another start."
+    }
+   },
+   "closed": {
+    "value": {
+     "scope": "nvz",
+     "slurry": {
+      "grass": {
+       "sandy": [
+        "09-01",
+        "12-31"
+       ],
+       "other": [
+        "10-15",
+        "01-31"
+       ]
+      },
+      "arable": {
+       "sandy": [
+        "08-01",
+        "12-31"
+       ],
+       "other": [
+        "10-01",
+        "01-31"
+       ]
+      }
+     },
+     "bagN": {
+      "north": {
+       "grass": [
+        "09-15",
+        "02-20"
+       ],
+       "arable": [
+        "09-01",
+        "02-20"
+       ]
+      },
+      "south": {
+       "grass": [
+        "09-15",
+        "02-15"
+       ],
+       "arable": [
+        "09-01",
+        "02-15"
+       ]
+      }
+     },
+     "north_zones": [
+      "Aberdeenshire",
+      "Banff",
+      "Buchan",
+      "Moray"
+     ],
+     "fym": null,
+     "exceptions": {
+      "bagN": [
+       {
+        "crop": "brassica",
+        "max": 100,
+        "plan": true
+       },
+       {
+        "crop": "winter_osr",
+        "table": "sch3_t1",
+        "plan": true
+       }
+      ],
+      "bagN_note": "Allowed only where your fertiliser and manure plan shows the crop needs it on these dates (SSI 2008/298 reg 19(4)).",
+      "slurry_sandy_arable_early": [
+       {
+        "from": "08-01",
+        "to": "09-15",
+        "sown_before": "09-15",
+        "kinds": [
+         "cereal"
+        ]
+       },
+       {
+        "from": "08-01",
+        "to": "09-30",
+        "sown_before": "09-30",
+        "kinds": [
+         "winter_osr",
+         "catch_cover"
+        ]
+       }
+      ],
+      "slurry_note": "Sandy or shallow land that is not grassland may take high available N manure up to 15 September where a cereal was sown before that date, or up to 30 September where oilseed rape, a catch crop or a cover crop was sown before that date (SSI 2008/298 reg 20(2)).",
+      "wosr_sch3_t1": {
+       "value": {
+        "1": 30,
+        "2": 20,
+        "3": 10,
+        "4": 0,
+        "5": 0,
+        "6": 0
+       },
+       "label": "Winter oilseed rape, autumn N in Schedule 3 Table 1, by the previous crop's nitrogen residue group (the same for every soil type)",
+       "source": "SSI 2008/298 Schedule 3 Table 1 (as substituted), \"Winter Oilseed Rape (autumn)\" row",
+       "source_url": "https://www.legislation.gov.uk/ssi/2008/298/schedule/3",
+       "status": "confirmed",
+       "version": "2026.1",
+       "checked_on": "2026-11-15",
+       "note": "Read 15 Nov 2026: groups 1 to 6 give 30, 20, 10, 0, 0, 0 kg N/ha for sand or shallow, sandy loam, humose and peaty soils alike."
+      }
+     },
+     "no_exception_in_law": {
+      "bagN": {
+       "grass": false,
+       "arable": false
+      },
+      "slurry": true,
+      "fym": false
+     },
+     "lawful_routes": [
+      {
+       "value": {
+        "id": "crop_exception",
+        "products": [
+         "manufactured"
+        ],
+        "plan": true,
+        "crops": "table"
+       },
+       "label": "Crop exception where the fertiliser and manure plan shows the need (brassicas up to 100 kg N/ha; winter oilseed rape up to the Schedule 3 Table 1 amount)",
+       "source": "SSI 2008/298 reg 19(4)",
+       "source_url": "https://www.legislation.gov.uk/ssi/2008/298/regulation/19",
+       "status": "confirmed",
+       "version": "2026.1",
+       "checked_on": "2026-11-15"
+      }
+     ],
+     "record_rule": {
+      "value": {
+       "never_refuse": true
+      },
+      "label": "Every spreading is recorded, inside a closed period too: it is saved with a warning and a reason (\"None: possible breach\" is a reason)",
+      "source": "SSI 2008/298 reg 25 (records of every application)",
+      "source_url": "https://www.legislation.gov.uk/ssi/2008/298",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-15",
+      "note": "RESEARCH-DECISIONS-NOV-2026 A; owner decision \"closed\" option a, 15 Nov 2026. Refusing would block lawful entries and the mandatory record."
+     }
+    },
+    "label": "Closed periods (MM-DD, inclusive; a period may run over New Year)",
+    "source": "SSI 2008/298 regs 19-20 (read 19 Sep 2026 in production; March 2026 review changed nothing)",
+    "source_url": "https://www.legislation.gov.uk/ssi/2008/298/contents",
+    "status": "confirmed",
+    "version": "2026.1",
+    "checked_on": "2026-11-14",
+    "note": "Phase 2: \"fym\" = solid manure with low readily available N (none in England, Wales and Scotland; NI 31 Oct-31 Jan, reg 7(4)). \"no_exception_in_law\" only changes the wording; the app never refuses a date (-439-sus6)."
+   },
+   "sheep_return": {
+    "value": {
+     "count_from": "12-01",
+     "count_to": "12-01",
+     "due": "12-31",
+     "due_rule": "within 30 days of 1 December",
+     "accepted_until": "01-30"
+    },
+    "label": "Count on 1 December; return within 30 days (by 31 December); ScotEID takes returns until 11:59 pm on 30 January",
+    "route": "ScotEID (online only)",
+    "species": [
+     "sheep",
+     "goats"
+    ],
+    "source": "Scottish Government notice under reg 24 of the Sheep and Goats (Records, Identification and Movement) (Scotland) Order 2009, signed 15 Oct 2026 (page last updated 20 Oct 2026)",
+    "source_url": "https://www.gov.scot/publications/sheep-and-goats-annual-inventory/",
+    "status": "confirmed",
+    "version": "2026.1",
+    "checked_on": "2026-11-14",
+    "note": "Late returns after 30 January are not accepted. PREBUILD R12 said \"the date on the notice\": the notice sets 1 December and 30 days."
+   },
+   "nmax": {
+    "value": {
+     "scope": "nvz",
+     "rule": "plan",
+     "crops": {},
+     "adj": {}
+    },
+    "label": "Scotland NVZ: no more than the crop requirement in your fertiliser plan (Nmax from the SRUC tables and the gov.scot Nmax calculator)",
+    "source": "SSI 2008/298 (crop requirement; fertiliser plan for each crop on each field each year; numerical Nmax extended by SSI 2013/123); gov.scot NVZ guidance",
+    "source_url": "https://www.legislation.gov.uk/ssi/2008/298/contents",
+    "status": "confirmed",
+    "version": "2026.1",
+    "checked_on": "2026-11-14",
+    "note": "The app does not hold the SRUC tables: the limit is the planned N you type for the field (from the gov.scot Nmax calculator or your adviser), never a guess."
+   },
+   "soil": {
+    "value": {
+     "law": false,
+     "every_years": 5,
+     "what": "pH, P, K and carbon",
+     "ask": "Is soil analysis one of your Whole Farm Plan items?",
+     "due": {
+      "items": "2026-05-15",
+      "all_region1": "2028-05-15"
+     },
+     "scope": "Whole Farm Plan (scheme): two plans or audits by 15 May 2026; all Region 1 land sampled in the previous 5 years by 15 May 2028"
+    },
+    "label": "Soil analysis is one Whole Farm Plan option in Scotland (scheme, not law): pH, P, K and carbon",
+    "source": "FAS, Whole Farm Plan advice (5 Jan 2026); test detail from FAS and Agrovista guidance (secondary)",
+    "source_url": "https://www.fas.scot/",
+    "status": "pending",
+    "version": "2026.1",
+    "checked_on": "2026-11-15",
+    "note": "Source audit L20: Mg dropped; pH, P, K and carbon tagged \"to confirm with Rural Payments\" (secondary source)."
+   },
+   "abstraction": {
+    "notify_over": {
+     "value": 10,
+     "label": "From 10 to 50 m³ a day: register with SEPA (below 10, the General Binding Rules)",
+     "unit": "m3 a day",
+     "source": "SEPA, EASR authorisations: surface water and groundwater abstraction (Environmental Authorisations (Scotland) Regulations 2018, water activities from 1 Nov 2025)",
+     "source_url": "https://beta.sepa.scot/regulation/authorisations-and-compliance/easr-authorisations/water-activities/abstraction/surface-water-and-groundwater-abstraction/",
+     "status": "confirmed",
+     "version": "2026.1",
+     "checked_on": "2026-11-15",
+     "note": "FIGURES-CHECK-NOV-2026 line 39."
+    },
+    "licence_over": {
+     "value": 50,
+     "label": "More than 50 m³ a day needs a SEPA permit",
+     "unit": "m3 a day",
+     "source": "SEPA, EASR authorisations: surface water and groundwater abstraction",
+     "source_url": "https://beta.sepa.scot/regulation/authorisations-and-compliance/easr-authorisations/water-activities/abstraction/surface-water-and-groundwater-abstraction/",
+     "status": "confirmed",
+     "version": "2026.1",
+     "checked_on": "2026-11-15",
+     "note": "FIGURES-CHECK-NOV-2026 line 39."
+    }
+   },
+   "register": {
+    "birth_days": {
+     "value": 27,
+     "label": "Calf births registered within 27 days",
+     "source": "gov.scot, Livestock identification and traceability guidance: cattle (updated 1 Jul 2026): births within 27 days",
+     "source_url": "https://gov.scot/publications/livestock-identification-and-traceability-guidance/pages/cattle",
+     "status": "confirmed",
+     "version": "2026.1",
+     "checked_on": "2026-11-15"
+    },
+    "death_days": {
+     "value": 7,
+     "label": "Cattle deaths reported within 7 days",
+     "source": "gov.scot, Livestock identification and traceability guidance: cattle (updated 1 Jul 2026): deaths within 7 days",
+     "source_url": "https://gov.scot/publications/livestock-identification-and-traceability-guidance/pages/cattle",
+     "status": "confirmed",
+     "version": "2026.1",
+     "checked_on": "2026-11-15"
+    },
+    "move_days_cattle": {
+     "value": 3,
+     "label": "Cattle moves notified to ScotEID within 3 days",
+     "source": "gov.scot, Livestock identification and traceability guidance: cattle (updated 1 Jul 2026): notify ScotEID within 3 days",
+     "source_url": "https://gov.scot/publications/livestock-identification-and-traceability-guidance/pages/cattle",
+     "status": "confirmed",
+     "version": "2026.1",
+     "checked_on": "2026-11-15"
+    },
+    "move_days_sheep": {
+     "value": 3,
+     "label": "Sheep moves notified within 3 days",
+     "source": "gov.scot, Livestock identification and traceability guidance: sheep and goats (updated 1 Jul 2026): the receiving keeper notifies within three days",
+     "source_url": "https://www.gov.scot/publications/livestock-identification-and-traceability-guidance/pages/sheep-and-goats/",
+     "status": "confirmed",
+     "version": "2026.1",
+     "checked_on": "2026-11-15"
+    }
+   },
+   "crop_available_n": {
+    "value": {
+     "cattle_slurry": 0.4,
+     "pig_slurry": 0.5,
+     "poultry": 0.3,
+     "fym": 0.1,
+     "other": 0.1
+    },
+    "label": "Share of total N counted as available to the crop, by manure",
+    "source": "SSI 2008/298 reg 13(12) and Schedule 3 Table 5 (as amended by SSI 2013/123), the minimum from 1 Jan 2012",
+    "source_url": "https://www.legislation.gov.uk/ssi/2008/298/schedule/3",
+    "status": "confirmed",
+    "version": "2026.1",
+    "checked_on": "2026-11-15",
+    "note": "Read 15 Nov 2026. Reg 13(1) works the share out from Table 4 (manure type, method, N and dry matter, soil); reg 13(12) says it is never less than Table 5: cattle slurry 40%, pig slurry 50%, poultry manure or litter 30%, solid manure 10%. The app uses the Table 5 floor; a Table 4 figure from the farmer's plan beats it. Digestate: no default; the supplier's analysis is asked (source audit L13)."
+   }
+  },
+  "N": {
+   "name": "Northern Ireland",
+   "nvz_scope": "whole_territory",
+   "review_by": "2027-01-01",
+   "manure_n": {
+    "bands": {
+     "value": {
+      "calf_under": 6,
+      "young_under": 12,
+      "mid_under": 24
+     },
+     "label": "NI cattle classes: calf 0-6 m, 6-12 m, 1-2 yr, over 2 yr",
+     "unit": "months",
+     "source": "Nutrient Action Programme Regulations (Northern Ireland) 2019 (NISR 2019/81), Schedule 2 Table 1a",
+     "source_url": "https://www.legislation.gov.uk/nisr/2019/81/schedule/2",
+     "status": "confirmed",
+     "version": "2026.1",
+     "checked_on": "2026-11-14"
+    },
+    "per_head": {
+     "dairy_cow": {
+      "value": 100,
+      "label": "Dairy cow (no yield band)",
+      "unit": "kg N per head a year",
+      "species": "cattle",
+      "review_by": "2027-01-01",
+      "source": "Nutrient Action Programme Regulations (Northern Ireland) 2019 (NISR 2019/81), Schedule 2 Table 1a",
+      "source_url": "https://www.legislation.gov.uk/nisr/2019/81/schedule/2",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "dairy_heifer_1_2": {
+      "value": 39,
+      "label": "Dairy heifer 1 to 2 years",
+      "unit": "kg N per head a year",
+      "species": "cattle",
+      "review_by": "2027-01-01",
+      "source": "Nutrient Action Programme Regulations (Northern Ireland) 2019 (NISR 2019/81), Schedule 2 Table 1a",
+      "source_url": "https://www.legislation.gov.uk/nisr/2019/81/schedule/2",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "dairy_heifer_gt2": {
+      "value": 45,
+      "label": "Dairy heifer over 2 years",
+      "unit": "kg N per head a year",
+      "species": "cattle",
+      "review_by": "2027-01-01",
+      "source": "Nutrient Action Programme Regulations (Northern Ireland) 2019 (NISR 2019/81), Schedule 2 Table 1a",
+      "source_url": "https://www.legislation.gov.uk/nisr/2019/81/schedule/2",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "suckler_gt2": {
+      "value": 52,
+      "label": "Beef suckler cow over 2 years",
+      "unit": "kg N per head a year",
+      "species": "cattle",
+      "review_by": "2027-01-01",
+      "source": "Nutrient Action Programme Regulations (Northern Ireland) 2019 (NISR 2019/81), Schedule 2 Table 1a",
+      "source_url": "https://www.legislation.gov.uk/nisr/2019/81/schedule/2",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "bull_breeding": {
+      "value": 52,
+      "label": "Breeding bull",
+      "unit": "kg N per head a year",
+      "species": "cattle",
+      "review_by": "2027-01-01",
+      "source": "Nutrient Action Programme Regulations (Northern Ireland) 2019 (NISR 2019/81), Schedule 2 Table 1a",
+      "source_url": "https://www.legislation.gov.uk/nisr/2019/81/schedule/2",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "cattle_1_2": {
+      "value": 39,
+      "label": "Cattle 1 to 2 years",
+      "unit": "kg N per head a year",
+      "species": "cattle",
+      "review_by": "2027-01-01",
+      "source": "Nutrient Action Programme Regulations (Northern Ireland) 2019 (NISR 2019/81), Schedule 2 Table 1a",
+      "source_url": "https://www.legislation.gov.uk/nisr/2019/81/schedule/2",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "cattle_gt2": {
+      "value": 45,
+      "label": "Cattle over 2 years",
+      "unit": "kg N per head a year",
+      "species": "cattle",
+      "review_by": "2027-01-01",
+      "source": "Nutrient Action Programme Regulations (Northern Ireland) 2019 (NISR 2019/81), Schedule 2 Table 1a",
+      "source_url": "https://www.legislation.gov.uk/nisr/2019/81/schedule/2",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "calf_0_6": {
+      "value": 7.0,
+      "label": "Calf 0 to 6 months",
+      "unit": "kg N per head a year",
+      "species": "cattle",
+      "review_by": "2027-01-01",
+      "source": "Nutrient Action Programme Regulations (Northern Ireland) 2019 (NISR 2019/81), Schedule 2 Table 1a",
+      "source_url": "https://www.legislation.gov.uk/nisr/2019/81/schedule/2",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "calf_6_12": {
+      "value": 12,
+      "label": "Calf 6 to 12 months",
+      "unit": "kg N per head a year",
+      "species": "cattle",
+      "review_by": "2027-01-01",
+      "source": "Nutrient Action Programme Regulations (Northern Ireland) 2019 (NISR 2019/81), Schedule 2 Table 1a",
+      "source_url": "https://www.legislation.gov.uk/nisr/2019/81/schedule/2",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "calf_0_12": {
+      "value": 19,
+      "label": "Calf 0 to 1 year",
+      "unit": "kg N per head a year",
+      "species": "cattle",
+      "review_by": "2027-01-01",
+      "source": "Nutrient Action Programme Regulations (Northern Ireland) 2019 (NISR 2019/81), Schedule 2 Table 1a",
+      "source_url": "https://www.legislation.gov.uk/nisr/2019/81/schedule/2",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "bull_beef_0_13": {
+      "value": 30,
+      "label": "Bull beef 0 to 13 months",
+      "unit": "kg N per head a year",
+      "species": "cattle",
+      "review_by": "2027-01-01",
+      "source": "Nutrient Action Programme Regulations (Northern Ireland) 2019 (NISR 2019/81), Schedule 2 Table 1a",
+      "source_url": "https://www.legislation.gov.uk/nisr/2019/81/schedule/2",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "ewe": {
+      "value": 9.0,
+      "label": "Ewe over 1 year (lambs count on their own)",
+      "unit": "kg N per head a year",
+      "species": "sheep",
+      "review_by": "2027-01-01",
+      "source": "Nutrient Action Programme Regulations (Northern Ireland) 2019 (NISR 2019/81), Schedule 2 Table 1a",
+      "source_url": "https://www.legislation.gov.uk/nisr/2019/81/schedule/2",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "ram": {
+      "value": 9.0,
+      "label": "Ram over 1 year",
+      "unit": "kg N per head a year",
+      "species": "sheep",
+      "review_by": "2027-01-01",
+      "source": "Nutrient Action Programme Regulations (Northern Ireland) 2019 (NISR 2019/81), Schedule 2 Table 1a",
+      "source_url": "https://www.legislation.gov.uk/nisr/2019/81/schedule/2",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "lamb_0_6": {
+      "value": 1.2,
+      "label": "Lamb 0 to 6 months",
+      "unit": "kg N per head a year",
+      "species": "sheep",
+      "review_by": "2027-01-01",
+      "source": "Nutrient Action Programme Regulations (Northern Ireland) 2019 (NISR 2019/81), Schedule 2 Table 1a",
+      "source_url": "https://www.legislation.gov.uk/nisr/2019/81/schedule/2",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "lamb_6_12": {
+      "value": 3.2,
+      "label": "Lamb 6 to 12 months",
+      "unit": "kg N per head a year",
+      "species": "sheep",
+      "review_by": "2027-01-01",
+      "source": "Nutrient Action Programme Regulations (Northern Ireland) 2019 (NISR 2019/81), Schedule 2 Table 1a",
+      "source_url": "https://www.legislation.gov.uk/nisr/2019/81/schedule/2",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "goat_milking": {
+      "value": 15,
+      "label": "Goat, milking",
+      "unit": "kg N per head a year",
+      "species": "other",
+      "review_by": "2027-01-01",
+      "source": "Nutrient Action Programme Regulations (Northern Ireland) 2019 (NISR 2019/81), Schedule 2 Table 1a",
+      "source_url": "https://www.legislation.gov.uk/nisr/2019/81/schedule/2",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "goat_nonmilking": {
+      "value": 9.0,
+      "label": "Goat, non-milking",
+      "unit": "kg N per head a year",
+      "species": "other",
+      "review_by": "2027-01-01",
+      "source": "Nutrient Action Programme Regulations (Northern Ireland) 2019 (NISR 2019/81), Schedule 2 Table 1a",
+      "source_url": "https://www.legislation.gov.uk/nisr/2019/81/schedule/2",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "horse_gt3": {
+      "value": 50,
+      "label": "Horse over 3 years",
+      "unit": "kg N per head a year",
+      "species": "other",
+      "review_by": "2027-01-01",
+      "source": "Nutrient Action Programme Regulations (Northern Ireland) 2019 (NISR 2019/81), Schedule 2 Table 1a",
+      "source_url": "https://www.legislation.gov.uk/nisr/2019/81/schedule/2",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "horse_2_3": {
+      "value": 44,
+      "label": "Horse 2 to 3 years",
+      "unit": "kg N per head a year",
+      "species": "other",
+      "review_by": "2027-01-01",
+      "source": "Nutrient Action Programme Regulations (Northern Ireland) 2019 (NISR 2019/81), Schedule 2 Table 1a",
+      "source_url": "https://www.legislation.gov.uk/nisr/2019/81/schedule/2",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "horse_1_2": {
+      "value": 36,
+      "label": "Horse 1 to 2 years",
+      "unit": "kg N per head a year",
+      "species": "other",
+      "review_by": "2027-01-01",
+      "source": "Nutrient Action Programme Regulations (Northern Ireland) 2019 (NISR 2019/81), Schedule 2 Table 1a",
+      "source_url": "https://www.legislation.gov.uk/nisr/2019/81/schedule/2",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "horse_u1": {
+      "value": 25,
+      "label": "Horse under 1 year",
+      "unit": "kg N per head a year",
+      "species": "other",
+      "review_by": "2027-01-01",
+      "source": "Nutrient Action Programme Regulations (Northern Ireland) 2019 (NISR 2019/81), Schedule 2 Table 1a",
+      "source_url": "https://www.legislation.gov.uk/nisr/2019/81/schedule/2",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "donkey_small_pony": {
+      "value": 30,
+      "label": "Donkey or small pony",
+      "unit": "kg N per head a year",
+      "species": "other",
+      "review_by": "2027-01-01",
+      "source": "Nutrient Action Programme Regulations (Northern Ireland) 2019 (NISR 2019/81), Schedule 2 Table 1a",
+      "source_url": "https://www.legislation.gov.uk/nisr/2019/81/schedule/2",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "deer_red_gt2": {
+      "value": 15,
+      "label": "Red deer over 2 years",
+      "unit": "kg N per head a year",
+      "species": "other",
+      "review_by": "2027-01-01",
+      "source": "Nutrient Action Programme Regulations (Northern Ireland) 2019 (NISR 2019/81), Schedule 2 Table 1a",
+      "source_url": "https://www.legislation.gov.uk/nisr/2019/81/schedule/2",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "sow": {
+      "value": 16,
+      "label": "Breeding sow (piglets to weaning included)",
+      "unit": "kg N per head a year",
+      "species": "pigs",
+      "review_by": "2027-01-01",
+      "source": "Nutrient Action Programme Regulations (Northern Ireland) 2019 (NISR 2019/81), Schedule 2 Table 1a",
+      "source_url": "https://www.legislation.gov.uk/nisr/2019/81/schedule/2",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "boar": {
+      "value": 18,
+      "label": "Boar",
+      "unit": "kg N per head a year",
+      "species": "pigs",
+      "review_by": "2027-01-01",
+      "source": "Nutrient Action Programme Regulations (Northern Ireland) 2019 (NISR 2019/81), Schedule 2 Table 1a",
+      "source_url": "https://www.legislation.gov.uk/nisr/2019/81/schedule/2",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "maiden_gilt": {
+      "value": 11,
+      "label": "Maiden gilt",
+      "unit": "kg N per head a year",
+      "species": "pigs",
+      "review_by": "2027-01-01",
+      "source": "Nutrient Action Programme Regulations (Northern Ireland) 2019 (NISR 2019/81), Schedule 2 Table 1a",
+      "source_url": "https://www.legislation.gov.uk/nisr/2019/81/schedule/2",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     }
+    },
+    "per_batch_pig": {
+     "w18": {
+      "value": 0.09,
+      "label": "Weaners 6-8 kg to 18 kg",
+      "unit": "kg N per pig for the stage",
+      "per": "pig",
+      "review_by": "2027-01-01",
+      "source": "Nutrient Action Programme Regulations (Northern Ireland) 2019 (NISR 2019/81), Schedule 2 Table 1b",
+      "source_url": "https://www.legislation.gov.uk/nisr/2019/81/schedule/2",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "w35": {
+      "value": 0.38,
+      "label": "Weaners 6-8 kg to 35 kg",
+      "unit": "kg N per pig for the stage",
+      "per": "pig",
+      "review_by": "2027-01-01",
+      "source": "Nutrient Action Programme Regulations (Northern Ireland) 2019 (NISR 2019/81), Schedule 2 Table 1b",
+      "source_url": "https://www.legislation.gov.uk/nisr/2019/81/schedule/2",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "w105": {
+      "value": 2.38,
+      "label": "Weaners 6-8 kg to 105 kg",
+      "unit": "kg N per pig for the stage",
+      "per": "pig",
+      "review_by": "2027-01-01",
+      "source": "Nutrient Action Programme Regulations (Northern Ireland) 2019 (NISR 2019/81), Schedule 2 Table 1b",
+      "source_url": "https://www.legislation.gov.uk/nisr/2019/81/schedule/2",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "g35": {
+      "value": 0.29,
+      "label": "Growers 18 to 35 kg",
+      "unit": "kg N per pig for the stage",
+      "per": "pig",
+      "review_by": "2027-01-01",
+      "source": "Nutrient Action Programme Regulations (Northern Ireland) 2019 (NISR 2019/81), Schedule 2 Table 1b",
+      "source_url": "https://www.legislation.gov.uk/nisr/2019/81/schedule/2",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "g105": {
+      "value": 2.3,
+      "label": "Growers 18 to 105 kg",
+      "unit": "kg N per pig for the stage",
+      "per": "pig",
+      "review_by": "2027-01-01",
+      "source": "Nutrient Action Programme Regulations (Northern Ireland) 2019 (NISR 2019/81), Schedule 2 Table 1b",
+      "source_url": "https://www.legislation.gov.uk/nisr/2019/81/schedule/2",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "f105": {
+      "value": 2.0,
+      "label": "Growers 35 to 105 kg",
+      "unit": "kg N per pig for the stage",
+      "per": "pig",
+      "review_by": "2027-01-01",
+      "source": "Nutrient Action Programme Regulations (Northern Ireland) 2019 (NISR 2019/81), Schedule 2 Table 1b",
+      "source_url": "https://www.legislation.gov.uk/nisr/2019/81/schedule/2",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     }
+    },
+    "per_crop_poultry": {
+     "broiler_hot": {
+      "value": 33.8,
+      "label": "Broilers, hot water heating",
+      "unit": "kg N per 1,000 birds a crop",
+      "per": "crop",
+      "type": "broilers",
+      "review_by": "2027-01-01",
+      "source": "Nutrient Action Programme Regulations (Northern Ireland) 2019 (NISR 2019/81), Schedule 2 Table 1c",
+      "source_url": "https://www.legislation.gov.uk/nisr/2019/81/schedule/2",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "broiler_conv": {
+      "value": 40,
+      "label": "Conventional broilers",
+      "unit": "kg N per 1,000 birds a crop",
+      "per": "crop",
+      "type": "broilers",
+      "review_by": "2027-01-01",
+      "source": "Nutrient Action Programme Regulations (Northern Ireland) 2019 (NISR 2019/81), Schedule 2 Table 1c",
+      "source_url": "https://www.legislation.gov.uk/nisr/2019/81/schedule/2",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "broiler_fr": {
+      "value": 44.9,
+      "label": "Free-range broilers",
+      "unit": "kg N per 1,000 birds a crop",
+      "per": "crop",
+      "type": "broilers",
+      "review_by": "2027-01-01",
+      "source": "Nutrient Action Programme Regulations (Northern Ireland) 2019 (NISR 2019/81), Schedule 2 Table 1c",
+      "source_url": "https://www.legislation.gov.uk/nisr/2019/81/schedule/2",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "turkey_0_6w": {
+      "value": 229,
+      "label": "Turkeys 0 to 6 weeks",
+      "unit": "kg N per 1,000 birds a crop",
+      "per": "crop",
+      "type": "turkeys",
+      "review_by": "2027-01-01",
+      "source": "Nutrient Action Programme Regulations (Northern Ireland) 2019 (NISR 2019/81), Schedule 2 Table 1c",
+      "source_url": "https://www.legislation.gov.uk/nisr/2019/81/schedule/2",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "turkey_6w_kill": {
+      "value": 305,
+      "label": "Turkeys 6 weeks to kill",
+      "unit": "kg N per 1,000 birds a crop",
+      "per": "crop",
+      "type": "turkeys",
+      "review_by": "2027-01-01",
+      "source": "Nutrient Action Programme Regulations (Northern Ireland) 2019 (NISR 2019/81), Schedule 2 Table 1c",
+      "source_url": "https://www.legislation.gov.uk/nisr/2019/81/schedule/2",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "turkey_0_kill": {
+      "value": 534,
+      "label": "Turkeys 0 to kill",
+      "unit": "kg N per 1,000 birds a crop",
+      "per": "crop",
+      "type": "turkeys",
+      "review_by": "2027-01-01",
+      "source": "Nutrient Action Programme Regulations (Northern Ireland) 2019 (NISR 2019/81), Schedule 2 Table 1c",
+      "source_url": "https://www.legislation.gov.uk/nisr/2019/81/schedule/2",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "duck_fattening": {
+      "value": 139,
+      "label": "Fattening ducks",
+      "unit": "kg N per 1,000 birds a crop",
+      "per": "crop",
+      "type": "ducks",
+      "review_by": "2027-01-01",
+      "source": "Nutrient Action Programme Regulations (Northern Ireland) 2019 (NISR 2019/81), Schedule 2 Table 1c",
+      "source_url": "https://www.legislation.gov.uk/nisr/2019/81/schedule/2",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     }
+    },
+    "per_week_poultry": {
+     "pullet": {
+      "value": 4.7,
+      "label": "Pullets",
+      "unit": "kg N per 1,000 birds a week",
+      "per": "week",
+      "review_by": "2027-01-01",
+      "source": "Nutrient Action Programme Regulations (Northern Ireland) 2019 (NISR 2019/81), Schedule 2 Table 1c",
+      "source_url": "https://www.legislation.gov.uk/nisr/2019/81/schedule/2",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "layer": {
+      "value": 12,
+      "label": "Layers (housed)",
+      "unit": "kg N per 1,000 birds a week",
+      "per": "week",
+      "review_by": "2027-01-01",
+      "source": "Nutrient Action Programme Regulations (Northern Ireland) 2019 (NISR 2019/81), Schedule 2 Table 1c",
+      "source_url": "https://www.legislation.gov.uk/nisr/2019/81/schedule/2",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "layer_fr": {
+      "value": 5.4,
+      "label": "Free-range laying hens",
+      "unit": "kg N per 1,000 birds a week",
+      "per": "week",
+      "review_by": "2027-01-01",
+      "source": "Nutrient Action Programme Regulations (Northern Ireland) 2019 (NISR 2019/81), Schedule 2 Table 1c",
+      "source_url": "https://www.legislation.gov.uk/nisr/2019/81/schedule/2",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "breeder_0_18w": {
+      "value": 2.9,
+      "label": "Broiler breeders 0 to 18 weeks",
+      "unit": "kg N per 1,000 birds a week",
+      "per": "week",
+      "review_by": "2027-01-01",
+      "source": "Nutrient Action Programme Regulations (Northern Ireland) 2019 (NISR 2019/81), Schedule 2 Table 1c",
+      "source_url": "https://www.legislation.gov.uk/nisr/2019/81/schedule/2",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "breeder_18_60w": {
+      "value": 7.2,
+      "label": "Broiler breeders 18 to 60 weeks",
+      "unit": "kg N per 1,000 birds a week",
+      "per": "week",
+      "review_by": "2027-01-01",
+      "source": "Nutrient Action Programme Regulations (Northern Ireland) 2019 (NISR 2019/81), Schedule 2 Table 1c",
+      "source_url": "https://www.legislation.gov.uk/nisr/2019/81/schedule/2",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     }
+    },
+    "deaths_rule": {
+     "value": 0,
+     "label": "Until you say how many left the farm, every pig or bird placed is counted (the higher figure)",
+     "source": "No mortality rule in NISR 2019/81 Schedule 2 Tables 1b/1c (source audit L16)",
+     "source_url": "https://www.legislation.gov.uk/nisr/2019/81/schedule/2",
+     "status": "assumption",
+     "version": "2026.1",
+     "checked_on": "2026-11-15",
+     "note": "Ask: \"How many went off the farm from this batch?\" Until answered: a labelled assumption the farmer ticks, \"We count every pig or bird placed\"."
+    },
+    "defaults": {
+     "pig_stage_unanswered": "w105",
+     "weaner_stage_unanswered": "w35",
+     "turkey_stage_unanswered": "turkey_0_kill",
+     "note": "Stage not answered, so the highest legal figure (source audit L17): pigs weaned to 105 kg 2.38, weaners to 35 kg 0.38, turkeys 0 to kill 534. Not from the mock-up."
+    }
+   },
+   "storage": {
+    "whole_territory": true,
+    "nvz": {
+     "cattle": {
+      "value": 154,
+      "label": "All holdings: 22 weeks",
+      "unit": "days",
+      "basis": "weeks",
+      "weeks": 22,
+      "source": "NISR 2019/81 regs 17(3) and 18(1)-(2)",
+      "source_url": "https://www.legislation.gov.uk/nisr/2019/81",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14",
+      "note": "NAP 2019 still in force; DAERA consulted on NAP 2026-29 / 2027-30 (closed 7 Sep 2026). Re-check before NI launch."
+     },
+     "pig": {
+      "value": 182,
+      "label": "Holdings with a pig enterprise: 26 weeks",
+      "unit": "days",
+      "basis": "weeks",
+      "weeks": 26,
+      "source": "NISR 2019/81 regs 17(3) and 18(1)-(2)",
+      "source_url": "https://www.legislation.gov.uk/nisr/2019/81",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "poultry": {
+      "value": 182,
+      "label": "Holdings with a poultry enterprise: 26 weeks",
+      "unit": "days",
+      "basis": "weeks",
+      "weeks": 26,
+      "source": "NISR 2019/81 regs 17(3) and 18(1)-(2)",
+      "source_url": "https://www.legislation.gov.uk/nisr/2019/81",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14"
+     },
+     "small_unit_places": {
+      "value": {
+       "sow": 10,
+       "finisher": 150,
+       "poultry": 500
+      },
+      "label": "Under 10 breeding sow, 150 finishing or 500 poultry places: 22 weeks instead of 26",
+      "unit": "places",
+      "source": "NISR 2019/81 regs 17(3) and 18(1)-(2)",
+      "source_url": "https://www.legislation.gov.uk/nisr/2019/81",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-14",
+      "note": "reg 18(2)"
+     }
+    },
+    "assumed_start": {
+     "value": "10-01",
+     "label": "The law sets the weeks but no start date: we assume they run from 1 October (you can change it)",
+     "source": "No start date in NISR 2019/81 reg 17 (source audit L4)",
+     "source_url": "https://www.legislation.gov.uk/nisr/2019/81/regulation/17",
+     "status": "assumption",
+     "version": "2026.1",
+     "checked_on": "2026-11-15",
+     "note": "Owner decision \"weeks\" a, kept as a labelled assumption: shown as \"assumed from 1 October\". The farmer can pick another start."
+    }
+   },
+   "closed": {
+    "value": {
+     "scope": "all",
+     "chemicalNP": [
+      "09-15",
+      "01-31"
+     ],
+     "organicExceptFym": [
+      "10-15",
+      "01-31"
+     ],
+     "fym": [
+      "10-31",
+      "01-31"
+     ],
+     "slurry": {
+      "grass": {
+       "sandy": [
+        "10-15",
+        "01-31"
+       ],
+       "other": [
+        "10-15",
+        "01-31"
+       ]
+      },
+      "arable": {
+       "sandy": [
+        "10-15",
+        "01-31"
+       ],
+       "other": [
+        "10-15",
+        "01-31"
+       ]
+      }
+     },
+     "bagN": {
+      "grass": [
+       "09-15",
+       "01-31"
+      ],
+      "arable": [
+       "09-15",
+       "01-31"
+      ]
+     },
+     "exceptions": {
+      "bagN_arable": "Non-grass crops may get chemical N in the closed period where there is a demonstrable crop requirement (reg 7(2))."
+     },
+     "no_exception_in_law": {
+      "bagN": {
+       "grass": true,
+       "arable": false
+      },
+      "slurry": true,
+      "fym": true
+     },
+     "lawful_routes": [
+      {
+       "value": {
+        "id": "crop_exception",
+        "products": [
+         "manufactured"
+        ],
+        "land": [
+         "arable"
+        ]
+       },
+       "label": "Crops other than grass with a demonstrable crop requirement in the closed period",
+       "source": "NISR 2019/81 reg 7",
+       "source_url": "https://www.legislation.gov.uk/nisr/2019/81/regulation/7",
+       "status": "confirmed",
+       "version": "2026.1",
+       "checked_on": "2026-11-15"
+      }
+     ],
+     "record_rule": {
+      "value": {
+       "never_refuse": true
+      },
+      "label": "Every spreading is recorded, inside a closed period too: it is saved with a warning and a reason (\"None: possible breach\" is a reason)",
+      "source": "NISR 2019/81 reg 27 (records of every application)",
+      "source_url": "https://www.legislation.gov.uk/nisr/2019/81",
+      "status": "confirmed",
+      "version": "2026.1",
+      "checked_on": "2026-11-15",
+      "note": "RESEARCH-DECISIONS-NOV-2026 A; owner decision \"closed\" option a, 15 Nov 2026. Refusing would block lawful entries and the mandatory record."
+     }
+    },
+    "label": "Closed periods (MM-DD, inclusive; a period may run over New Year)",
+    "source": "NISR 2019/81 reg 7(1)-(4)",
+    "source_url": "https://www.legislation.gov.uk/nisr/2019/81",
+    "status": "confirmed",
+    "version": "2026.1",
+    "checked_on": "2026-11-14",
+    "note": "Non-grass crops may get chemical N in the closed period with a demonstrable crop requirement (reg 7(2)). NAP 2019 still in force; DAERA consulted on NAP 2026-29 / 2027-30 (closed 7 Sep 2026). Re-check before NI launch. Phase 2: \"fym\" = solid manure with low readily available N (none in England, Wales and Scotland; NI 31 Oct-31 Jan, reg 7(4)). \"no_exception_in_law\" only changes the wording; the app never refuses a date (-439-sus6)."
+   },
+   "sheep_return": {
+    "value": {
+     "count_from": "12-01",
+     "count_to": "12-05",
+     "due": "12-30",
+     "accepted_until": null
+    },
+    "label": "Sheep: count between 1 and 5 December; return by 30 December",
+    "route": "DAERA Online Services (NOL), or the online link in DAERA's letter (one return for sheep, one for goats)",
+    "species": [
+     "sheep"
+    ],
+    "review_by": "2026-12-01",
+    "source": "DAERA, Go online to complete your sheep and goat inventories (2 Dec 2021); duty under the Sheep and Goats (Records, Identification and Movement) Order (NI) 2009",
+    "source_url": "https://www.daera-ni.gov.uk/news/go-online-complete-your-sheep-and-goat-inventories",
+    "status": "confirmed",
+    "version": "2026.1",
+    "checked_on": "2026-11-14",
+    "note": "The dated DAERA notice read is 2021; the same 1-5 Dec / 30 Dec dates appear for 2025 in DAERA's inventory page as indexed (14 Nov 2026), but that page now shows only the 2026 pig and bird inventories. Re-check against DAERA's 2026 letter. -439-sus6: goats split out (their own row, due 5 January)."
+   },
+   "nmax": {
+    "value": {
+     "scope": "all",
+     "rule": "table",
+     "crops": {
+      "winter_wheat": {
+       "n": 220,
+       "std": 8.0,
+       "label": "Winter wheat",
+       "adj": [
+        "yield_evidence"
+       ]
+      },
+      "spring_wheat": {
+       "n": 180,
+       "std": 7.0,
+       "label": "Spring wheat",
+       "adj": [
+        "yield_evidence"
+       ]
+      },
+      "winter_barley": {
+       "n": 170,
+       "std": 7.0,
+       "label": "Winter barley",
+       "adj": [
+        "yield_evidence"
+       ]
+      },
+      "spring_barley": {
+       "n": 140,
+       "std": 5.0,
+       "label": "Spring barley",
+       "adj": [
+        "yield_evidence"
+       ]
+      },
+      "winter_oats": {
+       "n": 140,
+       "std": 6.0,
+       "label": "Winter oats",
+       "adj": [
+        "yield_evidence"
+       ]
+      },
+      "spring_oats": {
+       "n": 110,
+       "std": 5.0,
+       "label": "Spring oats",
+       "adj": [
+        "yield_evidence"
+       ]
+      }
+     },
+     "adj": {
+      "per_tonne": 20,
+      "part_tonnes": "pending",
+      "evidence": "overall farm crop yield in any of the previous three years"
+     }
+    },
+    "label": "Maximum permitted nitrogen for cereal crops (NI), kg N/ha",
+    "source": "NISR 2019/81 Sch 2 Table 5 (regulation 11)",
+    "source_url": "https://www.legislation.gov.uk/nisr/2019/81/schedule/2",
+    "status": "confirmed",
+    "version": "2026.1",
+    "checked_on": "2026-11-14",
+    "note": "\"an additional 20 kg N/ha is permitted for every tonne that the expected yield exceeds the standard yield\"; evidence must be shown by overall farm crop yield in any of the previous three years. Only cereals have a table; grassland and other crops follow the plan and the P limits (Sch 3).",
+    "review_by": "2027-01-01"
+   },
+   "soil": {
+    "value": {
+     "law": true,
+     "every_years": 4,
+     "what": "Olsen P (soil phosphorus index)",
+     "scope": "fields where chemical P fertiliser is planned; one sample per field, no more than 4 ha"
+    },
+    "label": "Soil analysis for P: sampling every fourth year is the basis for P recommendations (NAP)",
+    "source": "NISR 2019/81 reg 13 and Sch 5 para 4",
+    "source_url": "https://www.legislation.gov.uk/nisr/2019/81/schedule/5",
+    "status": "confirmed",
+    "version": "2026.1",
+    "checked_on": "2026-11-14",
+    "review_by": "2027-01-01"
+   },
+   "abstraction": {
+    "notify_over": {
+     "value": 10,
+     "label": "More than 10 m³ a day: tell NIEA",
+     "unit": "m3 a day",
+     "source": "DAERA, Abstraction and impoundment licensing requirements; Water Abstraction and Impoundment (Licensing) Regulations (NI) 2006",
+     "source_url": "https://www.daera-ni.gov.uk/articles/abstraction-and-impoundment-licensing-requirements",
+     "status": "confirmed",
+     "version": "2026.1",
+     "checked_on": "2026-11-15",
+     "note": "FIGURES-CHECK-NOV-2026 line 40.",
+     "review_by": "2027-01-01"
+    },
+    "licence_over": {
+     "value": 20,
+     "label": "More than 20 m³ a day needs a licence",
+     "unit": "m3 a day",
+     "source": "DAERA, Abstraction and impoundment licensing requirements; Water Abstraction and Impoundment (Licensing) Regulations (NI) 2006",
+     "source_url": "https://www.daera-ni.gov.uk/articles/abstraction-and-impoundment-licensing-requirements",
+     "status": "confirmed",
+     "version": "2026.1",
+     "checked_on": "2026-11-15",
+     "note": "FIGURES-CHECK-NOV-2026 line 40.",
+     "review_by": "2027-01-01"
+    }
+   },
+   "register": {
+    "birth_days": {
+     "value": 27,
+     "label": "Calf births registered within 27 days",
+     "source": "DAERA NIFAIS bovine herd register guidance (18 Aug 2026); DAERA Farm Sustainability Standard 7 (Dec 2025)",
+     "source_url": "https://www.daera-ni.gov.uk/articles/how-maintain-your-herd-register-nifais",
+     "status": "confirmed",
+     "version": "2026.1",
+     "checked_on": "2026-11-15",
+     "note": "Source audit L14: 20 days to tag + 7 to record.",
+     "review_by": "2026-12-31"
+    },
+    "death_days": {
+     "value": 7,
+     "label": "Cattle deaths reported within 7 days",
+     "source": "DAERA NIFAIS bovine herd register guidance (18 Aug 2026); Farm Sustainability Standard 7 (Dec 2025)",
+     "source_url": "https://www.daera-ni.gov.uk/articles/how-maintain-your-herd-register-nifais",
+     "status": "confirmed",
+     "version": "2026.1",
+     "checked_on": "2026-11-15",
+     "note": "Source audit L14.",
+     "review_by": "2026-12-31"
+    },
+    "move_days_cattle": {
+     "value": 7,
+     "label": "Cattle moves: late after 7 days, with a reminder at 3",
+     "source": "DAERA NIFAIS bovine herd register guidance (18 Aug 2026): \"within 3 days\"; DAERA Farm Sustainability Standard 7 (Dec 2025): \"within 7 days\"",
+     "source_url": "https://www.daera-ni.gov.uk/articles/how-maintain-your-herd-register-nifais",
+     "status": "product_choice",
+     "version": "2026.1",
+     "checked_on": "2026-11-15",
+     "note": "Our rule: the sources conflict, so a move is flagged late after 7 days and we remind at 3. Shown as \"DAERA's guidance asks for 3 days; the scheme standard allows 7\".",
+     "review_by": "2026-12-31",
+     "remind_days": 3
+    },
+    "move_days_sheep": {
+     "value": 7,
+     "label": "Sheep and goat moves recorded within 7 days",
+     "source": "DAERA Farm Sustainability Standard 7 (Dec 2025)",
+     "source_url": "https://www.daera-ni.gov.uk/articles/identification-registration-and-movement-sheep-and-goats",
+     "status": "confirmed",
+     "version": "2026.1",
+     "checked_on": "2026-11-15",
+     "note": "Source audit L14.",
+     "review_by": "2026-12-31"
+    }
+   },
+   "goat_return": {
+    "value": {
+     "count_from": "12-01",
+     "count_to": "12-05",
+     "due": "01-05",
+     "due_next_year": true,
+     "accepted_until": null
+    },
+    "label": "Goats: count between 1 and 5 December; return to DAERA by 5 January",
+    "route": "DAERA Online Services, a separate goat return",
+    "species": [
+     "goats"
+    ],
+    "review_by": "2026-12-01",
+    "source": "DAERA, Goats identification quick guide (12 May 2026)",
+    "source_url": "https://www.daera-ni.gov.uk/publications/goat-identification-quick-guide",
+    "status": "confirmed",
+    "version": "2026.1",
+    "checked_on": "2026-11-15",
+    "note": "Source audit L15. Sheep stay 1-5 Dec and 30 Dec."
+   },
+   "crop_available_n": {
+    "value": {
+     "cattle_slurry": 0.4,
+     "pig_slurry": 0.5,
+     "poultry": 0.3,
+     "fym": 0.3,
+     "other": 0.4,
+     "spent_mushroom": 0.2
+    },
+    "label": "Share of total N counted as available to the crop, by manure",
+    "source": "NISR 2019/81 Schedule 2 Table 3 (regulation 9)",
+    "source_url": "https://www.legislation.gov.uk/nisr/2019/81/schedule/2",
+    "status": "confirmed",
+    "version": "2026.1",
+    "checked_on": "2026-11-15",
+    "note": "Read 15 Nov 2026: chemical 100, pig slurry 50, poultry litter 30, farmyard manure 30, cattle slurry 40, spent mushroom compost 20, other organic manures 40 (%). NI FYM is 30%, not 10%. Digestate: no default; the supplier's analysis is asked (source audit L13)."
+   }
+  }
+ },
+ "rain_wet_year": {
+  "value": {
+   "rank": "1-in-5",
+   "method": "the 80th percentile of the farm's whole-season rainfall totals over its Rainfall normal (ERA5, about 30 seasons) divided by the average season scales each average month (never below 1); the season total exceeded in 1 year in 5. The average, said plainly, when the percentile is missing or under 10 seasons"
+  },
+  "label": "Rain on open stores: a 1-in-5 wet season at your farm (our method)",
+  "source": "gov.uk, Storing organic manures in NVZs (updated 12 Oct 2023): allow for wetter than average years (1 in 5)",
+  "source_url": "https://www.gov.uk/guidance/storing-organic-manures-in-nitrate-vulnerable-zones",
+  "status": "product_choice",
+  "version": "2026.1",
+  "checked_on": "2026-11-15",
+  "note": "Source audit L7. No published conversion exists (AHDB's Slurry Wizard uses CEH data internally); the method is ours, the 1-in-5 basis is gov.uk. Replaced the earlier month-by-month second-wettest method, which stacked wet months that don't fall in the same year and overstated rain."
+ },
+ "product_choices": {
+  "store_tight_days": {
+   "value": 42,
+   "label": "We warn 6 weeks before a store is full",
+   "source": "Our product rule (source audit section 4)",
+   "source_url": "https://www.gov.uk/guidance/storing-organic-manures-in-nitrate-vulnerable-zones",
+   "status": "product_choice",
+   "version": "2026.1",
+   "checked_on": "2026-11-15"
+  },
+  "register_old_days": {
+   "value": 30,
+   "label": "A register file over 30 days old is flagged",
+   "source": "Our product rule (source audit section 4)",
+   "source_url": "https://www.legislation.gov.uk/uksi/2015/668",
+   "status": "product_choice",
+   "version": "2026.1",
+   "checked_on": "2026-11-15"
+  },
+  "register_refused_share": {
+   "value": 0.1,
+   "label": "Over 1 in 10 rows refused: we ask \"right file?\"",
+   "source": "Our product rule (source audit section 4)",
+   "source_url": "https://www.legislation.gov.uk/uksi/2015/668",
+   "status": "product_choice",
+   "version": "2026.1",
+   "checked_on": "2026-11-15"
+  },
+  "sheep_return_job_days": {
+   "value": 45,
+   "label": "The sheep return job shows 45 days before the count",
+   "source": "Our product rule (source audit section 4)",
+   "source_url": "https://www.legislation.gov.uk/uksi/2015/668",
+   "status": "product_choice",
+   "version": "2026.1",
+   "checked_on": "2026-11-15"
+  },
+  "soil_soon_days": {
+   "value": 90,
+   "label": "Soil results \"due soon\" 90 days ahead",
+   "source": "Our product rule (source audit section 4)",
+   "source_url": "https://www.legislation.gov.uk/uksi/2015/668",
+   "status": "product_choice",
+   "version": "2026.1",
+   "checked_on": "2026-11-15"
+  },
+  "hide_days": {
+   "value": 14,
+   "label": "\"Hidden for 14 days\"",
+   "source": "Our product rule (source audit section 4)",
+   "source_url": "https://www.legislation.gov.uk/uksi/2015/668",
+   "status": "product_choice",
+   "version": "2026.1",
+   "checked_on": "2026-11-15"
+  },
+  "last_crop_days": {
+   "value": 60,
+   "label": "An application more than 60 days before planting belongs to the last crop",
+   "source": "Our product rule (source audit section 4)",
+   "source_url": "https://www.legislation.gov.uk/uksi/2015/668",
+   "status": "product_choice",
+   "version": "2026.1",
+   "checked_on": "2026-11-15"
+  },
+  "nmax_whole_tonnes": {
+   "value": true,
+   "label": "We count whole tonnes only above the standard yield (the law says \"for every tonne\")",
+   "source": "Our product rule (source audit section 4)",
+   "source_url": "https://www.legislation.gov.uk/uksi/2015/668",
+   "status": "product_choice",
+   "version": "2026.1",
+   "checked_on": "2026-11-15",
+   "note": "Source audit L22."
+  },
+  "unanswered_higher_row": {
+   "value": true,
+   "label": "Unanswered suckler size, ewe size, milk yield, pig weight or turkey sex: the higher legal figure until you answer",
+   "source": "Our product rule (source audit section 4)",
+   "source_url": "https://www.legislation.gov.uk/uksi/2015/668",
+   "status": "product_choice",
+   "version": "2026.1",
+   "checked_on": "2026-11-15",
+   "note": "Source audit L23."
+  },
+  "gb_batch_deaths_half": {
+   "value": 0.5,
+   "label": "Average birds or pigs on the farm, from the dates and losses you gave (deaths at half)",
+   "source": "Our product rule (source audit section 4)",
+   "source_url": "https://www.legislation.gov.uk/uksi/2015/668",
+   "status": "product_choice",
+   "version": "2026.1",
+   "checked_on": "2026-11-15",
+   "note": "Source audit L24: the averaging is ours."
+  },
+  "cover_unanswered_open": {
+   "value": true,
+   "label": "Cover not answered: counted as open to the rain",
+   "source": "Our product rule (source audit section 4)",
+   "source_url": "https://www.legislation.gov.uk/uksi/2015/668",
+   "status": "product_choice",
+   "version": "2026.1",
+   "checked_on": "2026-11-15",
+   "note": "Source audit S19."
+  },
+  "m3_is_tonne": {
+   "value": true,
+   "label": "1 m³ counted as 1 tonne",
+   "source": "Our product rule (source audit section 4)",
+   "source_url": "https://www.legislation.gov.uk/uksi/2015/668",
+   "status": "product_choice",
+   "version": "2026.1",
+   "checked_on": "2026-11-15",
+   "note": "Source audit S25."
+  },
+  "untyped_diesel_red": {
+   "value": true,
+   "label": "Diesel with no type counted as red diesel (gas oil)",
+   "source": "Our product rule (source audit section 4)",
+   "source_url": "https://www.legislation.gov.uk/uksi/2015/668",
+   "status": "product_choice",
+   "version": "2026.1",
+   "checked_on": "2026-11-15",
+   "note": "Source audit S21."
+  },
+  "electricity_generation_only": {
+   "value": true,
+   "label": "Electricity: generation only (Scope 2), losses in the wires not counted",
+   "source": "Our product rule (source audit section 4)",
+   "source_url": "https://www.legislation.gov.uk/uksi/2015/668",
+   "status": "product_choice",
+   "version": "2026.1",
+   "checked_on": "2026-11-15",
+   "note": "Source audit S22."
+  },
+  "pig_crust_unanswered": {
+   "value": true,
+   "label": "Pig slurry crust not answered: counted as crusted",
+   "source": "Our product rule (source audit section 4)",
+   "source_url": "https://www.legislation.gov.uk/uksi/2015/668",
+   "status": "product_choice",
+   "version": "2026.1",
+   "checked_on": "2026-11-15",
+   "note": "Source audit S4."
+  },
+  "fert_type_unrecorded_an": {
+   "value": true,
+   "label": "Fertiliser type not recorded: counted as ammonium nitrate",
+   "source": "Our product rule (source audit section 4)",
+   "source_url": "https://www.legislation.gov.uk/uksi/2015/668",
+   "status": "product_choice",
+   "version": "2026.1",
+   "checked_on": "2026-11-15",
+   "note": "Source audit S15."
+  }
+ }
+}

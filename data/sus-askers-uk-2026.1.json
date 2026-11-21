@@ -1,0 +1,1089 @@
+{
+ "id": "sus-askers-uk",
+ "version": "2026.1",
+ "checked_on": "2026-11-15",
+ "about": "Who asks a UK farm for its sustainability records, what each asks for, and the calculator input orders (PREBUILD-CHECK-V53 §9 row 5, §8 B10). Every claim has a status: verified = a dated source that was read (source_url, source_date, checked_on); example = shown on screen as 'Example: to confirm', never as fact (B10, change 74: Frontier, ABP, Barclays 0.3%, Arla, LEAF v17, the SFI26 rates and the rest still need a dated source); pending = being checked. Detection words only ever suggest an asker when a ledger line or a loan names them: nothing is guessed and nothing is pre-ticked. -439-sus6: claims without a dated source are hidden in the app (source audit A2); the Wales UA1 claim is confirmed (A3).",
+ "records": {
+  "manure": {
+   "label": "Manure nitrogen over the holding",
+   "module": "Livestock"
+  },
+  "store": {
+   "label": "Slurry storage and the full-by date",
+   "module": "Livestock"
+  },
+  "sheep": {
+   "label": "Sheep and goat inventory",
+   "module": "Livestock"
+  },
+  "nvz": {
+   "label": "Nitrogen records: N max by crop and the 250 kg field limit",
+   "module": "Crops"
+  },
+  "soil": {
+   "label": "Soil tests",
+   "module": "Crops"
+  },
+  "urea": {
+   "label": "Red Tractor urea check",
+   "module": "Crops"
+  },
+  "footprint": {
+   "label": "Carbon footprint by source (our figure, with its factor set)",
+   "module": "Sustainability"
+  },
+  "energy": {
+   "label": "Energy: electricity bought, solar and fuel",
+   "module": "Money"
+  },
+  "water": {
+   "label": "Water taken and the licence",
+   "module": "Crops"
+  },
+  "habitats": {
+   "label": "Habitats: hedges, woodland, ponds and margins",
+   "module": "Sustainability"
+  },
+  "targets": {
+   "label": "Targets and the baseline year",
+   "module": "Sustainability"
+  },
+  "inputs": {
+   "label": "Calculator inputs, in the tool's order (your records, not our figure)",
+   "module": "Sustainability"
+  }
+ },
+ "askers": [
+  {
+   "id": "reg_E",
+   "name": "Environment Agency",
+   "kind": "law",
+   "what": "Inspects the nitrate and Farming Rules for Water records in England",
+   "nations": [
+    "E"
+   ],
+   "profile": true,
+   "records": [
+    "manure",
+    "store",
+    "nvz",
+    "soil"
+   ],
+   "claims": [
+    {
+     "text": "Farms in a Nitrate Vulnerable Zone keep manure N, storage and fertiliser records and stay within the N limits",
+     "status": "verified",
+     "source": "Nitrate Pollution Prevention Regulations 2015 (SI 2015/668)",
+     "source_url": "https://www.legislation.gov.uk/uksi/2015/668/contents",
+     "source_date": "2015",
+     "checked_on": "2026-11-14"
+    },
+    {
+     "text": "Every farm in England plans its manure and fertiliser to soil and crop need, with soil tests at least every 5 years",
+     "status": "verified",
+     "source": "Reduction and Prevention of Agricultural Diffuse Pollution (England) Regulations 2018 (SI 2018/151)",
+     "source_url": "https://www.legislation.gov.uk/uksi/2018/151/contents",
+     "source_date": "2018",
+     "checked_on": "2026-11-14"
+    }
+   ]
+  },
+  {
+   "id": "reg_W",
+   "name": "Natural Resources Wales",
+   "kind": "law",
+   "what": "Inspects the Welsh nutrient rules",
+   "nations": [
+    "W"
+   ],
+   "profile": true,
+   "records": [
+    "manure",
+    "store",
+    "nvz",
+    "soil"
+   ],
+   "claims": [
+    {
+     "text": "Every farm in Wales keeps the nutrient management records, the storage and the manure N limit",
+     "status": "verified",
+     "source": "Water Resources (Control of Agricultural Pollution) (Wales) Regulations 2021 (WSI 2021/77)",
+     "source_url": "https://www.legislation.gov.uk/wsi/2021/77/contents",
+     "source_date": "2021",
+     "checked_on": "2026-11-14"
+    }
+   ]
+  },
+  {
+   "id": "reg_S",
+   "name": "SEPA and the Scottish Government",
+   "kind": "law",
+   "what": "Inspect the NVZ Action Programme records in Scotland",
+   "nations": [
+    "S"
+   ],
+   "profile": true,
+   "records": [
+    "manure",
+    "store",
+    "nvz",
+    "soil"
+   ],
+   "claims": [
+    {
+     "text": "Farms in an NVZ keep the manure N, storage and fertiliser plan records",
+     "status": "verified",
+     "source": "Action Programme for Nitrate Vulnerable Zones (Scotland) Regulations 2008 (SSI 2008/298)",
+     "source_url": "https://www.legislation.gov.uk/ssi/2008/298/contents",
+     "source_date": "2008",
+     "checked_on": "2026-11-14"
+    }
+   ]
+  },
+  {
+   "id": "reg_N",
+   "name": "NIEA (DAERA)",
+   "kind": "law",
+   "what": "Inspects the Nutrients Action Programme records in Northern Ireland",
+   "nations": [
+    "N"
+   ],
+   "profile": true,
+   "records": [
+    "manure",
+    "store",
+    "nvz",
+    "soil"
+   ],
+   "claims": [
+    {
+     "text": "Every farm in Northern Ireland keeps the Nutrients Action Programme records",
+     "status": "verified",
+     "source": "Nutrient Action Programme Regulations (Northern Ireland) 2019 (NISR 2019/81)",
+     "source_url": "https://www.legislation.gov.uk/nisr/2019/81/contents",
+     "source_date": "2019",
+     "checked_on": "2026-11-14"
+    }
+   ]
+  },
+  {
+   "id": "sfi",
+   "name": "Rural Payments Agency (SFI)",
+   "kind": "scheme",
+   "what": "Sustainable Farming Incentive, England",
+   "nations": [
+    "E"
+   ],
+   "match": {
+    "type": "income",
+    "words": [
+     "\\bsfi\\b",
+     "sustainable farming incentive",
+     "rural payments agency",
+     "\\brpa\\b"
+    ]
+   },
+   "records": [
+    "soil",
+    "habitats",
+    "nvz",
+    "targets"
+   ],
+   "claims": [
+    {
+     "text": "Keeps evidence for each SFI action (soil plan, hedge and margin photos) for 7 years after the agreement ends",
+     "status": "example",
+     "source": "PREBUILD-CHECK-V53 §7 retention table (RECORDS-BLUEPRINT, not re-checked)",
+     "source_url": null,
+     "source_date": null,
+     "checked_on": null
+    },
+    {
+     "text": "SFI26 payment rates and dates",
+     "status": "example",
+     "source": "B10: no dated source read yet",
+     "source_url": null,
+     "source_date": null,
+     "checked_on": null
+    }
+   ]
+  },
+  {
+   "id": "sfs",
+   "name": "Welsh Government (SFS)",
+   "kind": "scheme",
+   "what": "Sustainable Farming Scheme, Wales",
+   "nations": [
+    "W"
+   ],
+   "match": {
+    "type": "income",
+    "words": [
+     "sustainable farming scheme",
+     "\\bsfs\\b",
+     "rural payments wales",
+     "welsh government"
+    ]
+   },
+   "records": [
+    "soil",
+    "habitats",
+    "targets"
+   ],
+   "claims": [
+    {
+     "text": "Universal action UA1: soil tests on 20% of the fields with improved land by 31 Dec 2026, results by 15 Jan 2027",
+     "status": "verified",
+     "source": "NFU Cymru, SFS guidance 2026 briefing, quoting Welsh Government guidance (secondary; the WG PDF returned 404 on 15 Nov 2026)",
+     "source_url": "https://www.nfu-cymru.org.uk/",
+     "source_date": "2026",
+     "checked_on": "2026-11-15",
+     "note": "Source audit A3 / L19: tests on 20% of fields with improved land by 31 Dec 2026, results recorded by 15 Jan 2027."
+    }
+   ]
+  },
+  {
+   "id": "wfp",
+   "name": "Scottish Government (Whole Farm Plan)",
+   "kind": "scheme",
+   "what": "Whole Farm Plan audits, Scotland",
+   "nations": [
+    "S"
+   ],
+   "match": {
+    "type": "income",
+    "words": [
+     "whole farm plan",
+     "\\brpid\\b",
+     "scottish government",
+     "basic payment scheme scotland"
+    ]
+   },
+   "records": [
+    "soil",
+    "footprint",
+    "habitats"
+   ],
+   "claims": [
+    {
+     "text": "Keep two Whole Farm Plan audits current, and all of them by 2028",
+     "status": "example",
+     "source": "Mock-up v48 dlList (no dated source read)",
+     "source_url": null,
+     "source_date": null,
+     "checked_on": null
+    }
+   ]
+  },
+  {
+   "id": "fsp",
+   "name": "DAERA (Farm Sustainability Payment)",
+   "kind": "scheme",
+   "what": "Farm Sustainability Payment, Northern Ireland",
+   "nations": [
+    "N"
+   ],
+   "match": {
+    "type": "income",
+    "words": [
+     "farm sustainability payment",
+     "\\bdaera\\b"
+    ]
+   },
+   "records": [
+    "soil",
+    "nvz"
+   ],
+   "claims": [
+    {
+     "text": "Soil Nutrient Health Scheme sampling; payments can be cut if it is missed",
+     "status": "example",
+     "source": "Mock-up v48 dlList (no dated source read)",
+     "source_url": null,
+     "source_date": null,
+     "checked_on": null
+    }
+   ]
+  },
+  {
+   "id": "frontier",
+   "name": "Frontier Agriculture",
+   "kind": "buyer",
+   "what": "Grain and oilseed buyer",
+   "match": {
+    "type": "income",
+    "words": [
+     "\\bfrontier\\b"
+    ]
+   },
+   "tool": "cft",
+   "records": [
+    "inputs",
+    "nvz",
+    "soil",
+    "energy"
+   ],
+   "claims": [
+    {
+     "text": "Pays growers on enrolled tonnes for sustainability data (about £4.5m across some 850 growers for harvest 2026), using the Cool Farm Tool",
+     "status": "example",
+     "source": "MARKET-RESEARCH.md, RESEARCH-NOV-2026.md (B10: no dated public source read)",
+     "source_url": null,
+     "source_date": null,
+     "checked_on": null
+    }
+   ]
+  },
+  {
+   "id": "openfield",
+   "name": "Openfield",
+   "kind": "buyer",
+   "what": "Grain co-operative",
+   "match": {
+    "type": "income",
+    "words": [
+     "\\bopenfield\\b"
+    ]
+   },
+   "tool": "cft",
+   "records": [
+    "inputs",
+    "nvz",
+    "soil"
+   ],
+   "claims": [
+    {
+     "text": "May ask for crop inputs for a carbon or sustainability programme",
+     "status": "example",
+     "source": "RESEARCH-NOV-2026.md list of items not re-checked",
+     "source_url": null,
+     "source_date": null,
+     "checked_on": null
+    }
+   ]
+  },
+  {
+   "id": "abp",
+   "name": "ABP",
+   "kind": "buyer",
+   "what": "Beef and lamb processor",
+   "match": {
+    "type": "income",
+    "words": [
+     "\\babp\\b"
+    ]
+   },
+   "tool": "agrecalc",
+   "records": [
+    "inputs",
+    "manure",
+    "energy"
+   ],
+   "claims": [
+    {
+     "text": "PRISM 2030 farms use Agrecalc for a beef footprint (about 350 farms, average 26.7 kg CO₂e per kg deadweight)",
+     "status": "example",
+     "source": "RESEARCH-NOV-2026.md (B10: no dated public source read)",
+     "source_url": null,
+     "source_date": null,
+     "checked_on": null
+    }
+   ]
+  },
+  {
+   "id": "dunbia",
+   "name": "Dunbia",
+   "kind": "buyer",
+   "what": "Beef and lamb processor",
+   "match": {
+    "type": "income",
+    "words": [
+     "\\bdunbia\\b"
+    ]
+   },
+   "tool": "agrecalc",
+   "records": [
+    "inputs",
+    "manure"
+   ],
+   "claims": [
+    {
+     "text": "Activate programme farm footprints (860 or more)",
+     "status": "example",
+     "source": "RESEARCH-NOV-2026.md (no dated public source read)",
+     "source_url": null,
+     "source_date": null,
+     "checked_on": null
+    }
+   ]
+  },
+  {
+   "id": "arla",
+   "name": "Arla Foods",
+   "kind": "buyer",
+   "what": "Milk buyer",
+   "match": {
+    "type": "income",
+    "words": [
+     "\\barla\\b"
+    ]
+   },
+   "tool": "arla",
+   "records": [
+    "inputs",
+    "manure",
+    "energy",
+    "habitats"
+   ],
+   "claims": [
+    {
+     "text": "FarmAhead Check every year (203 questions, adviser-verified); from 1 Jan 2027, 111 points at €0.04 ct/kg each plus 1 ct/kg for completing it",
+     "status": "example",
+     "source": "RESEARCH-NOV-2026.md, MARKET-RESEARCH.md (checked against trade press; B10: no dated source URL kept)",
+     "source_url": null,
+     "source_date": null,
+     "checked_on": null
+    }
+   ]
+  },
+  {
+   "id": "muller",
+   "name": "Müller",
+   "kind": "buyer",
+   "what": "Milk buyer",
+   "match": {
+    "type": "income",
+    "words": [
+     "m[uü]ller"
+    ]
+   },
+   "tool": "fct",
+   "records": [
+    "inputs",
+    "manure",
+    "energy"
+   ],
+   "claims": [
+    {
+     "text": "Müller Advantage pays about 1p a litre for meeting its farm criteria",
+     "status": "example",
+     "source": "RESEARCH-NOV-2026.md (no dated public source read)",
+     "source_url": null,
+     "source_date": null,
+     "checked_on": null
+    }
+   ]
+  },
+  {
+   "id": "firstmilk",
+   "name": "First Milk",
+   "kind": "buyer",
+   "what": "Milk co-operative",
+   "match": {
+    "type": "income",
+    "words": [
+     "first milk"
+    ]
+   },
+   "tool": "fct",
+   "records": [
+    "inputs",
+    "soil",
+    "energy"
+   ],
+   "claims": [
+    {
+     "text": "Farm Carbon Toolkit footprint and soil carbon to 1 m; an emissions bonus averaging 0.5p a litre (up to 1p) from April 2026",
+     "status": "example",
+     "source": "RESEARCH-NOV-2026.md (no dated public source read)",
+     "source_url": null,
+     "source_date": null,
+     "checked_on": null
+    }
+   ]
+  },
+  {
+   "id": "leaf",
+   "name": "LEAF Marque",
+   "kind": "assurance",
+   "what": "Environmental assurance for fruit, veg and arable",
+   "match": {
+    "type": "expense",
+    "words": [
+     "\\bleaf\\b"
+    ]
+   },
+   "records": [
+    "habitats",
+    "soil",
+    "energy",
+    "water"
+   ],
+   "claims": [
+    {
+     "text": "Required by Tesco for UK fruit and veg growers",
+     "status": "verified",
+     "source": "Tesco PLC news, 2021: Tesco adopts the LEAF Marque standard for its growers (FIGURES-CHECK-NOV-2026)",
+     "source_url": "https://www.tescoplc.com/news/2021/tesco-strengthens-environmental-standards-for-its-growers-with-adoption-of-global-leaf-marque-standard",
+     "source_date": "2021",
+     "checked_on": "2026-11-14"
+    },
+    {
+     "text": "LEAF Marque v17 audits from 5 May 2026, with soil organic carbon in the Advanced level",
+     "status": "example",
+     "source": "RESEARCH-NOV-2026.md; the date was not found from Tesco or LEAF (FIGURES-CHECK-NOV-2026)",
+     "source_url": null,
+     "source_date": null,
+     "checked_on": null
+    }
+   ]
+  },
+  {
+   "id": "redtractor",
+   "name": "Red Tractor",
+   "kind": "assurance",
+   "what": "Farm assurance",
+   "nations": [
+    "E",
+    "W",
+    "S",
+    "N"
+   ],
+   "match": {
+    "type": "expense",
+    "words": [
+     "red tractor",
+     "assured food standards"
+    ]
+   },
+   "records": [
+    "urea",
+    "nvz",
+    "manure"
+   ],
+   "claims": [
+    {
+     "text": "Untreated solid urea may be applied only from 15 January to 31 March; protected urea at other times (England, from 1 April 2024). A Red Tractor standard, not law",
+     "status": "verified",
+     "source": "Red Tractor, New urea standard, 1 April 2024",
+     "source_url": "https://redtractor.org.uk/wp-content/uploads/sites/10/2024/03/New-UREA-standard-01-April-2024.pdf",
+     "source_date": "2024-03",
+     "checked_on": "2026-11-14"
+    }
+   ]
+  },
+  {
+   "id": "barclays",
+   "name": "Barclays",
+   "kind": "bank",
+   "what": "Bank",
+   "match": {
+    "type": "expense",
+    "words": [
+     "\\bbarclays\\b"
+    ],
+    "loans": true
+   },
+   "records": [
+    "footprint",
+    "habitats",
+    "soil"
+   ],
+   "claims": [
+    {
+     "text": "Transition finance at 0.3% off the rate for SFI, Countryside Stewardship Higher Tier, LEAF, organic or Regenified farms, with no carbon audit",
+     "status": "example",
+     "source": "RESEARCH-NOV-2026.md, MARKET-RESEARCH.md (B10: no dated public source read)",
+     "source_url": null,
+     "source_date": null,
+     "checked_on": null
+    }
+   ]
+  },
+  {
+   "id": "hsbc",
+   "name": "HSBC",
+   "kind": "bank",
+   "what": "Bank",
+   "match": {
+    "type": "expense",
+    "words": [
+     "\\bhsbc\\b"
+    ],
+    "loans": true
+   },
+   "records": [
+    "habitats",
+    "soil"
+   ],
+   "claims": [
+    {
+     "text": "A lower arrangement fee with LEAF Marque or a LEAF review",
+     "status": "example",
+     "source": "RESEARCH-NOV-2026.md (no dated public source read)",
+     "source_url": null,
+     "source_date": null,
+     "checked_on": null
+    }
+   ]
+  },
+  {
+   "id": "lloyds",
+   "name": "Lloyds",
+   "kind": "bank",
+   "what": "Bank",
+   "match": {
+    "type": "expense",
+    "words": [
+     "\\blloyds\\b"
+    ],
+    "loans": true
+   },
+   "records": [
+    "footprint",
+    "soil",
+    "habitats"
+   ],
+   "claims": [
+    {
+     "text": "Wants a recent environmental baseline (through Soil Association Exchange)",
+     "status": "example",
+     "source": "RESEARCH-NOV-2026.md (no dated public source read)",
+     "source_url": null,
+     "source_date": null,
+     "checked_on": null
+    }
+   ]
+  },
+  {
+   "id": "natwest",
+   "name": "NatWest",
+   "kind": "bank",
+   "what": "Bank",
+   "match": {
+    "type": "expense",
+    "words": [
+     "\\bnatwest\\b",
+     "\\blombard\\b"
+    ],
+    "loans": true
+   },
+   "records": [
+    "footprint",
+    "habitats"
+   ],
+   "claims": [
+    {
+     "text": "Works with Tesco suppliers on sustainability-linked lending",
+     "status": "example",
+     "source": "MARKET-RESEARCH.md (no dated public source read)",
+     "source_url": null,
+     "source_date": null,
+     "checked_on": null
+    }
+   ]
+  },
+  {
+   "id": "oxbury",
+   "name": "Oxbury Bank",
+   "kind": "bank",
+   "what": "Farm bank",
+   "match": {
+    "type": "expense",
+    "words": [
+     "\\boxbury\\b"
+    ],
+    "loans": true
+   },
+   "records": [
+    "habitats",
+    "soil"
+   ],
+   "claims": [
+    {
+     "text": "Transition lending of up to £500 a hectare for SFI and Countryside Stewardship farms",
+     "status": "example",
+     "source": "RESEARCH-NOV-2026.md (no dated public source read)",
+     "source_url": null,
+     "source_date": null,
+     "checked_on": null
+    }
+   ]
+  }
+ ],
+ "exports": {
+  "agrecalc": {
+   "label": "Agrecalc",
+   "status": "example",
+   "source": "Section order of Agrecalc's input screens as listed in the mock-up v48 (agcIn48c) and its public guides; check against the current version before relying on it",
+   "order": [
+    {
+     "section": "Farm",
+     "key": "farm.location",
+     "label": "Farm location (nation)"
+    },
+    {
+     "section": "Farm",
+     "key": "farm.year",
+     "label": "Year"
+    },
+    {
+     "section": "Land",
+     "key": "land.total_ha",
+     "label": "Total farmed area",
+     "unit": "ha"
+    },
+    {
+     "section": "Land",
+     "key": "land.crops",
+     "label": "Crops and grass by area"
+    },
+    {
+     "section": "Livestock",
+     "key": "stock.classes",
+     "label": "Animal classes (average head over the year)"
+    },
+    {
+     "section": "Livestock",
+     "key": "stock.weights",
+     "label": "Liveweights by class"
+    },
+    {
+     "section": "Livestock",
+     "key": "stock.housing",
+     "label": "Housing period"
+    },
+    {
+     "section": "Feed",
+     "key": "feed.bought_t",
+     "label": "Bought feed",
+     "unit": "t"
+    },
+    {
+     "section": "Fertiliser and manure",
+     "key": "fert.n_kg",
+     "label": "Fertiliser nitrogen",
+     "unit": "kg N"
+    },
+    {
+     "section": "Fertiliser and manure",
+     "key": "fert.products",
+     "label": "Fertiliser products"
+    },
+    {
+     "section": "Fertiliser and manure",
+     "key": "lime.t",
+     "label": "Lime",
+     "unit": "t"
+    },
+    {
+     "section": "Fertiliser and manure",
+     "key": "manure.management",
+     "label": "Manure management (stores)"
+    },
+    {
+     "section": "Energy",
+     "key": "fuel.diesel_l",
+     "label": "Diesel and gas oil",
+     "unit": "litres"
+    },
+    {
+     "section": "Energy",
+     "key": "elec.kwh",
+     "label": "Electricity bought",
+     "unit": "kWh"
+    },
+    {
+     "section": "Energy",
+     "key": "solar.kwh",
+     "label": "Solar generated",
+     "unit": "kWh"
+    },
+    {
+     "section": "Outputs",
+     "key": "out.sales",
+     "label": "Products sold (deadweight, liveweight, milk, crops)"
+    }
+   ]
+  },
+  "cft": {
+   "label": "Cool Farm Tool",
+   "status": "example",
+   "source": "Input order of the Cool Farm Tool crop assessment as listed in the mock-up v48 (cftIn48c); check against the current version before relying on it",
+   "order": [
+    {
+     "section": "Setting",
+     "key": "farm.location",
+     "label": "Farm location and climate"
+    },
+    {
+     "section": "Crop",
+     "key": "land.crops",
+     "label": "Crop and area"
+    },
+    {
+     "section": "Crop",
+     "key": "crop.yield",
+     "label": "Yield"
+    },
+    {
+     "section": "Fertiliser",
+     "key": "fert.products",
+     "label": "Fertiliser products"
+    },
+    {
+     "section": "Fertiliser",
+     "key": "fert.n_kg",
+     "label": "Fertiliser nitrogen",
+     "unit": "kg N"
+    },
+    {
+     "section": "Fertiliser",
+     "key": "fert.timing",
+     "label": "Fertiliser timing"
+    },
+    {
+     "section": "Fertiliser",
+     "key": "fert.method",
+     "label": "Application method"
+    },
+    {
+     "section": "Fertiliser",
+     "key": "manure.organic",
+     "label": "Manure spread on the crops"
+    },
+    {
+     "section": "Soil",
+     "key": "soil.som",
+     "label": "Soil organic matter"
+    },
+    {
+     "section": "Soil",
+     "key": "soil.ph",
+     "label": "Soil pH"
+    },
+    {
+     "section": "Soil",
+     "key": "soil.texture",
+     "label": "Soil texture"
+    },
+    {
+     "section": "Soil",
+     "key": "soil.drainage",
+     "label": "Drainage"
+    },
+    {
+     "section": "Crop",
+     "key": "crop.residues",
+     "label": "Crop residues (straw)"
+    },
+    {
+     "section": "Crop protection",
+     "key": "crop.protection",
+     "label": "Crop protection applications"
+    },
+    {
+     "section": "Energy",
+     "key": "fuel.diesel_l",
+     "label": "Diesel and gas oil",
+     "unit": "litres"
+    },
+    {
+     "section": "Soil",
+     "key": "lime.t",
+     "label": "Lime",
+     "unit": "t"
+    },
+    {
+     "section": "Irrigation",
+     "key": "water.m3",
+     "label": "Irrigation water",
+     "unit": "m³"
+    },
+    {
+     "section": "Energy",
+     "key": "crop.drying",
+     "label": "Grain drying"
+    }
+   ]
+  },
+  "fct": {
+   "label": "Farm Carbon Toolkit",
+   "status": "example",
+   "source": "Section order of the Farm Carbon Calculator (fuel, electricity, materials, livestock, crops, sequestration) from its public guide as we know it; check against the current version before relying on it",
+   "order": [
+    {
+     "section": "Farm",
+     "key": "farm.location",
+     "label": "Farm location (nation)"
+    },
+    {
+     "section": "Farm",
+     "key": "farm.year",
+     "label": "Year"
+    },
+    {
+     "section": "Farm",
+     "key": "land.total_ha",
+     "label": "Total farmed area",
+     "unit": "ha"
+    },
+    {
+     "section": "Fuel",
+     "key": "fuel.diesel_l",
+     "label": "Diesel and gas oil",
+     "unit": "litres"
+    },
+    {
+     "section": "Electricity",
+     "key": "elec.kwh",
+     "label": "Electricity bought",
+     "unit": "kWh"
+    },
+    {
+     "section": "Electricity",
+     "key": "solar.kwh",
+     "label": "Solar generated",
+     "unit": "kWh"
+    },
+    {
+     "section": "Materials",
+     "key": "fert.n_kg",
+     "label": "Fertiliser nitrogen",
+     "unit": "kg N"
+    },
+    {
+     "section": "Materials",
+     "key": "fert.products",
+     "label": "Fertiliser products"
+    },
+    {
+     "section": "Materials",
+     "key": "lime.t",
+     "label": "Lime",
+     "unit": "t"
+    },
+    {
+     "section": "Materials",
+     "key": "feed.bought_t",
+     "label": "Bought feed",
+     "unit": "t"
+    },
+    {
+     "section": "Livestock",
+     "key": "stock.classes",
+     "label": "Animal classes (average head over the year)"
+    },
+    {
+     "section": "Crops",
+     "key": "land.crops",
+     "label": "Crops and grass by area"
+    },
+    {
+     "section": "Sequestration",
+     "key": "hab.hedge_m",
+     "label": "Hedges",
+     "unit": "m"
+    },
+    {
+     "section": "Sequestration",
+     "key": "hab.wood_ha",
+     "label": "Woodland",
+     "unit": "ha"
+    },
+    {
+     "section": "Sequestration",
+     "key": "hab.other_ha",
+     "label": "Ponds, margins and other habitat",
+     "unit": "ha"
+    }
+   ]
+  },
+  "arla": {
+   "label": "Arla (FarmAhead Check, carbon section)",
+   "status": "example",
+   "source": "Order of the carbon inputs in Arla's yearly check as described in RESEARCH-NOV-2026; not checked against Arla's own form",
+   "order": [
+    {
+     "section": "Farm",
+     "key": "farm.location",
+     "label": "Farm location (nation)"
+    },
+    {
+     "section": "Farm",
+     "key": "farm.year",
+     "label": "Year"
+    },
+    {
+     "section": "Herd",
+     "key": "stock.classes",
+     "label": "Cows and young stock (average head over the year)"
+    },
+    {
+     "section": "Milk",
+     "key": "milk.litres",
+     "label": "Milk delivered",
+     "unit": "litres"
+    },
+    {
+     "section": "Feed",
+     "key": "feed.bought_t",
+     "label": "Bought feed",
+     "unit": "t"
+    },
+    {
+     "section": "Land",
+     "key": "land.total_ha",
+     "label": "Total farmed area",
+     "unit": "ha"
+    },
+    {
+     "section": "Land",
+     "key": "fert.n_kg",
+     "label": "Fertiliser nitrogen",
+     "unit": "kg N"
+    },
+    {
+     "section": "Manure",
+     "key": "manure.management",
+     "label": "Manure management (stores)"
+    },
+    {
+     "section": "Manure",
+     "key": "stock.housing",
+     "label": "Housing period"
+    },
+    {
+     "section": "Energy",
+     "key": "fuel.diesel_l",
+     "label": "Diesel and gas oil",
+     "unit": "litres"
+    },
+    {
+     "section": "Energy",
+     "key": "elec.kwh",
+     "label": "Electricity bought",
+     "unit": "kWh"
+    },
+    {
+     "section": "Energy",
+     "key": "solar.kwh",
+     "label": "Solar generated",
+     "unit": "kWh"
+    },
+    {
+     "section": "Nature",
+     "key": "hab.hedge_m",
+     "label": "Hedges",
+     "unit": "m"
+    },
+    {
+     "section": "Nature",
+     "key": "hab.wood_ha",
+     "label": "Woodland",
+     "unit": "ha"
+    }
+   ]
+  }
+ }
+}

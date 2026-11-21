@@ -7,7 +7,7 @@
 
 <meta name="description" content="AgriInsights UK — making farm finances simple for UK farmers. Track costs, plan your season, stay ready for Making Tax Digital and keep your farm records straight."/>
 <meta name="theme-color" content="#1B4332"/>
-<meta name="ai-build" content="uk-2026-11-20-439"/>
+<meta name="ai-build" content="uk-2026-11-21-441"/>
 <meta name="color-scheme" content="light"/>
 <meta property="og:title" content="AgriInsights — Making Farm Finances Simple"/>
 <meta property="og:description" content="The farm finance app built for UK farmers. Track every pound, plan your season, stay MTD-ready — all in one place."/>
@@ -31,8 +31,20 @@
 <script defer src="vendor/chart.umd.js"></script>
 
 <script src="vendor/supabase.js"></script>
-<script src="ai-data-uk.js?v=uk155"></script>
-<script src="ai-auth-uk.js?v=uk118"></script>
+<script src="ai-data-uk.js?v=uk156"></script>
+<script src="ai-auth-uk.js?v=uk119"></script>
+
+<script src="sus-engine-uk.js?v=uk13"></script>
+<script src="js/app-0-a897a5f284.js"></script>
+<script src="js/app-1-249d04d314.js"></script>
+
+<script src="sus-page-uk.js?v=uk15"></script>
+
+<script src="sus-health-uk.js?v=uk6"></script>
+
+<script src="sus-asks-uk.js?v=uk4"></script>
+
+<script src="sus-register-uk.js?v=uk4"></script>
 <link rel="stylesheet" href="fonts.css"/>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -7393,6 +7405,8 @@ button:focus-visible,a:focus-visible,[role=tab]:focus-visible{outline:2px solid 
 .tabs>.tab,.or-tabs>.or-tab,.plan-tabs>.plan-tab,.ln-tabs>button,.pf-tabs:not(#mf-tabs):not(#ls-hsub-nav)>button,.ux-tabs>button{flex:0 0 auto!important;height:36px;min-height:0!important;padding:0!important;margin:0 0 -1px!important;
   border:0!important;border-bottom:2px solid transparent!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;color:#6B7280!important;font-size:13px!important;font-weight:600!important;
   display:inline-flex!important;align-items:center;gap:8px;white-space:nowrap;cursor:pointer;text-transform:none!important;letter-spacing:0!important;font-family:inherit;width:auto!important}
+
+.tabs>.tab[style*="display:none"],.tabs>.tab[style*="display: none"],.tabs>.tab[hidden],.or-tabs>.or-tab[style*="display:none"],.or-tabs>.or-tab[style*="display: none"],.or-tabs>.or-tab[hidden],.plan-tabs>.plan-tab[style*="display:none"],.plan-tabs>.plan-tab[style*="display: none"],.plan-tabs>.plan-tab[hidden],.ln-tabs>button[style*="display:none"],.ln-tabs>button[style*="display: none"],.ln-tabs>button[hidden],.pf-tabs:not(#mf-tabs):not(#ls-hsub-nav)>button[style*="display:none"],.pf-tabs:not(#mf-tabs):not(#ls-hsub-nav)>button[style*="display: none"],.pf-tabs:not(#mf-tabs):not(#ls-hsub-nav)>button[hidden],.ux-tabs>button[style*="display:none"],.ux-tabs>button[style*="display: none"],.ux-tabs>button[hidden]{display:none!important}
 .tabs>.tab:hover,.or-tabs>.or-tab:hover,.plan-tabs>.plan-tab:hover,.ln-tabs>button:hover,.pf-tabs:not(#mf-tabs):not(#ls-hsub-nav)>button:hover,.ux-tabs>button:hover{color:#4B5563!important}
 .tabs>.tab.on,.or-tabs>.or-tab.on,.plan-tabs>.plan-tab.on,.ln-tabs>button.on,.pf-tabs:not(#mf-tabs):not(#ls-hsub-nav)>button.on,.ux-tabs>button.on,
 .tabs>.tab[aria-selected=true],.ln-tabs>button[aria-selected=true],.pf-tabs:not(#mf-tabs):not(#ls-hsub-nav)>button[aria-selected=true],.ux-tabs>button[aria-selected=true]{color:#1B4332!important;border-bottom-color:#1B4332!important;background:transparent!important}
@@ -8858,6 +8872,7 @@ body.ob4-ckfull #page-tour-fixed{display:none!important}
     <div class="nav-item" id="nav-crop" onclick="nav('crop')"><svg viewBox="0 0 24 24"><path d="M12 2v20"/><path d="M12 8c0-3 2-5 5-5 0 3-2 5-5 5z"/><path d="M12 11c0-3-2-5-5-5 0 3 2 5 5 5z"/><path d="M12 14c0-3 2-5 5-5 0 3-2 5-5 5z"/></svg><span data-t="nav.crop">Crops</span></div>
     <div class="nav-item" id="nav-orchards" onclick="nav('orchards')"><svg viewBox="0 0 24 24"><circle cx="12" cy="14" r="7.5"/><path d="M12 6.5V14M5 11.5h14"/><path d="M12 6.5c.4-2.2 2.2-3.5 4.2-3.5-.2 2.1-1.8 3.4-3.6 3.6"/></svg><span data-t="nav.orchards">Orchards, Fruit &amp; Veg</span></div>
     <div class="nav-item" id="nav-livestock" onclick="nav('livestock')"><svg viewBox="0 0 24 24"><ellipse cx="13" cy="9.8" rx="6.2" ry="3.5"/><ellipse cx="5.3" cy="9" rx="2.8" ry="2.4"/><ellipse cx="3.1" cy="10.7" rx="1.5" ry="1.1"/><path d="M3.9 6.7C3.6 5.7 3.9 4.9 4.7 4.8"/><path d="M6.8 6.9C7.1 5.9 7.8 5.6 8.5 5.9"/><path d="M8.6 13.1V19M10.8 13.3V19M16 13.3V19M18.2 12.8V19"/><path d="M19.1 7.7C20.7 8.2 21.2 10.5 20 12.4"/></svg><span data-t="nav.livestock">Livestock</span></div>
+    <div class="nav-item" id="nav-sustain" onclick="nav('sustain')" style="display:none"><svg viewBox="0 0 24 24"><path d="M5 19c0-8 5-13 14-14-1 9-6 14-14 14z"/><path d="M5 19c3-4 6-7 10-10"/></svg><span data-t="nav.sustain">Sustainability</span></div>
     <div class="nav-item" id="nav-profit" onclick="nav('profit')"><svg viewBox="0 0 24 24"><line x1="6" y1="20" x2="6" y2="14"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="18" y1="20" x2="18" y2="10"/></svg><span id="nav-profit-label" data-t="nav.profit">Profit</span></div>
     <div class="nav-item" id="nav-assets" onclick="nav('assets')"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span data-t="nav.assets">Assets</span></div>
     <div class="nav-item" id="nav-workers" onclick="nav('workers')"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M2.5 20v-1a4 4 0 014-4h5a4 4 0 014 4v1"/><circle cx="17.5" cy="9" r="2.2"/><path d="M16.5 14.6a3.6 3.6 0 015 3.4V20"/></svg><span data-t="nav.workers">Workers</span></div>
@@ -11137,7 +11152,13 @@ body.ob4-ckfull #page-tour-fixed{display:none!important}
     <div class="tab"     id="ls-tab-breeding"  onclick="lsTab('breeding')">Breeding</div>
     <div class="tab"     id="ls-tab-health"    onclick="lsTab('health')">Health</div>
     <div class="tab"     id="ls-tab-plan"      onclick="lsTab('plan')">Plan</div>
+    <div class="tab"     id="ls-tab-manure"    onclick="lsTab('manure')" style="display:none">Manure</div>
+    <div class="tab"     id="ls-tab-kreg"      onclick="lsTab('kreg')" style="display:none">Register</div>
   </div>
+  
+  <div id="ls-view-manure" style="display:none"></div>
+  
+  <div id="ls-view-kreg" style="display:none"></div>
 
 
   
@@ -11324,6 +11345,14 @@ body.ob4-ckfull #page-tour-fixed{display:none!important}
 </div>
 
 
+
+<div class="pg" id="pg-sustain">
+  <div class="page-hdr">
+    <div><div class="page-title" data-t="sus.title">Sustainability</div><div class="page-sub" data-t="sus.sub">Your farm's records for the law and your buyers. Every line links to where you keep the record.</div></div>
+    <div style="display:flex;gap:9px;align-items:center;flex-wrap:wrap"><span class="sus-st n">Pilot</span><button class="btn-sec" data-sa="profile">Farm profile</button><button class="btn-pri" data-sa="print">Print pack</button></div>
+  </div>
+  <div id="sus-body"></div>
+</div>
 
 <div class="pg" id="pg-rainfall">
   <div class="page-hdr" style="flex-direction:column;align-items:flex-start">
@@ -12780,7 +12809,7 @@ body.ob4-ckfull #page-tour-fixed{display:none!important}
 
 </div>
 </div>
-<script src="js/app-0-6b12682e0b.js"></script>
+<script src="js/app-2-655daa1feb.js"></script>
 
 
 <div class="imp-bg" id="imp-hub-bg">
@@ -13334,9 +13363,9 @@ body.ob4-ckfull #page-tour-fixed{display:none!important}
 </style>
 <div class="kdt-modal" id="kpi-modal" onclick="if(event.target===this)kpiClose()"><div class="kdt-card" id="kpi-card"></div></div>
 <div id="kpi-trail"></div>
-<script id="kpi-detail-js" src="js/app-1-58596889f9.js"></script>
+<script id="kpi-detail-js" src="js/app-3-b267748336.js"></script>
 
-<script id="bg-grid-js" src="js/app-2-9240655724.js"></script>
+<script id="bg-grid-js" src="js/app-4-09f9a6ef6d.js"></script>
 
 <div class="simple-mode-badge" id="simple-badge">Simple View ON</div>
 <style id="ux429">
@@ -13573,7 +13602,7 @@ html body .pf-legend i.dot.a{background:#B45309!important}
 
 table.bg-g.bg-fit td.c.sm,table.bg-g.bg-fit td.yr.sm{padding-left:3px!important;padding-right:3px!important;letter-spacing:-.04em}
 </style>
-<script id="v430-slider" src="js/app-3-51946c10df.js"></script>
+<script id="v430-slider" src="js/app-5-51946c10df.js"></script>
 
 <style id="v432-emoji-css">
 
@@ -13629,8 +13658,8 @@ img.ux-em:not([src]){visibility:hidden}
 .ux-eg-28:not(#ux-em):not(#ux-em-uk1):not(#ux-em-uk2)>.ux-eh{display:inline-block!important;min-width:28px!important;text-align:center!important}
 }
 </style>
-<script id="v432-emoji" src="js/app-4-32ab38abe9.js"></script>
-<script id="ob433" src="js/app-5-dec1aed6a3.js"></script>
+<script id="v432-emoji" src="js/app-6-32ab38abe9.js"></script>
+<script id="ob433" src="js/app-7-dec1aed6a3.js"></script>
 </body>
 </html>
 

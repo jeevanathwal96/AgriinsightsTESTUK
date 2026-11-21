@@ -15,25 +15,30 @@
  */
 'use strict';
 
-var APP_VERSION = 'uk-2026-11-20-439';
+var APP_VERSION = 'uk-2026-11-21-441';   /* -441 = held -439 (menus, Put in a field, icon gap) + Sustainability; Sustainability part built 20 Nov as -439 = live -438 + Sustainability (all phases through -442-sus7) behind SUS_FLAGS.pilot, OFF by default; database changes run by the owner (uk-sus1..sus7); ai-data-uk.js ?v=uk156 (uk155 was live -434c..-438) */   /* -442-sus7: the phone's prerequisites on the computer - keyed water readings (B7) and server-side merges of rain_prefs, sus_settings and the register answers (B8), tools/uk-sus7-phone.sql NOT RUN. */ /* -441-sus7: fixes from the independent check of -440 (VERIFY-440). -440-sus7: the real-database findings R1-R11 and the farmer walkthrough UX-01..53 (branch sustainability-phase0, not deployed) */   /* -441-sus7: fixes from the independent check of -440 (VERIFY-440). -440-sus7: the real-database findings R1-R11 and the farmer walkthrough UX-01..53 (branch sustainability-phase0, not deployed) */
 var CACHE = 'agriinsights-uk-' + APP_VERSION;
 
 /* App shell precached on install. The ?v=-suffixed JS is intentionally left to
  * runtime caching so the existing ?v= cache-busting keeps working untouched. */
 var PRECACHE = [
   './index-uk.html',
-  './js/app-0-6b12682e0b.js',   /* dist build: inline script 0 */
-  './js/app-1-58596889f9.js',   /* dist build: inline script 1 */
-  './js/app-2-9240655724.js',   /* dist build: inline script 2 */
-  './js/app-3-51946c10df.js',   /* dist build: inline script 3 */
-  './js/app-4-32ab38abe9.js',   /* dist build: inline script 4 */
-  './js/app-5-dec1aed6a3.js',   /* dist build: inline script 5 */
+  './js/app-0-a897a5f284.js',   /* dist build: inline script 0 */
+  './js/app-1-249d04d314.js',   /* dist build: inline script 1 */
+  './js/app-2-655daa1feb.js',   /* dist build: inline script 2 */
+  './js/app-3-b267748336.js',   /* dist build: inline script 3 */
+  './js/app-4-09f9a6ef6d.js',   /* dist build: inline script 4 */
+  './js/app-5-51946c10df.js',   /* dist build: inline script 5 */
+  './js/app-6-32ab38abe9.js',   /* dist build: inline script 6 */
+  './js/app-7-dec1aed6a3.js',   /* dist build: inline script 7 */
   './manifest-uk.webmanifest',
   './fonts.css',
   './vendor/chart.umd.js',
   './vendor/supabase.js',
   './data/uk-ppp.json',
   './data/uk-eamu.json',
+  './data/sus-law-uk-2026.1.json?v=uk441c',   /* Phase 0: the law table the sheep return and the NVZ answer read (offline from the first install) */
+  './data/sus-factors-uk-2026.1.json?v=uk441c',   /* Phase 1: the factor table (legal excreta volumes, manure N contents, estimates) */
+  './data/sus-askers-uk-2026.1.json?v=uk441c',   /* Phase 5: who asks for what, each claim with a dated source or 'example' */
   /* './Logo.png' was here — an SA-build filename that has never existed in this folder.
      cache.addAll() rejects the whole batch if any one entry 404s, so this single dead
      path could take the entire app-shell precache down with it. */
