@@ -7,7 +7,7 @@
 
 <meta name="description" content="AgriInsights UK — making farm finances simple for UK farmers. Track costs, plan your season, stay ready for Making Tax Digital and keep your farm records straight."/>
 <meta name="theme-color" content="#1B4332"/>
-<meta name="ai-build" content="uk-2026-11-21-441"/>
+<meta name="ai-build" content="uk-2026-11-21-443"/>
 <meta name="color-scheme" content="light"/>
 <meta property="og:title" content="AgriInsights — Making Farm Finances Simple"/>
 <meta property="og:description" content="The farm finance app built for UK farmers. Track every pound, plan your season, stay MTD-ready — all in one place."/>
@@ -31,7 +31,7 @@
 <script defer src="vendor/chart.umd.js"></script>
 
 <script src="vendor/supabase.js"></script>
-<script src="ai-data-uk.js?v=uk156"></script>
+<script src="ai-data-uk.js?v=uk157"></script>
 <script src="ai-auth-uk.js?v=uk119"></script>
 
 <script src="sus-engine-uk.js?v=uk13"></script>
@@ -967,6 +967,8 @@ small{font-size:12px}
 .pm-status.profit{color:var(--gl)}.pm-status.loss{color:var(--or)}
 
 .price-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:18px}
+
+.price-cards>.pc{min-width:0}.pc-spark canvas{max-width:100%}
 .pc{background:#fff;border:1px solid var(--br);border-radius:var(--rl);padding:16px;box-shadow:var(--sh)}
 .pc-ico{font-size:22px;margin-bottom:8px}
 .pc-name{font-size:12px;font-weight:600;color:var(--t2)}
@@ -5592,9 +5594,9 @@ body.simple-view #nav-crop{display:none !important}
 body.no-crops #nav-crop{display:none !important}
 body.no-orchards #nav-orchards{display:none !important}
 body.no-livestock #nav-livestock{display:none !important}
-body.no-crops #plan-tab-crops{display:none}
-body.no-orchards #plan-tab-orch{display:none}
-body.no-livestock #plan-tab-live{display:none}
+body.no-crops #plan-tab-crops{display:none!important}
+body.no-orchards #plan-tab-orch{display:none!important}
+body.no-livestock #plan-tab-live{display:none!important}   
 body.ent-one .plan-tabs{display:none}
 body.no-orchards .opf-wrap{display:none}
 
@@ -7066,6 +7068,12 @@ table.bg-xls td.on{outline:2px solid #217346;outline-offset:-2px}
 .bg-r1{display:flex;align-items:center;gap:12px;flex-wrap:nowrap;padding:14px 18px;border-bottom:1px solid var(--br2);min-width:0}
 .bg-r1>*{flex:none;margin:0}
 .bg-r1 .bg-r1-sp{flex:1 1 0;min-width:0}
+
+#bg-vpanel .bg-seg.col{display:flex!important;flex-direction:column;flex-wrap:nowrap!important;height:auto;align-items:stretch}
+#bg-vpanel .bg-seg.col button{align-items:flex-start;text-align:left;padding:8px 10px}
+@media (max-width:1300px){ #bg-sheet-view .bg-r1{gap:8px} }
+#bg-g thead th .k{letter-spacing:0}
+#bg-g thead th:has(>.k){padding-left:2px}
 .bg-r1 .bg-book{display:flex;align-items:center;padding:0;border:0;gap:2px}
 .bg-fbx{width:26px;height:38px;display:inline-flex;align-items:center;justify-content:center;border-radius:8px;color:var(--t4);font-size:15px;font-weight:700;cursor:help;font-family:inherit;background:none;border:0;padding:0}
 .bg-fbx:hover,.bg-fbx:focus-visible,.bg-fbx[aria-expanded="true"]{color:var(--gm);background:var(--gb)}
@@ -7459,6 +7467,55 @@ button:focus-visible,a:focus-visible,[role=tab]:focus-visible{outline:2px solid 
 #ast-doc-input::file-selector-button{height:32px;padding:0 12px;margin-right:12px;border:1px solid #D1D5DB;border-radius:8px;background:#fff;color:#111827;font:600 13px/1 inherit;font-family:inherit;cursor:pointer}
 #ast-doc-input::file-selector-button:hover{border-color:#9CA3AF;background:#F9FAFB}
 #set-sec-farm{align-items:start!important}
+
+.fx-btn{flex:none;align-self:center;border:1.5px solid var(--gm);background:#fff;color:var(--gm);border-radius:8px;padding:6px 11px;font-size:12px;font-weight:800;line-height:1.2;font-family:inherit;white-space:nowrap;cursor:pointer}
+.fx-btn:hover{background:#E8F1EC}
+.fx-btn.r{background:var(--rd);border-color:var(--rd);color:#fff}
+.fx-btn.r:hover{filter:brightness(.92);background:var(--rd)}
+.fx-btn:focus-visible{outline:2px solid var(--gd);outline-offset:2px}
+.fx-btn.sm{padding:3px 8px;font-size:12px;margin:3px 0 0 4px;vertical-align:middle}
+.fx-wrap{margin-top:8px}
+.wk-banner .fx-btn.sm{display:flex;width:max-content;margin:8px 0 0}   
+.fx-hl{outline:3px solid var(--gm)!important;outline-offset:2px!important;box-shadow:0 0 0 6px rgba(45,106,79,.18)!important}
+.fx-back{display:flex;width:max-content;max-width:calc(100% - 32px);align-items:center;gap:6px;font-family:inherit;font-size:12.5px;font-weight:800;line-height:1.2;color:var(--gd);background:#D8F3DC;border:1px solid #B7E4C7;border-radius:999px;padding:6px 14px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fx-back:hover{background:#C7EBCF}
+.fx-back:focus-visible{outline:2px solid var(--gd);outline-offset:2px}
+#fx-back{position:static;margin:0 0 12px}
+#fx-back.in-dlg{margin:0 0 12px}
+@media print{.fx-btn,.fx-back{display:none!important}}
+.tb-due{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;background:#F9FAFB;border:1px solid var(--br);border-radius:11px;padding:10px 12px;font-size:12.5px;color:var(--t2)}
+.tb-due b{color:var(--gd)}
+.tb-due.r{background:#FDECEA;border-color:#F4C7C2;color:#B23A2F}.tb-due.r b{color:#B23A2F}
+.tb-due.a{background:#FFF8E6;border-color:#F3DFB0}
+.tb-lnk{border:0;background:none;padding:0;font-family:inherit;font-size:12.5px;font-weight:800;color:var(--gm);text-decoration:underline;cursor:pointer;text-align:left}
+.tb-due.r .tb-lnk{color:#B23A2F}
+.tb-hint{font-size:12px;color:var(--t4);line-height:1.45;margin-top:6px}
+.tb-hint a{color:var(--gm);font-weight:700}
+.tb-srch{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:12px 0 6px}
+.tb-srch>input[type=search]{flex:1 1 220px;min-width:200px;width:auto!important;border:1.5px solid var(--br);border-radius:9px;padding:8px 11px;font-family:inherit;font-size:12.5px;margin:0}
+.tb-srch>.tb-f{flex:0 0 auto;width:auto!important;min-width:0;border:1.5px solid var(--br);border-radius:9px;padding:8px 10px;font-family:inherit;font-size:12px;font-weight:700;background:#fff;color:var(--t2);margin:0}
+.tb-srch>.tb-add{flex:0 0 auto;width:auto!important;white-space:nowrap;margin:0}
+.tb-row{display:grid;grid-template-columns:100px minmax(120px,1.3fr) 90px minmax(110px,1fr) 104px 96px;gap:10px;align-items:center;padding:9px 4px;border-bottom:1px solid var(--br2);font-size:12.5px;cursor:pointer;border-radius:6px}
+.tb-row:hover{background:#F8FAF8}
+.tb-row:focus-visible{outline:2px solid var(--gm);outline-offset:1px}
+.tb-row>.tb-chip{justify-self:start}
+.tb-n,.tb-by{color:var(--t2);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tb-none{color:#9CA3AF}
+.tb-dt{font-weight:800}
+.tb-ty{color:var(--t2);min-width:0}.tb-ty small{display:block;color:var(--t4);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tb-chip{font-size:12px;font-weight:800;border-radius:999px;padding:3px 9px;white-space:nowrap}
+.tb-chip.g{background:#D8F3DC;color:#1B4332}.tb-chip.a{background:#FFF8E6;color:#92400E}.tb-chip.r{background:#FDECEA;color:#B23A2F}
+.tb-att{border:0;background:none;padding:0;font-family:inherit;font-size:12px;font-weight:800;color:var(--gm);white-space:nowrap;cursor:pointer}
+.tb-att.no{color:#9CA3AF;font-weight:600;cursor:default}
+.tb-foot{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px;font-size:12px;color:var(--t4)}
+.tb-empty{font-size:12.5px;color:var(--t4);padding:14px 0}
+.tb-undo{font-size:12.5px;color:var(--t2);background:#F9FAFB;border:1px dashed var(--br);border-radius:9px;padding:8px 11px;margin-bottom:6px}
+.tb-seg{flex-wrap:wrap}.tb-seg button{min-width:0}
+.tb-other{gap:8px;align-items:center;margin-top:8px}.tb-other input{width:110px!important}.tb-other span{font-size:12.5px;color:var(--t3)}
+.tb-file{font-size:12.5px;font-weight:700;color:var(--gd)}
+.tb-vl{display:flex;justify-content:space-between;gap:12px;font-size:13px;padding:6px 0;border-bottom:1px dashed var(--br2)}.tb-vl span{color:var(--t3)}.tb-vl b{text-align:right}
+#set-tb-card .ls-tr-fld label{font-size:12.5px;text-transform:none;letter-spacing:0;color:var(--t2)}
+
 
 
 
@@ -11232,6 +11289,7 @@ body.ob4-ckfull #page-tour-fixed{display:none!important}
     <div id="ls-hm-filter" class="lshm-filt"></div>
     <div style="display:flex;margin-bottom:14px"><button class="btn-pri" style="margin-left:auto" onclick="lsTrFormOpen()">+ Log a treatment</button></div>
     <div id="ls-hm-table"></div>
+    <div id="ls-hm-tb"></div>
     <div style="font-size:12px;color:var(--t3);background:var(--br2);border-radius:var(--rs);padding:10px 13px;line-height:1.55;margin-top:14px">Each entry does two jobs: the <b>Cost</b> feeds your allowable business expenses and the <b>Status</b> tracks the safe-to-sell date — log a vaccination once, not twice. Births, deaths and sales are recorded under <b>Herd → Records</b>.</div>
     <div class="ls-rpt-divider"></div>
     <div class="ls-rpt-label">Report</div>
@@ -11254,6 +11312,10 @@ body.ob4-ckfull #page-tour-fixed{display:none!important}
   </div>
 
   
+  
+  <div id="ls-tb-bg" class="lshmv-bg" onclick="if(event.target===this)ukTbFormClose()">
+    <div class="lshmv" id="ls-tb-in"></div>
+  </div>
   <div id="ls-tr-bg" class="lshmv-bg" onclick="if(event.target===this)lsTrFormClose()">
     <div class="lshmv" id="ls-tr-in"></div>
   </div>
@@ -12222,6 +12284,7 @@ body.ob4-ckfull #page-tour-fixed{display:none!important}
           </select>
         </div>
       </div>
+      <div class="set-card" id="set-tb-card" style="display:none"></div>
     </div>
 
 
@@ -12809,7 +12872,7 @@ body.ob4-ckfull #page-tour-fixed{display:none!important}
 
 </div>
 </div>
-<script src="js/app-2-655daa1feb.js"></script>
+<script src="js/app-2-d0ec4a55a1.js"></script>
 
 
 <div class="imp-bg" id="imp-hub-bg">
@@ -13352,6 +13415,8 @@ body.ob4-ckfull #page-tour-fixed{display:none!important}
 .kdt-jump.gold{background:#C8962C}
 #kpi-trail{position:fixed;top:62px;left:50%;transform:translateX(-50%);z-index:3500;display:none;align-items:center;gap:10px;background:#FAEEDA;border:1px solid #eed3a6;border-radius:12px;padding:9px 12px;box-shadow:0 6px 20px rgba(0,0,0,.12);max-width:520px;width:calc(100% - 32px)}
 #kpi-trail.show{display:flex}
+
+#kpi-trail{position:static;top:auto;left:auto;transform:none;z-index:auto;margin:0 0 12px;width:max-content;max-width:100%}
 #kpi-trail .bk{display:flex;align-items:center;gap:6px;border:none;background:#fff;color:#8a6516;font-family:inherit;font-size:12px;font-weight:800;padding:7px 12px;border-radius:9px;cursor:pointer;box-shadow:0 1px 2px rgba(0,0,0,.08)}
 #kpi-trail .bt{font-size:12px;color:#8a6516;font-weight:700}
 #kpi-trail .fx{margin-left:auto;font-size:12px;font-weight:800;color:#8a6516;background:#fff;border:1px solid #eed3a6;border-radius:20px;padding:4px 9px;cursor:pointer}
@@ -13363,9 +13428,9 @@ body.ob4-ckfull #page-tour-fixed{display:none!important}
 </style>
 <div class="kdt-modal" id="kpi-modal" onclick="if(event.target===this)kpiClose()"><div class="kdt-card" id="kpi-card"></div></div>
 <div id="kpi-trail"></div>
-<script id="kpi-detail-js" src="js/app-3-b267748336.js"></script>
+<script id="kpi-detail-js" src="js/app-3-08d682b5eb.js"></script>
 
-<script id="bg-grid-js" src="js/app-4-09f9a6ef6d.js"></script>
+<script id="bg-grid-js" src="js/app-4-017f29674f.js"></script>
 
 <div class="simple-mode-badge" id="simple-badge">Simple View ON</div>
 <style id="ux429">
@@ -13659,7 +13724,7 @@ img.ux-em:not([src]){visibility:hidden}
 }
 </style>
 <script id="v432-emoji" src="js/app-6-32ab38abe9.js"></script>
-<script id="ob433" src="js/app-7-dec1aed6a3.js"></script>
+<script id="ob433" src="js/app-7-1b5b7e60c9.js"></script>
 </body>
 </html>
 

@@ -3585,6 +3585,8 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     if(prefs.marketing && typeof prefs.marketing==='object') p.marketingOptIn = prefs.marketing;
     /* -399 (8A): what this farm's people have dismissed (the Spreadsheet's first-time card). Never queried: prefs. */
     if(prefs.ui && typeof prefs.ui==='object') p.uiPrefs = prefs.ui;
+    /* -443: the farm's TB answers (area, interval, restriction, last whole-herd test). Farm-level, never queried: prefs. */
+    if(prefs.tb && typeof prefs.tb==='object') p.tbPrefs = prefs.tb;
     return p;
   }
   function _profPrefsNext(prev, st){
@@ -3596,6 +3598,7 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     if(st && st.lsYear && typeof st.lsYear==='object'){ next.ls = st.lsYear; has=true; }   /* -388 */
     if(st && st.marketingOptIn && typeof st.marketingOptIn==='object'){ next.marketing = st.marketingOptIn; has=true; }   /* -391 */
     if(st && st.uiPrefs && typeof st.uiPrefs==='object'){ next.ui = st.uiPrefs; has=true; }   /* -399 */
+    if(st && st.tbPrefs && typeof st.tbPrefs==='object'){ next.tb = st.tbPrefs; has=true; }   /* -443 */
     return has ? next : null;
   }
 
@@ -4380,6 +4383,89 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
   };
   /* ══ SUSTAINABILITY-UK-SYNC-END ══ */
 
+  /* ══ -443 TB-TESTS-SYNC-BEGIN (owner 21 Nov: "New TB tests table") ═══════════════════════════════════════════════════
+     The herd's TB tests, one row each in uk_tb_tests (tools/uk-tb-tests.sql, NOT RUN until the owner runs it), keyed
+     (farm_id, local_id) like the Sustainability tables: keyed upsert of only the rows that changed since this device last
+     sent them, keyed delete of only the rows this device loaded or wrote and no longer holds (plus the removals it kept,
+     ST_LS.tb.removedTests), never replaceAllRows. The farm's TB answers (area, interval, restriction, last whole-herd test)
+     ride in farms.prefs.tb, the existing farm settings store (_profPrefsApply / _profPrefsNext), through the settings lane.
+     The table is probed with a FILTER (?local_id=is.null&limit=1). Not there (42P01 / PGRST205): the tests stay on this
+     device exactly as before and nothing errors, so the release can go out before the SQL. A probe that could not reach the
+     server is no answer: the lane is told to retry. One lane, 'tb', FIFO like every other writer; the catch-up re-sends from
+     the live ST_LS.tb. A test is marked sv=1 once the server has it, so a later load can tell "deleted on another device"
+     (sv, not on the server: dropped) from "never sent" (no sv: kept and sent - the one-time move of tests recorded before). */
+  var CAN_TB = false, _tbAsked = false;
+  async function _tbProbe(){
+    if(_tbAsked) return;
+    try{
+      const r = await client().from('uk_tb_tests').select('local_id').is('local_id', null).limit(1);
+      if(!r.error){ CAN_TB = true; _tbAsked = true; return; }
+      if(_susMissing(r.error)){ CAN_TB = false; _tbAsked = true; return; }
+    }catch(e){}
+  }
+  var _TB_TYPES = ['Whole herd', 'Pre-movement', 'Re-test', 'Other'], _TB_RES = ['Clear', 'Inconclusive', 'Reactor'];
+  function tbTestToDb(t, fid){
+    var f = t.file || null, path = (f && f.url && !/^data:/.test(String(f.url))) ? String(f.url) : null;
+    var marks = {};
+    ['setLast', 'prevLast', 'setRestriction', 'prevRestriction', 'reactors'].forEach(function(k){ if(t[k] !== undefined) marks[k] = t[k]; });
+    return { farm_id: fid, local_id: String(t.id), test_date: _d(t.date) /* the day the test was injected */, type: _in(t.type, _TB_TYPES), result: _in(t.result, _TB_RES),
+             whole_herd_restricted: (t.result === 'Inconclusive') ? _b(t.herdRestricted) : null, whole_herd: t.wholeHerd === true ? true : null,
+             restrict_from: _d(t.restrictFrom), animals_tested: _i(t.tested), tester: _t(t.by, 200), notes: _t(t.notes, 2000),
+             attachment_path: path, attachment_name: f ? _t(f.name, 200) : null, attachment_kind: f ? _in(f.kind, ['image', 'pdf']) : null,
+             marks: Object.keys(marks).length ? marks : null };
+  }
+  function tbTestFromDb(r){
+    var t = { id: r.local_id, date: _d(r.test_date) || '', type: r.type || 'Other', result: r.result || 'Clear', sv: 1 };
+    if(r.whole_herd_restricted === true || r.whole_herd_restricted === false) t.herdRestricted = r.whole_herd_restricted;
+    if(r.whole_herd === true) t.wholeHerd = true;
+    if(r.restrict_from) t.restrictFrom = _d(r.restrict_from);
+    if(r.animals_tested != null) t.tested = Number(r.animals_tested);
+    if(r.tester) t.by = r.tester;
+    if(r.notes) t.notes = r.notes;
+    if(r.attachment_path) t.file = { name: r.attachment_name || String(r.attachment_path).split('/').pop(), kind: r.attachment_kind || (/\.pdf$/i.test(r.attachment_path) ? 'pdf' : 'image'), url: r.attachment_path };
+    var m = r.marks; if(typeof m === 'string'){ try{ m = JSON.parse(m); }catch(e){ m = null; } }
+    if(m && typeof m === 'object') Object.keys(m).forEach(function(k){ t[k] = m[k]; });
+    return t;
+  }
+  var _tbMem = Object.create(null), _tbKnown = Object.create(null);
+  const tb = {
+    can(){ return CAN_TB; }, asked(){ return _tbAsked; },
+    /* the whole set from the live ST_LS.tb (tests that carry an id; the app gives every test one before it saves) */
+    async saveAll(st){
+      st = st || {}; const fid = farm.active(); if(!fid) return true;
+      await _tbProbe();
+      if(!_tbAsked){ var err0 = new Error('Failed to fetch (TB tests table not checked yet)'); err0.status = 0; throw err0; }
+      if(!CAN_TB) return true;                     /* no table on this project yet: this device keeps them, as before */
+      const list = (st.tests || []).filter(function(x){ return x && x.id != null && x.date; });
+      const keep = Object.create(null), up = [];
+      list.forEach(function(x){ var r = tbTestToDb(x, fid), k = r.local_id; keep[k] = 1; var s = JSON.stringify(r); if(_tbMem[k] !== s || !x.sv) up.push([k, s, r, x]); });
+      if(up.length){
+        const e = (await client().from('uk_tb_tests').upsert(up.map(function(u){ return u[2]; }), { onConflict: 'farm_id,local_id' })).error;
+        if(e){ if(_susMissing(e)){ CAN_TB = false; return true; } throw e; }
+        up.forEach(function(u){ _tbMem[u[0]] = u[1]; _tbKnown[u[0]] = 1; u[3].sv = 1; });
+      }
+      const pend = (st.removedTests || []).filter(function(x){ return x && x.id != null && x.sv; }).map(function(x){ return String(x.id); });
+      const gone = Object.keys(_tbKnown).concat(pend).filter(function(k, i, a){ return !keep[k] && a.indexOf(k) === i; });
+      if(gone.length){
+        const e2 = (await client().from('uk_tb_tests').delete().eq('farm_id', fid).in('local_id', gone)).error;
+        if(e2){ if(_susMissing(e2)){ CAN_TB = false; return true; } throw e2; }
+        gone.forEach(function(k){ delete _tbKnown[k]; delete _tbMem[k]; });
+        (st.removedTests || []).forEach(function(x){ if(x && gone.indexOf(String(x.id)) >= 0) delete x.sv; });   /* the server no longer has it */
+      }
+      return true;
+    }
+  };
+  /* The read. null = no table on this project (or nothing could be asked): the device keeps its own. */
+  load.tb = async function(farmId){
+    farmId = farmId || farm.active(); if(!farmId) return null;
+    await _tbProbe();
+    if(!CAN_TB) return null;
+    const r = await selectAll(function(){ return client().from('uk_tb_tests').select('*').eq('farm_id', farmId); });
+    if(r.error){ if(_susMissing(r.error)){ CAN_TB = false; return null; } throw r.error; }
+    return (r.data || []).map(function(row){ var x = tbTestFromDb(row); _tbMem[row.local_id] = JSON.stringify(tbTestToDb(x, farmId)); _tbKnown[row.local_id] = 1; return x; });
+  };
+  /* ══ -443 TB-TESTS-SYNC-END ══ */
+
   // ---- SAVE QUEUES -----------------------------------------------------------
   /* One save at a time per area, in the order the farmer made the changes.
 
@@ -4518,7 +4604,8 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     documents: function(){ return (global.ST && global.ST.docs) ? _syncRawCall('documents.saveAll', documents, [global.ST.docs]) : true; },
     budget:    function(){ return (global.ST && global.ST.budgets) ? _syncRawCall('budget.save', budget, [global.ST.budgets]) : true; },
     rules:     function(){ var list = (typeof global.catRules === 'function') ? global.catRules() : (global.ST && global.ST.catRules); return list ? _syncRawCall('rules.saveAll', rules, [list]) : true; },
-    sus:       function(){ return global.ST_SUS ? _syncRawCall('sus.saveAll', sus, [global.ST_SUS]) : true; }
+    sus:       function(){ return global.ST_SUS ? _syncRawCall('sus.saveAll', sus, [global.ST_SUS]) : true; },
+    tb:        function(){ return (global.ST_LS && global.ST_LS.tb) ? _syncRawCall('tb.saveAll', tb, [global.ST_LS.tb]) : true; }   /* -443 */
   };
   /* Is this area's data actually on the device right now? */
   var _CATCHUP_HAS = {
@@ -4534,7 +4621,8 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     documents: function(){ return !!(global.ST && global.ST.docs); },
     budget:    function(){ return !!(global.ST && global.ST.budgets); },
     rules:     function(){ return !!(typeof global.catRules === 'function' || (global.ST && global.ST.catRules)); },
-    sus:       function(){ return !!global.ST_SUS; }
+    sus:       function(){ return !!global.ST_SUS; },
+    tb:        function(){ return !!(global.ST_LS && global.ST_LS.tb); }   /* -443 */
   };
   /* The app loads its own copy from this device (loadState) on the window 'load' event, while
      sign-in starts on DOMContentLoaded - so the catch-up below could run FIRST, with the state
@@ -4599,6 +4687,7 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
   _syncWrap('documents', 'documents', documents,   'saveAll');
   _syncWrap('rules',     'rules',     rules,       'saveAll');
   _syncWrap('sus',       'sus',       sus,         'saveAll');   /* Sustainability Phase 1 (-434-sus1) */
+  _syncWrap('tb',        'tb',        tb,          'saveAll');   /* -443: TB tests (uk_tb_tests) */
   /* -411: the six writers that saved outside the queues. A failure used to print one
      console line under a green status and the next load wiped the row. Assets, recurring
      bills, co-op settlements and import batches go in as operations - replayed with the
@@ -4861,6 +4950,7 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
                          migrated: function(){ return Object.assign({}, _MIGRATED); } },
                 documents: documents, fuel: fuel, pairing: pairing,
                 sus: sus,   /* Sustainability Phase 1 (-434-sus1): eleven keyed tables, CAN_SUS probes, the 'sus' lane */
+                tb: tb, _tb: { toDb: tbTestToDb, fromDb: tbTestFromDb, setCan: function(on){ CAN_TB = !!on; _tbAsked = true; } },   /* -443: TB tests (uk_tb_tests), the 'tb' lane */
                 _sus: { tables: SUS_TABLES, setToDb: _susSetToDb, setFromDb: _susSetFromDb, caps: function(){ return Object.assign({}, CAN_SUS); }, colCaps: function(){ return Object.assign({}, CAN_SUS_COL); }, cinToDb: function(i, fid){ return cinToDb(i, fid); }, setNut: function(on){ CAN_INPUT_NUT = !!on; }, setCaps: function(o){ Object.keys(o||{}).forEach(function(t){ if(t in CAN_SUS){ CAN_SUS[t] = !!o[t]; _susAsked[t] = true; } if(t in CAN_SUS_COL){ CAN_SUS_COL[t] = !!o[t]; _susColAsked[t] = true; } }); } },
                 rules: rules,
                 storage: storage,
