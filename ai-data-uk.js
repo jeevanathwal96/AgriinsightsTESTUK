@@ -3848,6 +3848,9 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
               county:(_L&&_L.county)||'', locSrc:(_L&&_L.src)||'',
               drillDays:_r.drillDays||null, drillContractor:!!_r.drillContractor, land:_r.land||null,
               fieldLimits:(_r.fieldLimits&&typeof _r.fieldLimits==='object')?_r.fieldLimits:{}, wetSeen:_r.wetSeen||'' };
+            /* -445 (decision 3): Scotland's zone answer, merged by key (farm_rain_prefs_merge). Sent only once answered on, or brought
+               to, this device: a device that never held it never sends a null over the phone's answer. */
+            if(_r.scotZone==='north'||_r.scotZone==='south'||_r.scotZone==='unsure') rainc.rain_prefs.scotZone=_r.scotZone;
           }
         }catch(e){}
       }
@@ -4166,10 +4169,10 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
       to: function(x, fid){ return Object.assign({ farm_id: fid, local_id: String(x.id), kind: _in(x.kind, ['hedge','woodland','pond','margin','other']) || 'other', name: _t(x.name, 120),
         length_m: x.kind === 'hedge' ? _n(x.lengthM) : null, area_ha: x.kind === 'hedge' ? null : _n(x.areaHa), land_local_id: x.land != null && x.land !== '' ? String(x.land) : null,
         land_kind: _in(x.landKind, ['crop','ls']), photo_path: _t(x.photo, 300), photo_name: _t(x.photoName, 120), note: _t(x.note, 500), removed: !!x.removed },
-        (CAN_SUS_COL['habitats.history'] ? { added_on: _d(x.addedOn), history: Array.isArray(x.history) && x.history.length ? x.history.filter(function(y){ return y && _d(y.on); }).slice(0, 200).map(function(y){ return { on: _d(y.on), lengthM: _n(y.lengthM), areaHa: _n(y.areaHa), removed: !!y.removed }; }) : null } : {})); },
+        (CAN_SUS_COL['habitats.history'] ? { added_on: _d(x.addedOn), history: Array.isArray(x.history) && x.history.length ? x.history.filter(function(y){ return y && _d(y.on); }).slice(0, 200).map(function(y){ return Object.assign({ on: _d(y.on), lengthM: _n(y.lengthM), areaHa: _n(y.areaHa), removed: !!y.removed }, y.unsure === true ? { unsure: true } : {}); }) : null } : {})); },   /* -445 (decision 4): "not sure" rides in the history entry, no new column */
       from: function(r){ return { id: r.local_id, kind: r.kind, name: r.name || '', lengthM: _n(r.length_m), areaHa: _n(r.area_ha), land: r.land_local_id, landKind: r.land_kind || null,
         photo: r.photo_path || null, photoName: r.photo_name || '', note: r.note || '', removed: !!r.removed,
-        addedOn: 'added_on' in r ? _d(r.added_on) : undefined, history: 'history' in r ? (Array.isArray(r.history) ? r.history : null) : undefined }; },
+        addedOn: 'added_on' in r ? _d(r.added_on) : undefined, history: 'history' in r ? (Array.isArray(r.history) ? r.history.map(function(y){ return (y && y.unsure != null && y.unsure !== true) ? Object.assign({}, y, { unsure: undefined }) : y; }) : null) : undefined }; },   /* -445: unsure comes back only as true */
       ok: function(x){ return x && (x.kind === 'hedge' ? _n(x.lengthM) > 0 : _n(x.areaHa) > 0); } },
     /* Solar generation the farmer reads off the inverter or the export meter, per year or per month ('2026' | '2026-07'). */
     solar: { t: 'solar_readings',

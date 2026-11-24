@@ -1,8 +1,8 @@
 {
  "id": "sus-law-uk",
  "version": "2026.1",
- "compiled": "2026-11-14",
- "about": "UK legal values for the Sustainability engine (sus-engine-uk.js). Every row carries source, source_url, status, version and checked_on. Nations: E England, W Wales, S Scotland, N Northern Ireland. Phase 0 (PREBUILD-CHECK-V53 §4.2). Phase 2 (-435-sus2) adds crop N max (nmax), closed periods per product (fym, absolute, exceptions), soil testing (soil) and the Red Tractor urea standard (limits.urea_rt). Phase 4 (-436-sus4, 15 Nov 2026) adds abstraction thresholds per nation (R14). The register import (-438-sus5r, 15 Nov 2026) adds the reporting windows per nation (register: birth_days, death_days, move_days_cattle, move_days_sheep; RESEARCH-DECISIONS-NOV-2026.md section E). -439-sus6 (15 Nov 2026): owner standing rule, nothing from the mock-up. Closed periods never refuse (record with a reason), Scotland bagged-N exceptions, worst-4-months SSAFO, NI goats 5 Jan, crop-available N per nation in law, NI register rows confirmed, Scotland WFP soil pH P K C, and every product choice labelled.",
+ "compiled": "2026-11-24",
+ "about": "UK legal values for the Sustainability engine (sus-engine-uk.js). Every row carries source, source_url, status, version and checked_on. Nations: E England, W Wales, S Scotland, N Northern Ireland. Phase 0 (PREBUILD-CHECK-V53 §4.2). Phase 2 (-435-sus2) adds crop N max (nmax), closed periods per product (fym, absolute, exceptions), soil testing (soil) and the Red Tractor urea standard (limits.urea_rt). Phase 4 (-436-sus4, 15 Nov 2026) adds abstraction thresholds per nation (R14). The register import (-438-sus5r, 15 Nov 2026) adds the reporting windows per nation (register: birth_days, death_days, move_days_cattle, move_days_sheep; RESEARCH-DECISIONS-NOV-2026.md section E). -439-sus6 (15 Nov 2026): owner standing rule, nothing from the mock-up. Closed periods never refuse (record with a reason), Scotland bagged-N exceptions, worst-4-months SSAFO, NI goats 5 Jan, crop-available N per nation in law, NI register rows confirmed, Scotland WFP soil pH P K C, and every product choice labelled. -445 (24 Nov 2026, owner decision \"recorded late\"): closed.record_rule.value.within_days per nation - England and Wales 7 days (SI 2015/668 reg 31, WSI 2021/77 reg 40), Scotland and Northern Ireland null (no per-spreading limit); additive, so the version stays 2026.1.",
  "status_values": {
   "confirmed": "read from the regulation or the regulator's page on checked_on",
   "estimate": "not a legal value, or not confirmed; always shown tagged",
@@ -784,7 +784,18 @@
      ],
      "record_rule": {
       "value": {
-       "never_refuse": true
+       "never_refuse": true,
+       "within_days": {
+        "value": 7,
+        "label": "A spreading is recorded within this many days of the spreading (null: no per-spreading time limit)",
+        "source": "SI 2015/668 reg 31(1) (organic manure) and 31(2) (manufactured nitrogen fertiliser)",
+        "source_url": "https://www.legislation.gov.uk/uksi/2015/668/regulation/31",
+        "status": "confirmed",
+        "version": "2026.1",
+        "checked_on": "2026-11-24",
+        "quote": "within one week",
+        "note": "England: the record of each spreading is made within one week of it. Not modelled: the reg 31(4)-(5) exemption for holdings of at least 80% grass within the nitrogen limits; such a farm still sees the calm warning, which never refuses the record."
+        }
       },
       "label": "Every spreading is recorded, inside a closed period too: it is saved with a warning and a reason (\"None: possible breach\" is a reason)",
       "source": "SI 2015/668 reg 31 (records of every application)",
@@ -1722,7 +1733,18 @@
      ],
      "record_rule": {
       "value": {
-       "never_refuse": true
+       "never_refuse": true,
+       "within_days": {
+        "value": 7,
+        "label": "A spreading is recorded within this many days of the spreading (null: no per-spreading time limit)",
+        "source": "WSI 2021/77 reg 40(1) and (2)",
+        "source_url": "https://www.legislation.gov.uk/wsi/2021/77/regulation/40",
+        "status": "confirmed",
+        "version": "2026.1",
+        "checked_on": "2026-11-24",
+        "quote": "within one week",
+        "note": "Wales: the record of each spreading is made within one week of it. Not modelled: the reg 40(3) exemption for holdings of at least 80% grass within the nitrogen limits; such a farm still sees the calm warning, which never refuses the record."
+        }
       },
       "label": "Every spreading is recorded, inside a closed period too: it is saved with a warning and a reason (\"None: possible breach\" is a reason)",
       "source": "WSI 2021/77 reg 40 (records of every application)",
@@ -2669,7 +2691,17 @@
      ],
      "record_rule": {
       "value": {
-       "never_refuse": true
+       "never_refuse": true,
+       "within_days": {
+        "value": null,
+        "label": "A spreading is recorded within this many days of the spreading (null: no per-spreading time limit)",
+        "source": "SSI 2008/298 reg 25",
+        "source_url": "https://www.legislation.gov.uk/ssi/2008/298/regulation/25",
+        "status": "confirmed",
+        "version": "2026.1",
+        "checked_on": "2026-11-24",
+        "note": "Scotland: reg 25 sets NO time limit for making the record of a spreading, so a late record is never flagged."
+        }
       },
       "label": "Every spreading is recorded, inside a closed period too: it is saved with a warning and a reason (\"None: possible breach\" is a reason)",
       "source": "SSI 2008/298 reg 25 (records of every application)",
@@ -3548,7 +3580,18 @@
      ],
      "record_rule": {
       "value": {
-       "never_refuse": true
+       "never_refuse": true,
+       "within_days": {
+        "value": null,
+        "label": "A spreading is recorded within this many days of the spreading (null: no per-spreading time limit)",
+        "source": "NISR 2019/81 reg 27(2)",
+        "source_url": "https://www.legislation.gov.uk/nisr/2019/81/regulation/27",
+        "status": "confirmed",
+        "version": "2026.1",
+        "checked_on": "2026-11-24",
+        "quote": "shall be prepared for each calendar year by 30th June of the following year",
+        "note": "Northern Ireland: the records are prepared for each calendar year by 30 June of the following year, so there is no per-spreading limit and a late record is never flagged."
+        }
       },
       "label": "Every spreading is recorded, inside a closed period too: it is saved with a warning and a reason (\"None: possible breach\" is a reason)",
       "source": "NISR 2019/81 reg 27 (records of every application)",

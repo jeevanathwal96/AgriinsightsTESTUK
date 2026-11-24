@@ -831,6 +831,7 @@ function _sessionUid(){
               if (_rp.land) ST_RAIN.land = _rp.land;
               if (_rp.fieldLimits && typeof _rp.fieldLimits === 'object') ST_RAIN.fieldLimits = _rp.fieldLimits;
               if (_rp.wetSeen) ST_RAIN.wetSeen = _rp.wetSeen;
+              if ('scotZone' in _rp) ST_RAIN.scotZone = (_rp.scotZone === 'north' || _rp.scotZone === 'south' || _rp.scotZone === 'unsure') ? _rp.scotZone : null;   /* -445 (decision 3): set on the phone or here, read back on both */
             }
             ST_RAIN.prefsSet = true;   /* now this device holds the farm's answer, and may send it back */
             try { if (_rp && AI.profile && AI.profile.rainAdopted) AI.profile.rainAdopted(_rp); } catch (_) {}   /* -442-sus7 (B8): the base its next rain merge is diffed against */

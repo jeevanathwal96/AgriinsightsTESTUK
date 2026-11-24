@@ -32,7 +32,7 @@
   else root.SusEngineUK = factory();
 }(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
-  var VERSION = '0.7.0';
+  var VERSION = '0.7.1';   /* 0.7.1 (-445, 24 Nov 2026): recordLate, scotZone, the scot-zone setup job, habitat "not sure" */
   var DAY = 86400000;
 
   /* ── small helpers ─────────────────────────────────────────────────────────── */
@@ -1216,7 +1216,7 @@
   function jobState(j, s, t) {
     s = s || {}; var st = s.status || 'open';
     if ((st === 'done' && !JOB_ACTS[j.rule_id]) || st === 'recheck') { j.rechecked = s.status ? true : false; st = 'open'; }
-    if (st === 'notforus' && j.rule_id === 'nvz-answer') st = 'open';   /* UX-09: the NVZ answer decides the law; "Not sure" is the answer, never "not for us" */
+    if (st === 'notforus' && (j.rule_id === 'nvz-answer' || j.rule_id === 'scot-zone')) st = 'open';   /* UX-09: the NVZ answer decides the law; "Not sure" is the answer, never "not for us" */
     j.status = st; j.computed = !JOB_ACTS[j.rule_id]; if (st === 'later' && isoOk(s.until)) j.until = s.until;   /* -441 (UX-04): "Due later" says until when */
     j.open = st === 'open' || (st === 'later' && (!isoOk(s.until) || s.until <= t)); j.dueIn = isoOk(j.due) ? daysBetween(t, j.due) : null;
     return j;
@@ -1228,6 +1228,8 @@
     var add = function (j) { jobState(j, (inp.states || {})[j.local_id], t); out.push(j); };
     var M = inp.manure, nv = inp.nvz || {};
     if ((nv.inNvz === null || nv.assumed) && (k === 'E' || k === 'S')) add({ local_id: 'nvz-answer', rule_id: 'nvz-answer', kind: 'setup', area: 'land', title: 'Is the farm in an NVZ?', why: 'The manure limit, the storage rule and the closed periods depend on it. The government map is a suggestion; you confirm it.' + (nv.assumed ? ' Until you know, we use the NVZ rules (the safer ones).' : ''), due: null, cta: 'setup' });
+    /* -445 (decision 3): Scotland's zone, asked until answered; "Not sure" uses the north dates (the safe side) and keeps asking */
+    var SZ = inp.scotZone; if (k === 'S' && SZ && SZ.ask && nv.inNvz !== false) add({ local_id: 'scot-zone', rule_id: 'scot-zone', kind: 'setup', area: 'land', title: 'Is your farm in the Moray, Aberdeenshire, Banff and Buchan nitrate vulnerable zone?', why: 'It sets when bagged nitrogen can go on again.' + (SZ.how === 'unsure' ? ' Until you know, we use the north dates: the longer closed period, so the safe side.' : ''), due: null, cta: 'setup' });
     if (M && M.perHa !== null && M.over && nv.inNvz === true) add({ local_id: 'manure-over:' + y, rule_id: 'manure-over', kind: 'law', area: 'livestock', title: 'Manure nitrogen is over the 170 kg limit',
       why: Math.round(M.perHa) + ' kg N per ha over the holding this year. Export manure, take on more land, or change stock numbers before 31 December.', due: y + '-12-31', cta: 'livestock' });
     if (M && M.holdingHa === null && (M.rows || []).length) add({ local_id: 'holding-area', rule_id: 'holding-area', kind: 'setup', area: 'land', title: 'How many hectares does the farm have?', why: 'The manure limit is worked out over the farm plus any land you rent.', due: null, cta: 'setup' });
@@ -1360,6 +1362,45 @@
     if (/catch crop|cover crop/.test(s)) return 'catch_cover';
     if (/wheat|barley|oat|rye|triticale|cereal/.test(s) || /wheat|barley|oats/.test(kk)) return 'cereal';
     return 'other';
+  }
+
+  /* -442 (owner decision 1, 24 Nov 2026): "recorded late". England and Wales ask for the record of a spreading within one week of
+     it (SI 2015/668 reg 31(1)-(2), WSI 2021/77 reg 40(1)-(2)); Scotland (SSI 2008/298 reg 25) and Northern Ireland (NISR 2019/81
+     reg 27(2)) set no per-spreading limit. The limit is the law table's closed.record_rule.value.within_days, never typed here.
+     The record is ALWAYS saved (record_rule never_refuse): this only says whether to show the calm warning.
+     inp: { nation, spreadOn:'YYYY-MM-DD', recordedOn:'YYYY-MM-DD' }
+     out: { applies (the nation has a limit), late, days (recordedOn - spreadOn), withinDays, words, why, cite, quote, note, law_set } */
+  function recordLate(inp, law) {
+    inp = inp || {}; var k = nationKey(inp.nation), N = nat(law, k);
+    var R = N && N.closed && N.closed.value && N.closed.value.record_rule && N.closed.value.record_rule.value ? N.closed.value.record_rule.value.within_days : null;
+    var out = { applies: false, late: false, days: null, withinDays: null, words: null, why: null, cite: cite(R), quote: R ? R.quote || null : null, note: R ? R.note || null : null, law_set: lawSet(law) };
+    if (!R) { out.refused = k ? 'no record-time row for this nation' : 'nation needed'; return out; }
+    var lim = num(R.value);
+    if (isoOk(inp.spreadOn) && isoOk(inp.recordedOn)) out.days = daysBetween(inp.spreadOn, inp.recordedOn);
+    if (lim === null) { out.why = R.note || 'No time limit for making the record here.'; return out; }
+    out.applies = true; out.withinDays = lim;
+    if (out.days === null) { out.refused = 'spread date and recorded date needed'; return out; }
+    out.late = out.days > lim;
+    if (out.late) { out.words = lim === 7 ? 'Recorded more than a week after spreading. The law asks for a record within one week.' : 'Recorded more than ' + lim + ' days after spreading. The law asks for a record within ' + lim + ' days.'; out.why = (R.source || '') + (R.quote ? ': \u201c' + R.quote + '\u201d' : ''); }
+    return out;
+  }
+  /* -442 (owner decision 3, 24 Nov 2026): Scotland's two bagged-N zones (SSI 2008/298; the law table's closed.bagN north/south and
+     north_zones). The farmer's answer wins: 'north' or 'unsure' -> north (the longer closed period, the safe side), 'south' -> south.
+     With no answer, the NVZ map name decides (any north_zones name in it). ask: the question is still open (no map name settles it
+     and the answer is missing or "not sure"), so the app keeps asking gently.
+     inp: { nation, answer:'north'|'south'|'unsure'|null, mapName, nvz:true|false|null }
+     out: { applies (Scotland), north, how:'answer'|'unsure'|'map'|'none', ask } */
+  function scotZone(inp, law) {
+    inp = inp || {}; var k = nationKey(inp.nation);
+    if (k !== 'S') return { applies: false, north: false, how: 'none', ask: false };
+    var C = nat(law, 'S') ? nat(law, 'S').closed.value : null, zs = (C && Array.isArray(C.north_zones)) ? C.north_zones : [];
+    var map = String(inp.mapName || ''), a = inp.answer === 'north' || inp.answer === 'south' || inp.answer === 'unsure' ? inp.answer : null;
+    var mapNorth = !!map && zs.some(function (z) { return map.toLowerCase().indexOf(String(z).toLowerCase().replace(/shire$/, '')) >= 0; });   /* 'Aberdeenshire' matches an 'Aberdeen' map name too, as the old regex did */
+    var settled = !!map, ask = !settled && inp.nvz !== false && a !== 'north' && a !== 'south';
+    if (a === 'north') return { applies: true, north: true, how: 'answer', ask: false };
+    if (a === 'south') return { applies: true, north: false, how: 'answer', ask: false };
+    if (a === 'unsure') return { applies: true, north: true, how: 'unsure', ask: ask };
+    return { applies: true, north: mapNorth, how: map ? 'map' : 'none', ask: ask };
   }
 
   /* R13: one closed-period check for every place spreading is recorded (Crops input form, Livestock -> Manure spread).
@@ -1985,6 +2026,8 @@
      the latest entry on or before it; a habitat with no history counts from its added date (added_on), or always if none.
      out: { at: { day: summary } , change: { areaHa, hedgeM } between the first and last day, dated: true when every habitat has a dated start } */
   function habitatAt(h, day) {
+    /* -445 (decision 4): "Not sure" if it was there before is read as already there: no gain is ever claimed for it */
+    if (Array.isArray(h.history) && h.history.some(function (x) { return x && x.unsure === true; })) { var lu = h.history.filter(function (x) { return x && isoOk(x.on) && x.on <= day; }).sort(function (a, b) { return a.on < b.on ? -1 : 1; }).pop() || h.history[0]; return lu.removed ? null : { kind: h.kind, length_m: lu.length_m != null ? lu.length_m : h.length_m, area_ha: lu.area_ha != null ? lu.area_ha : h.area_ha }; }
     var hs = Array.isArray(h.history) ? h.history.filter(function (x) { return x && isoOk(x.on) && x.on <= day; }).sort(function (a, b) { return a.on < b.on ? -1 : 1; }) : [];
     if (hs.length) { var l = hs[hs.length - 1]; return l.removed ? null : { kind: h.kind, length_m: l.length_m != null ? l.length_m : h.length_m, area_ha: l.area_ha != null ? l.area_ha : h.area_ha }; }
     if (Array.isArray(h.history) && h.history.some(function (x) { return x && isoOk(x.on); })) return null;   /* every dated entry is after the day: not there yet */
@@ -2136,6 +2179,8 @@
     /* Phase 4 */
     footprint: footprint, stockGroups: stockGroups, grazeShare: grazeShare, n2oMethod: n2oMethod, waterUse: waterUse, habitatSummary: habitatSummary, targetProgress: targetProgress, HAB_KINDS: HAB_KINDS,
     /* -439-sus6 */
+    /* -442 */
+    recordLate: recordLate, scotZone: scotZone,
     housingResolve: housingResolve, housingDefault: housingDefault, wetYearRain: wetYearRain, ukEf1: ukEf1, habitatHistory: habitatHistory,
     /* Phase 5 */
     sha256: sha256, canonical: canonical, previewHash: previewHash, askDetect: askDetect, canSend: canSend, exportInputs: exportInputs, exportCsvRows: exportCsvRows, EXPORT_COLS: EXPORT_COLS,

@@ -345,7 +345,7 @@
     var goats = null; if (inp.nation === 'N' && (inp.herds.some(function (h) { return E.herdKind(h.type) === 'goats'; }) || inp.counts.some(function (x) { return x.species === 'goat' && x.ownership !== 'notours'; }))) {
       var GR = E.sheepReturn('N', inp.today, L, 'goats'); goats = GR ? { dates: GR, filed: false } : null; }   /* marked done on the job itself (sus_tasks) */
     var jobs = E.legalJobs({ nation: inp.nation, today: inp.today, year: inp.year, manure: man, nvz: inp.nvz, store: inp.stores.length ? store : null, sheep: sheep, goats: goats, setup: need,
-                             asks: man.asks, exceptions: man.exceptions, states: inp.taskStates, fmt: D, register: reg ? reg.jobs : [] }, L);
+                             asks: man.asks, exceptions: man.exceptions, states: inp.taskStates, fmt: D, register: reg ? reg.jobs : [], scotZone: inp.n && inp.n.zone }, L);
     /* Phase 2: nitrogen and soil, and its jobs beside the livestock ones (one list) */
     var nn = nCompute(inp);
     jobs = jobs.concat(E.nitrogenJobs({ nation: inp.nation, today: inp.today, year: inp.year, records: nn.rec, soil: nn.has && !(inp.nation === 'S' && set().wfpSoil === 'no') ? nn.soil : null,   /* -439-sus6 (L20): Scotland asks whether soil analysis is one of the WFP items */ urea: nn.urea, states: inp.taskStates }, L))
@@ -501,7 +501,7 @@
           /* -440 (UX-04): a worked-out legal job can't be ticked away; "I've dealt with it" checks it again at once */
           (j.kind === 'law' && !j.computed && !(j.state === 'upcoming') ? '<button class="btn-sec sm" data-sa="job" data-v="' + e(j.local_id) + '|done">Filed</button>' : '') +
           (j.kind === 'law' && j.computed ? '<button class="btn-sec sm" data-sa="job" data-v="' + e(j.local_id) + '|recheck">I’ve dealt with it</button>' : '') +
-          '<button class="btn-sec sm" data-sa="job" data-v="' + e(j.local_id) + '|later">Later</button>' + (j.kind === 'setup' && j.rule_id !== 'nvz-answer' ? '<button class="btn-sec sm" data-sa="job" data-v="' + e(j.local_id) + '|notforus">Not for us</button>' : '') +
+          '<button class="btn-sec sm" data-sa="job" data-v="' + e(j.local_id) + '|later">Later</button>' + (j.kind === 'setup' && j.rule_id !== 'nvz-answer' && j.rule_id !== 'scot-zone' ? '<button class="btn-sec sm" data-sa="job" data-v="' + e(j.local_id) + '|notforus">Not for us</button>' : '') +
           (j.rechecked ? '<span class="sus-mini sus-rechk">Checked again: still true from your records. It clears itself when the numbers change.</span>' : '')
                 : '<span class="sus-mini">' + e(st || '') + '</span><button class="sus-lnk" data-sa="job" data-v="' + e(j.local_id) + '|open">Reopen</button>') + '</div></div>';
     };
@@ -752,7 +752,7 @@
       h += '<div class="sus-aw"><span class="sus-kind ' + (m.kind === 'export' || m.kind === 'import' ? 'law' : 'set') + '">' + e(kw) + '</span><div><b>' + e(N(m.qty, 1) + ' ' + (m.unit === 'm3' ? 'm³' : 't') + ' ' + (lab ? lab[1].toLowerCase() : 'manure') + ', ' + D(m.on)) + '</b><p class="sus-mini">' + e((r && r.kg != null ? N(r.kg) + ' kg N' + (r.typed ? ' (your figure)' : ' (from the standard figure)') : 'Not worked out') + (m.toName ? ', to ' + m.toName : '') + (m.toCph ? ' (CPH ' + m.toCph + ')' : '') + '.') + '</p></div><button class="sus-lnk" data-sa="mdel" data-v="' + e(m.id) + '">Remove</button></div>';
     });
     if (_ui.mf) h += '<div class="sus-form"><div class="sus-row3"><label class="sus-f"><span>What happened</span><select id="sus-m-kind"><option value="clear-out">Cleared out to a heap or store</option><option value="export">Sent off the farm</option><option value="import">Brought in</option><option value="spread">Spread here</option></select></label><label class="sus-f"><span>Date</span><input type="date" id="sus-m-on"></label><label class="sus-f"><span>Manure</span><select id="sus-m-man">' + MANURES.map(function (k) { return '<option value="' + k[0] + '">' + k[1] + '</option>'; }).join('') + '</select></label></div>' +
-      '<div class="sus-row3"><label class="sus-f"><span>Amount</span><input type="number" min="0" id="sus-m-qty"></label><label class="sus-f"><span>Unit</span><select id="sus-m-unit"><option value="t">tonnes</option><option value="m3">m³</option></select></label><label class="sus-f"><span>kg N, if you have an analysis (optional)</span><input type="number" min="0" id="sus-m-kgn"></label></div>' +
+      '<div id="sus-m-late" class="sus-late" hidden aria-live="polite"></div><div class="sus-row3"><label class="sus-f"><span>Amount</span><input type="number" min="0" id="sus-m-qty"></label><label class="sus-f"><span>Unit</span><select id="sus-m-unit"><option value="t">tonnes</option><option value="m3">m³</option></select></label><label class="sus-f"><span>kg N, if you have an analysis (optional)</span><input type="number" min="0" id="sus-m-kgn"></label></div>' +
       '<div class="sus-row3">' + whySelect('sus-m-why') + '</div><div class="sus-row3"><label class="sus-f"><span>Field, if spread here</span><select id="sus-m-field"><option value="">Not answered</option>' + landsAll().map(function (l) { return '<option value="' + e(l.id) + '">' + e(l.name + (l.area ? ', ' + N(l.area, 1) + ' ha' : '')) + '</option>'; }).join('') + '</select></label><label class="sus-f"><span>Area spread, ha (blank = the whole field)</span><input type="number" min="0" step="0.01" id="sus-m-area"></label></div>' +
       '<div class="sus-row3"><label class="sus-f"><span>To or from (name)</span><input type="text" maxlength="120" id="sus-m-to"></label><label class="sus-f"><span>Their CPH (optional)</span><input type="text" maxlength="20" id="sus-m-cph"></label></div><div class="sus-bt"><button class="btn-pri sm" data-sa="msave">Save</button><button class="sus-lnk" data-sa="mcancel">Cancel</button></div></div>';
     else h += '<div class="sus-bt"><button class="btn-sec sm" data-sa="mopen">Add a clear-out or a load of manure</button></div>';
@@ -795,6 +795,11 @@
       : line('CPH number', '<input type="text" maxlength="20" data-sf="prof:cphNumber" value="' + e(T.cphNumber || '') + '" placeholder="e.g. 12/345/6789" aria-label="CPH number">', 'On your cattle passports and sheep movement forms.', T.cphNumber ? 'From Settings' : (needCph ? 'Needs you' : ''));
     if (nv.how === 'whole-territory') h += line('NVZ', 'Every farm in ' + e(NAT[n]) + ' follows the nitrate rules', '', 'The law');
     else h += line('In an NVZ?', seg('nvz', nv.inNvz === true ? 'yes' : nv.inNvz === false ? 'no' : set().nvzAsk === 'unsure' ? 'unsure' : '', [['yes', 'Yes'], ['no', 'No'], ['unsure', 'Not sure']], 'In an NVZ') + (nv.inNvz === null && set().nvzAsk === 'unsure' ? '<small class="sus-mini">Until you know, we use the NVZ rules (the safer ones) and say so. It stays on your jobs list.</small>' : ''),   /* -440 (UX-09) */ nv.suggestion === true ? 'The government map puts the farm’s location in an NVZ. It is a suggestion; you confirm it.' : nv.suggestion === false ? 'The government map does not put the farm’s location in an NVZ. You confirm it.' : 'Set the farm’s location in Rainfall and we check the government map for you.', nv.inNvz === null ? 'Needs you' : 'From Rainfall');
+    /* -445 (decision 3): a Scottish farm whose NVZ map name does not settle the zone is asked once; "Not sure" uses the north dates */
+    var sz = susScotZone();
+    if (n === 'S' && (sz.ask || sz.how === 'answer' || sz.how === 'unsure')) { var szA = (W.ST_RAIN || {}).scotZone || '';
+      h += line('Bagged nitrogen zone', '<span class="sus-ql">Is your farm in the Moray, Aberdeenshire, Banff and Buchan nitrate vulnerable zone?</span>' + seg('szone', szA, [['north', 'Yes'], ['south', 'No'], ['unsure', 'Not sure']], 'Moray, Aberdeenshire, Banff and Buchan NVZ') +
+        (szA === 'unsure' ? '<small class="sus-mini">Until you know, we use the north dates: the longer closed period, so the safe side. It stays on your jobs list.</small>' : ''), 'It sets when bagged nitrogen can go on again.', szA === 'north' || szA === 'south' ? 'From Rainfall' : 'Needs you'); }
     h += line('Fields and crops', lands ? pl(lands, 'field') + ' in Crops' : 'None in Crops yet', '', lands ? 'From Crops' : '');
     h += line('Livestock', herds.length ? e(herds.map(function (x) { return N(x.qty) + ' ' + String(x.name || x.type).toLowerCase(); }).join(', ')) : 'None in Livestock yet', '', herds.length ? 'From Livestock' : '');
     return h;
@@ -912,6 +917,7 @@
       case 'job': var p = v.split('|'); taskSet(p[0], p[1]); return;
       case 'nvz': if (v === 'unsure') { st.nvzAsk = 'unsure'; _cache.key = null; save(); setupRender(); redraw(); return; } st.nvzAsk = null;   /* -440 (UX-09): "Not sure" is an answer; the NVZ rules apply until it is known */
         if (typeof W.rnSetNvz === 'function') W.rnSetNvz(v); else { W.ST_RAIN.nvz = v === 'yes'; W.ST_RAIN.prefsSet = true; } try { if (W.ST_CROP && W.ST_CROP.compliance) W.ST_CROP.compliance.nvzInZone = (v === 'yes'); } catch (er) {} _cache.key = null; setupRender(); redraw(); return;
+      case 'szone': if (typeof W.rnSetScotZone === 'function') W.rnSetScotZone(v); else if (W.ST_RAIN) { W.ST_RAIN.scotZone = v; W.ST_RAIN.prefsSet = true; } _cache.key = null; setupRender(); redraw(); return;   /* -445 (decision 3): saved in farms.rain_prefs through the merge RPC */
       case 'rent': st.rentedAsk = v; if (v !== 'yes') st.rentedHa = st.rentedHa || null; save(); setupRender(); return;
       case 'size': var q = v.split(':'); if (q[0] === 'suckler') st.sucklerSize = q[1]; if (q[0] === 'ewe') st.eweSize = q[1]; if (q[0] === 'dairy') st.dairyYield = q[1]; save('Saved'); setupRender(); return;
       case 'hmode': var hm = v.split(':'); st.housing = st.housing || {}; st.housing[hm[0]] = Object.assign({}, st.housing[hm[0]] || {}, { mode: hm[1] }); save('Saved'); setupRender(); return;   /* -440 (UX-28): the dates are never filled in for the farmer */
@@ -1124,7 +1130,8 @@
     var L0 = kind === 'spread' && fld ? landOf(fld) : null;
     var m = { id: uid('mm'), kind: kind, on: on0, manure: val('sus-m-man'), qty: q, unit: val('sus-m-unit') || 't', kgN: k !== null && k >= 0 ? k : null, toName: String(val('sus-m-to')).slice(0, 120), toCph: String(val('sus-m-cph')).slice(0, 20),
               field: L0 ? L0.id : null, areaHa: L0 ? (ar !== null ? ar : (L0.area || null)) : null, _new: true };
-    var go = function (msg) { S().manureMoves.push(m); _ui.mf = null; save(msg || 'Saved'); };
+    var late = kind === 'spread' ? lateCheck(on0) : null;   /* -445 (decision 1): always saved; the toast says it was late */
+    var go = function (msg) { S().manureMoves.push(m); _ui.mf = null; save((msg || 'Saved') + (late ? '. ' + late.words : '')); };
     /* Phase 2 (R13): the one closed-period check, the same function as the Crops input form. -439-sus6: never refused. */
     var hit = spreadCheck(m), why = val('sus-m-why');
     if (hit) {
@@ -1143,7 +1150,7 @@
     var hit = /^\d{4}-\d{2}-\d{2}$/.test(m.on) && m.kind === 'spread' ? spreadCheck(m) : null;
     if (hit && hit.reasons) fillWhy('sus-m-why', hit.reasons);
   }
-  try { document.addEventListener('change', function (ev) { var t = ev.target; if (t && /^sus-m-(kind|on|man|field)$/.test(t.id || '')) moveWhyRefresh(); }, true); } catch (e) {}
+  try { document.addEventListener('change', function (ev) { var t = ev.target; if (t && /^sus-m-(kind|on|man|field)$/.test(t.id || '')) { moveWhyRefresh(); lateShow('sus-m-late', val('sus-m-kind') === 'spread' ? val('sus-m-on') : ''); } }, true); } catch (e) {}
   /* ── the print pack, for the farmer's own file (no sending) ── */
   function printPack() {
     var c = compute(); if (!c || !c.manure) { W.toast && W.toast('Nothing to print yet', 'info'); return; }
@@ -1182,7 +1189,7 @@
     });
     /* -440 (UX-35): the setup answers the law turns on (the NVZ answer, the farm's hectares, a missing slurry store) reach the Dashboard
        and the bell too, as a "to answer" item, not only the jobs list */
-    var LAWSETUP = { 'nvz-answer': 1, 'holding-area': 1, 'setup-store': 1 };
+    var LAWSETUP = { 'nvz-answer': 1, 'holding-area': 1, 'setup-store': 1, 'scot-zone': 1 };   /* -445: the Scotland zone too */
     var setupItems = c.jobs.filter(function (j) { return j.open && LAWSETUP[j.rule_id]; }).map(function (j) {
       return { tier: j.kind === 'law' ? 'legal' : 'house', sev: j.kind === 'law' ? 70 : 60, nm: j.title, lead: j.title, sub: j.why, st: 'to answer',   /* -441 (UX-17): the store job is legal in an NVZ, listed once */ when: 9998, cta: 'Answer', action: function () { if (j.cta === 'setup' || j.cta === 'rainfall') setupOpen(0); else goTo(j.cta); } };
     });
@@ -1257,6 +1264,27 @@
   }
   function landOf(id) { return landsAll().filter(function (l) { return String(l.id) === String(id); })[0] || null; }
   function moveKgN(m) { var r = EN().manureMoveN({ kind: m.kind, qty: m.qty, unit: m.unit, manure: m.manure, kg_n: m.kgN }, FAC()); return r && r.kg != null ? r.kg : null; }
+  /* -445 (decision 3): Scotland's zone, the one place the desktop works it out (Crops, Rainfall and Sustainability all call this) */
+  function susScotZone() {
+    var R = W.ST_RAIN || {}, E = EN(), L = LAW(), nv = (typeof W.ukNvzStatus === 'function') ? W.ukNvzStatus() : { inNvz: null };
+    var inp = { nation: nationKey(), answer: R.scotZone || null, mapName: (R.nvzMap && R.nvzMap.name) || '', nvz: nv.inNvz };
+    if (E && E.scotZone && L) return E.scotZone(inp, L);
+    var a = inp.answer; return { applies: inp.nation === 'S', north: a === 'north' || a === 'unsure' ? true : a === 'south' ? false : /aberdeen|banff|buchan|moray/i.test(inp.mapName), how: 'fallback', ask: false };
+  }
+  W.susScotZone = susScotZone;
+  /* -445 (decision 1): recorded more than the law's days after the spreading (England and Wales, 7). Always saved; a calm line. */
+  function lateCheck(date) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date || '')) return null;
+    var c = compute(), E = EN(), L = LAW(); if (!c || !c.nation || !L || !E || !E.recordLate) return null;
+    var r = E.recordLate({ nation: c.nation, spreadOn: date, recordedOn: today() }, L); return r && r.late ? r : null;
+  }
+  function lateHtml(r) {
+    if (!r) return '';
+    var u = r.cite && r.cite.source_url ? r.cite.source_url : '';
+    return '<span>' + e(r.words) + '</span> <details class="sus-why"><summary>Why?</summary><span>' + e(r.why || '') + (u ? ' <a href="' + e(u) + '" target="_blank" rel="noopener">legislation.gov.uk</a>' : '') + '. It is saved either way.</span></details>';
+  }
+  function lateShow(id, date) { var el = document.getElementById(id); if (!el) return; var r = lateCheck(date); el.hidden = !r; el.innerHTML = lateHtml(r); }
+  W.susLateCheck = function (date) { var r = lateCheck(date); return r ? r.words : null; };
   function nInputs() {
     var st = set(), nf = st.nFields || {};
     var lands = landsAll().filter(function (l) { return l.planted0; }).map(function (l) { return Object.assign({}, l, { opts: nf[l.id] || {} }); });
@@ -1267,9 +1295,10 @@
     var spreads = (S() ? S().manureMoves : []).filter(function (m) { return m && m.kind === 'spread'; }).map(function (m) { var L0 = m.field != null ? landOf(m.field) : null, lab = MANURES.filter(function (k) { return k[0] === m.manure; })[0];
       return { id: m.id, field: m.field != null ? m.field : null, fieldName: L0 ? L0.name : '', date: m.on, organic_kind: MOVE_ORG[m.manure] || null, qty: m.qty, qty_unit: m.unit, area_ha: m.areaHa || null, kg_n: moveKgN(m), label: lab ? lab[1] : 'Manure', closed_reason: m.closedReason || null }; });
     var tests = (S() ? S().soilTests : []).map(function (t) { return { id: t.id, land: t.land, sampled_on: t.on || null, sns: t.sns, soil: t.soil || null }; });
-    var zone = String((W.ST_RAIN && W.ST_RAIN.nvzMap && W.ST_RAIN.nvzMap.name) || (W.ST_RAIN && W.ST_RAIN.scotZone) || '');
+    /* -445 (decision 3): the farmer's answer (rain_prefs.scotZone) wins, then the NVZ map name; one engine function decides (susScotZone) */
+    var zone = susScotZone();
     return { lands: lands, inputs: inputs, spreads: spreads, tests: tests, member: (st.schemes || {}).redTractor === true ? true : (st.schemes || {}).redTractor === false ? false : null,
-             north: /aberdeen|banff|buchan|moray/i.test(zone) };
+             north: !!zone.north, zone: zone };
   }
   function nCompute(inp) {
     var E = EN(), L = LAW(), F = FAC() || {}, n = inp.n, t = inp.today, nv = inp.nvz ? inp.nvz.inNvz : null;
@@ -1467,7 +1496,7 @@
         '<div style="flex:1">' + lb('Crop-available N, % of total', true) + '<input id="ci-n-avail" type="number" min="0" max="100" step="1" placeholder="the supplier’s analysis" style="' + css + '"></div></div></div>' +
       '<div style="display:flex;gap:10px;margin-bottom:4px"><div style="flex:1">' + lb('Amount') + '<input id="ci-n-qty" type="number" min="0" step="0.01" style="' + css + '"></div><div style="flex:1">' + lb('Unit') + '<select id="ci-n-unit" style="' + css + '"><option value="">Choose</option>' + opt(UNITS_HA) + '</select></div><div style="flex:1">' + lb('Area, ha', true) + '<input id="ci-n-area" type="number" min="0" step="0.01" placeholder="the field’s area" style="' + css + '"></div></div>' +
       /* -440 (UX-31): the form says, as the date, field and product change, whether the day is in a closed period; the reason is asked only then */
-      '<div id="ci-n-cp" style="font-size:13px;font-weight:700;color:var(--t2);margin:8px 0 4px" aria-live="polite"></div>' +
+      '<div id="ci-n-cp" style="font-size:13px;font-weight:700;color:var(--t2);margin:8px 0 4px" aria-live="polite"></div><div id="ci-n-late" class="sus-late" hidden aria-live="polite"></div>' +
       '<div id="ci-n-whybox" hidden style="margin:8px 0 4px">' + lb('This date is in a closed period: why?') + '<select id="ci-n-why" style="' + css + '"><option value="">Choose</option>' + whyOptions().map(function (o) { return '<option value="' + e(o[0]) + '">' + e(o[1]) + '</option>'; }).join('') + '</select></div>' +
       '<div style="font-size:12px;color:var(--t3);line-height:1.5;margin-top:6px">These numbers make the NVZ record and the N max.</div></div>';
   }
@@ -1479,6 +1508,7 @@
     var el = document.getElementById('ci-n-cp'), wb = document.getElementById('ci-n-whybox'); if (!el) return;
     var v = function (id) { var x = document.getElementById(id); return x ? String(x.value || '').trim() : ''; }, date = v('ci-date'), type = v('ci-n-type'), app = v('ci-n-app');
     var ids = [].map.call(document.querySelectorAll('.ci-land-cb:checked'), function (c) { return c.value; });
+    var ed = document.getElementById('ci-n-app'); lateShow('ci-n-late', app === 'bought' || (ed && ed.disabled) ? '' : date);   /* -445: a new spreading only; a correction keeps its first record */
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !type || app === 'bought') { el.textContent = ''; if (wb) wb.hidden = true; return; }
     var c = compute(), E = EN(), L = LAW(); if (!c || !L || !c.nation) { el.textContent = ''; return; }
     var org = type === 'org', ok = v('ci-n-ok'), cat = org ? (/fym/.test(ok) ? 'fym' : 'high_ran') : 'manufactured', hit = null, unk = null, why0 = null, rs = null, per = [];
@@ -1550,7 +1580,7 @@
           if (xn && xn.kgNHa != null && xn.kgNHa > r.exceptionMax + 1e-9) (out0.over = out0.over || []).push((L0 ? L0.name + ': ' : '') + 'this is ' + N(xn.kgNHa, 1) + ' kg N/ha; the crop exception allows up to ' + r.exceptionMax + ' kg N/ha.'); } }
       else if (r.unknown && !worst) { worst = 'ask'; msgs.push(r.why); }
     });
-    var out = { nut: nut };
+    var out = { nut: nut }, lt = lateCheck(date); if (lt) out.late = lt.words;   /* -445 (decision 1): said, never refused */
     /* -439-sus6: never refused; the farmer says why, and the record is saved with the warning and the reason */
     if (worst === 'warn') {
       var why = v('ci-n-why');
@@ -1584,6 +1614,8 @@
       '.sus-tile{background:#fff;border:1px solid var(--br);border-radius:var(--rl);padding:15px 17px;box-shadow:var(--sh);display:flex;flex-direction:column;gap:6px;align-items:flex-start}' +
       '.sus-k{display:block;font-size:11px;font-weight:800;color:var(--t3);text-transform:uppercase;letter-spacing:.04em}.sus-big{font-size:18px;font-weight:800;color:var(--t1);line-height:1.25}' +
       '.sus-mini{font-size:12px;color:var(--t3);line-height:1.5;margin:4px 0 0}.sus-st{display:inline-block;font-size:12px;font-weight:800;border-radius:999px;padding:3px 10px;white-space:nowrap}' +
+      '.sus-chip{border:1px solid var(--br2);background:var(--ap);color:#8A5A00;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:700;cursor:pointer}' +
+      '.sus-late{margin:8px 0 4px;padding:8px 10px;border-radius:8px;background:var(--ap);color:#8A5A00;font-size:13px;line-height:1.5}.sus-late details{display:inline}.sus-late summary{display:inline;cursor:pointer;text-decoration:underline}.sus-late details[open] span{display:block;margin-top:4px}.sus-late a{color:inherit}' +
       '.sus-st.g{background:var(--gp);color:var(--gd)}.sus-st.a{background:var(--ap);color:#8A5A00}.sus-st.r{background:var(--rp);color:#A4281B}.sus-st.n{background:var(--br2);color:var(--t2)}' +
       '.sus-tag{display:inline-block;font-size:11px;font-weight:800;background:var(--br2);color:var(--t2);border-radius:6px;padding:1px 7px}.sus-est{font-size:12px;color:var(--t3);margin-top:8px}' +
       '.sus-lnk{color:var(--gm);font-weight:700;font-size:13px;text-decoration:underline;cursor:pointer;background:none;border:0;padding:0}.btn-sec.sm,.btn-pri.sm{padding:6px 12px;font-size:12px}' +

@@ -76,7 +76,7 @@
     out.hab = (s ? s.habitats : []).filter(function (h) { return h && !h.removed; }).map(function (h) { return { id: h.id, kind: h.kind, name: h.name || '', length_m: h.lengthM, area_ha: h.areaHa, land: h.land, photo: !!h.photo }; });
     /* -439-sus6 (owner decision "habitats" a): the dated history, removed ones included, so the baseline is real */
     out.habAll = (s ? s.habitats : []).filter(function (h) { return h; }).map(function (h) { return { kind: h.kind, length_m: h.lengthM, area_ha: h.areaHa, removed: !!h.removed, added_on: h.addedOn || null,
-      history: Array.isArray(h.history) ? h.history.map(function (x) { return { on: x.on, length_m: x.lengthM, area_ha: x.areaHa, removed: !!x.removed }; }) : null }; });
+      history: Array.isArray(h.history) ? h.history.map(function (x) { return { on: x.on, length_m: x.lengthM, area_ha: x.areaHa, removed: !!x.removed, unsure: x.unsure === true }; }) : null }; });   /* -445: unsure = already there, no gain */
     var st = ap.set(); out.set = { targets: st.targets || {}, baselineYear: st.baselineYear || null, reviewedAt: st.targetsReviewedAt || null, recalc: (st.setup && st.setup.recalc) || {} };
     out.farmedHa = 0; ap.landsAll().forEach(function (l) { if (l.planted0) out.farmedHa += Number(l.area) || 0; });
     return out;
@@ -406,21 +406,27 @@
     if (rs.length) h += '<div class="sus-card"><h3>Meter readings</h3>' + table(['Date', 'Reading'], rs.slice(0, 24).map(function (r) { return [D(r.date), N(r.m3) + ' m³']; }), [1]) + '</div>';
     return h;
   }
+  function habUnsure(x) { return !!(x && Array.isArray(x.history) && x.history.some(function (y) { return y && y.unsure === true; })); }
   var KINDS = [['hedge', 'Hedge (length)'], ['woodland', 'Woodland (area)'], ['pond', 'Pond or wet ground (area)'], ['margin', 'Field margin or buffer strip (area)'], ['other', 'Other habitat (area)']];
   function natureTab(c, H) {
     var ap = A(), s = ap.S(), list = (s ? s.habitats : []).filter(function (x) { return x && !x.removed; }), lands = ap.landsAll(), ln = function (id) { var l = lands.filter(function (x) { return String(x.id) === String(id); })[0]; return l ? l.name : ''; };
     var h = '<div class="sus-card"><h3>Nature</h3>' + natureWork(H).replace(/<button[^>]*data-v="na"[^>]*>[^<]*<\/button>/, '') + '</div><div class="sus-card" id="sus-hab"><h3>Hedges, woods, ponds and margins</h3>';
     h += list.length ? table(['Kind', 'Name', 'Field', 'Size', 'Photo', ''], list.map(function (x) { return [{ hedge: 'Hedge', woodland: 'Woodland', pond: 'Pond or wet ground', margin: 'Margin', other: 'Other' }[x.kind] || x.kind, x.name, ln(x.land), x.kind === 'hedge' ? N(x.lengthM) + ' m' : N(x.areaHa, 2) + ' ha',
-      H_(x.photo ? '<button class="sus-lnk" data-sh="hphoto" data-v="' + e(x.id) + '">View</button>' : '<label class="sus-lnk">Add<input type="file" accept="image/*" hidden data-sh-file="' + e(x.id) + '"></label>'), H_('<button class="sus-lnk" data-sh="hchg" data-v="' + e(x.id) + '">Change size</button> <button class="sus-lnk" data-sh="hdel" data-v="' + e(x.id) + '">Remove</button>')]; }), [3]) : '<p class="sus-mini">Nothing recorded yet.</p>';
+      H_(x.photo ? '<button class="sus-lnk" data-sh="hphoto" data-v="' + e(x.id) + '">View</button>' : '<label class="sus-lnk">Add<input type="file" accept="image/*" hidden data-sh-file="' + e(x.id) + '"></label>'), H_((habUnsure(x) ? '<button class="sus-chip" data-sh="hask" data-v="' + e(x.id) + '">New this year? Answer</button> ' : '') + '<button class="sus-lnk" data-sh="hchg" data-v="' + e(x.id) + '">Change size</button> <button class="sus-lnk" data-sh="hdel" data-v="' + e(x.id) + '">Remove</button>')]; }), [3]) : '<p class="sus-mini">Nothing recorded yet.</p>';
     var hcx = _ui.hc ? list.filter(function (x) { return x.id === _ui.hc; })[0] : null;
     if (hcx) h += '<div class="sus-form"><div class="sus-row3"><label class="sus-f"><span>New ' + (hcx.kind === 'hedge' ? 'length, metres' : 'area, hectares') + '</span><input type="number" min="0" step="' + (hcx.kind === 'hedge' ? '1' : '0.01') + '" id="sus-hc-size"></label><label class="sus-f"><span>Changed on</span><input type="date" id="sus-hc-on" value="' + e(A().today()) + '"></label></div><div class="sus-bt"><button class="btn-pri sm" data-sh="hchgsave" data-v="' + e(hcx.id) + '">Save the change</button><button class="btn-sec sm" data-sh="hchg" data-v="' + e(hcx.id) + '">Cancel</button></div><p class="sus-mini">Each change keeps its date, so progress since your baseline is real.</p></div>';
+    /* -445 (decision 4): "Not sure" is asked again from the list; "No, new this year" asks the date (today to start with) */
+    var hax = _ui.ha ? list.filter(function (x) { return x.id === _ui.ha; })[0] : null;
+    if (hax) h += '<div class="sus-form"><div class="sus-q"><span class="sus-ql">Was ' + e(hax.name || 'it') + ' there before ' + e(String(H.Y)) + '?</span><div class="sus-seg" role="group" aria-label="There before this year">' + [['yes', 'Yes, it was already there'], ['no', 'No, new this year']].map(function (o) { var x = _ui.haB === o[0]; return '<button type="button" data-sh="habefore" data-v="' + o[0] + '" class="' + (x ? 'on' : '') + '" aria-pressed="' + x + '">' + o[1] + '</button>'; }).join('') + '</div>' +
+      (_ui.haB === 'no' ? '<label class="sus-f"><span>When was it planted, dug or made?</span><input type="date" id="sus-ha-on" value="' + e(A().today()) + '" min="' + e(A().today().slice(0, 4)) + '-01-01" max="' + e(A().today()) + '"></label>' : '') + '</div>' +
+      '<div class="sus-bt"><button class="btn-pri sm" data-sh="hasave" data-v="' + e(hax.id) + '">Save</button><button class="btn-sec sm" data-sh="hask" data-v="' + e(hax.id) + '">Cancel</button></div></div>';
     var hist = (s ? s.habitats : []).filter(function (x) { return x && Array.isArray(x.history) && x.history.length; });
     if (hist.length) h += '<details class="sus-det"><summary>History of changes</summary><ul class="sus-ul">' + [].concat.apply([], hist.map(function (x) { return x.history.map(function (y) { return [y.on, (x.name || ({ hedge: 'Hedge', woodland: 'Woodland', pond: 'Pond', margin: 'Margin', other: 'Habitat' }[x.kind] || x.kind)) + ': ' + (y.removed ? 'removed' : x.kind === 'hedge' ? N(y.lengthM) + ' m' : N(y.areaHa, 2) + ' ha')]; }); })).sort(function (a, b) { return a[0] < b[0] ? -1 : 1; }).map(function (r) { return '<li>' + e(D(r[0]) + ': ' + r[1]) + '</li>'; }).join('') + '</ul></details>';
     if (_ui.hf) { var k = _ui.hf.kind || '';
       h += '<div class="sus-form"><div class="sus-row3"><label class="sus-f"><span>Kind</span><select id="sus-h-kind" data-sh-change="hkind"><option value="">Choose</option>' + KINDS.map(function (o) { return '<option value="' + o[0] + '"' + (k === o[0] ? ' selected' : '') + '>' + e(o[1]) + '</option>'; }).join('') + '</select></label>' +
         '<label class="sus-f"><span>Name (optional)</span><input type="text" maxlength="120" id="sus-h-name"></label><label class="sus-f"><span>Field</span><select id="sus-h-land"><option value="">Not answered</option>' + lands.map(function (l) { return '<option value="' + e(l.id) + '" data-k="' + e(l.kind) + '">' + e(l.name) + '</option>'; }).join('') + '</select></label></div>' +
-        (k ? '<div class="sus-row3"><label class="sus-f"><span>' + (k === 'hedge' ? 'Length, metres' : 'Area, hectares') + '</span><input type="number" min="0" step="' + (k === 'hedge' ? '1' : '0.01') + '" id="sus-h-size"></label></div><div class="sus-q"><span class="sus-ql">Was it there before ' + e(String(H.Y)) + '?</span><div class="sus-seg" role="group" aria-label="There before this year">' + [['yes', 'Yes, it was already there'], ['no', 'No, new this year']].map(function (o) { var x = _ui.hf.before === o[0]; return '<button type="button" data-sh="hbefore" data-v="' + o[0] + '" class="' + (x ? 'on' : '') + '" aria-pressed="' + x + '">' + o[1] + '</button>'; }).join('') + '</div>' +
-          (_ui.hf.before ? '<label class="sus-f"><span>' + (_ui.hf.before === 'no' ? 'When was it planted, dug or made?' : 'There since (optional; leave blank if you don’t know)') + '</span><input type="date" id="sus-h-on" max="' + e(A().today()) + '"></label>' : '') + '</div>' : '') +   /* -440 (UX-12): never dated today for the farmer */
+        (k ? '<div class="sus-row3"><label class="sus-f"><span>' + (k === 'hedge' ? 'Length, metres' : 'Area, hectares') + '</span><input type="number" min="0" step="' + (k === 'hedge' ? '1' : '0.01') + '" id="sus-h-size"></label></div><div class="sus-q"><span class="sus-ql">Was it there before ' + e(String(H.Y)) + '?</span><div class="sus-seg" role="group" aria-label="There before this year">' + [['yes', 'Yes, it was already there'], ['no', 'No, new this year'], ['unsure', 'Not sure']].map(function (o) { var x = _ui.hf.before === o[0]; return '<button type="button" data-sh="hbefore" data-v="' + o[0] + '" class="' + (x ? 'on' : '') + '" aria-pressed="' + x + '">' + o[1] + '</button>'; }).join('') + '</div>' +
+          (_ui.hf.before === 'unsure' ? '<p class="sus-mini">We count it as already there, so no gain is claimed. It shows “New this year? Answer” on the list until you know.</p>' : _ui.hf.before ? '<label class="sus-f"><span>' + (_ui.hf.before === 'no' ? 'When was it planted, dug or made?' : 'There since (optional; leave blank if you don’t know)') + '</span><input type="date" id="sus-h-on" max="' + e(A().today()) + '"></label>' : '') + '</div>' : '') +   /* -440 (UX-12): never dated today for the farmer */
         '<div class="sus-bt"><button class="btn-pri sm" data-sh="hsave">Save</button><button class="btn-sec sm" data-sh="hcancel">Cancel</button></div><p class="sus-mini">A photo can be added once it is saved. Photos are kept in your farm’s private files.</p></div>'; }
     else h += '<div class="sus-bt"><button class="btn-sec sm" data-sh="hopen">Add a hedge, wood, pond or margin</button></div>';
     return h + '</div>';
@@ -467,6 +473,9 @@
       case 'wadd': if (typeof W.cropAddWaterReading === 'function') { var wd = (document.getElementById('cwr-date') || {}).value; if (wd && wd > A().today()) { W.toast && W.toast('That date has not happened yet', 'info'); return; } try { W.cropAddWaterReading(); } catch (er) { console.warn('water reading', er); } redraw(); } return;
       case 'hbefore': if (_ui.hf) { _ui.hf.before = v; redraw(); } return;
       case 'hcancel': _ui.hf = null; redraw(); return;
+      case 'hask': _ui.ha = _ui.ha === v ? null : v; _ui.haB = null; redraw(); return;
+      case 'habefore': _ui.haB = v; redraw(); return;
+      case 'hasave': habAnswer(v); return;
       case 'hsave': habSave(); return;
       case 'hdel': if (W.susArmed && !W.susArmed(b)) return; var hx = S().habitats.filter(function (x) { return x.id === v; })[0]; if (hx) { hx.history = (hx.history || []).concat([{ on: A().today(), removed: true }]); hx.removed = true; } saveP('Removed today (kept in the history)'); return;
       case 'hchg': _ui.hc = _ui.hc === v ? null : v; redraw(); return;
@@ -530,10 +539,22 @@
     if (bf === 'no' && !on) { W.toast && W.toast('When was it planted, dug or made?', 'info'); return; }
     if (bf === 'no' && on < A().today().slice(0, 4) + '-01-01') { W.toast && W.toast('That date is before this year. Choose “it was already there”', 'info'); return; }
     if (bf === 'yes' && on && on >= A().today().slice(0, 4) + '-01-01') { W.toast && W.toast('That date is this year. Choose “new this year”', 'info'); return; }
+    if (bf === 'unsure') on = null;   /* -445 (decision 4): "Not sure" is saved like "already there, no date", marked unsure */
     /* -440 (UX-12): "already there" with no date counts as there all along (no gain is claimed); a new one keeps its real date */
     S().habitats.push({ id: A().uid('hb'), kind: k, name: v('sus-h-name').slice(0, 120), lengthM: k === 'hedge' ? sz : null, areaHa: k === 'hedge' ? null : sz, land: land || null, landKind: lo ? lo.kind : null,
-      addedOn: on, history: [{ on: on || '2000-01-01', lengthM: k === 'hedge' ? sz : null, areaHa: k === 'hedge' ? null : sz }], _new: true });
+      addedOn: on, history: [Object.assign({ on: on || '2000-01-01', lengthM: k === 'hedge' ? sz : null, areaHa: k === 'hedge' ? null : sz }, bf === 'unsure' ? { unsure: true } : {})], _new: true });
     _ui.hf = null; saveP('Saved');
+  }
+  /* -445 (decision 4): the answer to a "Not sure". Yes: already there (2000-01-01 stays, unsure cleared). No: new this year, on the date given. */
+  function habAnswer(id) {
+    var hx = S().habitats.filter(function (x) { return x.id === id; })[0]; if (!hx || !_ui.haB) { W.toast && W.toast('Was it there before this year?', 'info'); return; }
+    var hs = Array.isArray(hx.history) && hx.history.length ? hx.history : [{ on: '2000-01-01', lengthM: hx.lengthM, areaHa: hx.areaHa }];
+    hs = hs.map(function (y) { var o = Object.assign({}, y); delete o.unsure; return o; });
+    if (_ui.haB === 'no') { var on = (document.getElementById('sus-ha-on') || {}).value || '', t = A().today();
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(on) || on > t) { W.toast && W.toast('When was it planted, dug or made?', 'info'); return; }
+      if (on < t.slice(0, 4) + '-01-01') { W.toast && W.toast('That date is before this year. Choose “it was already there”', 'info'); return; }
+      hs[0].on = on; hx.addedOn = on; hs.sort(function (a, b) { return a.on < b.on ? -1 : 1; }); }
+    hx.history = hs; _ui.ha = null; _ui.haB = null; saveP('Saved');
   }
   function targetSet(k) {
     var m = METRICS[k], vv = num((document.getElementById('sus-t-v-' + k) || {}).value), by = num((document.getElementById('sus-t-by-' + k) || {}).value), c = W.susCompute(), H = c && c.h; if (!m || !H) return;
