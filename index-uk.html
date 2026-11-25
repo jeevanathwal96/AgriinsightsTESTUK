@@ -7,7 +7,7 @@
 
 <meta name="description" content="AgriInsights UK — making farm finances simple for UK farmers. Track costs, plan your season, stay ready for Making Tax Digital and keep your farm records straight."/>
 <meta name="theme-color" content="#1B4332"/>
-<meta name="ai-build" content="uk-2026-11-24-445"/>
+<meta name="ai-build" content="uk-2026-11-25-446"/>
 <meta name="color-scheme" content="light"/>
 <meta property="og:title" content="AgriInsights — Making Farm Finances Simple"/>
 <meta property="og:description" content="The farm finance app built for UK farmers. Track every pound, plan your season, stay MTD-ready — all in one place."/>
@@ -31,7 +31,7 @@
 <script defer src="vendor/chart.umd.js"></script>
 
 <script src="vendor/supabase.js"></script>
-<script src="ai-data-uk.js?v=uk159"></script>
+<script src="ai-data-uk.js?v=uk160"></script>
 <script src="ai-auth-uk.js?v=uk120"></script>
 
 <script src="sus-engine-uk.js?v=uk14"></script>
@@ -3761,6 +3761,47 @@ body.aicg-open .aidl-bg{z-index:100001}
 
 #qc-suggest{position:fixed;bottom:0;left:50%;transform:translateX(-50%) translateY(100%);z-index:8100;width:min(380px,calc(100vw - 32px));background:#1B4332;border-radius:16px 16px 0 0;padding:20px 22px 28px;box-shadow:0 -8px 40px rgba(0,0,0,.25);transition:transform .4s cubic-bezier(.34,1.56,.64,1);pointer-events:all}
 #qc-suggest.show{transform:translateX(-50%) translateY(0)}
+
+#qc-suggest:not(.show){box-shadow:none;visibility:hidden;transition:transform .4s cubic-bezier(.34,1.56,.64,1),visibility 0s linear .4s}
+
+#ast-tbody .ast-sub{white-space:normal!important;overflow:visible!important;text-overflow:clip!important;overflow-wrap:anywhere}
+.ai-bar .nm{white-space:normal!important;overflow:visible!important;text-overflow:clip!important;line-height:1.3;flex:none}
+.ie-comp-nm,.ie-snm{white-space:normal!important;overflow:visible!important;text-overflow:clip!important;overflow-wrap:anywhere}
+.rn-orow .n span{white-space:normal!important;overflow:visible!important;text-overflow:clip!important}
+.row2.nm-long{grid-template-columns:1fr!important}
+
+.mc-lbl>[role="img"][title],.mc-lbl>.wk-info,.mc-lbl>.cb-info{margin-left:.3em}
+
+.st-prog-pct{color:var(--t2)}.st-hero .st-prog-pct{color:#fff}
+
+.ls-camp-grid{align-items:stretch!important}
+.ls-camp-grid>.ls-camp:not(.open){display:flex;flex-direction:column}
+.ls-camp-grid>.ls-camp:not(.open)>.ls-camp-top{flex:1 1 auto;display:flex;flex-direction:column}
+.ls-camp-grid>.ls-camp:not(.open) .ls-tapmore{margin-top:auto;padding-top:10px}
+.crop-lands>.crop-land:not(.open){display:flex;flex-direction:column}
+.crop-lands>.crop-land:not(.open)>.cr-tapmore{margin-top:auto!important;padding-top:8px}
+
+#demo-bubble{max-width:300px}
+.demo-bubble-actions{flex-wrap:wrap;row-gap:6px}
+.demo-btn-next,.demo-btn-skip,.demo-progress{white-space:nowrap}
+
+.gfr-ban .hide{white-space:nowrap;flex:none;margin-left:16px}
+.ob4 .gfr-ban h2.long{font-size:20px;letter-spacing:-.3px}
+
+.ls-empty0{text-align:center;padding:30px 20px;background:#fff;border:1px dashed var(--br);border-radius:var(--rl);margin-bottom:14px}
+
+
+#uk-reg-card .wk-ptbl th,#uk-reg-card .wk-ptbl td{text-align:left;vertical-align:middle}
+#uk-reg-card .wk-ptbl td:nth-child(-n+3),#uk-reg-card .wk-ptbl th:nth-child(-n+3),#uk-reg-card .wk-ptbl td.reg-cph,#uk-reg-card .wk-ptbl th:nth-child(5){white-space:nowrap;padding-right:14px}
+
+#uk-reg-card .wk-ptbl th:nth-child(1){width:14%}#uk-reg-card .wk-ptbl th:nth-child(2){width:14%}#uk-reg-card .wk-ptbl th:nth-child(3){width:12%}
+#uk-reg-card .wk-ptbl th:nth-child(4){width:25%}#uk-reg-card .wk-ptbl th:nth-child(5){width:17%}#uk-reg-card .wk-ptbl th:nth-child(6){width:18%}
+#uk-reg-card .wk-ptbl td.reg-cph .fx-btn{margin:0}
+
+#crop-view-comply .cau-areas{flex:1 1 100%!important;order:3}
+#crop-view-comply .cau-chips{gap:5px}
+#crop-view-comply .cau-chip{padding:4px 10px;line-height:1.35}
+
 .qcs-handle{width:36px;height:4px;background:rgba(255,255,255,.25);border-radius:2px;margin:0 auto 16px}
 .qcs-title{font-size:15px;font-weight:800;color:#fff;margin-bottom:6px}
 .qcs-sub{font-size:13px;color:rgba(255,255,255,.75);line-height:1.6;margin-bottom:18px}
@@ -7811,7 +7852,7 @@ button:focus-visible,a:focus-visible,[role=tab]:focus-visible{outline:2px solid 
 .ob4 .n3 span{font-size:14px;color:rgba(255,255,255,.72);display:block;margin-top:3px;line-height:1.5}
 .ob4 .card{background:#fff;border:1px solid var(--line);border-radius:16px}
 .ob4 .gfr{display:grid;grid-template-columns:1fr 330px;overflow:hidden}
-.ob4 .gfr-ban{height:104px;background-size:cover;background-position:center 60%;position:relative;padding:20px 28px;color:#fff;display:flex;align-items:flex-end;justify-content:space-between}
+.ob4 .gfr-ban{min-height:104px;background-size:cover;background-position:center 60%;position:relative;padding:20px 28px;color:#fff;display:flex;align-items:flex-end;justify-content:space-between}
 .ob4 .gfr-ban::before{content:'';position:absolute;inset:0;background:linear-gradient(90deg,rgba(12,36,24,.88) 0%,rgba(12,36,24,.55) 55%,rgba(12,36,24,.15) 100%)}
 .ob4 .gfr-ban>*{position:relative}
 .ob4 .gfr-ban .d{font-size:12.5px;color:rgba(255,255,255,.8);font-weight:600}
@@ -11556,7 +11597,7 @@ body.ob4-ckfull #page-tour-fixed{display:none!important}
       <div id="or-bl-filter">
         <span class="or-chip on" onclick="orFilterBlocks('all',this)">All</span>
         <span class="or-chip" onclick="orFilterBlocks('topfruit',this)">🍎 Top fruit</span>
-        <span class="or-chip" onclick="orFilterBlocks('fruit',this)">🍏 Other fruit</span>
+        <span class="or-chip" onclick="orFilterBlocks('fruit',this)">🧺 Other fruit</span>
         <span class="or-chip" onclick="orFilterBlocks('berry',this)">🫐 Berries</span>
         <span class="or-chip" onclick="orFilterBlocks('veg',this)">🥬 Vegetables</span>
       </div>
@@ -12396,7 +12437,7 @@ body.ob4-ckfull #page-tour-fixed{display:none!important}
         <button id="set-fresh-btn" onclick="startFresh()" style="background:#fff;border:1.5px solid #BA7517;color:#8A6A14;border-radius:var(--rs);padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap">Start fresh</button>
       </div>
       
-      <div class="set-danger">
+      <div class="set-danger" id="set-row-demoreset">
         <div><div class="dt">Reset to the demo farm</div><div class="ds">Wipes every change made on this device and reloads the fresh demo farm.</div></div>
         <button onclick="appConfirm('Reset to the demo farm? All changes on this device will be erased.').then(function(o){if(o)clearData();})" style="background:#fff;border:1.5px solid var(--rd);color:var(--rd);border-radius:var(--rs);padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap">Reset</button>
       </div>
@@ -12872,7 +12913,7 @@ body.ob4-ckfull #page-tour-fixed{display:none!important}
 
 </div>
 </div>
-<script src="js/app-2-878f3d736d.js"></script>
+<script src="js/app-2-414c97ec9d.js"></script>
 
 
 <div class="imp-bg" id="imp-hub-bg">
@@ -13430,7 +13471,7 @@ body.ob4-ckfull #page-tour-fixed{display:none!important}
 <div id="kpi-trail"></div>
 <script id="kpi-detail-js" src="js/app-3-bd4d96eb95.js"></script>
 
-<script id="bg-grid-js" src="js/app-4-017f29674f.js"></script>
+<script id="bg-grid-js" src="js/app-4-d06f138a32.js"></script>
 
 <div class="simple-mode-badge" id="simple-badge">Simple View ON</div>
 <style id="ux429">
@@ -13724,7 +13765,7 @@ img.ux-em:not([src]){visibility:hidden}
 }
 </style>
 <script id="v432-emoji" src="js/app-6-32ab38abe9.js"></script>
-<script id="ob433" src="js/app-7-1b5b7e60c9.js"></script>
+<script id="ob433" src="js/app-7-4004792eec.js"></script>
 </body>
 </html>
 

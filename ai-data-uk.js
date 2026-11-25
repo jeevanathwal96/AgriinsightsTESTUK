@@ -1589,7 +1589,7 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
       var s0 = g.scen[r.local_id];
       if (r.kind) s0.kind = r.kind; else if (/^bud-/.test(r.local_id)) s0.kind = 'budget';
       if (r.approved_at) s0.approvedAt = r.approved_at;
-      if (s0.kind === 'forecast') { var h = (r.history && typeof r.history === 'object') ? r.history : {}; s0.hist = Array.isArray(h.log) ? h.log : []; s0.pv = h.pv || {}; s0.lk = h.lk || {}; s0.bt = h.bt || { income: {}, expense: {} }; s0.org = {}; if (h.seedDay1) s0.seedDay1 = true; } });
+      if (s0.kind === 'forecast') { var h = (r.history && typeof r.history === 'object') ? r.history : {}; s0.hist = Array.isArray(h.log) ? h.log : []; s0.pv = h.pv || {}; s0.lk = h.lk || {}; s0.bt = h.bt || { income: {}, expense: {} }; s0.org = {}; if (h.seedDay1) s0.seedDay1 = true; if (h.fx444) s0.fx444 = 1; } });
     (rows || []).forEach(function (r) {
       var s = g.scen[r.scenario_local_id]; if (!s || (r.side !== 'income' && r.side !== 'expense')) return;
       var L = ymToLabel(r.period_year, r.period_month), ent = r.ent_code || 'none', key = r.side + '|' + r.category + '|' + ent + '|' + L, v = Number(r.amount) || 0;
@@ -1606,7 +1606,7 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
       var sr = { farm_id: fid, local_id: id, fy: +s.fy, name: s.name || 'Budget', is_live: !!s.live, sort_idx: Math.max(0, Math.round(+s.sort || 0)) };
       /* -401 (8B): yield x price per enterprise row, {'cat|ent': {y, p, unit, ...}} with its keys sorted (one spelling) */
       if (CAN_BUDGET_FC) { sr.kind = s.kind || (/^bud-/.test(id) ? 'budget' : 'forecast'); sr.approved_at = s.approvedAt || null;
-        sr.history = (sr.kind === 'forecast') ? { log: (s.hist || []).slice(-200), pv: s.pv || {}, lk: { mkt: (s.lk && s.lk.mkt) || {}, at: (s.lk && s.lk.at) || null }, bt: s.bt || { income: {}, expense: {} }, seedDay1: !!s.seedDay1 } : {}; }
+        sr.history = (sr.kind === 'forecast') ? { log: (s.hist || []).slice(-200), pv: s.pv || {}, lk: { mkt: (s.lk && s.lk.mkt) || {}, at: (s.lk && s.lk.at) || null }, bt: s.bt || { income: {}, expense: {} }, seedDay1: !!s.seedDay1 } : {}; if (sr.kind === 'forecast' && s.fx444) sr.history.fx444 = 1; }   /* -444: the rent split rule it was made with */
       if (CAN_BUDGET_YP) { var yo = {}; Object.keys(s.yp || {}).sort().forEach(function (k) { var v = s.yp[k], o = {}; if (!v) return; Object.keys(v).sort().forEach(function (q) { o[q] = v[q]; }); yo[k] = o; }); sr.yp = yo; }
       scen.push(sr);
       var seen = {};
