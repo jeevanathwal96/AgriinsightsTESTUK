@@ -163,7 +163,7 @@
     if (data.settings && typeof data.settings === 'object') { var keep = s.settings || {}; s.settings = Object.assign({}, data.settings); if (keep._local) s.settings._local = keep._local;
       if (s.settings.asks === undefined) { if (keep.asks) s.settings.asks = keep.asks; else delete s.settings.asks; }   /* Phase 5: no asks column on the server yet: keep this device's answers */
       /* -439-sus6: the farm facts column (sus_settings.farm_facts, uk-sus6) may not be there yet: keep this device's answers */
-      ['lambingMonth', 'assumeEmptied', 'weeksFrom', 'assumeAnMfg', 'wfpSoil'].forEach(function (k) { if (s.settings[k] === undefined && keep[k] !== undefined) s.settings[k] = keep[k]; }); }
+      ['lambingMonth', 'assumeEmptied', 'weeksFrom', 'assumeAnMfg', 'wfpSoil', 'washAsk', 'washM3Wk', 'yardM2', 'lambsPerEwe', 'rentedIn', 'nvzSeen'].forEach(function (k) { if (s.settings[k] === undefined && keep[k] !== undefined) s.settings[k] = keep[k]; }); }
     Object.keys(data.tables || {}).forEach(function (k) {
       var srv = data.tables[k]; if (!Array.isArray(srv) || !Array.isArray(s[k])) return;
       var gone = {}; (s.gone[k] || []).forEach(function (id) { gone[String(id)] = 1; });
@@ -179,10 +179,21 @@
   }
 
   /* ── inputs: everything the engine needs, read from the modules ── */
+  /* -447 (web test P1-5): Settings calls the farm size "the whole farm, owned and rented", while this setup added the rented land on
+     top - a farmer who followed Settings counted it twice, which spreads the manure over too many hectares. So it is asked: is the
+     rented land inside the farm size? Not answered: inside (the smaller area, the cautious side for the 170 kg limit), and said. */
   function holdingHa() {
     var own = num(W.ST && W.ST.farmHa) || 0, st = set(), rent = (st.rentedAsk === 'yes' ? (num(st.rentedHa) || 0) : 0);
-    var t = own + rent; return t > 0 ? t : null;
+    var t = !rent ? own : st.rentedIn === 'no' ? own + rent : Math.max(own, rent); return t > 0 ? t : null;
   }
+  /* -447 (web test P1-6): the fields in Crops and Livestock add up to more than the farm the limits are worked over - one of the two is
+     wrong, and the per-hectare figures disagree (Nitrogen per field area, the 170 kg limit per farm). Said once, as a setup job. */
+  function areaAsk(inp) {
+    var ha = 0; ((inp.n && inp.n.lands) || []).forEach(function (l) { ha += num(l.area) || 0; });
+    var hold = num(inp.holdingHa); return hold > 0 && ha > hold * 1.05 + 0.5 ? [{ what: 'areaCheck', fieldsHa: Math.round(ha * 10) / 10, holdingHa: Math.round(hold * 10) / 10 }] : [];
+  }
+  var _nvzSeenT = null; function nvzSeenSave() { if (_nvzSeenT) return; _nvzSeenT = setTimeout(function () { _nvzSeenT = null; try { var s0 = S(); if (s0 && W.AI && W.AI.sus && W.AI.farm && W.AI.farm.active()) W.AI.sus.saveAll(s0).catch(function () {}); if (typeof W.saveState === 'function') W.saveState(); } catch (er) {} }, 0); }
+  function rentedInAsk() { var st = set(); return st.rentedAsk === 'yes' && num(st.rentedHa) > 0 && st.rentedIn !== 'yes' && st.rentedIn !== 'no'; }
   /* Livestock herds of other species are records too. Until the farmer adds batches (pigs, poultry) or a count (goats, deer,
      horses, camelids) in Livestock -> Manure, the herd's head count stands for the whole year, tagged as an estimate. */
   var KIND_COUNT = { goats: 'goat', deer: 'deer', horses: 'horse', camelids: 'alpaca' };
@@ -255,14 +266,20 @@
       spans: (S() ? S().spans : []).map(function (x) { return { kind: x.kind, species: x.species, role: x.role, n: x.n, from: x.from, to: x.to, occupier: x.occupier }; }),
       batches: batchesIn(), counts: countsIn(),
       manureMoves: (S() ? S().manureMoves : []).map(function (m) { return { kind: m.kind, qty: m.qty, unit: m.unit, manure: m.manure, kg_n: m.kgN, moved_on: m.on }; }),
-      opts: { size: st.sucklerSize || null, eweSize: st.eweSize || null, yieldBand: st.dairyYield || null, lambingMonth: st.lambingMonth || null, ewesIn: st.ewesIn || null },
-      assumeEmptied: st.assumeEmptied === true, weeksFrom: st.weeksFrom || null, assume: { anMfg: st.assumeAnMfg === true }, wfpSoil: st.wfpSoil || null,
-      holdingHa: holdingHa(), housing: housing(), pigFeed: st.pigFeed || null,
+      opts: { size: st.sucklerSize || null, eweSize: st.eweSize || null, yieldBand: st.dairyYield || null, lambingMonth: st.lambingMonth || null, ewesIn: st.ewesIn || null, lambsPerEwe: st.lambsPerEwe != null ? st.lambsPerEwe : null },
+      assumeEmptied: st.assumeEmptied === true, weeksFrom: st.weeksFrom || null, wash: { ask: st.washAsk === 'yes' || st.washAsk === 'no' ? st.washAsk : null, m3Wk: st.washAsk === 'yes' ? num(st.washM3Wk) : null, yardM2: st.washAsk === 'yes' ? num(st.yardM2) : null },   /* -446 (P0-2) */ assume: { anMfg: st.assumeAnMfg === true }, wfpSoil: st.wfpSoil || null,
+      holdingHa: holdingHa(), rentedInAsk: rentedInAsk(), housing: housing(), pigFeed: st.pigFeed || null,
       stores: (S() ? S().stores : []).map(function (x) { return { local_id: x.id, kind: x.kind, capacity_m3: x.capacityM3, covered: x.covered, built_or_changed: x.builtOrChanged, open_area_m2: x.openAreaM2, removed: x.removed }; }),
       readings: (S() ? S().readings : []).map(function (r) { return { store_local_id: r.store, read_on: r.on, fill_frac: r.frac }; }),
       rainNormal: (typeof W.rnNormalMonthly === 'function') ? W.rnNormalMonthly() : null,
       rainWet: rainWet(t),   /* -439-sus6 (L7): a 1-in-5 wet season from the farm's Rainfall normal (80th percentile of ~30 ERA5 seasons) */
-      nvz: (function () { var nv = (typeof W.ukNvzStatus === 'function') ? W.ukNvzStatus() : { inNvz: null }; return nv.inNvz === null && st.nvzAsk === 'unsure' ? Object.assign({}, nv, { inNvz: true, assumed: true, how: 'unsure' }) : nv; })(),   /* -440 (UX-09) */
+      nvz: (function () { var nv = (typeof W.ukNvzStatus === 'function') ? W.ukNvzStatus() : { inNvz: null };
+        /* -447 (web test P1-14): an NVZ answer belongs to the nation it was given under. The farm's nation changed since: asked again
+           (nvzSeen remembers the nation and the answer; a new answer, here or in Rainfall, takes the current nation). */
+        if ((nv.inNvz === true || nv.inNvz === false) && nv.editable !== false) { var nk0 = nationKey(), sn = st.nvzSeen;
+          if (!sn || sn.v !== nv.inNvz) { st.nvzSeen = { n: nk0, v: nv.inNvz }; nvzSeenSave(); }
+          else if (sn.n && nk0 && sn.n !== nk0) nv = Object.assign({}, nv, { inNvz: null, how: 'other-nation', was: sn.n }); }
+        return nv.inNvz === null && st.nvzAsk === 'unsure' ? Object.assign({}, nv, { inNvz: true, assumed: true, how: 'unsure' }) : nv; })(),   /* -440 (UX-09) */
       soil: (W.ST_RAIN && W.ST_RAIN.soils === 'sandy') ? 'sandy' : 'other',
       inv: (S() ? S().inventory : []).slice(), taskStates: taskStates(),
       sheepKeeper: (typeof W.ukKeepsSheepOrGoats === 'function') ? W.ukKeepsSheepOrGoats() : false,
@@ -314,15 +331,16 @@
     var key = E.inputsHash(inp);
     if (_cache.key === key && _cache.val) return _cache.val;
     var man = E.yearManure(inp, L, F);
+    if (!man.refused && inp.rentedInAsk) man.estimates = (man.estimates || []).concat(['the rented land counted as inside the farm size until you say (the smaller area, the cautious side)']);   /* -447 (P1-5) */
     if (man.refused) return { refused: man.refused };
     /* -439-sus6 (S18): only the open surface the farmer gave; no 1 m² per 2.1 m³ rule */
     var area = 0; inp.stores.forEach(function (s) { if (!s.removed && (s.kind === 'lagoon' || s.kind === 'tank') && s.covered !== true && num(s.open_area_m2) > 0) area += num(s.open_area_m2); });
     var RW = inp.rainWet || {}, followers = inp.herds.some(function (h) { var k = E.herdKind(h.type); return k === 'dairy' || k === 'dairy_young'; }) ? 'dairy' : 'beef';
-    var flow = E.slurryInflow({ nation: inp.nation, monthly: man.monthly, year: inp.year, housing: inp.housing, openAreaM2: area, rainMm: RW.mm, rainBasis: RW.basis, pigFeed: inp.pigFeed, pigBatches: inp.batches, followers: followers }, L, F || {});
+    var flow = E.slurryInflow({ nation: inp.nation, monthly: man.monthly, year: inp.year, housing: inp.housing, openAreaM2: area, rainMm: RW.mm, rainBasis: RW.basis, pigFeed: inp.pigFeed, pigBatches: inp.batches, followers: followers, washM3Wk: inp.wash ? inp.wash.m3Wk : null, yardM2: inp.wash ? inp.wash.yardM2 : null }, L, F || {});
     var anyPig = inp.batches.some(function (b) { return b.species === 'pig' && (b.where || 'house') === 'house'; }), anyPoultry = inp.batches.some(function (b) { return b.species === 'poultry' && (b.where || 'house') !== 'field'; });   /* the pig rule is for pig slurry: housed pigs */
     var places = { sow: 0, finisher: 0, poultry: 0 }; inp.batches.forEach(function (b) { var n = Number(b.n) || 0; if (b.species === 'poultry') places.poultry += n; else if (/sow|gilt/.test(b.type || '')) places.sow += n; else places.finisher += n; });
     var store = E.storePlan({ nation: inp.nation, nvz: inp.nvz.inNvz, stores: inp.stores, readings: inp.readings, inflowPerDay: flow.perDay || [0,0,0,0,0,0,0,0,0,0,0,0], today: inp.today,
-                              kind: anyPig ? 'pig' : 'cattle', places: places, hasPigOrPoultry: anyPig || anyPoultry, soil: inp.soil, assumeEmptied: inp.assumeEmptied, weeksFrom: inp.weeksFrom }, L);
+                              kind: anyPig ? 'pig' : 'cattle', places: places, hasPigOrPoultry: anyPig || anyPoultry, soil: inp.soil, assumeEmptied: inp.assumeEmptied, weeksFrom: inp.weeksFrom, washAsk: inp.wash ? inp.wash.ask : null, washGiven: !!(inp.wash && (inp.wash.m3Wk != null || inp.wash.yardM2 != null)) }, L);
     var savedInv = inp.inv.filter(function (x) { return +x.year === +inp.year; }).map(function (x) { return { year: x.year, ewes: x.ewes, rams: x.rams, other: x.other, goats: x.goats, counted_on: x.countedOn, filed_on: x.filedOn, filed_via: x.filedVia }; })[0] || null;
     /* -439-sus6: in NI goats have their own return (below); the sheep return is for a flock */
     var niSheep = inp.nation !== 'N' || inp.herds.some(function (h) { var k = E.herdKind(h.type); return k === 'ewes' || k === 'rams' || k === 'store_lambs'; });
@@ -345,10 +363,10 @@
     var goats = null; if (inp.nation === 'N' && (inp.herds.some(function (h) { return E.herdKind(h.type) === 'goats'; }) || inp.counts.some(function (x) { return x.species === 'goat' && x.ownership !== 'notours'; }))) {
       var GR = E.sheepReturn('N', inp.today, L, 'goats'); goats = GR ? { dates: GR, filed: false } : null; }   /* marked done on the job itself (sus_tasks) */
     var jobs = E.legalJobs({ nation: inp.nation, today: inp.today, year: inp.year, manure: man, nvz: inp.nvz, store: inp.stores.length ? store : null, sheep: sheep, goats: goats, setup: need,
-                             asks: man.asks, exceptions: man.exceptions, states: inp.taskStates, fmt: D, register: reg ? reg.jobs : [], scotZone: inp.n && inp.n.zone }, L);
+                             asks: (man.asks || []).concat(inp.rentedInAsk ? [{ what: 'rentedIn' }] : [], areaAsk(inp)), exceptions: man.exceptions, states: inp.taskStates, fmt: D, register: reg ? reg.jobs : [], scotZone: inp.n && inp.n.zone }, L);
     /* Phase 2: nitrogen and soil, and its jobs beside the livestock ones (one list) */
     var nn = nCompute(inp);
-    jobs = jobs.concat(E.nitrogenJobs({ nation: inp.nation, today: inp.today, year: inp.year, records: nn.rec, soil: nn.has && !(inp.nation === 'S' && set().wfpSoil === 'no') ? nn.soil : null,   /* -439-sus6 (L20): Scotland asks whether soil analysis is one of the WFP items */ urea: nn.urea, states: inp.taskStates }, L))
+    jobs = jobs.concat(E.nitrogenJobs({ nation: inp.nation, today: inp.today, year: inp.year, records: nn.rec, soil: nn.has && !(inp.nation === 'S' && set().wfpSoil === 'no') ? nn.soil : null,   /* -439-sus6 (L20): Scotland asks whether soil analysis is one of the WFP items */ urea: nn.urea, states: inp.taskStates, fmt: D }, L))
                .sort(function (a, b) { return (a.kind === 'law' ? 0 : 1) - (b.kind === 'law' ? 0 : 1) || ((a.dueIn == null ? 9999 : a.dueIn) - (b.dueIn == null ? 9999 : b.dueIn)); });
     var val = { nation: inp.nation, year: inp.year, today: inp.today, manure: man, inflow: flow, store: store, sheep: sheep, goats: goats, jobs: jobs, need: need, nvz: inp.nvz, n: nn, reg: reg, stock: stockInfo(inp),
                 holdingHa: inp.holdingHa, inputs: inp, hash: key, law_set: inp.law, factor_set: inp.fac };
@@ -405,7 +423,7 @@
     var lim = M.limit, assumed = c.nvz && c.nvz.assumed, close = !M.over && lim && M.perHa > 0.9 * lim;
     var word = nv === false ? ['n', 'No limit here'] : M.over ? ['r', 'Over the limit' + (assumed ? ' (if in an NVZ)' : '')] : nv === null ? ['a', 'Within 170, NVZ not answered'] : close ? ['a', 'Close to the limit'] : assumed ? ['a', 'Within 170, NVZ not known'] : ['g', 'Within the limit'];
     return { big: N(M.perHa) + (nv === false ? '' : ' of ' + lim) + ' kg N per ha', st: word,
-      line: N(M.kg) + ' kg N from livestock manure over ' + N(M.holdingHa, 1) + ' ha this year' + (nv === false ? '. The farm is not in an NVZ, so the 170 kg limit does not apply.' : '.') + (close && nv !== false ? ' Within ' + N(lim - M.perHa) + ' kg of the limit: check stock numbers, land you rent and manure you export before adding stock.' : '') + (assumed ? ' NVZ not known yet, so the NVZ rules are used.' : '') + regWords(c) };
+      line: ((M.estimates || []).length ? 'About ' + N(Math.round(M.kg / 10) * 10) : N(M.kg)) + ' kg N from livestock manure over ' + N(M.holdingHa, 1) + ' ha this year'   /* -447 (audit P2): estimates are not shown to the kilo */ + (nv === false ? '. The farm is not in an NVZ, so the 170 kg limit does not apply.' : '.') + (close && nv !== false ? ' Within ' + N(lim - M.perHa) + ' kg of the limit: check stock numbers, land you rent and manure you export before adding stock.' : '') + (assumed ? ' NVZ not known yet, so the NVZ rules are used.' : '') + regWords(c) };
   }
   /* decision 2a: the figure stays on Livestock and says when the register shows something different */
   function regWords(c) { return (typeof W.susRegDiffers === 'function' && W.susRegDiffers(c)) ? ' Your register shows something different: see Livestock, Register.' : ''; }
@@ -413,17 +431,19 @@
     var P = c.store; if (!P || P.status === 'none') return { big: 'No store added', st: ['n', 'Not started'], line: 'Add each slurry store once in Livestock, Manure: size and whether it’s covered.' };
     if (P.status === 'missing' || P.capacityM3 === 0) return { big: 'Size missing', st: ['a', 'Needs you'], line: 'Add the size of the slurry store in cubic metres.' };
     var st = P.status === 'short' ? ['r', 'Short of the rule'] : P.status === 'unknown' ? ['n', 'Unknown'] : P.status === 'tight' ? ['a', 'Tight'] : ['g', 'Room to spare'];
+    var noWash = (P.asks || []).indexOf('washings') >= 0;   /* -446 (P0-2): never "Room to spare" on stock and rain alone */
+    if (noWash && st[0] === 'g') st = ['a', set().washAsk === 'yes' ? 'Check: add the washings' : 'Check: washings not answered'];
     var big = P.fillM3 === null ? 'How full is it today?' : P.fullBy ? 'Full around ' + D(P.fullBy) : 'Not full within a year at this rate';
     var rule = P.rule && P.rule.days ? ('The rule: ' + P.rule.days + ' days of storage. About ' + N(P.needM3) + ' m³ needed against ' + N(P.capacityM3) + ' m³.') : (P.rule && P.rule.why ? 'Storage rule: ' + P.rule.why + '.' : '');
     /* -440 (UX-45): the spreading date says which soil it assumed and where that is set */
     var soilW = c.nation === 'N' ? '' : ' (' + (c.inputs && c.inputs.soil === 'sandy' ? 'sandy or shallow soil' : 'soil that is not sandy or shallow') + (set().soilAns ? ', your answer' : ', not answered yet') + ')';
-    return { big: big, st: st, line: (P.fillM3 === null ? 'No full-by date until you say how full it is, or tick “Assume emptied by 1 October”. ' : '') + (P.spreadFrom ? 'You can’t spread slurry until ' + D(P.spreadFrom) + soilW + '. ' : '') + rule };
+    return { big: big, st: st, line: (noWash ? (set().washAsk === 'yes' ? 'Washings and yard water are not counted yet: add how much below. ' : 'Washings and yard water are not counted yet: say below whether any drain into the store. ') : '') + (P.fillM3 === null ? 'No full-by date until you say how full it is, or tick “Assume emptied by 1 October”. ' : '') + (P.spreadFrom ? 'You can’t spread slurry until ' + D(P.spreadFrom) + soilW + '. ' : '') + rule };
   }
   function sheepWords(c) {
     var sh = c.sheep; if (!sh) return null; var R = sh.dates, f = sh.counted || sh.estimate;
     var sheepAny = (f.ewes || 0) + (f.rams || 0) + (f.other || 0) > 0 || !sh.goats;
     var txt = (sheepAny ? pl(f.ewes, 'ewe') + ', ' + pl(f.rams, 'ram') + ', ' + N(f.other) + ' other sheep' : '') + (sh.goats ? (sheepAny ? ', ' : '') + pl(f.goats || 0, 'goat') : '');
-    var st = sh.filed ? ['g', 'Filed ' + D(sh.filed_on)] : R.state === 'overdue' ? ['r', 'Overdue'] : sh.counted ? ['g', 'Counted'] : ['n', 'Estimate'];
+    var st = sh.filed ? ['g', 'Filed ' + D(sh.filed_on)] : R.state === 'overdue' ? (R.stillAccepted ? ['a', 'Late: still taken until ' + D(R.acceptedUntil)] : ['r', 'Overdue']) : sh.counted ? ['g', 'Counted'] : ['n', 'Estimate'];   /* -447 (audit P2): Scotland takes late returns until 30 January */
     var cnt = R.countFrom === R.countTo ? 'Count on ' + D(R.countFrom) : 'Count between ' + D(R.countFrom) + ' and ' + D(R.countTo);
     return { big: txt, st: st, line: cnt + '. Return by ' + D(R.dueBy) + ' through ' + R.route + '. We don’t send it for you.' };
   }
@@ -482,7 +502,7 @@
     }
     bits.push('Farm size: ' + (W.ST && W.ST.farmHa ? N(W.ST.farmHa, 1) + ' ha from Settings' : 'missing') + (set().rentedAsk === 'yes' ? ', plus ' + N(set().rentedHa, 1) + ' ha rented' : ''));
     /* -440 (UX-47): say whose answer it is and where it is kept, whichever page it was given on */
-    bits.push('NVZ: ' + (c.nvz.how === 'whole-territory' ? 'every farm in ' + NAT[c.nation] : c.nvz.assumed ? 'not sure yet, so the NVZ rules are used' : c.nvz.inNvz === true ? 'yes, your answer (kept with your Rainfall settings)' : c.nvz.inNvz === false ? 'no, your answer (kept with your Rainfall settings)' : 'not answered yet'));
+    bits.push('NVZ: ' + (c.nvz.how === 'other-nation' ? 'answered before the farm\'s nation changed, so asked again for ' + (NAT[c.nation] || 'this nation') : c.nvz.how === 'whole-territory' ? 'every farm in ' + NAT[c.nation] : c.nvz.assumed ? 'not sure yet, so the NVZ rules are used' : c.nvz.inNvz === true ? 'yes, your answer (kept with your Rainfall settings)' : c.nvz.inNvz === false ? 'no, your answer (kept with your Rainfall settings)' : 'not answered yet'));
     var h = '<ul class="sus-ul">' + bits.map(function (b) { return '<li>' + e(b) + '</li>'; }).join('') + '</ul>';
     h += estTags(M.estimates.concat((c.inflow && c.inflow.estimates) || [], (c.store && c.store.estimates) || []));
     h += '<p class="sus-mini">Legal values: ' + e(c.law_set || '') + ' (checked ' + e(D(LAW().compiled)) + '). ' + e(M.cite ? M.cite.source : '') + '. Check with your adviser if unsure.</p>';
@@ -628,7 +648,9 @@
     if (c.inputs.herds.some(function (x) { return EN().herdKind(x.type) === 'ewes'; })) {
       h += '<div class="sus-hr"><b>Ewes</b><div class="sus-q"><span class="sus-ql">When does lambing usually start?</span><select data-sf="lambing" aria-label="Lambing month"><option value="">Not answered</option>' + MONTHS.map(function (m, i) { return '<option value="' + (i + 1) + '"' + (+st.lambingMonth === i + 1 ? ' selected' : '') + '>' + m + '</option>'; }).join('') + '</select>' +
         '<p class="sus-mini">' + (st.lambingMonth ? 'Lambs are dated from 1 ' + MONTHS[st.lambingMonth - 1] + '.' : 'Not answered yet: lambs counted from 1 April.') + ' Lambs and rams are not housed.</p></div>' +
-        (st.lambingMonth ? '<div class="sus-q"><span class="sus-ql">Do the ewes come in to lamb?</span>' + seg('ewesin', st.ewesIn || '', [['yes', 'Yes'], ['no', 'No, they lamb outside']], 'Ewes housed to lamb') + '<p class="sus-mini">' + (st.ewesIn === 'yes' ? 'Counted as housed for 42 days before lambing (UK inventory).' : st.ewesIn === 'no' ? 'Not counted as housed.' : 'Not answered yet: counted as housed for 42 days before lambing (UK inventory) until you say.') + '</p></div>' : '') + '</div>';
+        (st.lambingMonth ? '<div class="sus-q"><span class="sus-ql">Do the ewes come in to lamb?</span>' + seg('ewesin', st.ewesIn || '', [['yes', 'Yes'], ['no', 'No, they lamb outside']], 'Ewes housed to lamb') + '<p class="sus-mini">' + (st.ewesIn === 'yes' ? 'Counted as housed for 42 days before lambing (UK inventory).' : st.ewesIn === 'no' ? 'Not counted as housed.' : 'Not answered yet: counted as housed for 42 days before lambing (UK inventory) until you say.') + '</p></div>' : '') +
+        (c.inputs.herds.some(function (x) { return EN().herdKind(x.type) === 'ewes' && !((x.classes || []).some(function (k) { return k.k === 'lambs' && Number(k.n) > 0; })); }) ?   /* -447: only where no lambs are counted */
+        '<div class="sus-q"><label class="sus-f"><span>Lambs reared per ewe</span><input type="number" min="0" max="4" step="0.05" data-sf="lpe" value="' + e(st.lambsPerEwe != null ? st.lambsPerEwe : '') + '" placeholder="e.g. 1.5"></label><p class="sus-mini">' + (st.lambsPerEwe != null ? 'Lambs at foot counted from lambing to 6 months old.' : 'Not answered yet: lambs at foot are not counted in the carbon footprint' + (nationKey() === 'N' ? ' or the manure figure' : '') + '.') + '</p></div>' : '') + '</div>';
     }
     return h ? sec('sus-housing', 'When stock are housed', h + '<div class="sus-bt"><button class="btn-sec sm" data-sa="hlog">Log housing or turnout</button></div>', 'Usual dates for your farm. We don’t ask every year: log the real day when they come in or go out, and the forecast uses it.') : '';
   }
@@ -648,10 +670,16 @@
         (slurry && x.covered === false ? '<div class="sus-f"><span>Does the slurry crust over?</span>' + seg('stcrust', (set().storeCrust || {})[x.id] ? x.id + ':' + set().storeCrust[x.id] : '', [[x.id + ':crust', 'It crusts over'], [x.id + ':none', 'No crust']], 'Slurry crust') + ((set().storeCrust || {})[x.id] ? '' : '<small class="sus-mini">Not answered: counted as crusted, the answer that gives the highest figure.</small>') + '</div>' : '') +   /* -440 (UX-27, R9): asked once, here */
         (slurry && x.covered !== true ? '<label class="sus-f"><span>Open surface, m² (length × width)</span><input type="number" min="0" data-sf="store:' + e(x.id) + ':openAreaM2" value="' + e(x.openAreaM2 || '') + '" placeholder="Needs your answer"></label>' : '') +
         (slurry && c.nation === 'E' ? '<label class="sus-f"><span>Built or last changed</span><input type="date" data-sf="store:' + e(x.id) + ':builtOrChanged" value="' + e(x.builtOrChanged || '') + '"></label>' : '') + '</div>' +
-        (slurry ? '<div class="sus-q"><span class="sus-ql">How full is it today?</span>' + seg('fill', '', [[x.id + ':0', 'Empty'], [x.id + ':0.25', 'A quarter'], [x.id + ':0.5', 'Half'], [x.id + ':0.75', 'Three quarters'], [x.id + ':1', 'Full']], 'How full') + '</div>' : '<p class="sus-mini">Solid manure: 10 m from water and 50 m from a spring, well or borehole' + (c.nation === 'N' ? ' (Northern Ireland: 20 m, 50 m and 250 m for FYM; within 120 days; not the same spot two years running)' : '') + '.</p>') +
+        (slurry ? '<div class="sus-q"><span class="sus-ql">How full is it today?</span>' + seg('fill', (function () { var r0 = ((S() || {}).readings || []).filter(function (r) { return r && r.store === x.id && r.on === today(); }).slice(-1)[0]; return r0 ? x.id + ':' + String(r0.frac) : ''; })(), [[x.id + ':0', 'Empty'], [x.id + ':0.25', 'A quarter'], [x.id + ':0.5', 'Half'], [x.id + ':0.75', 'Three quarters'], [x.id + ':1', 'Full']], 'How full') + '</div>' : '<p class="sus-mini">Solid manure: 10 m from water and 50 m from a spring, well or borehole' + (c.nation === 'N' ? ' (Northern Ireland: 20 m, 50 m and 250 m for FYM; within 120 days; not the same spot two years running)' : '') + '.</p>') +
         '<button class="sus-lnk" data-sa="stdel" data-v="' + e(x.id) + '">Remove</button></div>';
     });
     h += '<div class="sus-bt"><button class="btn-sec sm" data-sa="stadd">Add a store</button></div>';
+    /* -446 (web test P0-2): washings and yard water, the farmer's own figures (SI 2015/668 reg 25(3)) */
+    if (list.some(function (x) { return x.kind === 'lagoon' || x.kind === 'tank'; })) { var stw = set();
+      h += '<div class="sus-q"><span class="sus-ql">Does anything else drain into the slurry store?</span>' + seg('wash', stw.washAsk || '', [['no', 'No, only the slurry'], ['yes', 'Yes: washings or yard water']], 'Anything else into the store') +
+        '<p class="sus-mini">Parlour and dairy washings, or rain off a dirty yard that runs to the store. The storage rule counts them (SI 2015/668 reg 25(3)).</p>' +
+        (stw.washAsk === 'yes' ? '<div class="sus-row3"><label class="sus-f"><span>Washings and dairy water, m³ a week</span><input type="number" min="0" step="any" data-sf="washm3" value="' + e(stw.washM3Wk != null ? stw.washM3Wk : '') + '" placeholder="0 if none"></label>' +
+          '<label class="sus-f"><span>Dirty yard draining to the store, m²</span><input type="number" min="0" step="any" data-sf="yardm2" value="' + e(stw.yardM2 != null ? stw.yardM2 : '') + '" placeholder="0 if none"></label></div>' : '') + '</div>'; }
     if (P && P.capacityM3 > 0) {
       var w = storeWords(c);
       h += '<div class="sus-fc"><div class="sus-gh"><b>' + (P.stores > 1 ? 'Slurry stores together' : 'Slurry store') + ', ' + N(P.capacityM3) + ' m³</b>' + stPill(w.st) + '</div><p><b>' + e(w.big) + (/[?.]$/.test(w.big) ? '' : '.') + '</b> ' + e(w.line) + '</p>' +
@@ -769,7 +797,7 @@
   var _ui = { retEdit: false, awf: null, bf: null, cf: null, mf: null, step: 0, fs: null, st: null };
   var STEPS = ['What we already know', 'Land and livestock', 'A few questions'];
   function setupOpen(step) {
-    _ui.step = step || 0;
+    _ui.step = step || 0; _ui.shownStep = null;
     var ov = document.getElementById('sus-setup-ov');
     if (!ov) { ov = document.createElement('div'); ov.id = 'sus-setup-ov'; ov.className = 'rn-modal'; ov.innerHTML = '<div class="rn-sheet sus-sheet" role="dialog" aria-modal="true" aria-labelledby="sus-setup-t"><div id="sus-setup-box"></div></div>'; document.body.appendChild(ov); ov.addEventListener('click', onClick); ov.addEventListener('change', onChange); }
     ov.classList.add('on'); setupRender();
@@ -781,6 +809,8 @@
     h += st === 0 ? step1() : st === 1 ? step2() : step3();
     h += '</div><div class="sus-snav"><button class="btn-sec" data-sa="setback"' + (st === 0 ? ' style="visibility:hidden"' : '') + '>Back</button><button class="btn-pri" data-sa="setnext">' + (st === 2 ? (prof ? 'Save and close' : 'Finish setup') : st === 0 && !prof ? 'Looks right' : 'Next') + '</button></div>';
     setHtml(box, h);
+    /* -447 (web test F5): a new step opens at its top, never at the last step's scroll position */
+    if (_ui.shownStep !== st) { _ui.shownStep = st; try { box.scrollTop = 0; var pe = box.parentElement; while (pe && pe !== document.body) { if (pe.scrollTop) pe.scrollTop = 0; pe = pe.parentElement; } } catch (er) {} }
   }
   function line(k, v, sub, src, extra) { return '<div class="sus-line"><span class="sus-lk">' + e(k) + '</span><div class="sus-lv">' + v + (sub ? '<small class="sus-mini">' + e(sub) + '</small>' : '') + (extra || '') + '</div>' + (src ? '<span class="sus-src' + (/Needs you/.test(src) ? ' miss' : '') + '">' + e(src) + '</span>' : '') + '</div>'; }
   function step1() {
@@ -789,7 +819,7 @@
     var h = '<p class="sus-mini">This is what the app already holds. Change anything that is wrong; it is saved where it lives.</p>';
     h += line('Farm', '<input type="text" maxlength="80" data-sf="prof:farmName" value="' + e(T.farmName || '') + '" aria-label="Farm name">', '', T.farmName ? 'From Settings' : 'Needs you');
     h += line('Nation', e(n ? NAT[n] : 'Not set'), 'Sets which rules apply. Change it in Settings.', n ? 'From Settings' : 'Needs you');
-    h += line('Farm size', '<input type="number" min="0" step="0.1" data-sf="prof:farmHa" value="' + e(T.farmHa || '') + '" aria-label="Farm size in hectares"> ha', 'The land you own or farm as your own. Rented land is the next step.', T.farmHa ? 'From Settings' : 'Needs you');
+    h += line('Farm size', '<input type="number" min="0" step="0.1" data-sf="prof:farmHa" value="' + e(T.farmHa || '') + '" aria-label="Farm size in hectares"> ha', 'The farm size in Settings. Rented land is the next step, where we ask whether it is already inside this figure.', T.farmHa ? 'From Settings' : 'Needs you');
     var needCph = herds.length > 0;
     h += n === 'N' ? line('Herd or flock number', '<input type="text" maxlength="20" data-sf="prof:cphNumber" value="' + e(T.cphNumber || '') + '" aria-label="Herd or flock number">', 'Your DAERA herd number (on your cattle passports) or flock number.', T.cphNumber ? 'From Settings' : (needCph ? 'Needs you' : ''))   /* -440 (UX-43) */
       : line('CPH number', '<input type="text" maxlength="20" data-sf="prof:cphNumber" value="' + e(T.cphNumber || '') + '" placeholder="e.g. 12/345/6789" aria-label="CPH number">', 'On your cattle passports and sheep movement forms.', T.cphNumber ? 'From Settings' : (needCph ? 'Needs you' : ''));
@@ -819,7 +849,9 @@
   function step2() {
     var st = set(), LS = W.ST_LS || {}, herds = (LS.herd || []).filter(function (h) { return h && !h.removed && !h.planned; }), own = num(W.ST && W.ST.farmHa) || 0;
     var h = '<h4>Rented land</h4><div class="sus-q"><span class="sus-ql">Do you rent any extra land?</span>' + seg('rent', st.rentedAsk || '', [['yes', 'Yes'], ['no', 'No'], ['unsure', 'Not sure']], 'Rented land') +
-      (st.rentedAsk === 'yes' ? '<label class="sus-f"><span>Rented land, ha</span><input type="number" min="0" step="0.1" data-sf="set:rentedHa" value="' + e(st.rentedHa || '') + '"></label><p class="sus-mini">Limits are worked out over your ' + N(own, 1) + ' ha plus ' + N(st.rentedHa || 0, 1) + ' ha rented: ' + N(own + (num(st.rentedHa) || 0), 1) + ' ha in total.</p>'
+      (st.rentedAsk === 'yes' ? '<label class="sus-f"><span>Rented land, ha</span><input type="number" min="0" step="0.1" data-sf="set:rentedHa" value="' + e(st.rentedHa || '') + '"></label>' +
+          (num(st.rentedHa) > 0 ? '<div class="sus-q"><span class="sus-ql">Is the ' + N(st.rentedHa, 1) + ' ha rented already inside your farm size of ' + N(own, 1) + ' ha?</span>' + seg('rentin', st.rentedIn || '', [['yes', 'Yes, it is inside'], ['no', 'No, it is on top']], 'Rented land inside the farm size') + '</div>' : '') +   /* -447 (P1-5) */
+          '<p class="sus-mini">' + (st.rentedIn === 'no' ? 'Limits are worked out over your ' + N(own, 1) + ' ha plus ' + N(st.rentedHa || 0, 1) + ' ha rented: ' + N(own + (num(st.rentedHa) || 0), 1) + ' ha in total.' : st.rentedIn === 'yes' ? 'Limits are worked out over ' + N(holdingHa() || 0, 1) + ' ha, the rented land included.' : 'Until you say, limits are worked out over ' + N(holdingHa() || 0, 1) + ' ha (the rented land counted as inside, the cautious side).') + '</p>'
         : st.rentedAsk === 'no' ? '<p class="sus-mini">Limits are worked out over your ' + N(own, 1) + ' ha.</p>' : st.rentedAsk === 'unsure' ? '<p class="sus-mini">Until you know, limits are worked out over your ' + N(own, 1) + ' ha. It is on your jobs list.</p>' : '<p class="sus-mini">Land you rent and have at your disposal counts as part of your farm for the manure limit.</p>') + '</div>';
     h += '<h4>Livestock</h4>';
     var noStock = !herds.length && !(S() && (S().batches.length || S().counts.length));
@@ -916,6 +948,7 @@
       case 'go': case 'jobgo': goTo(v); return;
       case 'job': var p = v.split('|'); taskSet(p[0], p[1]); return;
       case 'nvz': if (v === 'unsure') { st.nvzAsk = 'unsure'; _cache.key = null; save(); setupRender(); redraw(); return; } st.nvzAsk = null;   /* -440 (UX-09): "Not sure" is an answer; the NVZ rules apply until it is known */
+        st.nvzSeen = { n: nationKey(), v: v === 'yes' }; save();   /* -447 (P1-14): answered for this nation */
         if (typeof W.rnSetNvz === 'function') W.rnSetNvz(v); else { W.ST_RAIN.nvz = v === 'yes'; W.ST_RAIN.prefsSet = true; } try { if (W.ST_CROP && W.ST_CROP.compliance) W.ST_CROP.compliance.nvzInZone = (v === 'yes'); } catch (er) {} _cache.key = null; setupRender(); redraw(); return;
       case 'szone': if (typeof W.rnSetScotZone === 'function') W.rnSetScotZone(v); else if (W.ST_RAIN) { W.ST_RAIN.scotZone = v; W.ST_RAIN.prefsSet = true; } _cache.key = null; setupRender(); redraw(); return;   /* -445 (decision 3): saved in farms.rain_prefs through the merge RPC */
       case 'rent': st.rentedAsk = v; if (v !== 'yes') st.rentedHa = st.rentedHa || null; save(); setupRender(); return;
@@ -931,6 +964,8 @@
       case 'ret': retAction(v); return;
       case 'stadd': s.stores.push({ id: uid('st'), kind: 'lagoon', name: '', capacityM3: null, covered: null, _new: true }); save(); return;
       case 'stdel': removeRow('stores', v); s.readings = s.readings.filter(function (r) { if (String(r.store) === String(v)) { (s.gone.readings = s.gone.readings || []).push(String(r.id)); return false; } return true; }); save('Store removed'); return;
+      case 'rentin': st.rentedIn = v === 'no' ? 'no' : 'yes'; _cache.key = null; save('Saved'); setupRender(); return;   /* -447 (P1-5) */
+      case 'wash': st.washAsk = v === 'yes' ? 'yes' : 'no'; _cache.key = null; save('Saved'); redraw(); return;   /* -446 (P0-2) */
       case 'stcrust': var scr = v.split(':'); st.storeCrust = Object.assign({}, st.storeCrust || {}); st.storeCrust[scr[0]] = scr[1] === 'none' ? 'none' : 'crust'; _cache.key = null; save('Saved'); return;
       case 'stcov': var sc = v.split(':'), so = s.stores.filter(function (x) { return x.id === sc[0]; })[0]; if (so) { so.covered = sc[1] === 'yes'; save('Saved'); } return;
       case 'fill': var fl = v.split(':'); s.readings.push({ id: uid('rd'), store: fl[0], on: today(), frac: +fl[1], source: 'typed', _new: true }); save('Thanks. The forecast starts from today’s level'); return;
@@ -986,10 +1021,15 @@
     var p = f.split(':'), s = S(), st = s.settings, v = t.value;
     if (p[0] === 'prof') {
       if (!W.ST) return;
-      if (p[1] === 'farmHa') { var ha = num(v); if (ha === null || ha < 0 || ha > 100000) { if (typeof W.toast === 'function') W.toast('Type the farm size in hectares', 'info'); try { t.value = W.ST.farmHa != null ? W.ST.farmHa : ''; } catch (er) {} return; } W.ST.farmHa = ha; try { if (W.FARM) W.FARM.ha = ha; } catch (er) {} }
+      if (p[1] === 'farmHa') { var ha = num(v); if (ha === null || ha <= 0 || ha > 100000) { _rangeAt = Date.now(); if (typeof W.toast === 'function') W.toast('The farm size should be more than 0 and up to 100,000 hectares. ' + (W.ST.farmHa != null && W.ST.farmHa !== '' ? 'Kept ' + Number(W.ST.farmHa).toLocaleString('en-GB') + ' ha.' : 'Left blank.'), 'info');   /* -447 (web test F1): said plainly, and kept on screen */ try { t.value = W.ST.farmHa != null ? W.ST.farmHa : ''; } catch (er) {} return; } W.ST.farmHa = ha; try { if (W.FARM) W.FARM.ha = ha; } catch (er) {} }
       else W.ST[p[1]] = String(v).trim().slice(0, p[1] === 'cphNumber' ? 20 : 80);
       try { if (typeof W.syncFarmFromST === 'function') W.syncFarmFromST(); } catch (er) {}
-      saveProfile(); _cache.key = null; if (typeof W.toast === 'function') W.toast('Saved to Settings', 'success'); redraw(); return;
+      /* -447 (web test F2): a GB CPH is 12/345/6789. Kept as typed (a farmer may hold an older form), but a wrong shape is said. */
+      var cphBad = p[1] === 'cphNumber' && String(v).trim() !== '' && nationKey() !== 'N' && !/^\d{2}\/\d{3}\/\d{4}$/.test(String(v).trim());
+      var keepMsg = !cphBad && Date.now() - _rangeAt < 2500;   /* a range message just shown stays on screen */
+      saveProfile(); _cache.key = null; if (cphBad) _rangeAt = Date.now();
+      if (typeof W.toast === 'function' && !keepMsg) W.toast(cphBad ? 'Saved. A CPH number usually looks like 12/345/6789: check it on a cattle passport or movement form.' : 'Saved to Settings', cphBad ? 'info' : 'success');
+      redraw(); return;
     }
     if (p[0] === 'set') { st[p[1]] = rangeNum(t, v, 0, 99999, st[p[1]]); save(); setupRender(); return; }
     if (p[0] === 'herdqty' || p[0] === 'herdcls') {
@@ -1002,9 +1042,12 @@
     if (p[0] === 'sns' || p[0] === 'soilg') { snsSet(p.slice(1).join(':'), p[0] === 'sns' ? 'sns' : 'soil', v); return; }
     if (p[0] === 'nplanN') { var lid = p.slice(1).join(':'), pn = num(v), nf2 = st.nFields = st.nFields || {}; nf2[lid] = Object.assign({}, nf2[lid] || {}, { planN: rangeNum(t, v, 0, 700, (nf2[lid] || {}).planN, 'Planned nitrogen, kg N/ha') }); save('Saved'); return; }
     if (p[0] === 'hw' || p[0] === 'hpct') { st.housing = st.housing || {}; var gh = st.housing[p[1]] = Object.assign({}, st.housing[p[1]] || {}); var hv = num(v);
-      if (p[0] === 'hw') gh.weightKg = rangeNum(t, v, 20, 1500, gh.weightKg, 'Weight, kg'); else gh.slurryPct = rangeNum(t, v, 0, 100, gh.slurryPct, 'Share as slurry, %'); save('Saved'); return; }
+      if (p[0] === 'hw') { gh.weightKg = rangeNum(t, v, 20, 1500, gh.weightKg, 'Weight, kg'); if (p[1] === 'sucklers' && gh.weightKg > 0) st.sucklerSize = gh.weightKg > 500 ? 'gt500' : 'le500'; }   /* -447 (web test F4): the weight answers the size question too */
+      else gh.slurryPct = rangeNum(t, v, 0, 100, gh.slurryPct, 'Share as slurry, %'); save('Saved'); return; }
+    if (p[0] === 'lpe') { st.lambsPerEwe = rangeNum(t, v, 0, 4, st.lambsPerEwe, 'Lambs reared per ewe'); _cache.key = null; save('Saved'); return; }   /* -447 (P1-2, P1-3) */
     if (p[0] === 'lambing') { var lm = Math.floor(num(v)); st.lambingMonth = lm >= 1 && lm <= 12 ? lm : null; save('Saved'); return; }
     if (p[0] === 'emptied') { st.assumeEmptied = !!t.checked; save('Saved'); return; }
+    if (p[0] === 'washm3' || p[0] === 'yardm2') { var wk = p[0] === 'washm3' ? 'washM3Wk' : 'yardM2'; st[wk] = rangeNum(t, v, 0, p[0] === 'washm3' ? 10000 : 1000000, st[wk]); _cache.key = null; save('Saved'); redraw(); return; }   /* -446 (P0-2) */
     if (p[0] === 'anmfg') { st.assumeAnMfg = !!t.checked; save('Saved'); return; }
     if (p[0] === 'weeksfrom') { st.weeksFrom = /^\d{4}-\d{2}-\d{2}$/.test(v) ? v.slice(5) : null; save('Saved'); return; }
     if (p[0] === 'boff' || p[0] === 'brange') { var bb2 = s.batches.filter(function (x) { return x.id === p[1]; })[0]; if (!bb2) return; var bv = num(v);
@@ -1168,6 +1211,7 @@
     if (shw) h += '<h2>Sheep and goat inventory</h2><p><b>' + e(shw.big) + '</b>: ' + e(shw.st[1]) + '. ' + e(shw.line) + '</p>';
     if (c.n && c.n.has) { var nw = nWords(c); h += '<h2>Nitrogen and soil (records in Crops)</h2><p><b>' + e(nw.big) + '</b>: ' + e(nw.st[1]) + '. ' + e(nw.line) + '</p>' +
       (c.n.rec.crops.length ? '<table><tr><th>Crop</th><th class="amt">Area, ha</th><th class="amt">Allowed, kg N/ha</th><th class="amt">Applied, kg N/ha</th></tr>' + c.n.rec.crops.map(function (k) { return '<tr><td>' + e(k.label) + '</td><td class="amt">' + N(k.area, 1) + '</td><td class="amt">' + (k.limitKgHa == null ? '' : N(k.limitKgHa)) + '</td><td class="amt">' + N(k.appliedKgHa) + '</td></tr>'; }).join('') + '</table>' : ''); }
+    if (c.n && c.n.has && (c.n.rec.breaches || []).length) h += '<p><b>Spread in a closed period</b> (as recorded):</p><table><tr><th>Date</th><th>Field</th><th>Product</th><th>Closed period</th><th>Reason</th></tr>' + c.n.rec.breaches.map(function (b) { return '<tr><td>' + e(D(b.date)) + '</td><td>' + e(b.fieldName) + '</td><td>' + e(b.product) + '</td><td>' + e(D(b.from) + ' to ' + D(b.to)) + '</td><td>' + e(b.reasonWords) + '</td></tr>'; }).join('') + '</table>';   /* -446 (P0-4) */
     var open = c.jobs.filter(function (j) { return j.open && j.kind === 'law'; });
     h += '<h2>Legal jobs</h2>' + (open.length ? '<table><tr><th>Job</th><th>Due</th></tr>' + open.map(function (j) { return '<tr><td><b>' + e(j.title) + '</b><br>' + e(j.why) + '</td><td>' + e(j.due ? D(j.due) : '') + '</td></tr>'; }).join('') + '</table>' : (lawLater(c.jobs).length ? '' : '<p>None open.</p>'));
     var lt0 = lawLater(c.jobs);   /* -441 (UX-04): put off with "Later", still true */
@@ -1302,7 +1346,7 @@
   }
   function nCompute(inp) {
     var E = EN(), L = LAW(), F = FAC() || {}, n = inp.n, t = inp.today, nv = inp.nvz ? inp.nvz.inNvz : null;
-    var rec = E.nvzRecords({ nation: inp.nation, nvz: nv, today: t, from: E._util.addDays(t, -364), to: t, lands: n.lands, inputs: n.inputs, spreads: n.spreads, soil: inp.soil, north: n.north }, L, F);
+    var rec = E.nvzRecords({ nation: inp.nation, nvz: nv, today: t, from: E._util.yearFrom ? E._util.yearFrom(t) : E._util.addDays(t, -364), to: t, lands: n.lands, inputs: n.inputs, spreads: n.spreads, soil: inp.soil, north: n.north }, L, F);
     var cropFields = n.lands.filter(function (l) { return l.kind === 'crop'; });
     var soil = cropFields.length ? E.soilDue(inp.nation, cropFields, n.tests, t, L) : null;
     var urea = n.inputs.map(function (x) { return Object.assign({ id: x.id, date: x.date, product: x.product }, E.ureaCheck({ nation: inp.nation, member: n.member, appliedOn: x.date, n_form: x.n_form, product: x.product }, L)); }).filter(function (u) { return u.applies; });
@@ -1321,7 +1365,10 @@
     var st = over.length || orgOver ? ['r', 'Over a limit'] : R.missing ? ['a', 'Records missing N'] : lim.length ? ['g', 'Within the limits'] : ['n', 'No limit worked out'];
     var big = over.length ? over.map(function (k) { return k.label; }).join(', ') + ' over the N max' : orgOver ? 'Over 250 kg N/ha of organic manure on ' + pl(orgOver, 'field') : R.missing ? 'N max not worked out: ' + pl(R.missing, 'record') + ' without N' : lim.length ? 'Within the crop N max' : worst > 0 ? 'Organic manure within 250 kg N/ha' : (c.nvz && c.nvz.inNvz === false && c.nation !== 'W' && c.nation !== 'N' ? 'No crop N max here' : 'N max not worked out');   /* -440 (UX-33) */
     if (!over.length && !orgOver && !R.missing && !lim.length && worst > 0) st = ['g', 'Within the limits'];
-    var line = (R.rows.length ? pl(R.rows.length, 'application') + ' in the last 12 months. ' : '') + (worst > 0 ? 'Organic manure: the most on one field is ' + N(worst) + ' of 250 kg N/ha' + (orgOver ? ' (over on ' + pl(orgOver, 'field') + ')' : '') + '.' : 'No organic manure spread on a field.') +   /* -440 (UX-33): never "up to 0 of 250" */
+    /* -446 (web test P0-4): a closed-period application with no lawful route recorded is said first, never under "Within the limits" */
+    var br = (R.breaches || []).length;
+    if (br) { st = ['r', 'Spread in a closed period']; big = pl(br, 'application') + ' in a closed period with no lawful route recorded' + (over.length || orgOver ? '; ' + big.charAt(0).toLowerCase() + big.slice(1) : ''); }
+    var line = (R.rows.length ? pl(R.rows.length, 'application') + ' in the last 12 months. ' : '') + (R.organic.applies === false ? 'Organic manure: ' + (R.organic.why || 'no 250 kg field limit here') + '.' : worst > 0 ? 'Organic manure: the most on one field is ' + N(worst) + ' of 250 kg N/ha' + (orgOver ? ' (over on ' + pl(orgOver, 'field') + ')' : '') + '.' : 'No organic manure spread on a field.') +   /* -446: with no field limit the table is empty - never read that as no manure */   /* -440 (UX-33): never "up to 0 of 250" */
       (X.soil ? ' Soil tests: ' + (X.soil.due + X.soil.missing ? pl(X.soil.due + X.soil.missing, 'field') + (X.soil.due + X.soil.missing === 1 ? ' needs one' : ' need one') + (X.soil.law ? ' (law)' : ' (scheme)') : 'up to date') + '.' : '');   /* UX-48 */
     return { big: big, st: st, line: line };
   }
@@ -1340,7 +1387,7 @@
       'Manufactured N plus the crop-available N from organic manure, over the area of each crop. ' + ((LAW().nations[c.nation].nmax || {}).source || ''));
     /* 250 per field */
     var fo = Object.keys(R.organic.fields).map(function (f) { var x = R.organic.fields[f], L0 = landOf(f); return '<tr><td>' + e(L0 ? L0.name : f) + '</td><td class="n">' + N(x.nowKgHa) + '</td><td class="n">' + N(x.worstKgHa) + '</td><td>' + stPill(x.over ? ['r', 'Over 250'] : ['g', 'Within 250']) + '</td></tr>'; }).join('');
-    h += sec('sus-org', 'Organic manure on each field', fo ? '<div class="sus-scroll"><table class="sus-t"><tr><th>Field</th><th class="n">Last 12 months</th><th class="n">Most in any 12 months</th><th>Status</th></tr>' + fo + '</table></div>' : '<p class="sus-mini">No organic manure spread on a field yet. Record slurry and FYM in Crops, Inputs (as an organic manure) or in Livestock, Manure (spread here, with the field).</p>',
+    h += sec('sus-org', 'Organic manure on each field', fo ? '<div class="sus-scroll"><table class="sus-t"><tr><th>Field</th><th class="n">Last 12 months</th><th class="n">Most in any 12 months</th><th>Status</th></tr>' + fo + '</table></div>' : R.organic.applies === false ? '<p class="sus-mini">' + e((R.organic.why || 'No 250 kg field limit here').replace(/^./, function (c) { return c.toUpperCase(); })) + '. Each application is still in the NVZ record below.</p>' : '<p class="sus-mini">No organic manure spread on a field yet. Record slurry and FYM in Crops, Inputs (as an organic manure) or in Livestock, Manure (spread here, with the field).</p>',
       'No more than 250 kg of total N from organic manure on any hectare in any 12 months. Manure dropped by grazing animals is not counted.');
     /* NVZ records + CSV */
     var rows = R.rows.map(function (r) { return '<tr><td>' + e(D(r.date)) + '</td><td>' + e(r.fieldName) + '</td><td>' + e(r.product) + '</td><td>' + e(r.type) + '</td><td class="n">' + (r.kgNHa == null ? '' : N(r.kgNHa)) + '</td><td class="n">' + (r.availKgNHa == null ? '' : N(r.availKgNHa)) + '</td><td>' + (r.closed ? stPill(['r', r.closed]) : '') + (r.note ? '<br><span class="sus-mini">' + e(r.note) + '</span>' : '') + '</td></tr>'; }).join('');
@@ -1528,6 +1575,11 @@
       SPRAY_ONLY.forEach(function (id) { var r = rowOf(id); if (r) r.style.display = fert ? 'none' : ''; });
       [].forEach.call(document.querySelectorAll('#crop-comply-card div'), function (d0) { if (/works out the date the field is/.test(d0.textContent || '') && d0.children.length <= 1) d0.style.display = fert ? 'none' : ''; });
       cpWords(); };
+    /* -447 (web test F13): manure is a type of its own on the form - picked, it is the fertiliser record with "organic manure" set
+       (the row saved is unchanged). And the panel's rows wrap, so no select is cut off in the narrow window. */
+    if (!k.querySelector('option[value="manure"]')) { var fo = k.querySelector('option[value="fertiliser"]'), mo = document.createElement('option'); mo.value = 'manure'; mo.textContent = 'Manure or slurry (organic)'; if (fo && fo.nextSibling) k.insertBefore(mo, fo.nextSibling); else k.appendChild(mo); }
+    k.addEventListener('change', function () { if (k.value !== 'manure') return; k.value = 'fertiliser'; var t0 = document.getElementById('ci-n-type'); if (t0) t0.value = 'org'; try { k.dispatchEvent(new Event('change', { bubbles: true })); } catch (er) { sync(); } });
+    if (!document.getElementById('sus-ci-wrap-css')) { var cs = document.createElement('style'); cs.id = 'sus-ci-wrap-css'; cs.textContent = '#ci-nut div[style*="display:flex"]{flex-wrap:wrap}#ci-nut div[style*="flex:1"]{min-width:160px}'; document.head.appendChild(cs); }
     k.addEventListener('change', sync); var ty = document.getElementById('ci-n-type'); if (ty) ty.addEventListener('change', sync);
     ['ci-date', 'ci-n-app', 'ci-n-ok'].forEach(function (id) { var x = document.getElementById(id); if (x) x.addEventListener('change', cpWords); });
     [].forEach.call(document.querySelectorAll('.ci-land-cb'), function (x) { x.addEventListener('change', cpWords); });
@@ -1599,7 +1651,7 @@
   function spreadCheck(m) {
     var c = compute(), E = EN(), L = LAW(); if (!c || !L || m.kind !== 'spread') return null;
     var L0 = m.field != null ? landOf(m.field) : null, ok = MOVE_ORG[m.manure], cat = /fym/.test(ok || '') ? 'fym' : 'high_ran';
-    var r = E.closedPeriodHit({ nation: c.nation, nvz: c.nvz.inNvz, land: L0 && L0.landType === 'arable' ? 'arable' : 'grass', soil: c.inputs.soil, product: cat, date: m.on, crop: L0 ? E.cropKey(L0.crop, L0.planted) : null, cropName: L0 ? L0.crop : null, organicKind: ok || null, sownOn: L0 ? L0.planted : null, north: c.inputs.n.north }, L);
+    var r = E.closedPeriodHit({ nation: c.nation, nvz: c.nvz.inNvz, land: L0 && L0.landType === 'grass' ? 'grass' : 'arable', soil: c.inputs.soil, product: cat, date: m.on, crop: L0 ? E.cropKey(L0.crop, L0.planted) : null, cropName: L0 ? L0.crop : null, organicKind: ok || null, sownOn: L0 ? L0.planted : null, north: c.inputs.n.north }, L);
     return r.hit ? r : null;
   }
   function nResult() { var c = compute(); if (!c || !c.n) return null; var R = c.n.rec, worst = 0; Object.keys(R.organic.fields).forEach(function (f) { worst = Math.max(worst, R.organic.fields[f].worstKgHa); });

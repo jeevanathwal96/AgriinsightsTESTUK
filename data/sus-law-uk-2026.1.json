@@ -1911,16 +1911,16 @@
     "value": {
      "law": false,
      "every_years": 5,
-     "what": "pH, P, K, Mg (SOM test optional)",
-     "scope": "Sustainable Farming Scheme universal action UA1 (scheme): 20% of fields with improved land by 31 Dec 2026, results by 15 Jan 2027"
+     "what": "pH, P, K, Mg and soil organic matter (SOM not needed for tests before 1 January 2026)",
+     "scope": "Sustainable Farming Scheme Universal Action UA1 (scheme): the SFS Universal Dashboard lists the improved-land field parcels to test; one set of results for each recorded by 15 January 2027; land with no inputs or lime since 1 April 2022 can be taken out on the SAF; a 5-year testing cycle"
     },
     "label": "Soil testing in Wales is a scheme action (SFS UA1), not a law the app can check",
-    "source": "NFU Cymru, SFS guidance 2026 briefing quoting Welsh Government guidance (secondary; the WG PDF returned 404)",
-    "source_url": "https://www.nfu-cymru.org.uk/",
+    "source": "Welsh Government, Sustainable Farming Scheme 2026 Universal Layer rules booklet (December 2025), UA1 soil testing",
+    "source_url": "https://www.gov.wales/sites/default/files/publications/2025-12/sustainable-farming-scheme-2026-universal-layer-rules-booklet.pdf",
     "status": "confirmed",
     "version": "2026.1",
-    "checked_on": "2026-11-15",
-    "note": "Source audit L19: 20% of fields with improved land tested by 31 Dec 2026, results recorded by 15 Jan 2027; tests since 1 Jan 2022 count; retest after 5 years."
+    "checked_on": "2026-11-25",
+    "note": "-447 (web test audit): read in the primary source on 25 Nov 2026. The earlier row came from an NFU Cymru briefing and said 20% of fields by 31 Dec 2026, which the booklet does not say; SOM is required for tests from 1 January 2026."
    },
    "abstraction": {
     "licence_over": {

@@ -15,15 +15,15 @@
  */
 'use strict';
 
-var APP_VERSION = 'uk-2026-11-25-446';   /* -446 = live -445 + the held -444 sweep batch B (25 Nov 2026); ai-data ?v=uk160 */ /* was: uk-2026-11-24-445 */   /* -445 = live -443 + the owner's five Sustainability phone decisions (24 Nov 2026), pilot only; ai-data ?v=uk159 (uk158 = held -444), ai-auth uk120, engine uk14 (0.7.1), sus-page uk16, sus-health uk7, law table ?v=uk445. -444 is held (sweep batch B). */ /* was: uk-2026-11-21-443 */   /* -443 = held -442 + D3 fix-it buttons, TB tests, TB intervals (21 Nov 2026) */   /* -442 = held -441 + sweep batch A (owner "Fix it", 21 Nov 2026) */   /* -441 = held -439 (menus, Put in a field, icon gap) + Sustainability; Sustainability part built 20 Nov as -439 = live -438 + Sustainability (all phases through -442-sus7) behind SUS_FLAGS.pilot, OFF by default; database changes run by the owner (uk-sus1..sus7); ai-data-uk.js ?v=uk156 (uk155 was live -434c..-438) */   /* -442-sus7: the phone's prerequisites on the computer - keyed water readings (B7) and server-side merges of rain_prefs, sus_settings and the register answers (B8), tools/uk-sus7-phone.sql NOT RUN. */ /* -441-sus7: fixes from the independent check of -440 (VERIFY-440). -440-sus7: the real-database findings R1-R11 and the farmer walkthrough UX-01..53 (branch sustainability-phase0, not deployed) */   /* -441-sus7: fixes from the independent check of -440 (VERIFY-440). -440-sus7: the real-database findings R1-R11 and the farmer walkthrough UX-01..53 (branch sustainability-phase0, not deployed) */
+var APP_VERSION = 'uk-2026-11-26-447';   /* -447 = live -446 + the Sustainability web-test fixes (P0, P1, P2; WEB-TEST-25-NOV-2026.md), pilot only; ai-data ?v=uk161, engine uk15 (0.7.2), sus-page uk17, sus-asks uk5, sus-health uk8. The first -446 (P0s alone, 73baf41) never shipped: its number went to batch B. */ /* was: uk-2026-11-25-446 */   /* -446 = live -445 + the held -444 sweep batch B (25 Nov 2026); ai-data ?v=uk160 */ /* was: uk-2026-11-24-445 */   /* -445 = live -443 + the owner's five Sustainability phone decisions (24 Nov 2026), pilot only; ai-data ?v=uk159 (uk158 = held -444), ai-auth uk120, engine uk14 (0.7.1), sus-page uk16, sus-health uk7, law table ?v=uk445. -444 is held (sweep batch B). */ /* was: uk-2026-11-21-443 */   /* -443 = held -442 + D3 fix-it buttons, TB tests, TB intervals (21 Nov 2026) */   /* -442 = held -441 + sweep batch A (owner "Fix it", 21 Nov 2026) */   /* -441 = held -439 (menus, Put in a field, icon gap) + Sustainability; Sustainability part built 20 Nov as -439 = live -438 + Sustainability (all phases through -442-sus7) behind SUS_FLAGS.pilot, OFF by default; database changes run by the owner (uk-sus1..sus7); ai-data-uk.js ?v=uk156 (uk155 was live -434c..-438) */   /* -442-sus7: the phone's prerequisites on the computer - keyed water readings (B7) and server-side merges of rain_prefs, sus_settings and the register answers (B8), tools/uk-sus7-phone.sql NOT RUN. */ /* -441-sus7: fixes from the independent check of -440 (VERIFY-440). -440-sus7: the real-database findings R1-R11 and the farmer walkthrough UX-01..53 (branch sustainability-phase0, not deployed) */   /* -441-sus7: fixes from the independent check of -440 (VERIFY-440). -440-sus7: the real-database findings R1-R11 and the farmer walkthrough UX-01..53 (branch sustainability-phase0, not deployed) */
 var CACHE = 'agriinsights-uk-' + APP_VERSION;
 
 /* App shell precached on install. The ?v=-suffixed JS is intentionally left to
  * runtime caching so the existing ?v= cache-busting keeps working untouched. */
 var PRECACHE = [
   './index-uk.html',
-  './js/app-0-d77a47341b.js',   /* dist build: inline script 0 */
-  './js/app-1-249d04d314.js',   /* dist build: inline script 1 */
+  './js/app-0-6bb62aecba.js',   /* dist build: inline script 0 */
+  './js/app-1-e1e04d8def.js',   /* dist build: inline script 1 */
   './js/app-2-414c97ec9d.js',   /* dist build: inline script 2 */
   './js/app-3-bd4d96eb95.js',   /* dist build: inline script 3 */
   './js/app-4-d06f138a32.js',   /* dist build: inline script 4 */
@@ -36,8 +36,8 @@ var PRECACHE = [
   './vendor/supabase.js',
   './data/uk-ppp.json',
   './data/uk-eamu.json',
-  './data/sus-law-uk-2026.1.json?v=uk445',   /* Phase 0: the law table the sheep return and the NVZ answer read (offline from the first install) */
-  './data/sus-factors-uk-2026.1.json?v=uk441c',   /* Phase 1: the factor table (legal excreta volumes, manure N contents, estimates) */
+  './data/sus-law-uk-2026.1.json?v=uk447',   /* Phase 0: the law table the sheep return and the NVZ answer read (offline from the first install) */
+  './data/sus-factors-uk-2026.1.json?v=uk447',   /* Phase 1: the factor table (legal excreta volumes, manure N contents, estimates) */
   './data/sus-askers-uk-2026.1.json?v=uk441c',   /* Phase 5: who asks for what, each claim with a dated source or 'example' */
   /* './Logo.png' was here — an SA-build filename that has never existed in this folder.
      cache.addAll() rejects the whole batch if any one entry 404s, so this single dead

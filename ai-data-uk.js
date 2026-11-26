@@ -4229,7 +4229,10 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
         weeksFrom: /^\d{2}-\d{2}$/.test(String(s.weeksFrom || '')) ? s.weeksFrom : null, assumeAnMfg: s.assumeAnMfg === true, wfpSoil: _in(s.wfpSoil, ['yes','no']),
         /* -440: the new answers ride in the same jsonb (no new column): NVZ "not sure", the kind of a generic beef herd, the crust per store,
            whether the ewes come in to lamb, and the Red Tractor answer given in Crops */
-        nvzAsk: _in(s.nvzAsk, ['unsure']), beefKind: _kinds(s.beefKind), storeCrust: _crusts(s.storeCrust), ewesIn: _in(s.ewesIn, ['yes','no']), soilAns: _in(s.soilAns, ['sandy','other']) } } : {}); }
+        nvzAsk: _in(s.nvzAsk, ['unsure']), beefKind: _kinds(s.beefKind), storeCrust: _crusts(s.storeCrust), ewesIn: _in(s.ewesIn, ['yes','no']), soilAns: _in(s.soilAns, ['sandy','other']),
+        /* -446 (web test P0-2): what else drains into the slurry store, the farmer's own figures */
+        washAsk: _in(s.washAsk, ['yes','no']), washM3Wk: _wnum(s.washM3Wk, 10000), yardM2: _wnum(s.yardM2, 1000000), lambsPerEwe: _wnum(s.lambsPerEwe, 4), rentedIn: _in(s.rentedIn, ['yes','no']), nvzSeen: (s.nvzSeen && /^[EWSN]$/.test(s.nvzSeen.n) && typeof s.nvzSeen.v === 'boolean') ? { n: s.nvzSeen.n, v: s.nvzSeen.v } : null } } : {}); }
+  function _wnum(v, hi){ if (v === '' || v == null) return null; var x = Number(v); return isFinite(x) && x >= 0 && x <= hi ? x : null; }
   function _kinds(o){ var r = {}; if (o && typeof o === 'object') Object.keys(o).slice(0, 200).forEach(function(k){ var v = _in(o[k], ['suckler','store_cattle']); if (v) r[String(k).slice(0, 40)] = v; }); return Object.keys(r).length ? r : null; }
   function _crusts(o){ var r = {}; if (o && typeof o === 'object') Object.keys(o).slice(0, 200).forEach(function(k){ var v = _in(o[k], ['crust','none']); if (v) r[String(k).slice(0, 60)] = v; }); return Object.keys(r).length ? r : null; }
   function _susSetFromDb(r){ return { rentedHa: _n(r.rented_ha), rentedAsk: r.rented_ask || null, rentedNote: r.rented_note || '', eweSize: r.ewe_size || null, sucklerSize: r.suckler_size || null,
@@ -4239,7 +4242,8 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
       lambingMonth: r.farm_facts ? (r.farm_facts.lambingMonth || null) : undefined, assumeEmptied: r.farm_facts ? r.farm_facts.assumeEmptied === true : undefined, weeksFrom: r.farm_facts ? (r.farm_facts.weeksFrom || null) : undefined,
       assumeAnMfg: r.farm_facts ? r.farm_facts.assumeAnMfg === true : undefined, wfpSoil: r.farm_facts ? (r.farm_facts.wfpSoil || null) : undefined,
       nvzAsk: r.farm_facts ? (r.farm_facts.nvzAsk || null) : undefined, beefKind: r.farm_facts ? (r.farm_facts.beefKind || {}) : undefined,
-      storeCrust: r.farm_facts ? (r.farm_facts.storeCrust || {}) : undefined, ewesIn: r.farm_facts ? (r.farm_facts.ewesIn || null) : undefined, soilAns: r.farm_facts ? (r.farm_facts.soilAns || null) : undefined }; }   /* no asks column yet: this device keeps its own */
+      storeCrust: r.farm_facts ? (r.farm_facts.storeCrust || {}) : undefined, ewesIn: r.farm_facts ? (r.farm_facts.ewesIn || null) : undefined, soilAns: r.farm_facts ? (r.farm_facts.soilAns || null) : undefined,
+      washAsk: r.farm_facts ? (r.farm_facts.washAsk || null) : undefined, washM3Wk: r.farm_facts ? (r.farm_facts.washM3Wk != null ? Number(r.farm_facts.washM3Wk) : null) : undefined, yardM2: r.farm_facts ? (r.farm_facts.yardM2 != null ? Number(r.farm_facts.yardM2) : null) : undefined, lambsPerEwe: r.farm_facts ? (r.farm_facts.lambsPerEwe != null ? Number(r.farm_facts.lambsPerEwe) : null) : undefined, rentedIn: r.farm_facts ? (r.farm_facts.rentedIn || null) : undefined, nvzSeen: r.farm_facts ? (r.farm_facts.nvzSeen || null) : undefined }; }   /* -446 */   /* no asks column yet: this device keeps its own */
   /* what this device last sent (or loaded) per table and row, and which rows it knows the server holds */
   var _susSent = Object.create(null), _susKnown = Object.create(null), _susSid = Object.create(null);
   function _susSids(t){ return (_susSid[t] = _susSid[t] || Object.create(null)); }   /* -442-sus7: local_id -> the server's uuid */

@@ -32,13 +32,18 @@
   else root.SusEngineUK = factory();
 }(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
-  var VERSION = '0.7.1';   /* 0.7.1 (-445, 24 Nov 2026): recordLate, scotZone, the scot-zone setup job, habitat "not sure" */
+  var VERSION = '0.7.2';   /* 0.7.2 (-446, 25 Nov 2026): web-test P0s - the 250 kg field limit follows the NVZ answer, the slurry need leaves out straw/FYM groups and adds the farmer's washings and dirty-yard rain, closed-period breaches in the records, jobs and packs. 0.7.1 (-445, 24 Nov 2026): recordLate, scotZone, the scot-zone setup job, habitat "not sure" */
   var DAY = 86400000;
 
   /* ── small helpers ─────────────────────────────────────────────────────────── */
   function num(v) { return (typeof v === 'number' && isFinite(v)) ? v : (typeof v === 'string' && v.trim() !== '' && isFinite(+v) ? +v : null); }
   function head(v) { var n = num(v); return (n === null || n < 0) ? 0 : n; }   // head counts: negative or junk counts as none
-  function isoOk(s) { return typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s) && !isNaN(Date.UTC(+s.slice(0, 4), +s.slice(5, 7) - 1, +s.slice(8, 10))); }
+  /* -447 (audit P1-6): a real calendar day only. Date.UTC rolls 2026-02-31 into 3 March and 2026-13-05 into January 2027, so the
+     date must come back unchanged from the round trip. */
+  function isoOk(s) { if (typeof s !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(s)) return false; var t = Date.UTC(+s.slice(0, 4), +s.slice(5, 7) - 1, +s.slice(8, 10)); return !isNaN(t) && iso(t) === s; }
+  /* -447 (audit P1-5): the first day of "any 12 months" ending on s - the day after the same date a year before (29 Feb counts back
+     to 28 Feb). A fixed 364 days left out the 366th day of a window that holds 29 February. */
+  function yearFrom(s) { var y = +s.slice(0, 4) - 1, md = s.slice(5); if (md === '02-29') md = '02-28'; return addDays(y + '-' + md, 1); }
   function toT(s) { return Date.UTC(+s.slice(0, 4), +s.slice(5, 7) - 1, +s.slice(8, 10)); }
   function iso(t) { var d = new Date(t); return d.getUTCFullYear() + '-' + ('0' + (d.getUTCMonth() + 1)).slice(-2) + '-' + ('0' + d.getUTCDate()).slice(-2); }
   function addDays(s, n) { return iso(toT(s) + n * DAY); }
@@ -403,7 +408,7 @@
   var LEAVE = { sold: 1, died: 1, slaughter: 1, moved_out: 1, dead: 1, culled: 1, 'out': 1 };
   function stockRecords(inp) {
     inp = inp || {};
-    var out = [], exc = [], est = { classAges: false, lambDates: false }, src = { cattle: null, sheep: null };
+    var out = [], exc = [], est = { classAges: false, lambDates: false, lambCarry: false, lambsAtFoot: false, lambsAsk: false }, src = { cattle: null, sheep: null };
     var from = isoOk(inp.from) ? inp.from : null, today = isoOk(inp.today) ? inp.today : null, opts = inp.opts || {};
     if (!from || !today) return { records: out, exceptions: exc, estimate: est, sources: src };
     (inp.herds || []).forEach(function (h) {
@@ -458,9 +463,22 @@
       });
       Object.keys(cnt).forEach(function (k) {
         var n = cnt[k]; if (!(n > 0)) return; var r = classRole(kind, k); if (!r) return;
-        if (r[0] === 'lamb') { est.lambDates = true; push(k, { role: 'lamb', dob: springDob(today, opts.lambingMonth), n: n, src: 'class', estimate: true }); }
+        if (r[0] === 'lamb') { est.lambDates = true; var sd = springDob(today, opts.lambingMonth); push(k, { role: 'lamb', dob: sd, n: n, src: 'class', estimate: true });
+          /* -447 (audit P1-1): the lambs counted today were born this spring; before that day the farm carried last year's crop (hoggs,
+             ewe lambs, stores). They are counted at today's number, a year older, until this year's lambing - an estimate, said. */
+          if (sd.slice(5) !== '01-01') { est.lambCarry = true; push(k, { role: 'lamb', dob: (+sd.slice(0, 4) - 1) + sd.slice(4), off: sd, n: n, src: 'class', estimate: true }); } }
         else { est.classAges = true; push(k, { role: r[0], age: r[1], n: n, src: 'class', estimate: true }); }
       });
+      /* -447 (audit P1-2, P1-3): a flock kept as ewes and rams has lambs at foot that no class or record holds. The footprint counts
+         lambs on their own (UK inventory), and so does the NI manure table (NISR 2019/81 Sch 2 Table 1a); in GB the ewe figure takes
+         them in to 6 months. The farmer's lambs reared per ewe give them, born on the lambing day and counted to 6 months old;
+         after that they are not counted (no sale age is known). Not answered: nothing invented - asked, and said. */
+      if (kind === 'ewes' && (cnt.ewes || 0) > 0 && !(cnt.lambs > 0) && !out.some(function (x) { return String(x.herd) === String(h.id) && x.role === 'lamb'; })) {
+        var lpe = num(opts.lambsPerEwe);
+        if (lpe !== null && lpe >= 0) { if (lpe > 0) { var ld = springDob(today, opts.lambingMonth), lo = (+ld.slice(5, 7) + 6 > 12 ? (+ld.slice(0, 4) + 1) + '-' + ('0' + (+ld.slice(5, 7) - 6)).slice(-2) : ld.slice(0, 4) + '-' + ('0' + (+ld.slice(5, 7) + 6)).slice(-2)) + '-01';
+            est.lambsAtFoot = true; push('lambs', { role: 'lamb', dob: ld, off: lo, n: Math.round(cnt.ewes * lpe), src: 'answer', estimate: true }); } }
+        else est.lambsAsk = true;
+      }
     });
     (inp.spans || []).forEach(function (s) {
       if (!s || (s.species !== 'cattle' && s.species !== 'sheep') || !isoOk(s.from)) return;
@@ -597,6 +615,7 @@
   function yearManure(inp, law, factors) {
     inp = inp || {}; var k = nationKey(inp.nation), y = num(inp.year);
     if (!k || !law || !y || !isoOk(inp.today)) return { refused: 'nation, year, today and law needed' };
+    if (inp.today < y + '-01-01') return { refused: 'the year has not started yet' };   /* -447 (audit P2): no whole-year figure for a year still to come */
     var from = y + '-01-01', st = stockRecords({ herds: inp.herds, animals: inp.animals, moves: inp.moves, spans: inp.spans, from: from, today: inp.today, opts: inp.opts });
     var monthly = monthlyClasses(k, st.records, from, 12, law), avg = averageClasses(monthly);
     var rows = Object.keys(avg).map(function (key) { return { key: key, head: avg[key] }; });
@@ -621,12 +640,15 @@
     var res = manureN({ nation: k, rows: rows, extraRows: extra, adjustKg: adj, holdingHa: inp.holdingHa }, law);
     var o = inp.opts || {};
     if (st.estimate.classAges) est.push('ages taken from today’s class counts');
+    if (st.estimate.lambCarry) est.push('last year\'s lambs (hoggs, ewe lambs, stores) counted at today\'s number until this year\'s lambing');
     if (st.estimate.lambDates) est.push('lambs counted as born on 1 ' + (num((inp.opts || {}).lambingMonth) >= 1 ? MONFULL[num(inp.opts.lambingMonth) - 1] + ' (your lambing month)' : 'April (lambing month not answered)'));
     if (inp.today < y + '-12-31' && inp.today >= from) est.push('the rest of the year uses today’s numbers');
     var has = function (re) { return rows.some(function (r) { return re.test(r.key); }); };
     if (k !== 'N' && !o.size && has(/^suckler_/)) est.push('suckler size not answered, so the higher figure');
     if (k !== 'N' && !o.eweSize && has(/^ewe_/)) est.push('ewe size not answered, so the higher figure');
     if (k !== 'N' && !o.yieldBand && has(/^dairy_(lt|60|gt)/)) est.push('milk yield not answered, so the higher figure');
+    if (st.estimate.lambsAtFoot) est.push('lambs at foot from your lambs reared per ewe, counted from lambing to 6 months old');
+    if (st.estimate.lambsAsk) { est.push('lambs at foot not counted until you say how many lambs you rear per ewe'); asks.push({ what: 'lambsPerEwe' }); }
     res.monthly = monthly; res.average = avg; res.sources = st.sources; res.exceptions = st.exceptions; res.records = st.records;
     res.estimates = est.filter(function (x, i) { return x && est.indexOf(x) === i; }); res.asks = asks; res.year = y;
     res.status = res.perHa === null ? 'missing' : res.over ? 'over' : 'within';
@@ -712,13 +734,21 @@
     if (!y || mon.length !== 12) return { refused: 'a year of monthly classes needed' };
     var HR = housingResolve(inp.housing, k, factors, { followers: inp.followers }), HS = HR.housing, usedEst = {};
     var area = Math.max(0, num(inp.openAreaM2) || 0), rain = inp.rainMm && inp.rainMm.length === 12 ? inp.rainMm : null;
+    /* -446 (web test P0-2): SI 2015/668 reg 25(3) - the store holds "any rainfall, washings or other liquid that enters the vessel
+       (either directly or indirectly)". The farmer's own figures, never a default: washings and dairy water in m³ a week, and the
+       dirty yard that drains to the store (its rain worked out like the open surface's). */
+    var washDay = Math.max(0, num(inp.washM3Wk) || 0) / 7, yard = Math.max(0, num(inp.yardM2) || 0), sysW = {}, sysBoth = {};
     for (var m = 0; m < 12; m++) {
       var dim = mon[m].days, v = 0;
       Object.keys(mon[m].classes).forEach(function (key) {
         var fid = excretaId(k, key); if (!fid) return; var w = facV(factors, fid); if (w === null) return;
         var g = excretaGroup(key), h = HS[g];
+        /* -446 (web test P0-3): a group whose housed manure is kept as straw or FYM puts nothing into the slurry store. "Both" and
+           an unanswered system are counted in full (the cautious side) and said. */
+        if (h && h.system === 'fym') return;
         if (EXCRETA_NEAREST[key + '_' + k]) nearest = true;
         var hd = housedDays(h, y, m); if (!hd) return; if (h && h.estimate) usedEst[g] = 1;
+        if (h && h.system === 'both') sysBoth[g] = 1; else if (!h || !h.system) sysW[g] = 1;
         v += mon[m].classes[key] * w / 7 * hd / dim;
       });
       (inp.pigBatches || []).forEach(function (b) {
@@ -728,9 +758,13 @@
         batchCycles(b, y).forEach(function (c) { var ms = iso(Date.UTC(y, m, 1)), me = iso(Date.UTC(y, m + 1, 1) - DAY); var lo = c[0] > ms ? c[0] : ms, hi = c[1] < me ? c[1] : me; if (hi >= lo) days += daysBetween(lo, hi) + 1; });
         var nE = head(b.n) - Math.min(head(b.deaths), head(b.n)) / 2; v += nE * w / 7 * days / dim;
       });
-      var rainV = rain && area ? area * (num(rain[m]) || 0) / 1000 / dim : 0;
-      per.push(r2((v + rainV) * 1000) / 1000); rows.push({ month: mon[m].month, stockM3: v * dim, rainM3: rainV * dim });
+      var rainV = rain && area ? area * (num(rain[m]) || 0) / 1000 / dim : 0, yardV = rain && yard ? yard * (num(rain[m]) || 0) / 1000 / dim : 0;
+      per.push(r2((v + rainV + yardV + washDay) * 1000) / 1000); rows.push({ month: mon[m].month, stockM3: v * dim, rainM3: rainV * dim, yardM3: yardV * dim, washM3: washDay * dim });
     }
+    var GW2 = { sucklers: 'suckler cows', dairy: 'dairy cows', followers: 'young and finishing cattle' }, gw = function (o) { return Object.keys(o).map(function (g) { return GW2[g] || g; }).join(', '); };
+    if (Object.keys(sysBoth).length) est.push('part of the manure of ' + gw(sysBoth) + ' goes to straw or a heap: all of it is counted in the slurry store (the cautious side)');
+    if (Object.keys(sysW).length) est.push('how the housed manure of ' + gw(sysW) + ' is kept is not answered, so it is counted in the slurry store (the cautious side)');
+    if (yard && !rain) est.push('no rainfall figures yet, so no rain off the yard');
     if (Object.keys(usedEst).length) { var w0 = HR.words(Object.keys(usedEst)); if (w0) est.push(w0); }   /* -440 (UX-52) */
     if (nearest) est.push('Northern Ireland has no bull row: the cattle row of the same age is used');
     if (pigGuess) est.push('pig weight band or feed not answered, so the highest legal figure');
@@ -795,6 +829,9 @@
     if (rd) { fill = since(rd.read_on, Math.max(0, Math.min(1, num(rd.fill_frac))) * cap); src = 'reading'; }
     else if (inp.assumeEmptied === true) { fill = since(wy + '-10-01', 0); src = 'assumed'; est.push('assumed emptied by 1 October (your tick); a reading beats it'); }
     else asks.push('fill');
+    /* -446 (web test P0-2), asked after the earlier questions: until the farmer says whether washings or yard water drain into the store, the need is stock and rain only */
+    if (slurry.length && inp.washAsk === 'yes' && inp.washGiven !== true) { asks.push('washings'); est.push('you said washings or yard water drain into the store: they are not counted until you add how much (m³ a week, or the yard area)'); }
+    else if (slurry.length && inp.washAsk !== 'no' && inp.washAsk !== 'yes') { asks.push('washings'); est.push('washings, dairy water and rain off dirty yards that drain into the store are not counted until you answer whether any do (the rule counts them, SI 2015/668 reg 25(3))'); }
     var fc = storeForecast({ capacityM3: cap, fillM3: fill, inflowPerDay: flow, today: inp.today, ruleDays: rule.days, ruleFrom: rule.worst ? wy + '-01-01' : ruleFrom, ruleWorst: !!rule.worst });
     if (fc.refused) return { capacityM3: cap, rule: rule, ask: ask, asks: asks, status: 'missing', estimates: est, refused: fc.refused };
     var cs = closedSpread(k, inp.nvz === true || nvzStatus({ nation: k, confirmed: inp.nvz }, law).inNvz === true, inp.today, law, inp.land, inp.soil);
@@ -1254,6 +1291,9 @@
       why: 'Until you say, the store shows "Unknown" and no full-by date. Or tick "Assume emptied by 1 October" for a labelled forecast.', due: null, cta: 'stores' });
     if (S && S.capacityM3 && (S.asks || []).indexOf('area') >= 0) add({ local_id: 'store-area', rule_id: 'store-area', kind: 'setup', area: 'livestock', title: 'How big is the open surface of the store?',
       why: 'Length × width (or the diameter of a round tank). Until then the rain falling on it is not counted.', due: null, cta: 'stores' });
+    /* -446 (web test P0-2) */
+    if (S && S.capacityM3 && (S.asks || []).indexOf('washings') >= 0) add({ local_id: 'store-washings', rule_id: 'store-washings', kind: 'setup', area: 'livestock', title: 'Does anything else drain into the slurry store?',
+      why: 'Parlour or dairy washings, or rain off a dirty yard. The storage rule counts them (SI 2015/668 reg 25(3)); until you answer, the store need is the stock and the rain on the store only.', due: null, cta: 'stores' });
     var st = inp.setup || {};
     if (st.rented === 'unsure' || st.rented == null) add({ local_id: 'setup-rented', rule_id: 'setup-rented', kind: 'setup', area: 'land', title: 'Do you rent any extra land?', why: 'Land you rent and have at your disposal counts as part of your farm for the manure limit.', due: null, cta: 'setup2' });
     if (st.sizes && st.sizes.suckler) add({ local_id: 'setup-size-suckler', rule_id: 'setup-size', kind: 'setup', area: 'livestock', title: 'How big are your suckler cows?', why: 'Under or over 500 kg changes the legal manure figure. Until you answer we use the higher one.', due: null, cta: 'sizes' });
@@ -1271,6 +1311,12 @@
       add({ local_id: 'setup-store', rule_id: 'setup-store', kind: stLaw ? 'law' : 'setup', area: 'livestock', title: 'Add your slurry store', why: 'You keep slurry, and ' + (k === 'W' || k === 'N' ? 'the storage rule applies to every farm in ' + (k === 'W' ? 'Wales' : 'Northern Ireland') : nv.inNvz === true ? 'in an NVZ the law sets how much storage you need' : 'if the farm is in an NVZ the law sets how much storage you need') + '. Add the store’s size and whether it is covered, in Livestock, Manure, and we check it against the rule.' + (stLaw && stR && stR.cite && stR.cite.source ? ' The rule: ' + (stR.label ? stR.label + ', ' : '') + stR.cite.source + '.' : ''), due: null, cite: stLaw && stR ? stR.cite : null, cta: 'stores' }); }
     if (st.away === 'add') add({ local_id: 'setup-away-add', rule_id: 'setup-away', kind: 'setup', area: 'livestock', title: 'Add the stock away, or other people’s stock on your land', why: 'You said there is some. Add each group once (how many, from when, and who has the land), and the manure limit counts it on the right holding.', due: null, cta: 'away' });
     if (st.away === 'unsure') add({ local_id: 'setup-away', rule_id: 'setup-away', kind: 'setup', area: 'livestock', title: 'Any stock away, or other people’s stock on your land?', why: 'Away-wintering, common grazing, tack sheep or grazing licences change which holding counts them.', due: null, cta: 'away' });
+    (inp.asks || []).forEach(function (a) { if (a.what === 'areaCheck') add({ local_id: 'area-check', rule_id: 'area-check', kind: 'setup', area: 'livestock', title: 'Your fields add up to more than the farm',
+      why: 'The fields in Crops and Livestock come to ' + a.fieldsHa + ' ha; the farm the limits are worked over is ' + a.holdingHa + ' ha (Settings, plus rented land). Correct whichever is wrong: the manure limit uses the farm size.', due: null, cta: 'setup' }); });   /* -447 (P1-6) */
+    (inp.asks || []).forEach(function (a) { if (a.what === 'rentedIn') add({ local_id: 'rented-in', rule_id: 'rented-in', kind: 'setup', area: 'livestock', title: 'Is the rented land inside your farm size?',
+      why: 'Settings asks for the whole farm, rented land included. If the rented land is on top of it, say so: until then the limits use the smaller area (the cautious side).', due: null, cta: 'setup2' }); });   /* -447 (P1-5) */
+    (inp.asks || []).forEach(function (a) { if (a.what === 'lambsPerEwe') add({ local_id: 'lambs-per-ewe', rule_id: 'lambs-per-ewe', kind: 'setup', area: 'livestock', title: 'How many lambs do you rear per ewe?',
+      why: 'Lambs at foot are counted on their own in the carbon footprint' + (k === 'N' ? ' and in the Northern Ireland manure figure' : '') + '. Until you say, they are not counted.', due: null, cta: 'housing' }); });   /* -447 */
     (inp.asks || []).forEach(function (a, i) { if (a.what === 'occupier') add({ local_id: 'occupier:' + (a.batch || a.span || i), rule_id: 'occupier', kind: 'setup', area: 'livestock', title: 'Who occupies the land the stock are on?', why: 'Stock count on the holding of whoever has the land at their disposal. Until you answer they count on this farm (our cautious rule).', due: null, cta: 'batches' }); });
     var regSp = {};
     (inp.register || []).forEach(function (r) { if (!r || !r.species) return; regSp[r.species] = 1;
@@ -1530,16 +1576,21 @@
   /* The 250 kg/ha organic manure N limit on any one hectare in any 12 months (grazing deposition not included).
      apps: [{ field, date, kgNHa, organic:true }] (crop inputs and Livestock -> Manure spreading)
      out: { limit, fields:{ id:{ worstKgHa, worstTo, nowKgHa, over } }, over:[ids], cite } */
-  function fieldOrganicN(apps, today, law, nation) {
+  function fieldOrganicN(apps, today, law, nation, nvz) {
     var L0 = law && law.limits && law.limits.field_organic_n, lim = L0 ? L0.value : null, by = {}, nk = nationKey(nation);
     /* -439-sus6: no field limit in NI (none in NISR 2019/81; the 250 there is the holding derogation) */
     if (nk && L0 && L0.applies && L0.applies[nk] === null) return { limit: null, applies: false, fields: {}, over: [], cite: cite(L0), law_set: lawSet(law), why: 'no field limit in Northern Ireland law' };
+    /* -446 (web test P0-1): the law row says where the limit applies - England and Scotland in NVZs only (SI 2015/668 reg 8,
+       SSI 2008/298 reg 15(1)), Wales everywhere. A farm answered "not in an NVZ" has no field limit; an unanswered NVZ keeps
+       the check (the cautious side) and says it rests on that answer. */
+    var scope = nk && L0 && L0.applies ? L0.applies[nk] : null, nvzOnly = scope === 'nvz';
+    if (nvzOnly && nvz === false) return { limit: null, applies: false, fields: {}, over: [], cite: cite(L0), law_set: lawSet(law), why: 'the 250 kg field limit applies in NVZs only, and the farm is not in one' };
     (apps || []).forEach(function (a) { if (!a || !a.organic || a.field == null || !isoOk(a.date) || !(num(a.kgNHa) > 0)) return; (by[String(a.field)] = by[String(a.field)] || []).push(a); });
-    var out = { limit: lim, fields: {}, over: [], cite: cite(L0), law_set: lawSet(law) };
+    var out = { limit: lim, fields: {}, over: [], cite: cite(L0), law_set: lawSet(law), nvzUnknown: nvzOnly && nvz !== true };
     Object.keys(by).forEach(function (f) {
       var L = by[f].sort(function (a, b) { return a.date < b.date ? -1 : 1; }), worst = 0, worstTo = null;
-      L.forEach(function (a) { var s = 0, from = addDays(a.date, -364); L.forEach(function (b) { if (b.date >= from && b.date <= a.date) s += num(b.kgNHa); }); if (s > worst) { worst = s; worstTo = a.date; } });
-      var now = 0; if (isoOk(today)) { var f0 = addDays(today, -364); L.forEach(function (b) { if (b.date >= f0 && b.date <= today) now += num(b.kgNHa); }); }
+      L.forEach(function (a) { var s = 0, from = yearFrom(a.date); L.forEach(function (b) { if (b.date >= from && b.date <= a.date) s += num(b.kgNHa); }); if (s > worst) { worst = s; worstTo = a.date; } });
+      var now = 0; if (isoOk(today)) { var f0 = yearFrom(today); L.forEach(function (b) { if (b.date >= f0 && b.date <= today) now += num(b.kgNHa); }); }
       out.fields[f] = { worstKgHa: r2(worst), worstTo: worstTo, nowKgHa: r2(now), over: worst > lim };
       if (worst > lim) out.over.push(f);
     });
@@ -1610,8 +1661,8 @@
      out: { rows, crops:[{crop,label,area,limit,appliedKg,appliedKgHa,within,status,tags}], organic: fieldOrganicN, totals } */
   var NVZ_COLS = ['Date', 'Field', 'Crop', 'Area (ha)', 'Product', 'Type', 'N %', 'Amount', 'Unit', 'kg N/ha', 'Crop-available kg N/ha', 'kg N total', 'Closed period', 'Note'];
   function nvzRecords(inp, law, factors) {
-    inp = inp || {}; var k = nationKey(inp.nation), rows = [], apps = [];
-    if (!k || !law) return { refused: 'nation and law needed', rows: rows };
+    inp = inp || {}; var k = nationKey(inp.nation), rows = [], apps = [], breaches = [];
+    if (!k || !law) return { refused: 'nation and law needed', rows: rows, breaches: breaches };
     var from = isoOk(inp.from) ? inp.from : null, to = isoOk(inp.to) ? inp.to : inp.today;
     var landBy = {}; (inp.lands || []).forEach(function (l) { if (l) landBy[String(l.id)] = l; });
     var push = function (src, l, r, x) {
@@ -1623,6 +1674,13 @@
                   kgNHa: r.kgNHa, availKgNHa: r.availKgNHa, kgN: r.kgN, closed: (cp.hit && !(r.refused && num(x.n_pct) === null)) ? 'In the closed period: ' + (rsn ? rsn.label : x.closed_reason ? 'the reason chosen does not cover this product' : 'reason not given') : '', closedReason: cp.hit ? (x.closed_reason || null) : null, refused: r.refused || null,
                   note: (r.refused ? 'Not worked out: ' + r.refused : (r.estimate || []).join('; ')) });
       if (!r.refused && r.organic) apps.push({ field: l ? l.id : x.field, date: x.date, kgNHa: r.kgNHa, organic: true });
+      /* -446 (web test P0-4): an application in a closed period with no lawful route recorded ("None", no reason, or a reason that
+         does not cover this product) is a possible breach. It stays a record exactly as made, and it is said wherever the
+         nitrogen record is summed up: the jobs, the summary and the pack - not only in the row. */
+      if (cp.hit && !(r.refused && num(x.n_pct) === null) && (!x.closed_reason || x.closed_reason === 'none' || !rsn))
+        breaches.push({ id: x.id, src: src, date: x.date, field: l ? l.id : x.field, fieldName: l ? (l.name || '') : (x.fieldName || ''), product: x.product || '',
+                        from: cp.from, to: cp.to, why: cp.why || '', reason: x.closed_reason || null,
+                        reasonWords: !x.closed_reason ? 'no reason recorded' : x.closed_reason === 'none' ? 'reason recorded: none' : 'the reason chosen does not cover this product' });
     };
     (inp.inputs || []).forEach(function (x) {
       if (!x || x.kind !== 'fertiliser' || x.removed || !isoOk(x.date) || (from && x.date < from) || (to && x.date > to) || x.applied === false) return;
@@ -1655,9 +1713,10 @@
       return { crop: c, label: g.label, area: r2(g.area), rule: g.rule, limitKgHa: lim === null ? null : r2(lim), appliedKgHa: r2(ap), within: lim === null ? null : ap <= lim + 1e-9,
                status: lim === null ? (g.rule === 'not-nvz' || g.rule === 'none' ? 'no-limit' : 'missing') : ap <= lim + 1e-9 ? 'within' : 'over', tags: g.tags };
     });
-    var organic = fieldOrganicN(apps, inp.today, law, k);
+    var organic = fieldOrganicN(apps, inp.today, law, k, inp.nvz === true ? true : inp.nvz === false ? false : null);
     var missing = rows.filter(function (r) { return r.refused; }).length, closedN = rows.filter(function (r) { return r.closed; }).length;
-    return { rows: rows, crops: cropList, organic: organic, missing: missing, closed: closedN, cols: NVZ_COLS, law_set: lawSet(law),
+    breaches.sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
+    return { rows: rows, crops: cropList, organic: organic, missing: missing, closed: closedN, breaches: breaches, cols: NVZ_COLS, law_set: lawSet(law),
              over: cropList.filter(function (c) { return c.status === 'over'; }).length };
   }
   /* the CSV rows: exactly the screen's rows, in the screen's order */
@@ -1677,7 +1736,11 @@
     if (R && R.crops) R.crops.filter(function (c) { return c.status === 'over'; }).forEach(function (c) {
       add({ local_id: 'nmax-over:' + y + ':' + c.crop, rule_id: 'nmax-over', kind: 'law', area: 'crops', title: c.label + ': over the crop N max', why: Math.round(c.appliedKgHa) + ' kg N/ha over ' + c.area + ' ha against ' + Math.round(c.limitKgHa) + ' kg allowed. Check the records, or hold back the next application.', due: null, cta: 'crops' }); });
     if (R && R.organic) R.organic.over.forEach(function (f) { var x = R.organic.fields[f], lab = (R.rows.filter(function (r) { return String(r.field) === String(f); })[0] || {}).fieldName || 'A field';
-      add({ local_id: 'organic-over:' + f + ':' + (x.worstTo || y), rule_id: 'organic-over', kind: 'law', area: 'crops', title: lab + ': over 250 kg N/ha of organic manure', why: Math.round(x.worstKgHa) + ' kg N/ha of organic manure in the 12 months to ' + x.worstTo + '. No more organic manure on that field for now.', due: null, cta: 'crops' }); });
+      add({ local_id: 'organic-over:' + f + ':' + (x.worstTo || y), rule_id: 'organic-over', kind: 'law', area: 'crops', title: lab + ': over 250 kg N/ha of organic manure', why: Math.round(x.worstKgHa) + ' kg N/ha of organic manure in the 12 months to ' + x.worstTo + '. No more organic manure on that field for now.' + (R.organic.nvzUnknown ? ' The limit applies in an NVZ: answer the NVZ question in Rainfall if the farm is not in one.' : ''), due: null, cta: 'crops' }); });
+    var Dn = typeof inp.fmt === 'function' ? inp.fmt : function (x) { return x; };
+    if (R && R.breaches) R.breaches.forEach(function (b) {
+      add({ local_id: 'closed-spread:' + b.id, rule_id: 'closed-spread', kind: 'law', area: 'crops', title: (b.fieldName || 'A field') + ': spread in the closed period on ' + Dn(b.date),
+            why: (b.product ? b.product + '. ' : '') + b.why + ' ' + b.reasonWords.charAt(0).toUpperCase() + b.reasonWords.slice(1) + '. If a lawful route covered it, add it to the record in Crops; if not, talk to your adviser. The record stays as it was made.', due: null, cta: 'crops' }); });
     var S = inp.soil;
     if (S && (S.due || S.missing)) add({ local_id: 'soil-due:' + y, rule_id: 'soil-due', kind: S.law ? 'law' : 'scheme', area: 'crops', title: 'Soil: ' + (S.due + S.missing) + ' field' + (S.due + S.missing === 1 ? ' needs' : 's need') + ' a soil test',   /* -440 (R10, UX-48) */
       why: (S.law ? S.label + '.' : S.label + '. A scheme action, not law.') + ' One soil item with your soil management plan in Crops, Compliance.', due: null, cta: 'soil', shared: 'compliance-soil' });
@@ -1882,6 +1945,8 @@
           n2oSpread += (kSp * esp[0] + kSp * (FGM * EF4 + FL * EF5)) * G; kSpTot += kSp; idsSp[esp[1]] = 1;
           gs.forEach(function (g) {      /* volatile solids: head x weight x VS rate x days housed */
             var dairyCow = g === 'dairy', wKg = num(h && h.weightKg), wId = dairyCow ? 'ipcc.liveweight.dairy' : 'ipcc.liveweight.other_cattle';
+            /* -447 (audit P2): the weight typed for a suckler group is the cows' weight; bulls in that group keep the IPCC default, said */
+            if (g === 'bull' && hg === 'sucklers' && wKg > 0) { wKg = F(wId); idsM[wId] = 1; tag('breeding bulls: the IPCC default weight for Western Europe (the weight you typed is for the cows)'); }
             /* -440 (UX-05, R7): the farmer's own answers first. A typed weight; else, for suckler cows, the size band they answered in setup
                (the legal 500 kg line, SI 2015/668 Sch 1): "500 kg or less" keeps the IPCC default (405 kg, inside the band); "over 500 kg"
                uses 500 kg, the least the answer allows, and says so. Only with neither, the IPCC default, and the words say which. */
@@ -1908,7 +1973,7 @@
     if (LV.sheepN > 0) {
       var eweN = 0; Object.keys(sN.byKey).forEach(function (key) { if (/^ewe/.test(key)) eweN += sN.byKey[key]; });
       var eh = HS.ewes, eShare = eh ? (yearDays(y) - grazeShare(eh, y) * yearDays(y)) / yearDays(y) : 0, kEH = eweN * eShare, kSG = LV.sheepN - kEH;
-      if (!eh) tag('sheep counted at grass all year: lambing month not answered, so no ewe housing estimate');
+      if (!eh) tag(so.ewesIn === 'no' ? 'sheep counted at grass all year: the ewes lamb outside (your answer)' : 'sheep counted at grass all year: lambing month not answered, so no ewe housing estimate');   /* -447: the reason it is so */
       else tag('ewes housed 42 days before lambing (UK inventory), from your lambing month');
       add('Manure', 'Sheep dung and urine at grass', kSG, 'kg N', 'EF ' + PRPs + ' + indirect', (kSG * PRPs + kSG * (FGM * EF4 + FL * EF5)) * G, [M.ef_prp_sheep, 'ipcc.fracgasm', 'ipcc.ef4.wet', 'ipcc.fracleach_h', 'ipcc.ef5', 'gwp.ar5.n2o'], { method: M.id });
       if (kEH > 0) { var sfg = F('ipcc.fracgas_ms.other_solid'), sfl = F('ipcc.fracleach_ms.solid_any'), sef3 = F('ipcc.ef3.solid_storage'), sp1 = EFsp('fym'), kSS = kEH * (1 - sfg - sfl);
@@ -2018,7 +2083,9 @@
       var a = num(h.area_ha); if (a === null || a <= 0) return; area += a; n++; (by[h.kind] = by[h.kind] || { ha: 0, n: 0 }).ha += a; by[h.kind].n++;
     });
     var fh = num(farmHa);
-    return { features: n, areaHa: area, hedgeM: hedgeM, byKind: by, kinds: HAB_KINDS, pct: fh > 0 ? area / fh * 100 : null };
+    /* -447 (audit P2): habitat larger than the farm is a wrong figure somewhere (the area or the farm size): never over 100%, and said */
+    var pc = fh > 0 ? area / fh * 100 : null, overFarm = pc !== null && pc > 100;
+    return { features: n, areaHa: area, hedgeM: hedgeM, byKind: by, kinds: HAB_KINDS, pct: overFarm ? 100 : pc, overFarm: overFarm, why: overFarm ? 'the habitat recorded (' + r2(area) + ' ha) is more than the farm (' + r2(fh) + ' ha): check the areas or the farm size' : null };
   }
 
   /* -439-sus6 (owner decision "habitats" a): a dated history, so progress since the baseline is real. Each habitat keeps
@@ -2185,6 +2252,6 @@
     /* Phase 5 */
     sha256: sha256, canonical: canonical, previewHash: previewHash, askDetect: askDetect, canSend: canSend, exportInputs: exportInputs, exportCsvRows: exportCsvRows, EXPORT_COLS: EXPORT_COLS,
     jobState: jobState, JOB_ACTS: JOB_ACTS,
-    _util: { addDays: addDays, daysBetween: daysBetween, isoOk: isoOk, ageAt: ageAt }
+    _util: { addDays: addDays, daysBetween: daysBetween, isoOk: isoOk, ageAt: ageAt, yearFrom: yearFrom }
   };
 }));

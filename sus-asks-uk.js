@@ -112,7 +112,9 @@
     else if (key === 'store') { var P = c.store; fill(w.store && w.store(c)); s.ready = !P || P.status === 'none' ? 'missing' : (P.status === 'missing' || !P.capacityM3) ? 'part' : 'ready'; }
     else if (key === 'sheep') { var sw = w.sheep && w.sheep(c); if (sw) { fill(sw); s.ready = 'ready'; } else { s.big = 'No sheep or goats'; s.line = 'The farm keeps no sheep or goats.'; } }
     else if (key === 'nvz') { fill(w.n && w.n(c)); var X = c.n; s.ready = X && X.has ? (X.rec.missing ? 'part' : 'ready') : 'missing';
-      if (X && X.has && X.rec.crops.length) s.table = { head: ['Crop', 'Area, ha', 'Allowed, kg N/ha', 'Applied, kg N/ha'], rows: X.rec.crops.map(function (k) { return [k.label, Math.round(k.area * 10) / 10, k.limitKgHa == null ? '' : Math.round(k.limitKgHa), Math.round(k.appliedKgHa)]; }) }; }
+      if (X && X.has && X.rec.crops.length) s.table = { head: ['Crop', 'Area, ha', 'Allowed, kg N/ha', 'Applied, kg N/ha'], rows: X.rec.crops.map(function (k) { return [k.label, Math.round(k.area * 10) / 10, k.limitKgHa == null ? '' : Math.round(k.limitKgHa), Math.round(k.appliedKgHa)]; }) };
+      /* -446 (web test P0-4): the pack for an inspector carries every closed-period application with no lawful route, as recorded */
+      if (X && X.rec && X.rec.breaches && X.rec.breaches.length) { X.rec.breaches.forEach(function (b) { s.notes.push('Spread in a closed period: ' + D(b.date) + ', ' + (b.fieldName || 'a field') + (b.product ? ', ' + b.product : '') + ' (closed ' + D(b.from) + ' to ' + D(b.to) + '; ' + b.reasonWords + ').'); }); } }
     else if (key === 'soil') { var t = tileK(c, 's'), S0 = c.n && c.n.soil; fill(t); s.ready = S0 ? (S0.due + S0.missing ? 'part' : 'ready') : 'missing'; }
     else if (key === 'urea') { var X2 = c.n; if (c.nation !== 'E') { s.big = 'Not used here'; s.line = 'The Red Tractor urea standard is for England.'; }
       else if (!X2 || X2.member !== true) { s.big = X2 && X2.member === false ? 'Not a Red Tractor member' : 'Red Tractor membership not answered'; s.line = 'Answer it in Crops, Compliance.'; }
@@ -211,7 +213,9 @@
   function lastSend(id) { return consents().filter(function (x) { return x.recipientId === id; }).sort(function (a, b) { return String(b.sentAt) < String(a.sentAt) ? -1 : 1; })[0] || null; }
   function card(c, r) {
     var g = EN().canSend(r, consents()), secs = r.records.map(function (k) { return sec(c, k, r.tool); }), miss = secs.filter(function (s) { return s.ready === 'missing'; }).length;
-    var st = r.withdrawnAt || g.why === 'withdrawn' ? ['n', 'Sharing stopped'] : miss ? ['a', pl(miss, 'record') + ' not in your records yet'] : ['g', 'Ready to share'];
+    /* -447 (web test F17): a regulator's card says when legal jobs are open, so the farmer looks before sharing */
+    var lawOpen = r.kind === 'law' ? (c.jobs || []).filter(function (j) { return j.open && j.kind === 'law'; }).length : 0;
+    var st = r.withdrawnAt || g.why === 'withdrawn' ? ['n', 'Sharing stopped'] : miss ? ['a', pl(miss, 'record') + ' not in your records yet'] : lawOpen ? ['a', 'Ready: ' + pl(lawOpen, 'legal job') + ' open, look first'] : ['g', 'Ready to share'];
     var h = '<div class="sus-ask" data-ask="' + e(r.id) + '"><div class="sus-gh"><div><b>' + e(r.name) + '</b> <span class="sus-kind set">' + e(KIND[r.kind] || r.kind) + '</span><span class="sus-mini sus-blk">' + e(r.what) + '</span></div>' + pill(st) + '</div>';
     h += '<p class="sus-mini"><b>Why they are here:</b> ' + e(r.evidence) + '</p>';
     /* -439-sus6 (source audit A2): a claim with no dated source is not shown; only the name and the records they usually want */
@@ -278,6 +282,9 @@
     var m = document.getElementById('sus-ask-email'); if (m) o.email = String(m.value || '').trim().slice(0, 160);
   }
   function chosen(r) { var o = _ui.ov; return r.records.filter(function (k) { return o.keys[k]; }); }
+  /* -447 (web test F16): a warning about the ticks or the format goes as soon as the farmer ticks a record or picks a format */
+  try { document.addEventListener('change', function (ev) { var t = ev.target, o = _ui.ov; if (!o || !o.msg || !t || !t.closest || !t.closest('#sus-ask-box')) return;
+    if ((t.hasAttribute('data-sk-rec') && /^Tick at least one/.test(o.msg)) || (t.name === 'sus-ask-fmt' && /^Choose the format/.test(o.msg))) { o.msg = null; var w = document.querySelector('#sus-ask-box .sus-warn'); if (w && w.parentNode) w.parentNode.removeChild(w); } }); } catch (er) {}
   function draw() {
     var box = document.getElementById('sus-ask-box'), o = _ui.ov; if (!box || !o) return;
     var c = W.susCompute(), r = c && askerById(c, o.id); if (!r) { close(); return; }
