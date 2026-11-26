@@ -658,6 +658,10 @@ function _sessionUid(){
       for (var j = 0; j < farms.length; j++) { if (farms[j].id === act) { activeRow = farms[j]; break; } }
       return act;
     }).then(function () {
+      /* -449: decide only once this device's own copy has been read. loadState() runs in bootAgriInsights(), which can come
+         after this point; asked earlier, every normal reload would look like "nothing saved here". */
+      return (window.AI && AI.sync && AI.sync.whenLocalReady) ? AI.sync.whenLocalReady(8000) : false;
+    }).then(function (localReady) {
       /* Whose data is already sitting on this device? A mismatch means the demo seed
          or another farmer's records are in the stores, and the server payloads below
          will NOT clear them on their own: the per-module apply steps deliberately keep
@@ -668,7 +672,20 @@ function _sessionUid(){
         sameU = (localStorage.getItem('ai_uk_state_uid')  === uid);
         sameF = (localStorage.getItem('ai_uk_state_farm') === fid);
       } catch(e){}
-      if (isNewFarm || !sameU || !sameF) {
+      /* -449 (live, 26 Nov 2026): the stamp says whose copy was SAVED here, not that it was READ. With the stamp kept and no
+         readable copy (part of the site data cleared, a copy that would not load, a first save refused by a full storage
+         allowance) the stores still hold the built-in sample farm, and the steps above keep local rows when the server has none:
+         Athwal Farm was sent the sample budget (1,025 cells), its two clear TB tests, herds, workers, pay runs and orchards.
+         Nothing read from this device counts as another farm's data. The owner stamp inside the copy must name this account and
+         farm too. If the wait above ran out, nothing is decided here and the stamp alone answers, as before. */
+      var diskOk = true;
+      try {
+        if (localReady === true) {
+          var _so = window.__aiSnapOwner;
+          diskOk = (window.STATE_LOADED_FROM_DISK === true) && (!_so || (_so.uid === uid && _so.farm === fid));
+        }
+      } catch(e){}
+      if (isNewFarm || !sameU || !sameF || !diskOk) {
         /* -400: figures already shown from this device are not this account's farm: cover them while it loads. */
         if (_revealed) _unreveal('opening');
         /* Unsent changes on this device belong to another account or farm: never send them. */
