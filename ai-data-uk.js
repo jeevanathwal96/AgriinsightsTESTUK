@@ -3587,6 +3587,10 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     if(prefs.ui && typeof prefs.ui==='object') p.uiPrefs = prefs.ui;
     /* -443: the farm's TB answers (area, interval, restriction, last whole-herd test). Farm-level, never queried: prefs. */
     if(prefs.tb && typeof prefs.tb==='object') p.tbPrefs = prefs.tb;
+    /* -448 (prod test 26 Nov): the CPH number was kept in this browser only - no column held it - so a second
+       computer, a cleared cache or the phone had none, and every movement form and pack went out without it.
+       Farm-level, never queried: prefs, no SQL. */
+    if(typeof prefs.cph==='string' && prefs.cph.trim()) p.cphNumber = prefs.cph.trim().slice(0, 20);
     return p;
   }
   function _profPrefsNext(prev, st){
@@ -3599,6 +3603,9 @@ let CAN_MOVE_TXNREF  = false;      /* livestock_moves.txn_ref */
     if(st && st.marketingOptIn && typeof st.marketingOptIn==='object'){ next.marketing = st.marketingOptIn; has=true; }   /* -391 */
     if(st && st.uiPrefs && typeof st.uiPrefs==='object'){ next.ui = st.uiPrefs; has=true; }   /* -399 */
     if(st && st.tbPrefs && typeof st.tbPrefs==='object'){ next.tb = st.tbPrefs; has=true; }   /* -443 */
+    /* -448: the CPH. A blank never overwrites the server's (as farm_ha, -434 R9): a new device starts blank and
+       must not wipe the holding's number. A CPH kept only in a browser before -448 goes up on its first save. */
+    if(st && typeof st.cphNumber==='string' && st.cphNumber.trim()){ next.cph = st.cphNumber.trim().slice(0, 20); has=true; }
     return has ? next : null;
   }
 

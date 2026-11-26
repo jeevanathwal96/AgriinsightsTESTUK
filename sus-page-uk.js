@@ -86,7 +86,10 @@
   function flush() {
     _flushT = null; if (_ptrDown || !_pend.length) return;
     var list = _pend; _pend = [];
-    list.forEach(function (p) { if (!p.el.isConnected) return; var a = ctlIn(p.el); if (a && typingBox(a)) { _pend.push(p); return; } paint(p.el, p.html); });
+    /* -448 (prod test 26 Nov): a held redraw also runs when the focus has landed in a typing box that holds no typing yet and that
+       the redraw can find again (paint() puts the focus and caret back). Tabbing from "Rented land, ha" to the next box kept the
+       new "already inside your farm size?" question off screen until the farmer clicked somewhere. A box with typing still holds it. */
+    list.forEach(function (p) { if (!p.el.isConnected) return; var a = ctlIn(p.el); if (a && typingBox(a) && (dirty(a) || !fkey(a))) { _pend.push(p); return; } paint(p.el, p.html); });
   }
   try {
     var mark = function (ev) { _evt = { type: ev.type, t: ev.target }; setTimeout(function () { _evt = null; }, 0); };
@@ -114,7 +117,10 @@
         var d = dirty(f); if (d) keep[k] = { v: f.value, c: f.checked };
         if (f === act) focus = { k: k, s: (function () { try { return [f.selectionStart, f.selectionEnd]; } catch (er) { return null; } })() }; });
     } catch (er) {}
+    /* -448: a focused button (a Yes/No the farmer tabbed to) is found again by its key after the redraw, so Tab then Space still works */
+    var bk = null; try { if (act && act.tagName === 'BUTTON' && el.contains(act)) bk = fkey(act); } catch (er) {}
     el.innerHTML = html;
+    if (bk) { try { var nb = [].filter.call(el.querySelectorAll('button'), function (b) { return fkey(b) === bk; })[0]; if (nb) nb.focus({ preventScroll: true }); } catch (er) {} }
     try {
       [].forEach.call(el.querySelectorAll('input,select,textarea'), function (f) { var k = fkey(f); if (!k) return; var x = keep[k];
         if (x) { if (f.type === 'checkbox' || f.type === 'radio') f.checked = x.c; else if (f.tagName === 'SELECT') { if ([].some.call(f.options, function (o) { return o.value === x.v; })) f.value = x.v; } else f.value = x.v; }
@@ -1021,7 +1027,7 @@
     var p = f.split(':'), s = S(), st = s.settings, v = t.value;
     if (p[0] === 'prof') {
       if (!W.ST) return;
-      if (p[1] === 'farmHa') { var ha = num(v); if (ha === null || ha <= 0 || ha > 100000) { _rangeAt = Date.now(); if (typeof W.toast === 'function') W.toast('The farm size should be more than 0 and up to 100,000 hectares. ' + (W.ST.farmHa != null && W.ST.farmHa !== '' ? 'Kept ' + Number(W.ST.farmHa).toLocaleString('en-GB') + ' ha.' : 'Left blank.'), 'info');   /* -447 (web test F1): said plainly, and kept on screen */ try { t.value = W.ST.farmHa != null ? W.ST.farmHa : ''; } catch (er) {} return; } W.ST.farmHa = ha; try { if (W.FARM) W.FARM.ha = ha; } catch (er) {} }
+      if (p[1] === 'farmHa') { var ha = num(v); if (ha === null || ha <= 0 || ha > 100000) { _rangeAt = Date.now(); if (typeof W.toast === 'function') W.toast('The farm size should be more than 0 and up to 100,000 hectares. ' + (num(W.ST.farmHa) > 0 ? 'Kept ' + Number(W.ST.farmHa).toLocaleString('en-GB') + ' ha.' : 'Left blank.'), 'info');   /* -447 (web test F1): said plainly, and kept on screen */ try { t.value = num(W.ST.farmHa) > 0 ? W.ST.farmHa : ''; } catch (er) {} return; }   /* -448: a farm size of 0 is not set: "Left blank.", box left empty */ W.ST.farmHa = ha; try { if (W.FARM) W.FARM.ha = ha; } catch (er) {} }
       else W.ST[p[1]] = String(v).trim().slice(0, p[1] === 'cphNumber' ? 20 : 80);
       try { if (typeof W.syncFarmFromST === 'function') W.syncFarmFromST(); } catch (er) {}
       /* -447 (web test F2): a GB CPH is 12/345/6789. Kept as typed (a farmer may hold an older form), but a wrong shape is said. */
